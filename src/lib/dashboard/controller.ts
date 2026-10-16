@@ -1,4 +1,5 @@
 import {mountWeather} from '../weather/view.ts';
+import {mountDensity} from './density.ts';
 import {
   displayConfig,
   formatClock,
@@ -8,6 +9,7 @@ import {
 
 const dashboard = document.querySelector<HTMLElement>('[data-dashboard]');
 if (dashboard) {
+  mountDensity(dashboard);
   const buttons =
     dashboard.querySelectorAll<HTMLButtonElement>('[data-mode-button]');
   const panels = dashboard.querySelectorAll<HTMLElement>('[data-mode-panel]');

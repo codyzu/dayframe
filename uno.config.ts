@@ -23,7 +23,24 @@ export default defineConfig({
         async meteocons() {
           const {default: collection} =
             await import('@iconify-json/meteocons/icons.json');
-          return collection;
+          // Cloud translations cross nested symbol view boxes. Let those
+          // symbols overflow inside the unchanged outer 512×512 icon canvas.
+          // Copy rather than mutate the module cached by the dev server.
+          return {
+            ...collection,
+            icons: Object.fromEntries(
+              Object.entries(collection.icons).map(([name, icon]) => [
+                name,
+                {
+                  ...icon,
+                  body: icon.body.replaceAll(
+                    '<symbol ',
+                    '<symbol overflow="visible" ',
+                  ),
+                },
+              ]),
+            ),
+          };
         },
       },
       processor(css, {collection, svg}) {

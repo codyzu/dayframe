@@ -157,6 +157,9 @@ test('weather icons switch between animated and static images with motion prefer
   for (const image of animated) {
     expect(image).toContain('<svg');
     expect(image).toMatch(/<animate/v);
+    for (const symbol of image.matchAll(/<symbol\b[^>]*>/gv)) {
+      expect(symbol[0]).toMatch(/overflow=["']visible["']/v);
+    }
   }
 
   await page.emulateMedia({reducedMotion: 'reduce'});
@@ -168,4 +171,53 @@ test('weather icons switch between animated and static images with motion prefer
 
   await page.emulateMedia({reducedMotion: 'no-preference'});
   expect(await images()).toEqual(animated);
+});
+
+test('overcast cloud stays visible at both animation extremes', async ({
+  page,
+}, testInfo) => {
+  await page.unroute('https://api.open-meteo.com/**');
+  await page.route('https://api.open-meteo.com/**', async (route) => {
+    const raw = weatherFixture();
+    raw.current.weather_code = 3;
+    await route.fulfill({json: raw});
+  });
+  await page.goto('/?density=large');
+  const icon = page.locator('[data-current-icon]');
+  await expect(icon).toHaveClass(/overcast-day/v);
+  // Inline the exact bundled image only in this test so SMIL time can be set
+  // deterministically; CSS background images do not expose setCurrentTime().
+  await icon.evaluate((element) => {
+    const image = decodeURIComponent(getComputedStyle(element).backgroundImage);
+    const markup = image.slice(
+      image.indexOf('<svg'),
+      image.lastIndexOf('</svg>') + 6,
+    );
+    const svg = new DOMParser().parseFromString(
+      markup,
+      'image/svg+xml',
+    ).documentElement;
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '100%');
+    element.replaceChildren(document.importNode(svg, true));
+    (element as HTMLElement).style.backgroundImage = 'none';
+  });
+  expect(await icon.locator('symbol').count()).toBeGreaterThan(0);
+  for (const time of [0, 3]) {
+    await icon.evaluate((element, seconds) => {
+      const svg = element.querySelector('svg')!;
+      svg.pauseAnimations();
+      svg.setCurrentTime(seconds);
+    }, time);
+    expect(
+      await icon
+        .locator('symbol')
+        .evaluateAll((symbols) =>
+          symbols.every(
+            (symbol) => getComputedStyle(symbol).overflow === 'visible',
+          ),
+        ),
+    ).toBe(true);
+    await icon.screenshot({path: testInfo.outputPath(`overcast-${time}s.png`)});
+  }
 });

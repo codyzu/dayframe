@@ -8,10 +8,14 @@ import {displayConfig} from '../lib/dashboard/config';
 <BaseLayout title="À la maison" bodyClass="display-page text-[#f5f6ef]">
   <main
     class="dashboard min-h-screen flex flex-col px-4.5 py-5.5 md:p-6 lg:px-11 lg:pt-7.5 lg:pb-6"
+    data-density="standard"
     data-dashboard
     data-mode="morning"
   >
-    <header class="flex items-center justify-between gap-3">
+    <header
+      data-dashboard-header
+      class="flex items-center justify-between gap-3"
+    >
       <a
         class="inline-flex items-center gap-2.5 text-lg md:text-[22px] font-bold tracking-tight"
         href="/"
@@ -30,11 +34,11 @@ import {displayConfig} from '../lib/dashboard/config';
       </span>
     </header>
     <section
-      class="flex flex-1 flex-col justify-center py-6 md:pb-9"
+      class="morning-panel flex flex-1 flex-col justify-center py-6"
       data-mode-panel="morning"
       aria-labelledby="morning-title"
     >
-      <div class="flex flex-col-reverse items-start justify-between gap-6 mb-6 md:flex-row md:items-center md:mb-8">
+      <div class="morning-intro flex flex-col-reverse items-start justify-between gap-6 mb-6 md:flex-row md:items-center md:mb-6">
         <div>
           <p class="eyebrow">Un nouveau jour à la maison</p>
           <h1 class="display-title" id="morning-title">
@@ -109,10 +113,21 @@ import {displayConfig} from '../lib/dashboard/config';
         </p>
       </div>
     </section>
-    <footer class="flex flex-col items-center justify-between gap-4 md:flex-row">
-      <span class="hidden max-w-[220px] text-[11px] text-mist lg:block">
-        Un peu d’essentiel. Beaucoup de chez vous.
-      </span>
+    <footer
+      data-dashboard-footer
+      class="flex flex-col items-center justify-between gap-4 md:flex-row"
+    >
+      <label class="flex items-center gap-2 text-sm text-mist">
+        Texte
+        <select
+          data-density-select
+          aria-label="Taille du texte"
+          class="min-h-11 rounded-xl border border-white/30 bg-[#0d2731] px-3 text-base text-white"
+        >
+          <option value="standard">Standard</option>
+          <option value="large">Grand</option>
+        </select>
+      </label>
       <ModeNavigation />
       <span class="text-[11px] text-mist">Annecy · Europe/Paris</span>
     </footer>
@@ -133,19 +148,72 @@ import {displayConfig} from '../lib/dashboard/config';
   :global(.display-page) {
     background: #143c48 url('/annecy.svg') center / cover fixed;
   }
+  /* Rem tokens preserve browser font preferences. Layout reflows rather than scaling. */
   .dashboard {
+    --font-weather-temperature: 5.6875rem;
+    --font-weather-description: 1.4375rem;
+    --font-weather-heading: 1.25rem;
+    --font-weather-detail: 1rem;
+    --font-weather-summary: 1.125rem;
+    --font-weather-secondary: 1rem;
+    --font-chart-label: 1.125rem;
+    --font-chart-time: 1rem;
+    --font-navigation: 0.875rem;
+    --icon-weather-current: 6rem;
+    --icon-weather-hourly: 2.5rem;
+    --font-weather-meta: 0.8125rem;
+
     background: linear-gradient(
       110deg,
       rgba(6, 25, 35, 0.79),
       rgba(9, 34, 43, 0.32)
     );
   }
+  .dashboard[data-density='large'] {
+    --font-weather-temperature: 6.25rem;
+    --font-weather-description: 1.875rem;
+    --font-weather-heading: 1.625rem;
+    --font-weather-detail: 1.375rem;
+    --font-weather-summary: 1.5rem;
+    --font-weather-secondary: 1.3125rem;
+    --font-chart-label: 1.375rem;
+    --font-chart-time: 1.1875rem;
+    --font-navigation: 1.1875rem;
+    --icon-weather-current: 7.5rem;
+    --icon-weather-hourly: 3rem;
+    --font-weather-meta: 0.9375rem;
+  }
+  .dashboard[data-density='large'] .clock {
+    font-size: 6.5rem;
+  }
   .dashboard[data-mode='night'] {
     background: #080f16;
   }
+  @media (min-width: 1000px) {
+    .dashboard[data-density='large'] {
+      padding: 1.5rem 2rem;
+    }
+    .dashboard[data-density='large'] .morning-panel {
+      padding: 1rem 0;
+    }
+    .dashboard[data-density='large'] .morning-intro {
+      margin-bottom: 1.25rem;
+    }
+    .dashboard[data-density='large'] .morning-intro .eyebrow {
+      font-size: 0.875rem;
+      margin-bottom: 0.5rem;
+    }
+    .dashboard[data-density='large'] .display-title {
+      font-size: 2.25rem;
+    }
+    .dashboard[data-density='large'] [data-date] {
+      font-size: 1.375rem;
+      margin-top: 0.5rem;
+    }
+  }
   @media (min-width: 1000px) and (min-height: 700px) {
     .dashboard {
-      height: 100vh;
+      min-height: 100vh;
     }
   }
 </style>

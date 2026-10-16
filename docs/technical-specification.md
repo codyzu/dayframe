@@ -50,6 +50,9 @@ The web app must remain usable without unlocking this particular frame.
 
 ### 2.2 Browser and UI requirements
 
+**Display density:** Standard is the default for ordinary desktop/mobile visits. Dedicated displays, including Classic 10, must be provisioned with `/?display=frame`, defaulting to Large independently of resolution/user agent. An explicit `density=standard|large` parameter overrides a saved browser preference, which overrides the profile default. The visible text-size selector persists explicit choices locally. Rem-based tokens respect font preferences; smaller viewports reflow without scaling the entire dashboard. See [display density](display-density.md) for precedence, persistence, provisioning and validation details.
+
+
 - Target Firefox/GeckoView 143 as a provisional older-Android compatibility baseline, not a promise that it runs on this device.
 - Support current desktop Firefox, Safari, and Chromium.
 - Avoid relying exclusively on web APIs unavailable in the supported kiosk browser.

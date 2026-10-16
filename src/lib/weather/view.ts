@@ -23,33 +23,48 @@ function chart(weather: Weather, now: number) {
     Math.max(...hours.map((hour) => hour.temperature)) + 2,
   );
   const x = (time: number) =>
-    42 + ((time - hours[0].time) / (hours.at(-1)!.time - hours[0].time)) * 470;
+    ((time - hours[0].time) / (hours.at(-1)!.time - hours[0].time)) * 100;
   const y = (temperature: number) =>
-    150 - ((temperature - low) / (high - low)) * 108;
-  const marker = Math.max(42, Math.min(512, x(now)));
+    100 - ((temperature - low) / (high - low)) * 100;
+  const marker = Math.max(0, Math.min(100, x(now)));
   const points = hours
-    .map((hour) => `${x(hour.time)},${y(hour.temperature)}`)
+    .map((hour) => `${x(hour.time) * 6},${y(hour.temperature) * 1.6}`)
     .join(' ');
-  // All interpolated values are validated numbers or locally generated labels/classes.
-  return `<div class="w-full py-3">
-    <svg class="block w-full" viewBox="0 0 558 230" role="img" aria-labelledby="chart-title chart-description">
-      <title id="chart-title">Température et probabilité de précipitations</title>
-      <desc id="chart-description">Courbe jaune : température en degrés Celsius, axe gauche. Barres bleues : probabilité de précipitations en pour cent, axe droit. Trait pointillé : maintenant. Tableau détaillé disponible après le graphique.</desc>
-      ${[0, 0.5, 1].map((fraction) => `<line x1="42" x2="512" y1="${150 - fraction * 108}" y2="${150 - fraction * 108}" stroke="#ffffff" stroke-opacity="0.18"/><text x="32" y="${155 - fraction * 108}" text-anchor="end" fill="#f5d294" font-size="14">${Math.round(low + fraction * (high - low))}°</text><text x="524" y="${155 - fraction * 108}" fill="#b5dfed" font-size="14">${fraction * 100}%</text>`).join('')}
-      ${hours.map((hour) => `<rect x="${x(hour.time) - 7}" y="${150 - hour.probability * 1.08}" width="14" height="${hour.probability * 1.08}" rx="3" fill="#88cbe4" fill-opacity="0.65"/>`).join('')}
-      <polyline points="${points}" fill="none" stroke="#f5d294" stroke-width="3" stroke-linejoin="round"/>
-      ${hours.map((hour, index) => (index % 2 === 0 ? `<circle cx="${x(hour.time)}" cy="${y(hour.temperature)}" r="4" fill="#f5d294"/><text x="${x(hour.time)}" y="${y(hour.temperature) - 12}" text-anchor="middle" fill="#fff0cd" font-size="16">${rounded(hour.temperature)}</text><text x="${x(hour.time)}" y="177" text-anchor="middle" fill="#d5e0df" font-size="15">${hourLabel(hour.time)}</text>` : '')).join('')}
-      <line x1="${marker}" x2="${marker}" y1="26" y2="155" stroke="white" stroke-dasharray="4 4"/><text x="${marker}" y="17" text-anchor="middle" fill="white" font-size="13">Maintenant</text>
-      <line x1="44" x2="66" y1="210" y2="210" stroke="#f5d294" stroke-width="3"/><text x="74" y="215" fill="#f5d294" font-size="14">Température °C</text>
-      <rect x="260" y="203" width="12" height="12" rx="2" fill="#88cbe4"/><text x="280" y="215" fill="#b5dfed" font-size="14">Précipitations %</text>
-    </svg>
-    <div class="grid grid-cols-6 gap-1" aria-hidden="true">${hours
-      .filter((_, index) => index % 2 === 0)
-      .map(
-        (hour) =>
-          `<span class="flex justify-center"><span class="${conditionFor(hour.code, hour.isDay).icon} inline-block size-9"></span></span>`,
-      )
-      .join('')}</div>
+  // HTML labels stay in rem at every viewport; only the numeric plot stretches.
+  // Both axes share the exact same plot bounds, rain always uses 0–100%.
+  return `<div class="weather-chart w-full py-3">
+    <div class="flex flex-wrap justify-between gap-2 text-[length:var(--font-chart-time)] mb-8">
+      <span class="text-[#fff0cd]">Température °C</span>
+      <span class="text-[#b5dfed]">Pluie · probabilité 0–100 %</span>
+    </div>
+    <div class="mx-7 relative">
+      <div class="relative h-[160px] mb-2" data-chart-plot>
+        <svg class="absolute inset-0 size-full overflow-visible" viewBox="0 0 600 160" preserveAspectRatio="none" role="img" aria-labelledby="chart-title chart-description">
+          <title id="chart-title">Température et probabilité de précipitations</title>
+          <desc id="chart-description">Courbe jaune : température en degrés Celsius, valeurs sur la courbe. Barres bleues : probabilité de précipitations de 0 % en bas à 100 % en haut. Trait pointillé : maintenant. Tableau détaillé disponible après le graphique.</desc>
+          ${[0, 0.5, 1].map((fraction) => `<line x1="0" x2="600" y1="${fraction * 160}" y2="${fraction * 160}" stroke="#ffffff" stroke-opacity="0.18"/>`).join('')}
+          ${hours.map((hour) => `<rect x="${x(hour.time) * 6 - 6}" y="${160 - hour.probability * 1.6}" width="12" height="${hour.probability * 1.6}" rx="3" fill="#88cbe4" fill-opacity="0.8"/>`).join('')}
+          <polyline points="${points}" fill="none" stroke="#f5d294" stroke-width="4" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+          ${hours.map((hour) => `<ellipse cx="${x(hour.time) * 6}" cy="${y(hour.temperature) * 1.6}" rx="4" ry="4" fill="#fff0cd"/>`).join('')}
+          <line x1="${marker * 6}" x2="${marker * 6}" y1="-12" y2="160" stroke="white" stroke-width="2" stroke-dasharray="5 4" vector-effect="non-scaling-stroke"/>
+        </svg>
+        <span class="absolute -top-7 text-[length:var(--font-chart-time)] font-semibold" style="left:clamp(0%, ${marker}%, 65%)">Maintenant</span>
+        ${hours
+          .filter((_, index) => index % 2 === 0)
+          .map(
+            (hour) =>
+              `<span class="absolute text-[length:var(--font-chart-label)] font-semibold text-[#fff0cd] bg-[#102a34] rounded px-0.5 leading-none" style="left:${x(hour.time)}%;top:${y(hour.temperature)}%;transform:translate(-50%,-130%)">${rounded(hour.temperature)}</span>`,
+          )
+          .join('')}
+      </div>
+      <div class="relative h-[calc(var(--icon-weather-hourly)+2rem)]" aria-hidden="true">${hours
+        .filter((_, index) => index % 2 === 0)
+        .map(
+          (hour) =>
+            `<span class="absolute flex flex-col items-center -translate-x-1/2 text-[length:var(--font-chart-time)] text-mist" style="left:${x(hour.time)}%">${hourLabel(hour.time).replace(':00', 'h')}<span class="${conditionFor(hour.code, hour.isDay).icon} inline-block size-[var(--icon-weather-hourly)] shrink-0"></span></span>`,
+        )
+        .join('')}</div>
+    </div>
     <div class="sr-only"><table><caption>Prévisions horaires, heure de Paris</caption><thead><tr><th>Heure</th><th>Température</th><th>Précipitations</th><th>Conditions</th></tr></thead><tbody>${hours.map((hour) => `<tr><th>${hourLabel(hour.time)}</th><td>${rounded(hour.temperature)}C</td><td>${hour.probability} %</td><td>${conditionFor(hour.code, hour.isDay).label}</td></tr>`).join('')}</tbody></table></div>
   </div>`;
 }
@@ -95,7 +110,7 @@ export function mountWeather(root: HTMLElement) {
     text('[data-condition]', label);
     const iconElement = root.querySelector('[data-current-icon]');
     if (iconElement) {
-      iconElement.className = `weather-icon ${icon} inline-block size-[116px]`;
+      iconElement.className = `weather-icon ${icon} inline-block size-[var(--icon-weather-current)] shrink-0`;
     }
 
     const daily = weather.daily.find((entry) => entry.date === dateKey(now));

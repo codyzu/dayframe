@@ -46,3 +46,7 @@ Refreshed upstream review on 16 October 2026 at `e97c50ba459c49ea8237259f69b95cd
 Retained ideas: glanceable large temperature/clock, brief rain advice, and bounded hourly information. Deliberate differences: independently written TypeScript adapter, live Open-Meteo data, French labels, full WMO/Meteocons mapping, absolute timestamps, distinct SVG chart axes, validated cache and backoff. Upstream's repeating hour-indexed fixture data is not used as live data or as tomorrow's forecast.
 
 The specification references approved mockups that are absent from this checkout. M2 therefore continues M1's **explicitly provisional** original Annecy SVG and panel layout; visual conformity to those mockups is unverified. No new external assets are introduced. Screenshots use synthetic weather and desktop engines/iPhone emulation; Classic 10 compatibility still requires M6.
+
+## Display readability
+
+See [display density](display-density.md) for Standard/Large presets, frame provisioning, preference persistence, chart presentation and accessibility verification.
