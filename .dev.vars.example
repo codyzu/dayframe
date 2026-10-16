@@ -1,1 +1,10 @@
-# M1 needs no secrets. Future local Worker secrets belong in .dev.vars.
+# Local Worker secrets only; never commit real household values.
+# API/browser tests provide synthetic identities and addresses automatically.
+# Configure a separate development Access application before enabling local APIs.
+# PHOTOS_ENABLED=true
+# ACCESS_TEAM_DOMAIN=https://your-team.cloudflareaccess.com
+# ACCESS_AUD=your-development-application-audience
+# ADMIN_EMAILS=one@example.test,two@example.test
+# HOME_NETWORKS=192.0.2.10,2001:db8:1234::/48
+# PHOTOS must use a local emulated KV namespace; never remote production data.
+# ADMINISTRATION is a local SQLite Durable Object binding in wrangler.jsonc.

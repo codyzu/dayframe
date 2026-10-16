@@ -1,0 +1,207 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const fields = [
+  {name: 'location', label: 'Lieu', type: 'text'},
+  {name: 'timezone', label: 'Fuseau horaire (ex. Europe/Paris)', type: 'text'},
+  {
+    name: 'latitude',
+    label: 'Latitude',
+    type: 'number',
+    min: -90,
+    max: 90,
+    step: 'any',
+  },
+  {
+    name: 'longitude',
+    label: 'Longitude',
+    type: 'number',
+    min: -180,
+    max: 180,
+    step: 'any',
+  },
+  {
+    name: 'slideshowIntervalSeconds',
+    label: 'Durée d’une photo (secondes)',
+    type: 'number',
+    min: 5,
+    max: 3600,
+  },
+  {
+    name: 'overrideTimeoutSeconds',
+    label: 'Retour au programme après inactivité (secondes)',
+    type: 'number',
+    min: 30,
+    max: 86_400,
+  },
+] as const;
+---
+
+<BaseLayout
+  title="Réglages · Administration"
+  bodyClass="bg-[#f5f4ef] text-[#203d43]"
+>
+  <main data-settings-admin class="mx-auto max-w-3xl px-5 py-10">
+    <nav class="flex flex-wrap gap-6 mb-8">
+      <a href="/admin/photos" class="min-h-11 underline">
+        Photos
+      </a>
+      <a href="/" class="min-h-11 underline">
+        Affichage
+      </a>
+      <a href="/cdn-cgi/access/logout" class="min-h-11 underline">
+        Se déconnecter
+      </a>
+    </nav>
+    <h1 class="text-4xl font-semibold">Réglages de la maison</h1>
+    <p data-status role="status" class="my-5 rounded-xl bg-[#e8eee7] p-4">
+      Vérification de l’accès…
+    </p>
+    <a
+      href="/admin/settings"
+      target="_blank"
+      rel="noopener"
+      class="min-h-11 inline-flex items-center underline"
+    >
+      Se reconnecter dans un autre onglet
+    </a>
+    <button data-reload type="button" class="min-h-11 px-4 underline">
+      Actualiser l’accès
+    </button>
+    <form data-settings-form class="mt-6 space-y-6">
+      <fieldset disabled data-controls class="space-y-6">
+        <div class="grid gap-5 sm:grid-cols-2">
+          {fields.map((field) => (
+            <label class="flex flex-col gap-2">
+              {field.label}
+              <input
+                name={field.name}
+                type={field.type}
+                min={'min' in field ? field.min : undefined}
+                max={'max' in field ? field.max : undefined}
+                step={'step' in field ? field.step : undefined}
+                required
+                class="min-h-12 w-full rounded-lg border border-[#9fb5af] bg-white px-3"
+              />
+            </label>
+          ))}
+          <label class="flex flex-col gap-2">
+            Cadrage par défaut
+            <select
+              name="fit"
+              class="min-h-12 rounded-lg border border-[#9fb5af] bg-white px-3"
+            >
+              <option value="contain">Photo entière</option>
+              <option value="cover">Remplir l’écran</option>
+            </select>
+          </label>
+        </div>
+        <section aria-labelledby="schedule-title">
+          <h2 id="schedule-title" class="text-2xl font-semibold">
+            Programme quotidien
+          </h2>
+          <p class="my-3 text-sm">
+            Les plages peuvent traverser minuit mais ne doivent pas se
+            chevaucher. Le programme est enregistré ; le changement automatique
+            des modes sera activé prochainement.
+          </p>
+          <div data-schedule class="space-y-3"></div>
+          <button data-add-period type="button" class="min-h-11 underline">
+            Ajouter une plage
+          </button>
+        </section>
+        <button
+          type="submit"
+          class="min-h-12 rounded-full bg-[#203d43] px-6 text-white"
+        >
+          Enregistrer les réglages
+        </button>
+        <button data-export type="button" class="min-h-12 px-5 underline">
+          Exporter les réglages
+        </button>
+      </fieldset>
+    </form>
+    <section
+      class="mt-10 rounded-xl border border-[#9fb5af] p-5"
+      aria-labelledby="display-title"
+    >
+      <h2 id="display-title" class="text-2xl font-semibold">
+        Connecter le cadre
+      </h2>
+      <p class="mt-3">
+        Créez une clé puis saisissez-la sur le cadre à l’adresse{' '}
+        <a href="/setup" class="underline">
+          /setup
+        </a>
+        . Aucun compte administrateur n’est nécessaire sur le cadre.
+      </p>
+      <p data-credential-status class="my-4 text-sm"></p>
+      <button
+        data-issue
+        disabled
+        type="button"
+        class="min-h-12 rounded-full bg-[#203d43] px-5 text-white disabled:opacity-50"
+      >
+        Créer ou remplacer la clé
+      </button>
+      <button
+        data-revoke
+        disabled
+        type="button"
+        class="min-h-12 px-4 underline disabled:opacity-50"
+      >
+        Révoquer la clé
+      </button>
+      <div data-token-panel hidden class="mt-5 space-y-3">
+        <p>
+          Cette clé n’apparaît qu’une fois. Sa création a révoqué la précédente.
+          Gardez-la privée.
+        </p>
+        <output
+          data-token
+          class="block break-all rounded-lg bg-white p-4 font-mono text-sm"
+        ></output>
+        <button data-hide-token type="button" class="min-h-11 underline">
+          Masquer la clé
+        </button>
+      </div>
+    </section>
+    <template data-period-template>
+      <div class="flex flex-wrap items-end gap-3 rounded-lg bg-[#e8eee7] p-3">
+        <label class="flex flex-col gap-1">
+          Début
+          <input
+            data-start
+            type="time"
+            required
+            class="min-h-11 rounded bg-white px-2"
+          />
+        </label>
+        <label class="flex flex-col gap-1">
+          Fin
+          <input
+            data-end
+            type="time"
+            required
+            class="min-h-11 rounded bg-white px-2"
+          />
+        </label>
+        <label class="flex flex-col gap-1">
+          Mode
+          <select data-mode class="min-h-11 rounded bg-white px-2">
+            <option value="morning">Matin</option>
+            <option value="photos">Photos</option>
+            <option value="home">Maison</option>
+            <option value="night">Nuit</option>
+          </select>
+        </label>
+        <button data-remove type="button" class="min-h-11 underline">
+          Retirer
+        </button>
+      </div>
+    </template>
+  </main>
+  <script>
+    import '../../lib/dashboard/settings-admin.ts';
+  </script>
+</BaseLayout>

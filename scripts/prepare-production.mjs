@@ -34,6 +34,8 @@ export function createProductionConfig(base, namespaceId) {
     assets: {...base.assets, directory: path.resolve(base.assets.directory)},
     vars: base.vars,
     observability: base.observability,
+    durable_objects: base.durable_objects,
+    migrations: base.migrations,
     kv_namespaces: [{binding: 'PHOTOS', id: namespaceId}],
   };
 }

@@ -1,5 +1,7 @@
 import {photoApi, type PhotoEnv} from './photo-api.ts';
 
+export {Administration} from './administration.ts';
+
 export type Env = PhotoEnv & {
   ASSETS: {fetch(request: Request): Promise<Response>};
   DEPLOYMENT_STAGE: string;
@@ -49,6 +51,9 @@ const worker = {
     }
 
     if (
+      path === '/api/config' ||
+      path === '/api/config/display' ||
+      path === '/api/display' ||
       path === '/api/photos' ||
       path === '/api/session' ||
       path.startsWith('/api/photos/') ||

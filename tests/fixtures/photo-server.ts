@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/no-await-expression-member -- Parse internal test provisioning responses inline. */
 // Test harness only: local HTTPS, synthetic Access issuer, and real local KV.
 // This entrypoint is never included in Wrangler production builds.
 import {Buffer} from 'node:buffer';
@@ -7,11 +8,12 @@ import {mkdtemp, readFile, rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {execFileSync} from 'node:child_process';
-import {randomBytes} from 'node:crypto';
 import {getPlatformProxy} from 'wrangler';
+import {defaultSettings} from '../../src/lib/dashboard/settings.ts';
 import worker, {type Env} from '../../worker/index.ts';
-import {sha256} from '../../src/lib/photos/contracts.ts';
+import {administration} from '../../worker/administration.ts';
 import type {PhotoKV} from '../../worker/photos.ts';
+import {administrationRuntime} from './administration-runtime.ts';
 import {photoAuthority, testAudience, testIssuer} from './photo-auth.ts';
 
 const authority = await photoAuthority();
@@ -26,7 +28,7 @@ const platform = await getPlatformProxy({
   configPath: 'tests/fixtures/wrangler.photos.jsonc',
   persist: false,
 });
-const displayToken = randomBytes(32).toString('hex');
+let displayToken: string;
 const temporary = await mkdtemp(path.join(tmpdir(), 'dayframe-photo-test-'));
 execFileSync(
   'openssl',
@@ -47,6 +49,7 @@ execFileSync(
   ],
   {stdio: 'ignore'},
 );
+const administrationPlatform = await administrationRuntime();
 const assetsRoot = path.resolve('dist');
 const env: Env = {
   DEPLOYMENT_STAGE: 'test',
@@ -55,9 +58,8 @@ const env: Env = {
   ACCESS_TEAM_DOMAIN: testIssuer,
   ACCESS_AUD: testAudience,
   ADMIN_EMAILS: 'one@example.test,two@example.test',
-  DISPLAY_TOKEN_SHA256: await sha256(
-    new TextEncoder().encode(displayToken).buffer,
-  ),
+  ADMINISTRATION: administrationPlatform.binding,
+  HOME_NETWORKS: '192.0.2.10,2001:db8:1234::/48',
   ASSETS: {
     async fetch(request) {
       const pathname = decodeURIComponent(new URL(request.url).pathname);
@@ -91,6 +93,11 @@ const env: Env = {
     },
   },
 };
+displayToken = (
+  (await (await administration(env.ADMINISTRATION!, '/credential')).json()) as {
+    token: string;
+  }
+).token;
 const server = createServer(
   {
     key: await readFile(path.join(temporary, 'key.pem')),
@@ -116,6 +123,17 @@ const server = createServer(
         await Promise.all(
           page.keys.map(async ({name}) => env.PHOTOS!.delete(name)),
         );
+        await administration(
+          env.ADMINISTRATION!,
+          '/config',
+          defaultSettings,
+          'PATCH',
+        );
+        displayToken = (
+          (await (
+            await administration(env.ADMINISTRATION!, '/credential')
+          ).json()) as {token: string}
+        ).token;
         outgoing.end('ok');
         return;
       }
@@ -132,6 +150,7 @@ const server = createServer(
         }
       }
 
+      headers.set('CF-Connecting-IP', headers.get('X-Test-IP') ?? '192.0.2.10');
       let request = new Request(url, {
         method: incoming.method,
         headers,
@@ -146,6 +165,7 @@ const server = createServer(
             Origin: url.origin,
             'X-Dayframe-Request': '1',
             Authorization: `Bearer ${displayToken}`,
+            'CF-Connecting-IP': '192.0.2.10',
           },
         });
       }
@@ -163,6 +183,7 @@ server.listen(8789, '127.0.0.1');
 async function close() {
   server.close();
   await platform.dispose();
+  await administrationPlatform.runtime.dispose();
   await rm(temporary, {recursive: true, force: true});
 }
 

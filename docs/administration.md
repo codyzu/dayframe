@@ -1,0 +1,47 @@
+# Administration and frame recovery
+
+M4 is implemented locally. Production still has the previously activated single administrator; a second approved identity, verified home-network secret, M4 deployment and live acceptance are pending. No household identity/address/key belongs in this document or the repository. See [ADR 0003](decisions/0003-administration.md) for boundaries, revocation timing, cost review and upstream provenance.
+
+## Activate on Workers Free
+
+1. Recheck the account is Workers Free and Zero Trust Free, with no automatic paid upgrade/add-on. The SQLite-backed Durable Object is available on Free and fails at quota exhaustion. Keep the existing free-plan deployment assertion. Never choose a paid storage backend.
+2. Keep the existing dedicated `PHOTOS` KV binding and Access secrets (`ACCESS_TEAM_DOMAIN`, `ACCESS_AUD`, `ADMIN_EMAILS`, `PHOTOS_ENABLED=true`). Approve the second person's exact email, add it to the existing Access application's exact-email allow policy and the comma-separated `ADMIN_EMAILS` Worker secret. Retain the one-hour session setting and hostname cookie scope; the application must protect **all `/admin/*`**, including `/admin/settings`. No general invitation or password sharing is needed.
+3. Independently verify the home's externally visible full IPv4 address and any IPv6 prefix assigned by the ISP/router. Privately set `HOME_NETWORKS` with `pnpm exec wrangler secret put HOME_NETWORKS --env production` (or use the ignored generated production configuration as in photo operations). Values are comma-separated exact IPv4 addresses and optional IPv6 prefixes (/48–/128), at most eight entries. Do not substitute a shared carrier NAT address without checking the ISP's full-stack assignment. Avoid Pseudo IPv4 header overwrite. Admin access remains available off-network if the home IP changes.
+4. Use the existing deployment workflow/config generator. `ADMINISTRATION` and the `m4-administration` SQLite migration must be present alongside `PHOTOS`. This introduces one object namespace, not a new subscription. Remove the old prototype `DISPLAY_TOKEN_SHA256` secret if previously configured: the M4 code deliberately ignores it.
+5. Each administrator signs in separately and verifies photo upload/delete, settings read/save and recovery. Use synthetic images first. Verify unsigned/forged/expired sessions and off-network display reads are rejected; verify allowed IPv4 and IPv6 through the actual edge. The deployment smoke checks now expect anonymous configuration/display APIs to return 401, headerless configuration/credential/provisioning mutations to return 403, `/setup` to load publicly, and both admin pages to redirect to Access. Run them against the M4 deployment, not the historical M3 build. Check Worker/Object CPU, duration and quota metrics on Free before calling activation accepted. Actual Classic 10 tests belong to M6.
+
+Local `pnpm verify` uses synthetic identities, local KV and an actual workerd SQLite object, with no production keys or household photos. Plain `pnpm dev` has no Worker APIs. Local API browser tests use an isolated HTTPS harness; do not copy its synthetic issuer or test-only routes into production.
+
+## Everyday settings
+
+Open `/admin/settings`. Set the place name, coordinates, timezone, photo duration (5–3,600 seconds), inactivity override duration (30–86,400 seconds), fit preference and daily periods. Periods can cross midnight; touching boundaries are allowed and overlaps rejected. Partial API updates preserve other settings. Missing fields use the public defaults in `settings.ts`. Gaps will use Morning when M5 implements the scheduler; M4 does not switch modes automatically.
+
+Save then reload the display to apply settings. Changing location/timezone uses a different weather-cache key. Settings responses expose only display settings; private network and identity configuration are managed as deployment secrets. Credentials are never exported with settings.
+
+## Provision, rotate or replace the frame
+
+1. On an administrator's own device, open `/admin/settings` and choose **Créer ou remplacer la clé**. Confirm the replacement. The old key stops authorizing subsequent requests as soon as the successful response commits; an already authorized response may finish.
+2. Transfer the displayed key privately to the frame. It is shown once and hidden when the admin page loses visibility. If lost, issue another key. Never send it in a URL, screenshot, public issue or source file.
+3. On the home network, open `/setup` on the frame and enter the key. Successful setup opens `/?display=frame` (Large density default) and installs an HttpOnly/Secure cookie scoped to `/api`. It lasts up to one year, subject to the browser's retention policy. No admin identity should ever be signed in on the frame. Restart the browser and verify authenticated images without logging in.
+4. To revoke access, use **Révoquer la clé** from any authenticated admin network. New authorization checks reject it immediately after the acknowledged write; no KV propagation delay or authorization cache applies. The frame clears private pixels on a denial or after its five-minute offline memory lease. Storage/network errors never grant access.
+5. On a browser being retired, open `/setup` and choose **Déconnecter ce navigateur**, or clear its site data. Logout clears the cookie even if already revoked/expired. Remote revocation cannot erase copies made by a compromised frame. No private image data is intentionally persisted to localStorage, IndexedDB, Cache Storage or a service worker.
+
+If setup fails, check HTTPS, correct key, expiration, current home address/prefix and the `ADMINISTRATION` binding. If the key-creation response was lost, rotate again; the previous key cannot be recovered from its digest. A new frame follows exactly the same process. Browser data removal, cookie expiry and a changed hostname require reprovisioning. Do not transfer admin cookies to the frame.
+
+## Identity and interrupted-upload recovery
+
+Each admin uses their own approved email through Access. The Worker checks the signed issuer/audience/email and expiry, not an email header alone. An expired session during a batch clears private previews and leaves explicit **Réessayer** actions for both failed and unattempted files. Open the reconnect link in another tab, complete Access login there, then return to the original tab and retry each file. Deterministic photo IDs safely reconcile a response lost after a successful write. Closing/reloading the original tab loses the in-memory selected files; select them again from the original library.
+
+Use the Access logout link in settings to end the human session. Other open photo tabs remove previews on the next session check (30 seconds), or within five minutes plus 30 seconds while offline. Do not assume deleting a browser cookie revokes a previously copied JWT; it can remain usable until its one-hour maximum expiry. For a lost identity/device, remove that email from both the Worker `ADMIN_EMAILS` secret and Access allow policy, revoke its Access sessions, then verify denial. Keep a second independent admin operational. If both identities are unavailable, the Cloudflare account owner restores a verified address in Access and Worker secrets, then signs in normally; no unauthenticated recovery endpoint exists.
+
+## Home address change
+
+An admin can sign in off-network and update `HOME_NETWORKS` through Worker secrets without giving the frame admin access. Verify the new ISP/router assignment privately; retain only required IPv4 and IPv6 entries, update the secret, and verify allowed/denied requests through the edge. If the frame key remains valid, retry without issuing a new key. A network restriction update follows the platform's secret rollout; no global rollout deadline is claimed. For an urgent lost-frame incident, revoke the credential through `/admin/settings` first, then update network configuration. Keep home addresses out of logs, checked-in configuration and screenshots.
+
+## Export and restore
+
+Use **Exporter les réglages** in `/admin/settings` to download the validated settings JSON. It contains the configured household location, so store it privately. To restore, sign in and enter the settings in the form, or PATCH that JSON to `/api/config` with `Content-Type: application/json`, same-origin credentials, `Origin` and `X-Dayframe-Request: 1`. Validation applies equally to restores; inspect the response and reload the display.
+
+Each photo card in `/admin/photos` offers **Télécharger le WebP**, using authenticated delivery. Save the optimized files privately. These exports are reduced, metadata-stripped images, not full-resolution originals; retain Apple/Google library originals. For a full collection, paginate the authenticated catalog and download each `/api/photos/:id` with the admin session; do not put session tokens in command history or reusable scripts. Exports are not a transactional snapshot during concurrent uploads/deletes: stop mutations, wait for KV propagation and reconcile catalog IDs/counts. Configuration export never includes credentials; after replacing infrastructure restore settings/photos, then issue a new frame key.
+
+No M4 hardware changes or paid services are authorized by these instructions.

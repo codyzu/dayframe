@@ -38,6 +38,7 @@
     "@unocss/reset": "66.11.0",
     "astro-eslint-parser": "3.2.0",
     "eslint-plugin-astro": "3.2.1",
+    "miniflare": "5.20261012.0-beta",
     "prettier": "3.9.10",
     "prettier-plugin-astro": "1.1.1",
     "typescript": "6.0.3",

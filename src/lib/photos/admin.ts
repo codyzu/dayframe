@@ -33,6 +33,7 @@ function mountAdmin(root: HTMLElement) {
   let catalog: PhotoMetadata[] = [];
   let isBusy = false;
   let isAuthorized = false;
+  let privacyDeadline = Date.now() + 300_000;
   const setBusy = (isBusyValue: boolean) => {
     isBusy = isBusyValue;
     choose.disabled = isBusyValue || !isAuthorized;
@@ -58,6 +59,11 @@ function mountAdmin(root: HTMLElement) {
       catalog = [];
       pending.clear();
       deleted.clear();
+      if (dialog.open) {
+        dialog.close('skip');
+      }
+
+      dialog.querySelector('[data-similar-images]')!.replaceChildren();
       render();
     }
 
@@ -76,6 +82,10 @@ function mountAdmin(root: HTMLElement) {
         true,
       ) as HTMLElement;
       card.querySelector('img')!.src = `/api/photos/${photo.id}`;
+      const download =
+        card.querySelector<HTMLAnchorElement>('[data-download]')!;
+      download.href = `/api/photos/${photo.id}`;
+      download.download = `${photo.id}.webp`;
       card.querySelector<HTMLElement>('[data-photo-details]')!.textContent =
         `${photo.width} × ${photo.height} · ${Math.round(photo.size / 1024)} Kio · ${new Date(photo.uploadedAt).toLocaleDateString('fr-FR')}`;
       const button = card.querySelector<HTMLButtonElement>('[data-delete]')!;
@@ -249,6 +259,7 @@ function mountAdmin(root: HTMLElement) {
       }
 
       await refresh();
+      privacyDeadline = Date.now() + 300_000;
       isAuthorized = true;
       login.hidden = true;
       status.textContent =
@@ -273,9 +284,25 @@ function mountAdmin(root: HTMLElement) {
     for (const file of files) {
       const row = document.createElement('li');
       results.append(row);
-      await upload(file, row);
-      if (!isAuthorized) {
-        break;
+      if (isAuthorized) {
+        await upload(file, row);
+      } else {
+        row.textContent = `${file.name} · en attente de reconnexion. `;
+        const retry = document.createElement('button');
+        retry.type = 'button';
+        retry.className = 'min-h-11 underline px-3';
+        retry.textContent = 'Réessayer';
+        listen(retry, 'click', async () => {
+          if (isBusy) {
+            return;
+          }
+
+          await initialize();
+          if (isAuthorized) {
+            await upload(file, row);
+          }
+        });
+        row.append(retry);
       }
     }
 
@@ -290,6 +317,41 @@ function mountAdmin(root: HTMLElement) {
   listen(refreshButton, 'click', async () => {
     if (!isBusy) {
       await initialize();
+    }
+  });
+  // Bound decoded admin previews even during an offline outage or a long upload/review.
+  const privacyCheck = setInterval(() => {
+    if (Date.now() >= privacyDeadline) {
+      showError(new ApiError('Accès privé à vérifier. Reconnectez-vous.', 401));
+    }
+
+    void photoRequest('/api/session')
+      .then(async (response) => {
+        const identity = (await response.json()) as {role: string};
+        if (identity.role !== 'admin') {
+          throw new ApiError('Accès administrateur requis.', 403);
+        }
+
+        privacyDeadline = Date.now() + 300_000;
+      })
+      .catch((error: unknown) => {
+        if (error instanceof ApiError && [401, 403].includes(error.status)) {
+          showError(error);
+        }
+      });
+  }, 30_000);
+  globalThis.addEventListener('pagehide', () => {
+    clearInterval(privacyCheck);
+    gallery.replaceChildren();
+    if (dialog.open) {
+      dialog.close('skip');
+    }
+
+    dialog.querySelector('[data-similar-images]')!.replaceChildren();
+  });
+  globalThis.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+      location.reload();
     }
   });
   void initialize();

@@ -19,6 +19,10 @@ Open `http://127.0.0.1:8787` for the actual Worker + static assets integration; 
 
 M1 needs no KV or secret binding. Future local bindings must be local emulations by default, without `remote: true`. `.dev.vars.example` documents the empty secret surface; local secrets belong in ignored `.dev.vars`. Public defaults are in `src/lib/dashboard/config.ts`; they are examples, not persisted household settings. Production uses `DEPLOYMENT_STAGE=production`; local preview uses `local`. Secrets belong in Wrangler secrets/GitHub environment secrets, never `PUBLIC_*` or build-time browser imports. No service worker or private cache exists in M1.
 
+## M4 administration
+
+[Administration operations](administration.md) describes saved settings, independent admin recovery, frame setup, home-network secrets, credential rotation/revocation, offline photo retention and exports. Its local implementation supersedes the historical M1 empty-binding/admin-placeholder notes above. M4 production activation remains pending.
+
 ## Weather in M2
 
 The browser calls Open-Meteo directly without a key or Worker proxy. [Weather operations](weather.md) documents public defaults, caching, retries, provider terms, request budgeting, and deterministic test fixtures. This is the only runtime external request introduced by M2. No new Cloudflare service or binding is needed.

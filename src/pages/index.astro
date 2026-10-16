@@ -31,7 +31,7 @@ import {displayConfig} from '../lib/dashboard/config';
         dayframe
       </a>
       <span class="border border-white/30 bg-[#091e26]/55 rounded-full px-2 py-1.75 md:px-3 text-[10px] md:text-xs tracking-wide">
-        Météo · Annecy
+        <span data-location>Météo · Annecy</span>
       </span>
     </header>
     <section
@@ -42,14 +42,14 @@ import {displayConfig} from '../lib/dashboard/config';
       <div class="morning-intro flex flex-col-reverse items-start justify-between gap-6 mb-6 md:flex-row md:items-center md:mb-6">
         <div>
           <p class="eyebrow">Un nouveau jour à la maison</p>
-          <h1 class="display-title" id="morning-title">
+          <h1 data-location-greeting class="display-title" id="morning-title">
             Bonjour, {displayConfig.location}.
           </h1>
           <p class="mt-3 text-lg text-mist first-letter:uppercase" data-date>
             Chargement de la date…
           </p>
         </div>
-        <time class="clock" data-clock aria-label="Heure locale à Annecy">
+        <time class="clock" data-clock aria-label="Heure locale">
           --:--
         </time>
       </div>
@@ -111,7 +111,9 @@ import {displayConfig} from '../lib/dashboard/config';
         </select>
       </label>
       <ModeNavigation />
-      <span class="text-[11px] text-mist">Annecy · Europe/Paris</span>
+      <span data-location-footer class="text-[11px] text-mist">
+        Annecy · Europe/Paris
+      </span>
     </footer>
     <noscript>
       <p class="p-2.5 text-xs">

@@ -387,3 +387,75 @@ test('slideshow polls for additions and keeps at most two image URLs', async ({
     await adminContext.close();
   }
 });
+
+test('expired upload sessions retain the whole selected batch for recovery in the same tab', async ({
+  page,
+}) => {
+  await login(page);
+  const files = [
+    await syntheticPhoto(page, 'premier.png'),
+    await syntheticPhoto(page, 'suivant.png', 2400, 1200, 10),
+  ];
+  let attempts = 0;
+  const ids: string[] = [];
+  await page.route('**/api/photos', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.continue();
+      return;
+    }
+
+    ids.push(route.request().headers()['x-photo-sha256']);
+    if (attempts++ === 0) {
+      await page.context().clearCookies();
+      await route.fulfill({
+        status: 401,
+        json: {
+          error: {message: 'Session expirée. Reconnectez-vous puis réessayez.'},
+        },
+      });
+    } else {
+      await route.continue();
+    }
+  });
+  await page.locator('[data-photo-files]').setInputFiles(files);
+  await expect(page.locator('[data-upload-results]')).toContainText(
+    'Session expirée',
+  );
+  await expect(page.locator('[data-upload-results]')).toContainText(
+    'suivant.png · en attente',
+  );
+  await expect(
+    page.getByRole('button', {name: 'Réessayer', exact: true}),
+  ).toHaveCount(2);
+  await page.request.get('/__test/login?admin=two');
+  await page
+    .getByRole('button', {name: 'Réessayer', exact: true})
+    .first()
+    .click();
+  await expect(page.locator('[data-storage]')).toContainText('1 photo');
+  expect(ids[0]).toBe(ids[1]);
+  await page.getByRole('button', {name: 'Réessayer', exact: true}).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.getByRole('button', {name: 'Garder cette photo'}).click();
+  await expect(page.locator('[data-storage]')).toContainText('2 photos');
+});
+
+test('private slideshow pixels expire after five offline minutes', async ({
+  page,
+  context,
+}) => {
+  await login(page);
+  await page
+    .locator('[data-photo-files]')
+    .setInputFiles(await syntheticPhoto(page));
+  await expect(page.locator('[data-storage]')).toContainText('1 photo');
+  await context.clearCookies();
+  await page.request.get('/__test/display');
+  await page.goto('/');
+  await page.clock.install();
+  await page.getByRole('button', {name: 'Photos', exact: true}).click();
+  await expect(page.locator('[data-photo-stage] img')).toBeVisible();
+  await context.setOffline(true);
+  await page.clock.fastForward(301_000);
+  await expect(page.locator('[data-photo-stage] img')).toHaveCount(0);
+});

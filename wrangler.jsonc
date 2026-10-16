@@ -10,7 +10,22 @@
     "run_worker_first": ["/api", "/api/*"],
     "not_found_handling": "404-page",
   },
+  "durable_objects": {
+    "bindings": [{"name": "ADMINISTRATION", "class_name": "Administration"}],
+  },
+  "migrations": [
+    {"tag": "m4-administration", "new_sqlite_classes": ["Administration"]},
+  ],
   "vars": {"DEPLOYMENT_STAGE": "local"},
-  "env": {"production": {"vars": {"DEPLOYMENT_STAGE": "production"}}},
+  "env": {
+    "production": {
+      "vars": {"DEPLOYMENT_STAGE": "production"},
+      "durable_objects": {
+        "bindings": [
+          {"name": "ADMINISTRATION", "class_name": "Administration"},
+        ],
+      },
+    },
+  },
   "observability": {"enabled": false},
 }

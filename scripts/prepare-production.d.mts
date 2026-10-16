@@ -12,6 +12,8 @@ export function createProductionConfig(
     | 'vars'
     | 'observability'
     | 'assets'
+    | 'durable_objects'
+    | 'migrations'
   >,
   namespaceId: string | undefined,
 ): Pick<
@@ -24,6 +26,8 @@ export function createProductionConfig(
   | 'preview_urls'
   | 'vars'
   | 'observability'
+  | 'durable_objects'
+  | 'migrations'
 > & {
   assets: NonNullable<Unstable_Config['assets']>;
   kv_namespaces: Array<{binding: string; id: string}>;

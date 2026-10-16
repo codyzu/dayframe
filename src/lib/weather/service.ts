@@ -1,5 +1,5 @@
 import {
-  cacheKey,
+  weatherCacheKey,
   fetchWeather,
   parseWeather,
   refreshInterval,
@@ -12,7 +12,7 @@ const retryDelays = [60_000, 5 * 60_000, 15 * 60_000, refreshInterval];
 
 export function readCache(storage: WeatherCache | undefined, now: number) {
   try {
-    const entry = JSON.parse(storage?.getItem(cacheKey) ?? 'null') as
+    const entry = JSON.parse(storage?.getItem(weatherCacheKey()) ?? 'null') as
       | {
           raw?: unknown;
           fetchedAt?: unknown;
@@ -68,7 +68,7 @@ export function createWeatherService(
         due = now() + refreshInterval;
         try {
           storage?.setItem(
-            cacheKey,
+            weatherCacheKey(),
             JSON.stringify({raw: result.raw, fetchedAt: result.fetchedAt}),
           );
         } catch {

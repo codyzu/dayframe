@@ -1,4 +1,4 @@
-import {displayConfig} from '../dashboard/config.ts';
+import {runtimeConfig} from '../dashboard/config.ts';
 
 export type Hour = {
   time: number;
@@ -27,14 +27,18 @@ export type Weather = {
 
 export const refreshInterval = 30 * 60_000;
 export const staleAfter = 45 * 60_000;
-export const cacheKey = `dayframe.weather.v1.${displayConfig.latitude}.${displayConfig.longitude}.${displayConfig.timezone}`;
+export function weatherCacheKey() {
+  return `dayframe.weather.v1.${runtimeConfig.latitude}.${runtimeConfig.longitude}.${runtimeConfig.timezone}`;
+}
+
+export const cacheKey = weatherCacheKey();
 
 export function weatherUrl() {
   const url = new URL('https://api.open-meteo.com/v1/forecast');
   url.search = new URLSearchParams({
-    latitude: String(displayConfig.latitude),
-    longitude: String(displayConfig.longitude),
-    timezone: displayConfig.timezone,
+    latitude: String(runtimeConfig.latitude),
+    longitude: String(runtimeConfig.longitude),
+    timezone: runtimeConfig.timezone,
     timeformat: 'unixtime',
     forecast_days: '2',
     temperature_unit: 'celsius',
@@ -85,7 +89,7 @@ function day(value: unknown) {
 
 export function dateKey(time: number) {
   return new Intl.DateTimeFormat('en-CA', {
-    timeZone: displayConfig.timezone,
+    timeZone: runtimeConfig.timezone,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -94,7 +98,7 @@ export function dateKey(time: number) {
 
 export function hourLabel(time: number) {
   return new Intl.DateTimeFormat('fr-FR', {
-    timeZone: displayConfig.timezone,
+    timeZone: runtimeConfig.timezone,
     hour: '2-digit',
     minute: '2-digit',
     hourCycle: 'h23',
@@ -104,7 +108,7 @@ export function hourLabel(time: number) {
 // Unix timestamps avoid parsing offset-free provider strings in the browser's timezone.
 export function parseWeather(input: unknown, fetchedAt: number): Weather {
   const root = record(input);
-  if (root.timezone !== displayConfig.timezone) {
+  if (root.timezone !== runtimeConfig.timezone) {
     throw new Error('Unexpected timezone');
   }
 
@@ -234,8 +238,8 @@ export function parseWeather(input: unknown, fetchedAt: number): Weather {
   }
 
   return {
-    location: displayConfig.location,
-    timezone: displayConfig.timezone,
+    location: runtimeConfig.location,
+    timezone: runtimeConfig.timezone,
     units: {temperature: '°C', precipitation: 'mm', probability: '%'},
     fetchedAt,
     current: {

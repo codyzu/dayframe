@@ -1,3 +1,4 @@
+import {defaultSettings, type Settings} from '../dashboard/settings.ts';
 import {
   ApiError,
   fetchCatalog,
@@ -28,7 +29,10 @@ export function shufflePhotos(
 }
 
 type LoadedPhoto = {id: string; url: string; image: HTMLImageElement};
-export function mountSlideshow(root: HTMLElement) {
+export function mountSlideshow(
+  root: HTMLElement,
+  settings: Settings = defaultSettings,
+) {
   const stage = root.querySelector<HTMLElement>('[data-photo-stage]')!;
   const status = root.querySelector<HTMLElement>('[data-photo-status]')!;
   const empty = root.querySelector<HTMLElement>('[data-photo-empty]')!;
@@ -41,6 +45,7 @@ export function mountSlideshow(root: HTMLElement) {
   let generation = 0;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let refreshAt = 0;
+  let privacyTimer: ReturnType<typeof setTimeout> | undefined;
   let controller = new AbortController();
   const release = (photo: LoadedPhoto | undefined) => {
     if (!photo) {
@@ -62,10 +67,29 @@ export function mountSlideshow(root: HTMLElement) {
     empty.hidden = false;
   };
 
+  function renewPrivacyLease() {
+    clearTimeout(privacyTimer);
+    privacyTimer = setTimeout(() => {
+      generation++;
+      controller.abort();
+      controller = new AbortController();
+      clearTimeout(timer);
+      clearTimeout(privacyTimer);
+      clear();
+      refreshAt = 0;
+      status.textContent =
+        'Accès privé à vérifier. Reconnectez le cadre au réseau.';
+      if (isActive) {
+        void tick();
+      }
+    }, 300_000);
+  }
+
   fit.addEventListener('change', () => {
     stage.dataset.fit = fit.value === 'cover' ? 'cover' : 'contain';
   });
-  stage.dataset.fit = 'contain';
+  stage.dataset.fit = settings.fit;
+  fit.value = settings.fit;
 
   async function load(id: string, signal: AbortSignal): Promise<LoadedPhoto> {
     const response = await photoRequest(`/api/photos/${id}`, {
@@ -73,6 +97,10 @@ export function mountSlideshow(root: HTMLElement) {
     });
     if (response.headers.get('Content-Type') !== 'image/webp') {
       throw new Error('Image invalide.');
+    }
+
+    if (!signal.aborted) {
+      renewPrivacyLease();
     }
 
     const blob = await response.blob();
@@ -108,6 +136,7 @@ export function mountSlideshow(root: HTMLElement) {
       return false;
     }
 
+    renewPrivacyLease();
     catalog = result.display;
     queue = queue.filter((id) => catalog.some((photo) => photo.id === id));
     if (next && catalog.every((photo) => photo.id !== next?.id)) {
@@ -207,7 +236,7 @@ export function mountSlideshow(root: HTMLElement) {
           () => {
             void tick();
           },
-          current ? 20_000 : 60_000,
+          current ? settings.slideshowIntervalSeconds * 1000 : 60_000,
         );
       }
     }
@@ -227,6 +256,7 @@ export function mountSlideshow(root: HTMLElement) {
     if (isActive) {
       void tick();
     } else {
+      clearTimeout(privacyTimer);
       clear();
       refreshAt = 0;
     }

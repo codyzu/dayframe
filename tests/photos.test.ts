@@ -10,9 +10,14 @@ import {
   sha256,
   type PhotoMetadata,
 } from '../src/lib/photos/contracts.ts';
+import {
+  administration,
+  type AdministrationBinding,
+} from '../worker/administration.ts';
 import {listPhotos, webpDimensions, type PhotoKV} from '../worker/photos.ts';
 import {stripWebpMetadata} from '../src/lib/photos/webp.ts';
 import {shufflePhotos} from '../src/lib/photos/slideshow.ts';
+import {administrationRuntime} from './fixtures/administration-runtime.ts';
 import {
   photoAuthority,
   testAudience,
@@ -20,9 +25,17 @@ import {
 } from './fixtures/photo-auth.ts';
 
 const authority = await photoAuthority();
-const display = 'a'.repeat(64);
-let platform: Awaited<ReturnType<typeof getPlatformProxy<{PHOTOS: PhotoKV}>>>;
+let display: string;
+let platform: Awaited<
+  ReturnType<
+    typeof getPlatformProxy<{
+      PHOTOS: PhotoKV;
+      ADMINISTRATION: AdministrationBinding;
+    }>
+  >
+>;
 let env: Env;
+let administrationPlatform: Awaited<ReturnType<typeof administrationRuntime>>;
 let admin: string;
 const origin = 'https://example.test';
 // Minimal static lossless WebP structural fixture. Real encoding/decoding is tested in browsers.
@@ -51,6 +64,7 @@ async function request(
       method,
       headers: {
         Cookie: token,
+        'CF-Connecting-IP': '192.0.2.10',
         Origin: origin,
         'X-Dayframe-Request': '1',
         'Content-Type': 'image/webp',
@@ -70,7 +84,10 @@ beforeAll(async () => {
     vi.fn(async () => Response.json(authority.jwks)),
   );
   admin = `CF_Authorization=${await authority.token()}`;
-  platform = await getPlatformProxy<{PHOTOS: PhotoKV}>({
+  platform = await getPlatformProxy<{
+    PHOTOS: PhotoKV;
+    ADMINISTRATION: AdministrationBinding;
+  }>({
     configPath: 'tests/fixtures/wrangler.photos.jsonc',
     persist: false,
   });
@@ -82,6 +99,7 @@ beforeAll(async () => {
     delete: async (key) => kv.delete(key),
     list: async (options) => kv.list(options),
   };
+  administrationPlatform = await administrationRuntime();
   env = {
     ASSETS: {fetch: vi.fn()},
     DEPLOYMENT_STAGE: 'test',
@@ -90,14 +108,19 @@ beforeAll(async () => {
     ACCESS_TEAM_DOMAIN: testIssuer,
     ACCESS_AUD: testAudience,
     ADMIN_EMAILS: 'one@example.test,two@example.test',
-    DISPLAY_TOKEN_SHA256: await sha256(
-      new TextEncoder().encode(display).buffer,
-    ),
+    ADMINISTRATION: administrationPlatform.binding,
+    HOME_NETWORKS: '192.0.2.10,2001:db8:1234::/48',
   };
+  display = (
+    (await (
+      await administration(env.ADMINISTRATION!, '/credential')
+    ).json()) as {token: string}
+  ).token;
 });
 afterAll(async () => {
   vi.unstubAllGlobals();
   await platform?.dispose();
+  await administrationPlatform?.runtime.dispose();
 });
 
 describe('photo contracts and hashing', () => {
@@ -252,7 +275,7 @@ describe('protected photo API with real local KV', () => {
     );
     expect(response.status).toBe(200);
     expect(response.headers.get('Set-Cookie')).toContain(
-      'Path=/api; HttpOnly; Secure; SameSite=Strict; Max-Age=86400',
+      'Path=/api; HttpOnly; Secure; SameSite=Strict; Max-Age=',
     );
     expect(
       (
@@ -263,7 +286,7 @@ describe('protected photo API with real local KV', () => {
     ).toBe(401);
     const revoked = await worker.fetch(
       new Request(`${origin}/api/photos`, {headers: {Cookie: token}}),
-      {...env, DISPLAY_TOKEN_SHA256: '0'.repeat(64)},
+      {...env, HOME_NETWORKS: '192.0.2.11'},
     );
     expect(revoked.status).toBe(401);
   });
@@ -370,5 +393,248 @@ describe('protected photo API with real local KV', () => {
       cursor: 'next',
     });
     list.mockRestore();
+  });
+});
+
+describe('M4 administration with real SQLite Durable Object storage', () => {
+  it('authorizes every configuration and credential route by role and origin', async () => {
+    for (const path of ['/api/config', '/api/config/display', '/api/display']) {
+      expect((await request(path, 'GET', '')).status).toBe(401);
+      expect((await request(path, 'GET')).status).toBe(200);
+      expect(
+        (
+          await request(path, 'PATCH', '', undefined, {
+            Origin: 'https://evil.test',
+          })
+        ).status,
+      ).toBe(403);
+    }
+
+    for (const [path, method] of [
+      ['/api/config', 'GET'],
+      ['/api/config', 'PATCH'],
+      ['/api/display', 'GET'],
+      ['/api/display', 'POST'],
+      ['/api/display', 'DELETE'],
+      ['/api/config/display', 'PATCH'],
+    ]) {
+      expect(
+        (await request(path, method, `__Secure-dayframe_display=${display}`))
+          .status,
+      ).toBe(403);
+    }
+
+    const safe = await request(
+      '/api/config/display',
+      'GET',
+      `__Secure-dayframe_display=${display}`,
+    );
+    expect(safe.status).toBe(200);
+    expect(JSON.stringify(await safe.json())).not.toMatch(
+      /digest|token|example.test|network|credential/iv,
+    );
+    expect(safe.headers.get('Cache-Control')).toBe('private, no-store');
+  });
+
+  it('persists validated settings, applies partial changes, and rejects oversized or malformed data', async () => {
+    const patch = async (value: unknown, headers = {}) =>
+      request(
+        '/api/config',
+        'PATCH',
+        admin,
+        new TextEncoder().encode(JSON.stringify(value)).buffer,
+        {'Content-Type': 'application/json', ...headers},
+      );
+    expect(
+      (
+        await patch({
+          location: 'Test household',
+          slideshowIntervalSeconds: 45,
+          fit: 'cover',
+        })
+      ).status,
+    ).toBe(200);
+    const saved = await request('/api/config');
+    expect(await saved.json()).toMatchObject({
+      location: 'Test household',
+      slideshowIntervalSeconds: 45,
+      fit: 'cover',
+      timezone: 'Europe/Paris',
+    });
+    expect(
+      await (
+        await request(
+          '/api/config/display',
+          'GET',
+          `__Secure-dayframe_display=${display}`,
+        )
+      ).json(),
+    ).toMatchObject({location: 'Test household'});
+    for (const invalid of [
+      null,
+      [],
+      {secret: 'no'},
+      {timezone: 'invalid/time'},
+      {latitude: 91},
+      {longitude: -181},
+      {slideshowIntervalSeconds: 0},
+      {overrideTimeoutSeconds: 29},
+      {fit: 'stretch'},
+      {
+        schedule: [
+          {start: '21:00', end: '06:00', mode: 'night'},
+          {start: '05:59', end: '10:00', mode: 'morning'},
+        ],
+      },
+    ]) {
+      expect((await patch(invalid)).status).toBe(400);
+    }
+
+    expect(
+      (await patch({location: 'x'}, {'Content-Type': 'text/plain'})).status,
+    ).toBe(415);
+    expect((await patch({location: 'x'.repeat(9000)})).status).toBe(413);
+    expect(await (await request('/api/config')).json()).toMatchObject({
+      location: 'Test household',
+    });
+  });
+
+  it('rejects off-network, missing and malformed addresses on every display read and exchange', async () => {
+    const token = `__Secure-dayframe_display=${display}`;
+    for (const ip of [
+      '',
+      '192.0.2.11',
+      '2001:db8:9999::1',
+      '192.0.2.010',
+      '2001:db8:1234:::1',
+    ]) {
+      for (const path of [
+        '/api/session',
+        '/api/config/display',
+        '/api/photos',
+        `/api/photos/${'b'.repeat(64)}`,
+      ]) {
+        expect(
+          (
+            await request(path, 'GET', token, undefined, {
+              'CF-Connecting-IP': ip,
+            })
+          ).status,
+        ).toBe(401);
+      }
+
+      expect(
+        (
+          await request('/api/session/display', 'POST', '', undefined, {
+            Authorization: `Bearer ${display}`,
+            'CF-Connecting-IP': ip,
+          })
+        ).status,
+      ).toBe(401);
+    }
+
+    for (const ip of [
+      '2001:db8:1234::1',
+      '2001:0db8:1234:ffff:0000:0000:0000:0001',
+    ]) {
+      expect(
+        (
+          await request('/api/photos', 'GET', token, undefined, {
+            'CF-Connecting-IP': ip,
+          })
+        ).status,
+      ).toBe(200);
+    }
+
+    // Admin recovery does not depend on the household network.
+    expect(
+      (
+        await request('/api/config', 'GET', admin, undefined, {
+          'CF-Connecting-IP': '203.0.113.9',
+        })
+      ).status,
+    ).toBe(200);
+  });
+
+  it('rotates and revokes credentials without stale KV authorization, and never returns stored hashes', async () => {
+    const old = display;
+    const issued = await request('/api/display', 'POST');
+    const result = (await issued.json()) as {token: string; expiresAt: number};
+    expect(result.token).toMatch(/^[0-9a-f]{64}$/v);
+    expect(result.token).not.toBe(old);
+    expect(
+      JSON.stringify(await (await request('/api/display')).json()),
+    ).not.toMatch(/token|digest/v);
+    expect(
+      (await request('/api/photos', 'GET', `__Secure-dayframe_display=${old}`))
+        .status,
+    ).toBe(401);
+    display = result.token;
+    expect(
+      (
+        await request(
+          '/api/photos',
+          'GET',
+          `__Secure-dayframe_display=${display}`,
+        )
+      ).status,
+    ).toBe(200);
+    expect((await request('/api/display', 'DELETE')).status).toBe(200);
+    expect(
+      (
+        await request(
+          '/api/photos',
+          'GET',
+          `__Secure-dayframe_display=${display}`,
+        )
+      ).status,
+    ).toBe(401);
+    expect(
+      (
+        await request('/api/session/display', 'POST', '', undefined, {
+          Authorization: `Bearer ${display}`,
+        })
+      ).status,
+    ).toBe(401);
+    // Logout clears a stale/revoked cookie too.
+    const logout = await request(
+      '/api/session',
+      'DELETE',
+      `__Secure-dayframe_display=${display}`,
+    );
+    expect(logout.status).toBe(200);
+    expect(logout.headers.get('Set-Cookie')).toContain('Max-Age=0');
+  });
+
+  it('fails closed during administration storage outages while admin photo access remains independent', async () => {
+    const broken = {
+      ...env,
+      ADMINISTRATION: {
+        idFromName: () => 'test',
+        get: () => ({
+          async fetch() {
+            throw new Error('quota');
+          },
+        }),
+      },
+    };
+    const response = await worker.fetch(
+      new Request(`${origin}/api/photos`, {
+        headers: {
+          Cookie: `__Secure-dayframe_display=${'a'.repeat(64)}`,
+          'CF-Connecting-IP': '192.0.2.10',
+        },
+      }),
+      broken,
+    );
+    expect(response.status).toBe(503);
+    expect(
+      (
+        await worker.fetch(
+          new Request(`${origin}/api/photos`, {headers: {Cookie: admin}}),
+          broken,
+        )
+      ).status,
+    ).toBe(200);
   });
 });

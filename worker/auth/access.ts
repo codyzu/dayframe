@@ -1,11 +1,14 @@
 import {createRemoteJWKSet, jwtVerify} from 'jose';
+import {administration, type AdministrationBinding} from '../administration.ts';
 import {sha256} from '../../src/lib/photos/contracts.ts';
+import {isHomeNetwork} from './network.ts';
 
 export type AuthEnv = {
   ACCESS_TEAM_DOMAIN?: string;
   ACCESS_AUD?: string;
   ADMIN_EMAILS?: string;
-  DISPLAY_TOKEN_SHA256?: string;
+  ADMINISTRATION?: AdministrationBinding;
+  HOME_NETWORKS?: string;
 };
 export type Identity = {role: 'admin' | 'display'; subject: string};
 const keySets = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
@@ -20,17 +23,27 @@ export function cookie(request: Request, name: string) {
     ?.slice(name.length + 1);
 }
 
-export async function isValidDisplayToken(
+export async function displaySession(
+  request: Request,
   token: string | undefined,
   env: AuthEnv,
-) {
-  return token === undefined ||
+): Promise<{valid: boolean; expiresAt?: number}> {
+  if (
+    token === undefined ||
+    !env.ADMINISTRATION ||
     !/^[0-9a-f]{64}$/v.test(token) ||
-    env.DISPLAY_TOKEN_SHA256 === undefined ||
-    !/^[0-9a-f]{64}$/v.test(env.DISPLAY_TOKEN_SHA256)
-    ? false
-    : (await sha256(new TextEncoder().encode(token).buffer)) ===
-        env.DISPLAY_TOKEN_SHA256;
+    !isHomeNetwork(request, env.HOME_NETWORKS)
+  ) {
+    return {valid: false};
+  }
+
+  const digest = await sha256(new TextEncoder().encode(token).buffer);
+  const response = await administration(env.ADMINISTRATION, '/verify', digest);
+  if (!response.ok) {
+    throw new Error('Display verification unavailable');
+  }
+
+  return response.json() as Promise<{valid: boolean; expiresAt?: number}>;
 }
 
 export async function authenticate(
@@ -85,7 +98,10 @@ export async function authenticate(
     }
   }
 
-  return (await isValidDisplayToken(cookie(request, displayCookie), env))
-    ? {role: 'display', subject: 'display'}
-    : undefined;
+  const session = await displaySession(
+    request,
+    cookie(request, displayCookie),
+    env,
+  );
+  return session.valid ? {role: 'display', subject: 'display'} : undefined;
 }

@@ -1,0 +1,81 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Connecter le cadre" bodyClass="bg-[#f5f4ef] text-[#203d43]">
+  <main class="mx-auto max-w-xl px-5 py-12">
+    <h1 class="text-4xl font-semibold">Connecter le cadre</h1>
+    <p class="my-5">
+      Sur le réseau de la maison, saisissez la clé créée dans les réglages par
+      un administrateur. Le cadre pourra uniquement afficher les photos.
+    </p>
+    <form data-setup class="space-y-5">
+      <label class="flex flex-col gap-3">
+        Clé du cadre
+        <input
+          name="token"
+          type="password"
+          required
+          pattern="[0-9a-f]{64}"
+          minlength="64"
+          maxlength="64"
+          autocomplete="off"
+          spellcheck="false"
+          class="min-h-12 rounded-lg border border-[#9fb5af] bg-white px-3"
+        />
+      </label>
+      <button class="min-h-12 rounded-full bg-[#203d43] px-6 text-white">
+        Connecter
+      </button>
+    </form>
+    <p data-status role="status" class="my-5"></p>
+    <button data-disconnect type="button" class="min-h-11 underline">
+      Déconnecter ce navigateur
+    </button>
+    <p class="mt-5 text-sm">
+      Si la connexion échoue, vérifiez la clé et demandez à un administrateur de
+      vérifier l’adresse réseau de la maison.
+    </p>
+  </main>
+  <script>
+    import {photoRequest} from '../lib/photos/client.ts';
+    const form = document.querySelector<HTMLFormElement>('[data-setup]')!;
+    const input = form.elements.namedItem('token') as HTMLInputElement;
+    const status = document.querySelector<HTMLElement>('[data-status]')!;
+    const button = form.querySelector('button')!;
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const token = input.value;
+      input.value = '';
+      button.disabled = true;
+      void photoRequest('/api/session/display', {
+        method: 'POST',
+        headers: {Authorization: `Bearer ${token}`},
+      })
+        .then(() => {
+          location.replace('/?display=frame');
+        })
+        .catch((error: unknown) => {
+          status.textContent =
+            error instanceof Error ? error.message : 'Connexion impossible.';
+        })
+        .finally(() => {
+          button.disabled = false;
+        });
+    });
+    document
+      .querySelector('[data-disconnect]')!
+      .addEventListener('click', () => {
+        void photoRequest('/api/session', {method: 'DELETE'})
+          .then(() => {
+            location.replace('/setup');
+          })
+          .catch(() => {
+            status.textContent = 'Déconnexion impossible. Réessayez en ligne.';
+          });
+      });
+    globalThis.addEventListener('pagehide', () => {
+      input.value = '';
+    });
+  </script>
+</BaseLayout>

@@ -2,6 +2,8 @@
 
 M3 photo administration is active in production as of 16 October 2026, with a dedicated KV namespace, an Access application for `/admin/*`, and one privately configured administrator. Display provisioning and a second administrator remain pending. Configuration remains fail-closed. See [ADR 0002](decisions/0002-protected-photos.md) for the identity model and consistency limits.
 
+M4 update: [administration operations](administration.md) supersedes prototype display-token and pending-settings instructions below. Production M4 activation remains pending. The final credential is stored as a digest in a strongly consistent SQLite Durable Object; display requests require the private home-network allowlist.
+
 ## Local acceptance
 
 `pnpm verify` builds the app, tests contracts/auth/storage, and runs browser flows. Integration tests use Wrangler's real **local** KV runtime; loopback sockets are required. Browser photo tests run a separate local HTTPS server on 8789 with ephemeral self-signed TLS and RSA keys and synthetic identities `one@example.test` / `two@example.test`. Only the JWKS network response is substituted; the real Worker handler verifies signatures and operates on local KV. The ordinary preview on 8788 remains photo-disabled. Test routes `/__test/*` exist only in the Node test harness, never the deployed Worker. Its code and synthetic keys are not included in production builds. OpenSSL must be available (macOS and Ubuntu CI provide it). No live Access account, private photos or Cloudflare credentials are required for tests.
@@ -33,7 +35,7 @@ A successful upload/delete may take 60 seconds or more to appear elsewhere. The 
 
 The upload boundary allows 2 MiB WebP, 1,600px maximum edge. Originals are limited to 40 MiB in-browser and processed sequentially. EXIF orientation is honored, no upscaling occurs, and output has no EXIF, GPS, XMP or ICC profile after sRGB conversion. A bundled WASM encoder handles Safari's absent native WebP encoder, using a temporary worker with timeout and termination. HEIC decoding is browser-dependent; JPEG export is the documented recovery. Actual physical iPhone memory/HEIC testing and representative household duplicate-threshold calibration remain follow-ups; synthetic tests do not establish that coverage.
 
-Slideshow fit defaults to contain and can switch to cover locally; settings persistence remains M4. It rotates around 20 seconds, refreshes metadata every five minutes and keeps at most two decoded images/object URLs. Retains the current image during an ordinary outage; clears private images on observed 401/403, hiding, page exit, or mode exit. No private images enter localStorage, Cache Storage or a service worker. Browser restarts require network and a valid session. The cookie transport works in tested desktop engines/iPhone emulation; Classic 10 remains unverified.
+Slideshow fit defaults to contain and can switch to cover locally; saved fit and interval are supplied by M4 settings at dashboard startup. It rotates around 20 seconds, refreshes metadata every five minutes and keeps at most two decoded images/object URLs. Retains the current image for up to five minutes during an ordinary outage; clears private images on observed 401/403, hiding, page exit, or mode exit. No private images enter localStorage, Cache Storage or a service worker. Browser restarts require network and a valid session. The cookie transport works in tested desktop engines/iPhone emulation; Classic 10 remains unverified.
 
 ## Activation record — 16 October 2026
 

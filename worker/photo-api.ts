@@ -4,10 +4,12 @@ import {
   shaPattern,
   type PhotoMetadata,
 } from '../src/lib/photos/contracts.ts';
+import {adminApi} from './admin-api.ts';
+import {failure, privateJson} from './private-response.ts';
 import {
   authenticate,
   displayCookie,
-  isValidDisplayToken,
+  displaySession,
   type AuthEnv,
   type Identity,
 } from './auth/access.ts';
@@ -20,26 +22,6 @@ import {
 } from './photos.ts';
 
 export type PhotoEnv = AuthEnv & {PHOTOS_ENABLED?: string; PHOTOS?: PhotoKV};
-export function privateJson(
-  body: unknown,
-  status = 200,
-  headers: Record<string, string> = {},
-) {
-  return Response.json(body, {
-    status,
-    headers: {
-      'Cache-Control': 'private, no-store',
-      Vary: 'Cookie, Cf-Access-Jwt-Assertion',
-      'X-Content-Type-Options': 'nosniff',
-      ...headers,
-    },
-  });
-}
-
-export function failure(status: number, code: string, message: string) {
-  return privateJson({error: {code, message}}, status);
-}
-
 export async function photoApi(
   request: Request,
   env: PhotoEnv,
@@ -54,12 +36,7 @@ export async function photoApi(
   const url = new URL(request.url);
   const path = url.pathname;
   const isMutation = !['GET', 'HEAD'].includes(request.method);
-  if (
-    isMutation &&
-    (request.headers.get('Origin') !== url.origin ||
-      request.headers.get('X-Dayframe-Request') !== '1' ||
-      request.headers.get('Sec-Fetch-Site') === 'cross-site')
-  ) {
+  if (isMutation && !hasMutationOrigin(request, url)) {
     return failure(403, 'ORIGIN_REJECTED', 'Origine de la requête refusée.');
   }
 
@@ -76,11 +53,22 @@ export async function photoApi(
       const token = request.headers
         .get('Authorization')
         ?.replace(/^Bearer /v, '');
-      return (await isValidDisplayToken(token, env))
+      const session = await displaySession(request, token, env);
+      const maxAge = Math.max(
+        0,
+        Math.floor(((session.expiresAt ?? 0) - Date.now()) / 1000),
+      );
+      return session.valid
         ? privateJson({role: 'display'}, 200, {
-            'Set-Cookie': `${displayCookie}=${token}; Path=/api; HttpOnly; Secure; SameSite=Strict; Max-Age=86400`,
+            'Set-Cookie': `${displayCookie}=${token}; Path=/api; HttpOnly; Secure; SameSite=Strict; Max-Age=${maxAge}`,
           })
         : failure(401, 'UNAUTHORIZED', 'Accès privé requis.');
+    }
+
+    if (path === '/api/session' && request.method === 'DELETE') {
+      return privateJson({ok: true}, 200, {
+        'Set-Cookie': `${displayCookie}=; Path=/api; HttpOnly; Secure; SameSite=Strict; Max-Age=0`,
+      });
     }
 
     const identity = await authenticate(request, env);
@@ -96,12 +84,6 @@ export async function photoApi(
       return privateJson(identity);
     }
 
-    if (path === '/api/session' && request.method === 'DELETE') {
-      return privateJson({ok: true}, 200, {
-        'Set-Cookie': `${displayCookie}=; Path=/api; HttpOnly; Secure; SameSite=Strict; Max-Age=0`,
-      });
-    }
-
     if (isMutation && identity.role !== 'admin') {
       return failure(
         403,
@@ -110,7 +92,9 @@ export async function photoApi(
       );
     }
 
-    return await routePhotos(request, env.PHOTOS, identity, url);
+    return ['/api/config', '/api/config/display', '/api/display'].includes(path)
+      ? await adminApi(request, env, identity)
+      : await routePhotos(request, env.PHOTOS, identity, url);
   } catch (error) {
     return error instanceof PhotoError
       ? failure(error.status, error.code, error.message)
@@ -269,4 +253,12 @@ async function imageResponse(
       'Cross-Origin-Resource-Policy': 'same-origin',
     },
   });
+}
+
+function hasMutationOrigin(request: Request, url: URL) {
+  return (
+    request.headers.get('Origin') === url.origin &&
+    request.headers.get('X-Dayframe-Request') === '1' &&
+    request.headers.get('Sec-Fetch-Site') !== 'cross-site'
+  );
 }

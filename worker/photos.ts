@@ -38,17 +38,24 @@ export class PhotoError extends Error {
   }
 }
 
-export async function readBounded(request: Request): Promise<ArrayBuffer> {
+export async function readBounded(
+  request: Request,
+  maximumBytes = maxPhotoBytes,
+): Promise<ArrayBuffer> {
+  const tooLarge = () =>
+    new PhotoError(
+      413,
+      'TOO_LARGE',
+      maximumBytes === maxPhotoBytes
+        ? 'Photo trop volumineuse (2 Mio maximum).'
+        : `Requête trop volumineuse (${Math.ceil(maximumBytes / 1024)} Kio maximum).`,
+    );
   const length = request.headers.get('Content-Length');
   if (
     length !== null &&
-    (!/^\d+$/v.test(length) || Number(length) > maxPhotoBytes)
+    (!/^\d+$/v.test(length) || Number(length) > maximumBytes)
   ) {
-    throw new PhotoError(
-      413,
-      'TOO_LARGE',
-      'Photo trop volumineuse (2 Mio maximum).',
-    );
+    throw tooLarge();
   }
 
   const reader = request.body?.getReader();
@@ -66,13 +73,9 @@ export async function readBounded(request: Request): Promise<ArrayBuffer> {
       }
 
       size += value.byteLength;
-      if (size > maxPhotoBytes) {
+      if (size > maximumBytes) {
         await reader.cancel();
-        throw new PhotoError(
-          413,
-          'TOO_LARGE',
-          'Photo trop volumineuse (2 Mio maximum).',
-        );
+        throw tooLarge();
       }
 
       chunks.push(value);

@@ -7,6 +7,8 @@ const base = 'https://dayframe-fixture-production.cody-zuschlag.workers.dev';
 const routes = [
   {path: '/', method: 'GET', status: 200},
   {path: '/admin/photos', method: 'GET', status: 302},
+  {path: '/admin/settings', method: 'GET', status: 302},
+  {path: '/setup', method: 'GET', status: 200},
   {path: '/api/health', method: 'GET', status: 200},
   {path: '/api/health', method: 'HEAD', status: 200},
   {path: '/api/health', method: 'POST', status: 405},
@@ -14,7 +16,14 @@ const routes = [
   {path: '/api/session', method: 'GET', status: 401},
   {path: `/api/photos/${'0'.repeat(64)}`, method: 'GET', status: 401},
   {path: '/api/photos', method: 'POST', status: 403},
-  {path: '/api/config', method: 'GET', status: 404},
+  {path: '/api/config', method: 'GET', status: 401},
+  {path: '/api/config/display', method: 'GET', status: 401},
+  {path: '/api/display', method: 'GET', status: 401},
+  {path: '/api/config', method: 'PATCH', status: 403},
+  {path: '/api/display', method: 'POST', status: 403},
+  {path: '/api/display', method: 'DELETE', status: 403},
+  {path: '/api/session/display', method: 'POST', status: 403},
+  {path: '/api/unknown', method: 'GET', status: 404},
 ];
 const expectedHtml = await readFile(
   new URL('../dist/index.html', import.meta.url),
@@ -45,7 +54,7 @@ await Promise.all(
           );
         }
 
-        if (path === '/admin/photos') {
+        if (path.startsWith('/admin/')) {
           const destination = new URL(
             response.headers.get('location') ?? '',
             base,

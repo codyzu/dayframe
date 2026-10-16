@@ -18,6 +18,14 @@ export const displayConfig = {
   ],
 } as const;
 
+// Updated only from a validated, authorized display configuration at startup.
+export const runtimeConfig: {
+  timezone: string;
+  location: string;
+  latitude: number;
+  longitude: number;
+} = {...displayConfig};
+
 export const modes = ['morning', 'photos', 'home', 'night'] as const;
 export type DisplayMode = (typeof modes)[number];
 export function isDisplayMode(value: string): value is DisplayMode {
@@ -27,13 +35,13 @@ export function isDisplayMode(value: string): value is DisplayMode {
 export function formatClock(now: Date) {
   return {
     time: new Intl.DateTimeFormat(displayConfig.locale, {
-      timeZone: displayConfig.timezone,
+      timeZone: runtimeConfig.timezone,
       hour: '2-digit',
       minute: '2-digit',
       hourCycle: 'h23',
     }).format(now),
     date: new Intl.DateTimeFormat(displayConfig.locale, {
-      timeZone: displayConfig.timezone,
+      timeZone: runtimeConfig.timezone,
       weekday: 'long',
       day: 'numeric',
       month: 'long',

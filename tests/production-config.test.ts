@@ -11,6 +11,12 @@ describe('private production configuration', () => {
     preview_urls: undefined,
     observability: undefined,
     vars: {DEPLOYMENT_STAGE: 'production'},
+    durable_objects: {
+      bindings: [{name: 'ADMINISTRATION', class_name: 'Administration'}],
+    },
+    migrations: [
+      {tag: 'm4-administration', new_sqlite_classes: ['Administration']},
+    ],
     assets: {
       directory: './dist',
       binding: 'ASSETS',
@@ -31,6 +37,8 @@ describe('private production configuration', () => {
       {binding: 'PHOTOS', id: 'a'.repeat(32)},
     ]);
     expect(config.assets.run_worker_first).toEqual(['/api', '/api/*']);
+    expect(config.durable_objects).toEqual(base.durable_objects);
+    expect(config.migrations).toEqual(base.migrations);
     expect(config.name).toBe(base.name);
     expect(config.vars).toEqual({DEPLOYMENT_STAGE: 'production'});
     expect(JSON.stringify(config)).not.toMatch(
