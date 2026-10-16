@@ -17,6 +17,7 @@ Open `http://127.0.0.1:8787`; the admin shell is `/admin/photos`, and `/api/heal
 
 Styling uses UnoCSS's Wind4 preset and reset. Prefer utilities and small reusable shortcuts; custom CSS stays scoped, with only shared accessibility rules in global.css. Linting uses XO with its built-in Prettier support, following the existing Tetras, Les Mains de Sérénité, and Xen website conventions.
 
+- [Classic 10 hardware inventory, backup and M6 integration plan](docs/hardware/README.md)
 - [Requirements](docs/technical-specification.md)
 - [Weather behavior, provider terms and request budget](docs/weather.md)
 - [Protected photos, quotas and activation](docs/photos.md)

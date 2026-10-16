@@ -129,13 +129,15 @@ Complete this before publishing any private photo route:
 
 ## 8. M6 — Dragon Touch Classic 10
 
-Read current upstream hardware guidance before this phase. Identify the real model, board, firmware, Android build, RAM, browser/WebView, and recovery options without modifying the device. Keep private identifiers, dumps, keys, and diagnostics out of Git; publish only sanitized observations, clearly separated from assumptions, in `docs/devices/dragon-touch-classic-10.md`.
+Read current upstream hardware guidance before this phase. Identify the real model, board, firmware, Android build, RAM, browser/WebView, and recovery options without modifying the device. Keep private identifiers, dumps, keys, and diagnostics out of Git; publish only sanitized observations, clearly separated from assumptions, in the [Classic 10 inventory](hardware/dragon-touch-classic10.md). The [hardware documentation](hardware/README.md) and [H1–H8 stage plan](hardware/implementation-plan.md) provide the detailed M6 breakdown, exact future discovery commands, backup/verification gates, Firefox trial, optional GeckoView shell and security plan.
 
 - Verify browser installation/support, HTTPS, WebP/SVG, timezone behavior, touch, authenticated images, and available memory. The provisional Firefox/GeckoView baseline must be tested rather than assumed.
 - Prefer a working browser kiosk. Evaluate Wes's existing wrapper only if needed and compatible; adopting it requires a recorded decision because native app development is outside the initial product scope.
 - Before any firmware/system modification, establish a verified backup and recovery route and obtain authorization for the specific change. Match device identities exactly; do not apply Modern10 Charm or BIUFRAME scripts by brand similarity.
 - Verify physical access back to Settings and a recovery route before disabling vendor navigation or replacing launch behavior.
 - Test cold boot, kiosk launch/manual fallback, Wi-Fi loss/recovery, sleep/resume, credential persistence, and a proposed minimum 48-hour run. Record crashes, memory growth, image failures, and recovery behavior.
+
+**Planning evidence (16 October 2026):** Owner-supplied Classic 10 diagnostics recorded; upstream reviewed at `e97c50ba459c49ea8237259f69b95cd28054b628`, including Modern10 follow-up and relevant open discussions. Official Firefox APK hash/manifest/ABI verified on the Mac; signature check remains a pre-installation gate. [Research provenance](hardware/sources.md) records adopted ideas, intentional differences, licensing and missing GeckoView source. H1 is partial; H2–H8 and M6 acceptance remain pending. No device contact, backup, installation or settings changes performed. Next hardware slice: complete H1 with explicit read-only access permission, then review exact H2 paths/sizes.
 
 **Exit:** Actual-device evidence supports the M6 criteria. If unsupported, document the blocker and retain the working web application; do not claim desktop emulation establishes frame compatibility.
 

@@ -39,12 +39,12 @@ No multi-tenant hosting, public account registration, generalized plugin system,
 | Display | 10.1-inch IPS touchscreen, 1280 × 800 |
 | Orientation | Landscape |
 | Network | Wi-Fi |
-| OS | Android; actual version to be verified |
+| OS | Android 6.0.1 / API 23 (supplied Classic 10 diagnostics) |
 | Browser | Firefox or GeckoView, version subject to hardware verification |
 | Input | Touchscreen |
 | Presentation | Fullscreen kiosk if hardware supports it |
 
-**Hardware uncertainty:** Processor, RAM, Android build, ADB access, modern browser support, and boot-to-kiosk functionality are not yet confirmed on the purchased Classic 10. The documented Dragon Touch Modern10 Charm is a *different marketed model* and does not guarantee compatibility. Hardware investigation must be non-destructive until recovery and backup options are understood.
+**Hardware evidence:** Supplied Classic 10 diagnostics confirm the Android build, approximately 1 GB RAM, ARMv7 ABI, native display and root ADB over TCP 5555. Allwinner A33 is a platform inference; storage layout, WebView version, browser execution, recovery and boot-to-kiosk remain unverified. See the [hardware inventory and evidence labels](hardware/dragon-touch-classic10.md) and [M6 hardware stages H1–H8](hardware/implementation-plan.md). The documented Modern10 Charm is a different model; firmware and partition layouts must not be interchanged. No device commands were run during planning. A verified private backup precedes APK/persistent changes; firmware/system changes additionally need a usable recovery route and specific authorization.
 
 The web app must remain usable without unlocking this particular frame.
 
@@ -356,7 +356,7 @@ Use Playwright or equivalent with a 1280 × 800 viewport for the morning view, p
 
 ### 14.4 Hardware tests
 
-After delivery, inspect hardware and Android version non-destructively; determine ADB access, RAM, browser support, WebP/SVG rendering, memory/CPU constraints, startup behavior, Wi-Fi recovery, and extended operational stability. Do not flash firmware until backups and recovery paths are understood.
+Continue non-destructive discovery from the supplied Classic 10 results, then follow the [M6 hardware plan](hardware/implementation-plan.md) for verified private backup, browser support, WebP/SVG rendering, memory/CPU constraints, startup, Wi-Fi recovery and extended stability. The [backup runbook](hardware/backup-and-recovery.md) distinguishes captured bytes, verified backups and unproven restore capability. No firmware/system changes without a usable recovery path and explicit authorization.
 
 ## 15. Development and repository workflow
 
@@ -429,7 +429,7 @@ Record significant design changes as architecture decision records. Keep an impl
 
 ### M6: Dragon Touch integration
 
-**Deliverables:** Hardware inspection, compatible browser/kiosk, fullscreen deployment, automatic launch where feasible, network recovery, performance/stability testing, setup instructions.
+**Deliverables:** Hardware inspection, verified private firmware backup with recovery limitations, compatible browser/kiosk, fullscreen deployment, automatic launch where feasible, network recovery, performance/stability testing, setup instructions. See [H1–H8 hardware breakdown](hardware/implementation-plan.md); stages are planned, not completed.
 
 **Done when:** Dashboard fits native screen; touch and media work; protected images authenticate without admin login; restart behavior is documented; extended run is stable. If this frame is unsupported, document blockers and retain usable browser app.
 
