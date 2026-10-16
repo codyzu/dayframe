@@ -1,6 +1,14 @@
 import {expect, test} from '@playwright/test';
+import {fixtureNow, weatherFixture} from '../fixtures/weather.ts';
 
-test('French fixture shell, working modes and locally bundled assets', async ({
+test.beforeEach(async ({page}) => {
+  await page.clock.install({time: fixtureNow});
+  await page.route('https://api.open-meteo.com/**', async (route) => {
+    await route.fulfill({json: weatherFixture()});
+  });
+});
+
+test('French weather shell, working modes and locally bundled assets', async ({
   page,
 }, testInfo) => {
   const failures: string[] = [];
@@ -10,7 +18,9 @@ test('French fixture shell, working modes and locally bundled assets', async ({
   });
   page.on('request', (request) => {
     if (
-      !/^(?:127\.0\.0\.1|localhost)$/v.test(new URL(request.url()).hostname)
+      !/^(?:127\.0\.0\.1|localhost|api\.open-meteo\.com)$/v.test(
+        new URL(request.url()).hostname,
+      )
     ) {
       remoteRequests.push(request.url());
     }
@@ -21,7 +31,7 @@ test('French fixture shell, working modes and locally bundled assets', async ({
   ).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
   await expect(page.locator('[data-clock]').first()).toHaveText(/\d{2}:\d{2}/v);
-  await expect(page.getByText('Aperçu · données fictives')).toBeVisible();
+  await expect(page.getByText('Météo · Annecy')).toBeVisible();
   const icon = page.locator('.weather-icon');
   await expect(icon).toHaveCSS('background-image', /data:image\/svg\+xml/v);
   for (const [button, title] of [
@@ -38,11 +48,9 @@ test('French fixture shell, working modes and locally bundled assets', async ({
     if (testInfo.project.name !== 'mobile') {
       expect(
         await page.evaluate(
-          () =>
-            globalThis.document.documentElement.scrollHeight <=
-            globalThis.innerHeight,
+          () => globalThis.document.documentElement.scrollHeight,
         ),
-      ).toBe(true);
+      ).toBeLessThanOrEqual(800);
     }
   }
 

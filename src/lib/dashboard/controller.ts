@@ -1,3 +1,4 @@
+import {mountWeather} from '../weather/view.ts';
 import {
   displayConfig,
   formatClock,
@@ -55,4 +56,9 @@ if (dashboard) {
   updateClock();
   setInterval(updateClock, 1000);
   document.addEventListener('visibilitychange', updateClock);
+}
+
+const weatherRoot = document.querySelector<HTMLElement>('[data-weather]');
+if (weatherRoot) {
+  mountWeather(weatherRoot);
 }

@@ -19,6 +19,10 @@ Open `http://127.0.0.1:8787` for the actual Worker + static assets integration; 
 
 M1 needs no KV or secret binding. Future local bindings must be local emulations by default, without `remote: true`. `.dev.vars.example` documents the empty secret surface; local secrets belong in ignored `.dev.vars`. Public defaults are in `src/lib/dashboard/config.ts`; they are examples, not persisted household settings. Production uses `DEPLOYMENT_STAGE=production`; local preview uses `local`. Secrets belong in Wrangler secrets/GitHub environment secrets, never `PUBLIC_*` or build-time browser imports. No service worker or private cache exists in M1.
 
+## Weather in M2
+
+The browser calls Open-Meteo directly without a key or Worker proxy. [Weather operations](weather.md) documents public defaults, caching, retries, provider terms, request budgeting, and deterministic test fixtures. This is the only runtime external request introduced by M2. No new Cloudflare service or binding is needed.
+
 ## Free-plan gate (verify before any provisioning)
 
 Reviewed on 16 October 2026:
@@ -49,7 +53,7 @@ Use an account-owned API token with **Specified Workers → dayframe-fixture-pro
 
 For a bad fixture deployment, use the Cloudflare dashboard's Worker deployment history to roll back to the previous known-good version. Remove/disable this fixture Worker if retiring the preview. No storage migration or device configuration is involved.
 
-Desktop browser checks and mobile emulation do not validate Dragon Touch Classic 10, Firefox 143 on Android, authentication, real weather, photo upload, scheduling or offline private-photo retention. Those remain later milestones. CSS night mode does not change the screen backlight.
+Desktop browser checks and mobile emulation do not validate Dragon Touch Classic 10, Firefox 143 on Android, authentication, photo upload, scheduling or offline private-photo retention. Those remain later milestones. M2 weather has local browser and live-provider acceptance; see [weather operations](weather.md). CSS night mode does not change the screen backlight.
 
 M1 deployed on 16 October 2026 to [the fixture preview](https://dayframe-fixture-production.cody-zuschlag.workers.dev), after the authenticated Workers plans dashboard confirmed Free / $0 / Current plan. No upgrade, automatic billing, or paid service was enabled. The only deployed bindings are ASSETS and the public production stage. See the implementation plan for version and smoke-test evidence. Re-check the account plan before every subsequent deployment; this record is not a permanent billing guarantee.
 

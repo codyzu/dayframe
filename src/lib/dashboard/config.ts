@@ -5,6 +5,8 @@ export const displayConfig = {
   locale: 'fr-FR',
   timezone: 'Europe/Paris',
   location: 'Annecy',
+  latitude: 45.8992,
+  longitude: 6.1294,
   initialMode: 'morning',
   slideshowIntervalSeconds: 20,
   overrideTimeoutSeconds: 300,

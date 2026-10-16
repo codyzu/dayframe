@@ -1,6 +1,6 @@
 # Dayframe: Implementation Plan
 
-**Status:** M1 complete — later milestones pending
+**Status:** M1 complete; M2 implemented and locally verified — M3 onward pending
 **Date:** 16 October 2026  
 **Requirements:** [Family Dashboard: Technical Specification](technical-specification.md)  
 **Primary upstream:** [Wes Bos — photo-frame-dashboard](https://github.com/wesbos/photo-frame-dashboard)
@@ -34,7 +34,7 @@ Review upstream first, then decide deliberately. Dayframe keeps Astro/TypeScript
 
 ## 2. Delivery approach
 
-Deliver one demonstrable slice at a time. Keep task IDs in commits/PRs and update this document with validation evidence. M1 is delivered with local and Workers Free acceptance evidence below. Later milestones are pending. A task is done only when its acceptance evidence exists; a mock or desktop-only test must be labeled as such.
+Deliver one demonstrable slice at a time. Keep task IDs in commits/PRs and update this document with validation evidence. M1 is delivered with local and Workers Free acceptance evidence below. M2 has local acceptance evidence below; its public deployment remains pending. M3 onward are pending. A task is done only when its acceptance evidence exists; a mock or desktop-only test must be labeled as such.
 
 ```text
 M1 foundation → M2 weather → M3 protected photos → M4 administration → M5 display behavior
@@ -165,7 +165,7 @@ For each milestone record: completed task IDs, checks run and results, screensho
 | Credential revocation bounds and private offline cache policy | M4–M5        | Explicit propagation/retention guarantees and tests.                                |
 | Classic 10 compatibility, kiosk, brightness, startup          | Discovery/M6 | Observations on the actual unit and a recovery path.                                |
 
-**Next implementation slice:** M2 weather as a separate reviewable slice. This document authorizes no hardware changes or paid infrastructure.
+**Next implementation slice:** M3 protected photos, starting with the M3.0 authentication/storage gate. This document authorizes no hardware changes or paid infrastructure.
 
 ## M1 implementation record — 16 October 2026
 
@@ -205,3 +205,23 @@ Manual **Deploy to Cloudflare** workflow is ready: main branch only, production 
 The owner approved and completed the production access setup: main-only production environment, codyzu review with self-review allowed, verified Free-plan flag, and token/account ID stored only as GitHub production environment secrets. The dedicated account-owned token has Individual Workers Editor permission for dayframe-fixture-production only, with 90-day expiry displayed as 15 January 2027. The token value was transferred directly from the Cloudflare one-time dialog to the GitHub secret without appearing in chat, source, or logs. No personal Wrangler OAuth credential was copied into CI. The token dialog was closed and temporary credential variables were cleared.
 
 The first manual GitHub deployment [run](https://github.com/codyzu/dayframe/actions/runs/38876764782) paused for production review as expected, then passed all checks and uploaded version `39a9a9dc-a8ca-480a-8678-401951cbdc6e` using the scoped token. Its immediate smoke check saw the previous HTML during Cloudflare propagation and failed; a later HTTPS request confirmed the uploaded CSS fingerprint. The smoke script now retries failed checks up to 12 times with five-second waits, retaining the exact HTML comparison via SHA-256 and all API assertions. A local simulated stale-first response check confirmed retry and eventual exact-build acceptance. The corrected [deployment run](https://github.com/codyzu/dayframe/actions/runs/38877356532) passed: full verification (9 unit tests and 16 browser checks), scoped-token upload (version `491beb73-2a8b-446a-a7f0-dd34be05a349`), and all eight public smoke checks. The corresponding automatic [push checks](https://github.com/codyzu/dayframe/actions/runs/38877349654) also passed. No token permissions were expanded and no paid service was enabled.
+
+## M2 implementation record — 16 October 2026
+
+**Status: M2 complete locally. Public deployment remains M1; no M2 deploy or hardware changes performed.**
+
+| Task | Evidence / status                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| M2.1 | Complete: `src/lib/weather/adapter.ts` normalizes public location/timezone/units, fetch time, current/hourly/daily data. Boundary validation rejects malformed fields, units, arrays, ranges, times and incomplete forecasts. Unix hourly times and provider-offset daily dates handle Paris DST. Deterministic synthetic fixtures are in `tests/fixtures/weather.ts`. A live Annecy request passed the final adapter (48 hours, two dated daily ranges, metric units).        |
+| M2.2 | Complete: `conditions.ts` maps all 29 specification WMO codes to semantic conditions, French descriptions and literal day/night Meteocons classes, with unknown fallback. Tests resolve every variant against installed `@iconify-json/meteocons` 1.2.4. UnoCSS explicitly scans browser weather TS; production browser tests verify actual current/hourly icon backgrounds and day/night switching.                                                                           |
+| M2.3 | Complete with explicitly provisional design: current/feels-like/high/low, current rain, upcoming precipitation advice, existing French clock/date and original Annecy scene. SVG has separate °C/% axes, yellow line/blue bars, current-time marker, legend and accessible hourly table. No 1280×800 scrolling in tested desktop engines; mobile adapts. Approved mockups remain absent, so conformity to them is not claimed. No new external assets copied.                  |
+| M2.4 | Complete: deterministic 50% / 0.1 mm thresholds, bounded forecast language, 30-minute refresh, 12-second timeout, 1/5/15/30-minute backoff, one in-flight request and scheduler, validated single-entry cache, blocked/quota storage fallback, stale age and last-reading date/time, exit/resume cleanup. Browser flows cover offline reload with retained weather, stale status, recovery, malformed initial data, missing cache, unknown codes, and independent clock/modes. |
+| M2.5 | Complete: current official Open-Meteo docs/terms/licence/pricing reviewed; attribution/licence and adaptation label displayed beside data. [Weather operations](weather.md) records a conservative household request budget, public coordinate disclosure, cache/retry policy, limits and provider sources. No key, subscription, proxy, paid service or Cloudflare binding added.                                                                                             |
+
+Final local acceptance: the complete `pnpm verify` pipeline passed. Strict Astro/TypeScript checks (23 files) and XO/Prettier passed; **32 Vitest tests** passed; production build passed; **32 Playwright checks** passed across Chromium, Firefox, WebKit and iPhone 13 emulation. Coverage includes WMO/icon lookup, validation, DST daily/hourly behavior, summary thresholds, cache age/invalidity, timeout/backoff, deduplication, suspend/resume and storage quota handling. Browser scenarios use deterministic data and never depend on live weather. A separate manual live-provider check validated the actual response. Private API fail-closed tests still pass. `git diff --check` is clean.
+
+Visual evidence (synthetic weather): [1280×800 morning](evidence/m2/dashboard-1280x800.png), [night condition icon](evidence/m2/night-condition-1280x800.png), [stale/offline](evidence/m2/stale-1280x800.png), [mobile morning](evidence/m2/morning-mobile.png). Visual QA corrected production icon extraction and the hidden table's overflow. Desktop Firefox and iPhone emulation do not establish Classic 10 compatibility. The night icon screenshot tests weather day/night mapping, not scheduled night mode.
+
+Upstream review refreshed at current HEAD `e97c50ba459c49ea8237259f69b95cd28054b628`; reviewed README, `dashboard/js/data.js`, weather helpers in `dashboard/js/app.js`, weather layout in `dashboard/js/views/home.js`, and `dashboard/css/views/home.css`. Retained glanceable hierarchy and short rain advice as ideas; independently implemented live timestamped weather/chart/cache instead of upstream's hour-indexed mock data. No license file found and no upstream source/assets copied. [Weather provenance](weather.md#upstream-and-visual-provenance) records the details; ADR 0001 still governs the foundation.
+
+Remaining limits: provisional visuals until mockups are supplied; actual Android/frame testing remains M6; offline weather persistence requires the app shell itself to load; M2 is not yet published to Workers. M3 must start with its authentication/storage gate before any private photo route becomes public.

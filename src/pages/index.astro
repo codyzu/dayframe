@@ -1,16 +1,8 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import MorningWeather from '../components/MorningWeather.astro';
 import ModeNavigation from '../components/ModeNavigation.astro';
 import {displayConfig} from '../lib/dashboard/config';
-
-const hours = [
-  {hour: '08 h', temperature: '12°', rain: '10 %'},
-  {hour: '10 h', temperature: '15°', rain: '10 %'},
-  {hour: '12 h', temperature: '18°', rain: '15 %'},
-  {hour: '14 h', temperature: '19°', rain: '20 %'},
-  {hour: '16 h', temperature: '17°', rain: '65 %'},
-  {hour: '18 h', temperature: '15°', rain: '40 %'},
-];
 ---
 
 <BaseLayout title="À la maison" bodyClass="display-page text-[#f5f6ef]">
@@ -34,7 +26,7 @@ const hours = [
         dayframe
       </a>
       <span class="border border-white/30 bg-[#091e26]/55 rounded-full px-2 py-1.75 md:px-3 text-[10px] md:text-xs tracking-wide">
-        Aperçu · données fictives
+        Météo · Annecy
       </span>
     </header>
     <section
@@ -56,87 +48,7 @@ const hours = [
           --:--
         </time>
       </div>
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-[1fr_1.2fr] lg:grid-cols-[1fr_1.3fr] lg:gap-5.5">
-        <section class="surface p-6 lg:px-7" aria-labelledby="weather-title">
-          <p class="eyebrow" id="weather-title">
-            Météo de démonstration
-          </p>
-          <div class="flex items-center gap-6">
-            <span class="text-[91px] tracking-[-6px] leading-[1.15]">
-              12<span class="align-top text-[66px]">°</span>
-            </span>
-            <span
-              class="i-meteocons-partly-cloudy-day-fill weather-icon inline-block size-[116px]"
-              aria-hidden="true"
-            ></span>
-          </div>
-          <p class="mt-0.5 text-[23px] font-semibold">Quelques éclaircies</p>
-          <p class="mt-2 text-[15px] text-mist">
-            Ressenti 10° <span aria-hidden="true">·</span> Max. 19° / Min. 8°
-          </p>
-          <div class="mt-5.5 flex items-start gap-3 border-t border-white/20 pt-4.5">
-            <span
-              class="mt-1.75 size-[7px] shrink-0 rounded-full bg-[#f0ce92]"
-              aria-hidden="true"
-            ></span>
-            <div>
-              <strong class="text-base font-semibold">
-                Une matinée au sec
-              </strong>
-              <p class="mt-1 text-sm text-mist leading-relaxed">
-                Averses possibles après 15 h.
-                <br />
-                Pensez à prendre une veste.
-              </p>
-            </div>
-          </div>
-        </section>
-        <section
-          class="surface flex flex-col p-6 lg:p-7"
-          aria-labelledby="forecast-title"
-        >
-          <div class="flex items-center justify-between gap-3">
-            <h2
-              class="text-xl font-semibold tracking-tight"
-              id="forecast-title"
-            >
-              Au fil de la journée
-            </h2>
-            <span class="text-[11px] text-mist uppercase tracking-wider">
-              Exemple
-            </span>
-          </div>
-          <div class="my-auto grid grid-cols-6 gap-1 py-7 md:gap-2">
-            {hours.map((hour, index) => (
-              <div class="flex flex-col items-center gap-3 text-xs text-mist lg:gap-4 lg:text-sm">
-                <span>{hour.hour}</span>
-                <span
-                  class={
-                    index < 4
-                      ? 'i-meteocons-partly-cloudy-day-fill inline-block size-[38px] lg:size-[51px]'
-                      : 'i-meteocons-rain-fill inline-block size-[38px] lg:size-[51px]'
-                  }
-                  aria-hidden="true"
-                ></span>
-                <strong class="text-2xl font-semibold text-white">
-                  {hour.temperature}
-                </strong>
-                <span class="text-xs text-[#b5dfed]">{hour.rain}</span>
-              </div>
-            ))}
-          </div>
-          <div class="border-t border-white/20 pt-4.5 text-xs text-[#c8e2eb]">
-            <span
-              class="mr-1.75 inline-block size-1.5 rounded-full bg-[#9cd1e1]"
-              aria-hidden="true"
-            ></span>{' '}
-            Probabilité de pluie · scénario fictif
-          </div>
-          <p class="mt-2.5 text-[11px] text-mist">
-            Les prévisions en direct arrivent avec la prochaine étape.
-          </p>
-        </section>
-      </div>
+      <MorningWeather />
     </section>
     <section
       class="grid min-h-[500px] flex-1 place-items-center py-8 text-center md:min-h-0"
@@ -206,8 +118,8 @@ const hours = [
     </footer>
     <noscript>
       <p class="p-2.5 text-xs">
-        Activez JavaScript pour l’horloge et le changement de mode. Les données
-        affichées sont fictives.
+        Activez JavaScript pour l’horloge et le changement de mode. La météo en
+        direct nécessite JavaScript.
       </p>
     </noscript>
   </main>

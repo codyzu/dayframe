@@ -1,6 +1,6 @@
 # Third-party notices
 
-The project foundation is Wes Bos's [photo-frame-dashboard](https://github.com/wesbos/photo-frame-dashboard). M1 uses its research and architectural ideas as reference; no upstream source or assets were copied. See [ADR 0001](docs/decisions/0001-upstream-foundation.md) for the reviewed revision, paths, and license decision.
+The project foundation is Wes Bos's [photo-frame-dashboard](https://github.com/wesbos/photo-frame-dashboard). M1–M2 use its research and architectural ideas as reference; no upstream source or assets were copied. See [ADR 0001](docs/decisions/0001-upstream-foundation.md) for the reviewed revision, paths, and license decision.
 
 Bundled runtime assets:
 
@@ -9,3 +9,5 @@ Bundled runtime assets:
 - `public/annecy.svg` and `public/favicon.svg` are original Dayframe illustrations authored for this repository; no external photos, upstream artwork, or generated raster assets are included.
 
 Application/tooling dependencies retain their own package notices in the lockfile-installed distribution. There are no remote font/image/icon dependencies in the shell.
+
+Weather data in M2: [Open-Meteo](https://open-meteo.com/), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Dayframe rounds temperatures, localizes conditions, draws charts, and derives deterministic summaries. Provider and license links appear beside the display. See [weather operations](docs/weather.md) for noncommercial API terms and the upstream M2 review. No Open-Meteo server source is incorporated.

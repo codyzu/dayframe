@@ -21,6 +21,8 @@ const config = [
     semicolon: true,
     rules: {
       'import-x/extensions': 'off',
+      // Prettier removes redundant arithmetic parentheses; let it own this formatting.
+      '@stylistic/no-mixed-operators': 'off',
       // M1 tooling gate deliberately pins exact runtime and dependency versions.
       'package-json/dependency-version-range': 'off',
       'package-json/prefer-engines-range': 'off',

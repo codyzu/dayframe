@@ -2,6 +2,8 @@ import {defineConfig, presetIcons} from 'unocss';
 import presetWind4 from '@unocss/preset-wind4';
 
 export default defineConfig({
+  // Astro scans templates by default; weather classes also live in browser-only TS.
+  content: {filesystem: ['src/lib/weather/{conditions,view}.ts']},
   theme: {
     colors: {mist: '#d5e0df'},
     font: {sans: 'Manrope, system-ui, sans-serif'},
