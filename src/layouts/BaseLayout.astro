@@ -1,0 +1,30 @@
+---
+import '@fontsource/manrope/latin-400.css';
+import '@fontsource/manrope/latin-600.css';
+import '@fontsource/manrope/latin-700.css';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  bodyClass?: string;
+}
+const {title, bodyClass = ''} = Astro.props;
+---
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#143c48" />
+    <meta
+      name="description"
+      content="Dayframe, le tableau de bord de la maison. Aperçu de démonstration."
+    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title} · Dayframe</title>
+  </head>
+  <body class:list={['font-sans', bodyClass || 'bg-[#143c48] text-[#f5f6ef]']}>
+    <slot />
+  </body>
+</html>

@@ -1,0 +1,24 @@
+---
+const modes = [
+  {id: 'morning', label: 'Matin'},
+  {id: 'photos', label: 'Photos'},
+  {id: 'home', label: 'Maison'},
+  {id: 'night', label: 'Nuit'},
+];
+---
+
+<nav
+  class="flex w-full justify-between gap-1 rounded-full border border-white/20 bg-[#071b24]/85 p-1.25 md:w-auto"
+  aria-label="Modes d’affichage"
+>
+  {modes.map(({id, label}) => (
+    <button
+      class="min-h-12 rounded-full px-4 text-[13px] text-[#e1e8e5] transition-colors hover:bg-white/15 aria-pressed:bg-[#edf0e6] aria-pressed:text-[#193a42] aria-pressed:font-bold aria-pressed:hover:bg-white md:min-w-20 md:px-5"
+      type="button"
+      data-mode-button={id}
+      aria-pressed={id === 'morning'}
+    >
+      {label}
+    </button>
+  ))}
+</nav>

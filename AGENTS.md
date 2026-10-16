@@ -11,3 +11,12 @@ The local specification controls product requirements. Upstream is a source of i
 For hardware work, first identify the actual model, board, firmware, Android version, and browser. Dragon Touch Classic 10 and Modern10 Charm are different models. Read current upstream device notes and relevant issues/PRs before proposing device changes. Start with non-destructive inspection; do not run upstream setup or flashing scripts blindly. Firmware/system changes require a verified backup, a recovery path, and explicit authorization for the specific action.
 
 Implement one reviewable milestone slice at a time, starting with M1. Keep the plan updated with evidence and unresolved decisions. Protect photo reads and mutations before exposing them publicly. Keep household data and credentials out of source control. Preserve the €0 recurring-cost requirement and do not enable paid or automatically billed services without explicit approval.
+
+## Frontend conventions
+
+- Use UnoCSS with `@unocss/preset-wind4` (Tailwind CSS 4 conventions) and `@unocss/reset/tailwind.css`.
+- Prefer literal, extractable utility classes for layout, spacing, typography, colors, responsive states, and interaction states. Use small UnoCSS shortcuts for repeated visual patterns.
+- Add custom CSS only when utilities would make the implementation harder to understand or cannot express the behavior cleanly. Keep it scoped to the owning Astro component/page and explain non-obvious exceptions.
+- Keep `src/styles/global.css` minimal: shared accessibility behavior and true cross-page invariants only. Do not recreate the reset or a component class system there.
+- Use XO with its built-in Prettier support (`prettier: true`) for linting and formatting checks. Astro linting uses `eslint-plugin-astro`; `pnpm lint:fix` applies fixes. Keep the two-space, semicolon, single-quote style consistent with the existing local Astro projects.
+- Use pnpm (pinned by `packageManager`) for dependencies and scripts; commit only `pnpm-lock.yaml`.

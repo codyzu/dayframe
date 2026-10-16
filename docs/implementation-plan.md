@@ -11,30 +11,30 @@
 
 ### Source map
 
-| Source | Use in Dayframe |
-| --- | --- |
-| [Upstream README and agent guidance](https://github.com/wesbos/photo-frame-dashboard/blob/main/README.md) | Understand the project, device investigation process, backup/recovery lessons, and entry points. |
-| [Dashboard source](https://github.com/wesbos/photo-frame-dashboard/tree/main/dashboard) | Review layout, display behavior, asset handling, deployment, and browser compatibility before building equivalent features. |
-| [Kiosk guide](https://github.com/wesbos/photo-frame-dashboard/blob/main/dashboard/kiosk/README.md) | Evaluate kiosk behavior and an existing Android wrapper during M6, if a browser alone is insufficient. |
-| [Device index](https://github.com/wesbos/photo-frame-dashboard/blob/main/docs/devices.md) | Find relevant board/firmware reports after identifying our unit. |
-| [Dragon Touch Modern10 Charm notes](https://github.com/wesbos/photo-frame-dashboard/blob/main/docs/dragontouch-modern10-charm.md) | Related research to investigate, **not a validated procedure for Classic 10**. |
-| [Issues](https://github.com/wesbos/photo-frame-dashboard/issues) and [pull requests](https://github.com/wesbos/photo-frame-dashboard/pulls) | Check newer findings relevant to the actual hardware before device work. Treat unmerged procedures as unverified. |
+| Source                                                                                                                                      | Use in Dayframe                                                                                                             |
+| ------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| [Upstream README and agent guidance](https://github.com/wesbos/photo-frame-dashboard/blob/main/README.md)                                   | Understand the project, device investigation process, backup/recovery lessons, and entry points.                            |
+| [Dashboard source](https://github.com/wesbos/photo-frame-dashboard/tree/main/dashboard)                                                     | Review layout, display behavior, asset handling, deployment, and browser compatibility before building equivalent features. |
+| [Kiosk guide](https://github.com/wesbos/photo-frame-dashboard/blob/main/dashboard/kiosk/README.md)                                          | Evaluate kiosk behavior and an existing Android wrapper during M6, if a browser alone is insufficient.                      |
+| [Device index](https://github.com/wesbos/photo-frame-dashboard/blob/main/docs/devices.md)                                                   | Find relevant board/firmware reports after identifying our unit.                                                            |
+| [Dragon Touch Modern10 Charm notes](https://github.com/wesbos/photo-frame-dashboard/blob/main/docs/dragontouch-modern10-charm.md)           | Related research to investigate, **not a validated procedure for Classic 10**.                                              |
+| [Issues](https://github.com/wesbos/photo-frame-dashboard/issues) and [pull requests](https://github.com/wesbos/photo-frame-dashboard/pulls) | Check newer findings relevant to the actual hardware before device work. Treat unmerged procedures as unverified.           |
 
-**Review baseline:** The upstream README and device index were reviewed via GitHub on 16 October 2026. The README describes a Vite dashboard using mock data and Cloudflare Workers, plus an Android kiosk wrapper. This is an initial orientation, not a source-code or license audit. No upstream code or assets have been imported. A reviewed upstream commit SHA has not yet been captured; branch links above move over time.
+**Review baseline:** The upstream README and device index were reviewed via GitHub on 16 October 2026. The README describes a Vite dashboard using mock data and Cloudflare Workers, plus an Android kiosk wrapper. This is an initial orientation, not a source-code or license audit. No upstream code or assets have been imported. The subsequent M1 source/license audit is recorded at commit `e97c50ba459c49ea8237259f69b95cd28054b628` in [ADR 0001](decisions/0001-upstream-foundation.md); branch links above move over time.
 
 ### Required upstream review before implementation
 
-- [ ] M1: Capture an upstream commit SHA; inspect the dashboard source, package manifest, build configuration, styling, and deployment setup at that revision.
-- [ ] Record useful source paths, adoption decisions, and any incompatibilities in `docs/decisions/0001-upstream-foundation.md`.
-- [ ] Verify license coverage for each code/asset candidate before copying it. If permission is unclear, use the research as reference and implement locally without copying that material.
-- [ ] For adapted material, retain required notices and record source permalink, original path, local destination, and modifications. Add a third-party notices file when material is imported.
-- [ ] Refresh the relevant upstream review when starting a new feature or device session; record the revision actually used. Do not silently absorb upstream changes.
+- [x] M1: Capture an upstream commit SHA; inspect the dashboard source, package manifest, build configuration, styling, and deployment setup at that revision.
+- [x] Record useful source paths, adoption decisions, and any incompatibilities in `docs/decisions/0001-upstream-foundation.md`.
+- [x] Verify license coverage for each code/asset candidate before copying it. If permission is unclear, use the research as reference and implement locally without copying that material.
+- [x] For adapted material, retain required notices and record source permalink, original path, local destination, and modifications. Add a third-party notices file when material is imported.
+- [x] Refresh the relevant upstream review when starting a new feature or device session; record the revision actually used. Do not silently absorb upstream changes.
 
 Review upstream first, then decide deliberately. Dayframe keeps Astro/TypeScript/UnoCSS, French weather for Annecy, protected family photos, KV storage, and the strict €0 deployment requirement. An upstream implementation does not override these choices. No automated upstream synchronization or full fork is planned unless the review justifies it.
 
 ## 2. Delivery approach
 
-Deliver one demonstrable slice at a time. Keep task IDs in commits/PRs and update this document with validation evidence. All tasks below are pending. A task is done only when its acceptance evidence exists; a mock or desktop-only test must be labeled as such.
+Deliver one demonstrable slice at a time. Keep task IDs in commits/PRs and update this document with validation evidence. M1 is delivered with local and Workers Free acceptance evidence below. Later milestones are pending. A task is done only when its acceptance evidence exists; a mock or desktop-only test must be labeled as such.
 
 ```text
 M1 foundation → M2 weather → M3 protected photos → M4 administration → M5 display behavior
@@ -58,14 +58,14 @@ Use the source layout proposed in specification §15. Keep ADRs in `docs/decisio
 
 **Scope:** Repository tooling, source review, a static dashboard shell, and a free-tier deployment path. Use fixtures and non-private images.
 
-| Task | Work | Acceptance evidence |
-| --- | --- | --- |
-| M1.1 | Complete the upstream review and provenance record above; compare reuse against our stack. | ADR with source revision, paths, license findings, and explicit adopt/adapt/defer decisions. |
-| M1.2 | Select compatible versions of Node, package manager, Astro, TypeScript, UnoCSS, Iconify Meteocons, Wrangler, Vitest, Playwright, and lint/format tooling. Verify current official docs and package engine/peer requirements. | Exact versions recorded in the ADR and manifest, committed lockfile, pinned runtime/package manager, reproducible clean install and build. |
-| M1.3 | Scaffold static pages, layout, dashboard controller, example configuration, and locally bundled icons/fonts/assets with documented rights. | French shell renders at 1280 × 800; admin shell adapts to phone/desktop; no kiosk scrolling; reduced motion supported. |
-| M1.4 | Validate the Astro/static-assets/Worker API integration with a non-sensitive health route. Configure local bindings and ignore private configuration. | Local preview serves assets and the API; bundles contain no secrets; separate local and production settings documented. |
-| M1.5 | Add CI for type checks, lint, unit tests, and build; document deployment with least-privilege CI credentials. | Required checks pass on a clean checkout; deployment runs only after checks pass. |
-| M1.6 | Verify current Cloudflare Free quotas, asset request behavior, and account settings before provisioning. Deploy a public fixture-only preview when credentials are available. | Free-plan configuration and sanitized deployment evidence recorded; no billable services enabled. |
+| Task | Work                                                                                                                                                                                                                                                                                                                                                                         | Acceptance evidence                                                                                                                        |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| M1.1 | Complete the upstream review and provenance record above; compare reuse against our stack.                                                                                                                                                                                                                                                                                   | ADR with source revision, paths, license findings, and explicit adopt/adapt/defer decisions.                                               |
+| M1.2 | Select compatible versions of Node, package manager, Astro, TypeScript, UnoCSS, Iconify Meteocons, Wrangler, Vitest, Playwright, and lint/format tooling. Verify current official docs and package engine/peer requirements.                                                                                                                                                 | Exact versions recorded in the ADR and manifest, committed lockfile, pinned runtime/package manager, reproducible clean install and build. |
+| M1.3 | Scaffold static pages, layout, dashboard controller, example configuration, and locally bundled icons/fonts/assets with documented rights.                                                                                                                                                                                                                                   | French shell renders at 1280 × 800; admin shell adapts to phone/desktop; no kiosk scrolling; reduced motion supported.                     |
+| M1.4 | Validate the Astro/static-assets/Worker API integration with a non-sensitive health route. Configure local bindings and ignore private configuration.                                                                                                                                                                                                                        | Local preview serves assets and the API; bundles contain no secrets; separate local and production settings documented.                    |
+| M1.5 | Add CI for type checks, lint, unit tests, and build; document deployment with least-privilege CI credentials.                                                                                                                                                                                                                                                                | Required checks pass on a clean checkout; deployment runs only after checks pass.                                                          |
+| M1.6 | Complete: Workers plans dashboard visibly confirmed Free / $0 / Current plan on 16 October 2026, with 100,000 requests/day and 10 ms CPU. OAuth subscription read returned 403, so billing was verified in the authenticated dashboard instead. Deployed only Worker + Static Assets; no paid service, storage product, or subscription change. Public smoke evidence below. |
 
 **Tooling gate:** Exact dependency versions are intentionally unresolved in this document, not implied to have been verified. M1.2 must resolve them before scaffolding; do not invent versions or inherit upstream versions without checking compatibility.
 
@@ -94,14 +94,14 @@ Complete this before publishing any private photo route:
 
 ### Implementation tasks
 
-| Task | Work | Acceptance evidence |
-| --- | --- | --- |
-| M3.1 | Build validated metadata contracts and KV adapter: separate binary records and listable metadata, stable IDs, cursor pagination, and consistent errors. | Catalog does not read all binaries; partial writes/deletes and delayed visibility have documented recovery behavior. |
-| M3.2 | Add protected catalog/image/upload/delete endpoints with size limits, ID/hash format checks, image header/dimension validation within Worker limits, trusted identity attribution, and authorization-aware cache headers. | Anonymous reads and non-admin mutations fail; malformed/oversized input is rejected; private responses never enter shared caches. |
-| M3.3 | Build sequential browser processing: original-byte SHA-256, orientation-aware decode, normalized 64-bit dHash, no-upscale resize to ~1600px, WebP ~0.82, metadata stripping, and per-file feedback. | Representative iPhone/browser images render correctly; actual output MIME is checked; unsupported formats/encoders produce actionable errors. |
-| M3.4 | Add exact duplicate lookup and human review of perceptual matches, configurable thresholds, and safe retry UI. | Repeated uploads target the same identity; similar photos are not discarded automatically; concurrency limitations remain explicit. |
-| M3.5 | Add responsive admin catalog, thumbnails, confirmed deletion, and storage reporting. | Both admins can manage photos; quota errors preserve existing content; usage is labeled approximate if based on eventually consistent metadata. |
-| M3.6 | Add shuffle slideshow, ~20-second interval, contain/cover, bounded preloading, empty state, periodic catalog refresh, and failure recovery. | No immediate repeats when multiple photos exist; new uploads appear; transient errors retain the current image; decoded image memory stays bounded. |
+| Task | Work                                                                                                                                                                                                                      | Acceptance evidence                                                                                                                                 |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M3.1 | Build validated metadata contracts and KV adapter: separate binary records and listable metadata, stable IDs, cursor pagination, and consistent errors.                                                                   | Catalog does not read all binaries; partial writes/deletes and delayed visibility have documented recovery behavior.                                |
+| M3.2 | Add protected catalog/image/upload/delete endpoints with size limits, ID/hash format checks, image header/dimension validation within Worker limits, trusted identity attribution, and authorization-aware cache headers. | Anonymous reads and non-admin mutations fail; malformed/oversized input is rejected; private responses never enter shared caches.                   |
+| M3.3 | Build sequential browser processing: original-byte SHA-256, orientation-aware decode, normalized 64-bit dHash, no-upscale resize to ~1600px, WebP ~0.82, metadata stripping, and per-file feedback.                       | Representative iPhone/browser images render correctly; actual output MIME is checked; unsupported formats/encoders produce actionable errors.       |
+| M3.4 | Add exact duplicate lookup and human review of perceptual matches, configurable thresholds, and safe retry UI.                                                                                                            | Repeated uploads target the same identity; similar photos are not discarded automatically; concurrency limitations remain explicit.                 |
+| M3.5 | Add responsive admin catalog, thumbnails, confirmed deletion, and storage reporting.                                                                                                                                      | Both admins can manage photos; quota errors preserve existing content; usage is labeled approximate if based on eventually consistent metadata.     |
+| M3.6 | Add shuffle slideshow, ~20-second interval, contain/cover, bounded preloading, empty state, periodic catalog refresh, and failure recovery.                                                                               | No immediate repeats when multiple photos exist; new uploads appear; transient errors retain the current image; decoded image memory stays bounded. |
 
 **Quota design gate:** Before calling storage usage authoritative, decide how concurrent writes and deletions affect accounting. Prefer conservative warnings and quota failure handling over a falsely exact counter. Estimate reads/list/writes for the actual polling cadence and photo collection; avoid hot shared counters and repeated full-catalog scans. Any new coordination service needs an ADR and free-cost validation.
 
@@ -155,14 +155,43 @@ For each milestone record: completed task IDs, checks run and results, screensho
 
 ### Decisions to resolve at their gates
 
-| Decision | Due | Required outcome |
-| --- | --- | --- |
-| Upstream revision, reuse scope, and licensing | M1.1 | Source review and attribution record. |
-| Exact dependencies and Astro/Worker wiring | M1.2–M1.4 | Pinned compatible versions and verified local build/API. |
-| Approved visual assets/mockups | M2.3 | Available reference and asset rights, or an explicitly recorded provisional design. |
-| Admin authentication and image credential transport | M3.0 | Working protected-route prototype and auth ADR. |
-| KV schema, accounting, and partial-operation recovery | M3.0–M3.5 | Measured operation budget and documented consistency limits. |
-| Credential revocation bounds and private offline cache policy | M4–M5 | Explicit propagation/retention guarantees and tests. |
-| Classic 10 compatibility, kiosk, brightness, startup | Discovery/M6 | Observations on the actual unit and a recovery path. |
+| Decision                                                      | Due          | Required outcome                                                                    |
+| ------------------------------------------------------------- | ------------ | ----------------------------------------------------------------------------------- |
+| Upstream revision, reuse scope, and licensing                 | M1.1         | Source review and attribution record.                                               |
+| Exact dependencies and Astro/Worker wiring                    | M1.2–M1.4    | Pinned compatible versions and verified local build/API.                            |
+| Approved visual assets/mockups                                | M2.3         | Available reference and asset rights, or an explicitly recorded provisional design. |
+| Admin authentication and image credential transport           | M3.0         | Working protected-route prototype and auth ADR.                                     |
+| KV schema, accounting, and partial-operation recovery         | M3.0–M3.5    | Measured operation budget and documented consistency limits.                        |
+| Credential revocation bounds and private offline cache policy | M4–M5        | Explicit propagation/retention guarantees and tests.                                |
+| Classic 10 compatibility, kiosk, brightness, startup          | Discovery/M6 | Observations on the actual unit and a recovery path.                                |
 
-**Next implementation slice:** M1.1 upstream review and M1.2 tooling decision, followed by the smallest static shell. This document authorizes no hardware changes or paid infrastructure.
+**Next implementation slice:** M2 weather as a separate reviewable slice. This document authorizes no hardware changes or paid infrastructure.
+
+## M1 implementation record — 16 October 2026
+
+**Status: M1 complete. Local checks and public Workers Free deployment passed; hosted GitHub Actions execution awaits a configured Git remote.**
+
+| Task | Evidence / status                                                                                                                                                                                                                                                                                                                                                            |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M1.1 | Complete: [ADR 0001](decisions/0001-upstream-foundation.md), upstream `e97c50ba459c49ea8237259f69b95cd28054b628`, relevant source/build/style/deployment review. No upstream license file found; no upstream source/assets copied. Asset notices ship under `public/licenses/`.                                                                                              |
+| M1.2 | Pinned Node 24.16.0, pnpm 10.23.0, exact direct dependencies and `pnpm-lock.yaml`; peer/engine evidence and owner's tool preferences recorded in ADR. Fresh frozen install and full `pnpm verify` passed; evidence below.                                                                                                                                                    |
+| M1.3 | French fixture shell at `/`, local clock using Europe/Paris, four manual navigation modes, responsive `/admin/photos` placeholder. UnoCSS Wind4/reset/utilities, minimal global accessibility CSS, locally bundled Manrope/Meteocons and original SVG scenery. No live weather, private photos, persisted settings, scheduling, or device claims.                            |
+| M1.4 | Worker `/api/health` plus static assets tested through local Wrangler. GET/HEAD health, 405 mutations, all other API paths 404/no-store and never fall through to assets (including document navigation). No KV or secret binding needed in M1. Production dry-run passes: ASSETS plus public DEPLOYMENT_STAGE only; Worker 1.40 KiB, gzip 0.70 KiB.                         |
+| M1.5 | `.github/workflows/ci.yml` runs frozen install, checks, XO/Prettier/Astro lint, unit tests, build, and browser flows. Manual main-only deployment re-runs checks; protected environment and least-privilege secrets documented in [operations](operations.md). No Git remote exists yet, so hosted CI cannot be exercised here.                                              |
+| M1.6 | Complete: Workers plans dashboard visibly confirmed Free / $0 / Current plan on 16 October 2026, with 100,000 requests/day and 10 ms CPU. OAuth subscription read returned 403, so billing was verified in the authenticated dashboard instead. Deployed only Worker + Static Assets; no paid service, storage product, or subscription change. Public smoke evidence below. |
+
+Initial verification: Astro/TypeScript clean (14 files); XO clean; 9 Vitest tests; 16 Playwright checks across Chromium, desktop Firefox, WebKit and iPhone 13 emulation. Browser tests cover manual modes, French clock, no 1280×800 scrolling, mobile/admin overflow, bundled icon rendering, no external requests, API failures, keyboard/reduced motion. Visual QA caught and corrected missing display text color and hidden rain paths after freezing animated icons. Final clean verification and screenshots are recorded below.
+
+Asset processing: the installed Meteocons collection has no `*-static` variants. Actual `partly-cloudy-day-fill` and `rain-fill` names are used literally. The build strips embedded SVG animations and reveals rain paths that were initially transparent. Complete WMO mapping remains M2.
+
+Dependency audit: `pnpm audit --prod` reports no known vulnerabilities. Full audit reports one high advisory in `braces` 3.0.3 (no patched release available) and one low advisory in `katex` 0.16.47, both confined to XO's development dependency tree (`pnpm why` verified). Do not apply a forced XO downgrade or incompatible transitive KaTeX upgrade. Lint only trusted repository content; reassess when upstream packages publish compatible fixes. Neither dependency is shipped to the browser/Worker.
+
+Final local acceptance: a fresh directory under `/tmp` completed `pnpm install --frozen-lockfile` and the complete `pnpm verify` pipeline: strict Astro/TypeScript checks, XO with built-in Prettier/Astro support, 9 unit tests, production build, and all 16 browser checks passed. These browser checks use current desktop engines and iPhone emulation, not the physical Android frame. [1280×800 screenshot](evidence/m1/dashboard-1280x800.png) and [mobile admin screenshot](evidence/m1/admin-mobile.png) were inspected after the visual corrections. No private data is present. The production Worker packaging dry-run also passed.
+
+### Public deployment acceptance
+
+On 16 October 2026, after the owner authenticated Wrangler, the matching account’s Workers plans UI showed **Free**, **$0**, and disabled **Current plan**, alongside a separate Paid upgrade option. No upgrade or billing action was taken. The account settings API reported standard usage; that alone was not treated as proof of plan. No account identifiers or credentials are recorded here.
+
+`CLOUDFLARE_FREE_PLAN_CONFIRMED=true pnpm run deploy` ran the full verification pipeline successfully before deployment. Worker `dayframe-fixture-production`, version `ac9e9c06-4f2f-457b-962e-10a73c024727`, deployed to [the public fixture preview](https://dayframe-fixture-production.cody-zuschlag.workers.dev). The only bindings are ASSETS and the non-sensitive production stage. Bundle 1.40 KiB (gzip 0.70 KiB), startup 1 ms; no KV/R2/D1/Images/paid Workers provisioning.
+
+The public HTTPS smoke check verifies that the home HTML exactly matches the checked local production build, admin shell responds 200, production health responds correctly, health mutation returns 405, photo/config/unknown APIs return JSON 404/no-store, and missing static pages return 404. Hosted CI has not run because the checkout has no Git remote; its exact check pipeline passes locally. Hardware and live weather/photo functionality remain outside M1.

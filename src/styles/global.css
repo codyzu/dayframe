@@ -1,0 +1,23 @@
+/* Keep the reset below utilities in the cascade, including native button defaults. */
+@import '@unocss/reset/tailwind.css' layer(reset);
+
+/* Cross-page invariants only. Use UnoCSS utilities for component styling. */
+:root {
+  font-synthesis: none;
+}
+:focus-visible {
+  outline: 3px solid #f1cc8f;
+  outline-offset: 5px;
+}
+[hidden] {
+  display: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

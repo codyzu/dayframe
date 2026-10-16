@@ -1,0 +1,93 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Photos · Administration"
+  bodyClass="bg-[#f5f4ef] text-[#203d43]"
+>
+  <header class="flex items-center justify-between gap-3 border-b border-[#d7deda] px-4.5 py-4.5 md:px-[6vw] md:py-6">
+    <a
+      class="inline-flex items-center gap-2.5 text-[22px] font-bold tracking-tight"
+      href="/"
+    >
+      <span
+        class="grid place-items-center size-[33px] rounded-[10px] border border-[#aabcb7] text-2xl"
+        aria-hidden="true"
+      >
+        d.
+      </span>
+      dayframe
+    </a>
+    <a
+      class="inline-block py-3 text-xs underline underline-offset-4 md:text-sm"
+      href="/"
+    >
+      Voir l’affichage <span aria-hidden="true">↗</span>
+    </a>
+  </header>
+  <main class="mx-auto max-w-[1000px] px-4.5 py-9 md:px-7 md:py-15">
+    <p class="eyebrow text-slate-600">Administration · aperçu public</p>
+    <h1 class="text-[38px] md:text-5xl font-semibold tracking-tight">
+      Vos photos
+    </h1>
+    <p class="mt-3 text-base text-slate-600 md:text-lg">
+      Les petits moments méritent le grand écran.
+    </p>
+    <div
+      class="mt-8 rounded-xl border border-[#ccd9cd] bg-[#e8eee7] px-6 py-5 text-sm leading-relaxed"
+      role="note"
+    >
+      <strong>L’espace privé est en préparation.</strong>
+      <p class="mt-1">
+        Cet aperçu ne contient aucune photo personnelle. L’envoi et la gestion
+        seront disponibles après la mise en place de l’authentification.
+      </p>
+    </div>
+    <section
+      class="mt-6 rounded-[18px] border border-dashed border-[#9fb5af] bg-[#fffefa] px-5 py-9 text-center"
+      aria-labelledby="upload-title"
+    >
+      <span class="text-[35px] leading-none text-[#547a72]" aria-hidden="true">
+        ＋
+      </span>
+      <h2 class="mt-2.5 text-2xl font-semibold" id="upload-title">
+        Un album à faire vivre
+      </h2>
+      <p class="mt-3 mb-6 text-sm text-slate-600">
+        Ajoutez bientôt vos photos depuis votre téléphone ou votre ordinateur.
+      </p>
+      <button
+        class="min-h-12 rounded-full border-0 bg-[#dde5de] px-6 py-3.5 font-semibold text-[#53635d] disabled:cursor-not-allowed"
+        type="button"
+        disabled
+        aria-describedby="upload-explanation"
+      >
+        Ajouter des photos
+      </button>
+      <small class="mt-3 block text-xs text-slate-600" id="upload-explanation">
+        Envoi indisponible dans cet aperçu
+      </small>
+    </section>
+    <section
+      class="mt-6 grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4"
+      aria-label="État de la collection"
+    >
+      <div class="flex flex-row items-center justify-between gap-2 rounded-xl bg-[#eaece5] p-5 md:flex-col md:items-start">
+        <span class="text-xs text-slate-600">Collection</span>
+        <strong class="text-base font-semibold">Aucune photo</strong>
+      </div>
+      <div class="flex flex-row items-center justify-between gap-2 rounded-xl bg-[#eaece5] p-5 md:flex-col md:items-start">
+        <span class="text-xs text-slate-600">Stockage</span>
+        <strong class="text-base font-semibold">Non connecté</strong>
+      </div>
+      <div class="flex flex-row items-center justify-between gap-2 rounded-xl bg-[#eaece5] p-5 md:flex-col md:items-start">
+        <span class="text-xs text-slate-600">Accès privé</span>
+        <strong class="text-base font-semibold">À configurer</strong>
+      </div>
+    </section>
+  </main>
+  <footer class="p-5 text-center text-xs text-slate-600">
+    Dayframe · Une fenêtre sur votre quotidien.
+  </footer>
+</BaseLayout>

@@ -1,0 +1,53 @@
+name: Deploy to Cloudflare
+run-name: Deploy production from ${{ github.ref_name }}
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: production
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: https://dayframe-fixture-production.cody-zuschlag.workers.dev
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Require verified Workers Free plan
+        env:
+          FREE_PLAN_CONFIRMED: ${{ vars.CLOUDFLARE_FREE_PLAN_CONFIRMED }}
+        run: |
+          if [ "$FREE_PLAN_CONFIRMED" != "true" ]; then
+            echo 'Verify Workers Free in the target account and set the production environment variable CLOUDFLARE_FREE_PLAN_CONFIRMED=true.'
+            exit 1
+          fi
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install test browsers
+        run: pnpm exec playwright install --with-deps chromium firefox webkit
+      - name: Verify checks and production build
+        run: pnpm verify
+      - name: Upload verified build to Cloudflare
+        run: pnpm exec wrangler deploy --env production
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Verify live deployment
+        run: pnpm smoke:production
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: deployment-browser-failures
+          path: test-results/
+          retention-days: 7

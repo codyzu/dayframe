@@ -1,0 +1,10 @@
+node_modules
+dist
+.astro
+.wrangler
+playwright-report
+test-results
+package-lock.json
+pnpm-lock.yaml
+.vscode
+docs/technical-specification.md

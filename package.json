@@ -1,0 +1,48 @@
+{
+  "name": "dayframe",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.16.0"
+  },
+  "packageManager": "pnpm@10.23.0",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "wrangler dev --local --ip 127.0.0.1",
+    "check": "astro check && tsc --project tsconfig.worker.json",
+    "lint": "astro sync && xo",
+    "format": "prettier --write .",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "verify": "pnpm check && pnpm lint && pnpm test && pnpm build && pnpm test:e2e",
+    "deploy": "node scripts/deploy.mjs",
+    "lint:fix": "astro sync && xo --fix",
+    "smoke:production": "node scripts/smoke-production.mjs"
+  },
+  "dependencies": {
+    "@fontsource/manrope": "5.3.0",
+    "astro": "7.4.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "@iconify-json/meteocons": "1.2.4",
+    "@playwright/test": "1.64.1",
+    "@types/node": "24.19.2",
+    "@typescript-eslint/parser": "8.71.2",
+    "@unocss/astro": "66.11.0",
+    "@unocss/preset-wind4": "66.11.0",
+    "@unocss/reset": "66.11.0",
+    "astro-eslint-parser": "3.2.0",
+    "eslint-plugin-astro": "3.2.1",
+    "prettier": "3.9.10",
+    "prettier-plugin-astro": "1.1.1",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.2",
+    "unocss": "66.11.0",
+    "vitest": "5.0.5",
+    "wrangler": "4.151.0",
+    "xo": "5.0.1"
+  }
+}

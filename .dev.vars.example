@@ -1,0 +1,1 @@
+# M1 needs no secrets. Future local Worker secrets belong in .dev.vars.
