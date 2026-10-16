@@ -5,6 +5,8 @@
 **Target:** Single-household personal deployment; public GitHub repository  
 **Primary stack:** Astro, TypeScript, UnoCSS, Cloudflare Workers
 
+**Project foundation:** This project builds on [Wes Bos's Photo Frame Dashboard](https://github.com/wesbos/photo-frame-dashboard), including its dashboard example and Android photo-frame research. Implementation agents must review the relevant upstream work and record reuse or deviations as described in the [companion implementation plan](implementation-plan.md). Upstream hardware findings must be verified against our actual Dragon Touch Classic 10.
+
 ## 1. Overview
 
 Family Dashboard is a browser-based household display designed for a repurposed Android digital photo frame. It combines useful morning weather information, family photos, and eventually home automation controls in an attractive, time-aware interface. The same site should work on the frame, a computer, and a phone.
@@ -489,4 +491,4 @@ Record significant design changes as architecture decision records. Keep an impl
 
 ---
 
-**Next document:** `docs/implementation-plan.md`, prepared with Codex after repository initialization, with concrete dependency versions, security decisions, tasks, and milestones. Begin with M1 rather than attempting all milestones in one pass.
+**Companion document:** [Implementation plan](implementation-plan.md), covering upstream provenance, security decision gates, tasks, and milestones. Begin with M1 rather than attempting all milestones in one pass; pin and record concrete dependency versions at the M1 tooling gate.
