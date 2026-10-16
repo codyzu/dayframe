@@ -1,6 +1,6 @@
 # Classic 10 backup and recovery plan
 
-**PLANNED, not executed.** This runbook requires a separately authorized H1/H2 session. No block paths, capacities or partition offsets have yet been measured on our Classic 10. All examples fail until placeholders are replaced from that unit's evidence. No Android output files, `dd of=`, remounts, filesystem freezes, reboots or recovery payloads are part of capture.
+**H2 PLANNED, not executed.** [H1 read-only discovery](h1-discovery.md) measured the Classic 10 storage map; exact partition starts/ranges remain in ignored private diagnostics. Whole-user-area and hardware boot-area sizes are recorded in the H1 handoff. H2 still requires separate read-capture authorization, review of that map, and an encrypted private destination. Capture examples remain unconfigured until placeholders are replaced from that unit's reviewed evidence. No Android output files, `dd of=`, remounts, filesystem freezes, reboots or recovery payloads are part of capture.
 
 The [Modern10 report](https://github.com/wesbos/photo-frame-dashboard/blob/e97c50ba459c49ea8237259f69b95cd28054b628/docs/dragontouch-modern10-charm.md) establishes an ADB live-capture precedent, not our storage map. Our strategy independently reads the entire identified eMMC user area, including `/data`, and each accessible hardware boot area. The Rockchip `biuframe-setup.sh backup` captures a device-specific prefix and is unsuitable here. `scripts/backup-flash.py` uses Rockchip loader commands; do not run it on this Allwinner candidate.
 
@@ -32,6 +32,8 @@ adb -s "$FRAME_ADDR" shell 'command -v blockdev; command -v dd; command -v busyb
 Record unavailable boot regions, unreadable sectors and configuration metadata as coverage gaps. Do not call the backup complete if required regions are unresolved. A full user-area image plus readable hardware boot areas still does not copy SoC fuses, RPMB secrets, controller firmware or every eMMC configuration register.
 
 ## Binary transport preflight (PLANNED)
+
+H1 passed a generated six-byte `exec-out` stream, not a block read. Its stock `head` help advertises only `-n`; BusyBox lists `head`/`dd`/`cat`. Verify actual options and clean independent block reads before using the examples below. The old shell can report host exit zero despite a command error, so inspect content and exact lengths.
 
 Use `adb exec-out` (no PTY); never `adb shell -t` for binary data. Review installed host platform-tools version (`adb version`). Confirm this old adbd's transport does not mix text diagnostics into image bytes. On the actual selected user-area path, compare two small reads using existing tools, keeping stderr separate on the Mac:
 

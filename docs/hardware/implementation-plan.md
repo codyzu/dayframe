@@ -1,6 +1,6 @@
 # M6 hardware stages and acceptance gates
 
-**Documentation prepared 16 October 2026; no stage executed in this session.** H1 has partial evidence supplied by the owner. H2–H8 remain PLANNED; H8 also waits for delivery. This breakdown preserves the [main M1–M7 roadmap](../implementation-plan.md). M4 production acceptance and M5 display behavior remain dependencies for full hardware acceptance; early public-fixture browser experiments can be evaluated separately.
+**Updated 16 October 2026:** [H1 complete](h1-discovery.md); exact storage checks passed, private map recorded and owner visual ports/power/buttons inventory supplied. H2–H8 remain PLANNED; H8 also waits for delivery. This breakdown preserves the [main M1–M7 roadmap](../implementation-plan.md). M4 production acceptance and M5 display behavior remain dependencies for full hardware acceptance; early public-fixture browser experiments can be evaluated separately.
 
 For every future stage: obtain authorization for the specific device actions, recheck identity/upstream changes, record date, firmware, browser/app version, Dayframe revision, actions and sanitized results. An acceptance checkbox requires actual evidence. Raw evidence stays private. Stop at the first unexplained identity, size, checksum or behavior mismatch; do not run a broader setup script as remediation.
 
@@ -11,7 +11,7 @@ For every future stage: obtain authorization for the specific device actions, re
 - **Expected result:** A sanitized inventory and private exact storage map; no changed Android configuration.
 - **Verification:** Confirm model `Classic10` and supplied firmware; reconcile sysfs sizes, mount sources and by-name links. Identify tools available for clean binary reads.
 - **Risks/stop:** Root ADB exposure, wrong DHCP target, unique data in outputs. Stop if not the identified unit, non-eMMC storage, unknown map or unclean binary transport.
-- **Acceptance:** All H2 region paths/sizes derivable from evidence, known omissions recorded. Current status: identity/RAM/display/root partly confirmed; storage/WebView/recovery details pending.
+- **Acceptance:** All H2 region paths/sizes derivable from evidence, known omissions recorded. Current status: identity/RAM/display/root/WebView confirmed; all H2 candidate paths/sizes derived and reconciled privately. Generated binary transport passed; block-reader preflight remains H2. Owner visual physical inventory recorded; recovery/USB data unverified. H1 accepted with these omissions explicit. See [execution evidence](h1-discovery.md).
 
 ## H2 — Firmware backup
 
@@ -96,10 +96,10 @@ Basic exposure assessment starts at H1; H7 is not permission to leave root ADB b
 
 | Question                                                            | Exact next evidence / stage                                                                                                                                                          |
 | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Actual eMMC device, exact size and partition starts?                | H1 `cat /proc/partitions`, `/proc/mounts`, sysfs `size`/`start`, resolved `/dev/block` symlinks; [full command set](backup-and-recovery.md#preflight-and-storage-map-planned)        |
-| Boot areas, configuration, RPMB, device-specific partitions?        | H1 sysfs/block inventory and private partition-map review; record exclusions explicitly                                                                                              |
+| Actual eMMC device, exact size and partition starts?                | H1 completed: sysfs, blockdev and proc agree; private exact map plus mount/alias/bounds checks; [full command set](backup-and-recovery.md#preflight-and-storage-map-planned)         |
+| Boot areas, configuration, RPMB, device-specific partitions?        | H1 completed: two 4 MiB hardware boot areas; no RPMB node exposed; private map reviewed, configuration/fuses/RPMB exclusions recorded                                                |
 | Clean binary ADB stream and usable >2 GiB reader?                   | H2 small independent clean-read tests and exact lengths before full capture; do not infer stock dd behavior                                                                          |
-| WebView and vendor packages/version/permissions?                    | H1 `dumpsys package com.android.webview`, package list and exact discovered home/updater IDs                                                                                         |
+| WebView and vendor packages/version/permissions?                    | H1 completed: WebView 44.0.2403.119; VPhoto 2.1.3.71 and Fota 1.0; both privileged with install/reboot grants                                                                        |
 | USB data/recovery/FEL/correct restore tooling?                      | Port inspection and approved Mac enumeration first; offline image research after H2. Actual entry/boot/write experiments require separate review; no Classic recovery route verified |
 | Firefox authentic signer / actual rendering / 48-hour stability?    | API 23 signature check before H3, then H3/H4 actual-device matrix. Host hash/manifest/ABI already verified                                                                           |
 | Dayframe shortcut fullscreen and current launcher compatibility?    | H5 manifest inspection/proposal and actual touch trial; no Dayframe web manifest found in current tree                                                                               |
@@ -108,4 +108,4 @@ Basic exposure assessment starts at H1; H7 is not permission to leave root ADB b
 | Can network ADB be safely restricted/disabled persistently?         | H7 router capability, denied/allowed tests, independent maintenance path and later authorized restart                                                                                |
 | Our Modern10 RAM, storage and firmware?                             | H8 after delivery; do not infer from upstream or Classic                                                                                                                             |
 
-The next execution slice is H1 completion only. H2 is the highest-priority follow-on, reviewed from H1's exact map. Documentation readiness does not mark M6 complete.
+H1 is complete, including owner visual ports/power/buttons confirmation. H2 is the highest-priority follow-on, requiring separate read-capture authorization, the reviewed private exact map and a private encrypted destination. Documentation readiness does not mark M6 complete.

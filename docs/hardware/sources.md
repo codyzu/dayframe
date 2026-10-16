@@ -42,3 +42,7 @@ Reviewed issue and pull-request listings plus the following relevant discussions
 ## Documentation validation
 
 Local Markdown file links checked, shell blocks parsed with `bash -n`, and the Python capture example compiled. A host-only synthetic ADB stand-in exercised the documented capture code: complete stream accepted; short, oversized, 64 KiB filler, nonempty stderr and nonzero-reader cases rejected. No real ADB was invoked. These checks validate the example mechanics, not Classic 10 transport, storage coverage, filesystem consistency or recovery. `git diff --check` passed. Application tests were not run for this documentation-only change.
+
+## H1 execution follow-up — 16 October 2026
+
+The [H1 execution record](h1-discovery.md) supersedes the initial planning-only device status. Read-only ADB discovery was performed on the owner-confirmed Classic 10; raw outputs and the reconciled exact map remain private. Refreshed upstream main with `git ls-remote`: still `e97c50ba459c49ea8237259f69b95cd28054b628`. Re-read device index and complete Modern10 report/follow-up from that checkout; refreshed current issue/PR lists and #143/#138/#152. #147 browser fetch still failed. No upstream license file found or code/assets copied. Adopted discovery/verification principles; used only locally measured Classic paths/sizes and independently authored host reconciliation. Generated transport bytes matched; no block-content reads or backup acceptance claimed.
