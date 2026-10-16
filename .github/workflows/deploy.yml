@@ -41,10 +41,13 @@ jobs:
       - name: Verify checks and production build
         run: pnpm verify
       - name: Upload verified build to Cloudflare
-        run: pnpm exec wrangler deploy --env production
+        run: |
+          node scripts/prepare-production.mjs
+          pnpm exec wrangler deploy --config private/wrangler.production.jsonc
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          DAYFRAME_PHOTOS_NAMESPACE_ID: ${{ secrets.DAYFRAME_PHOTOS_NAMESPACE_ID }}
       - name: Verify live deployment
         run: pnpm smoke:production
       - uses: actions/upload-artifact@v4

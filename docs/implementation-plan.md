@@ -1,6 +1,6 @@
 # Dayframe: Implementation Plan
 
-**Status:** M1–M2 complete; M3 implemented with local acceptance — production photo activation pending; M4 onward pending
+**Status:** M1–M2 complete; M3 implemented and production admin activated for one administrator; M4 onward pending
 **Date:** 16 October 2026  
 **Requirements:** [Family Dashboard: Technical Specification](technical-specification.md)  
 **Primary upstream:** [Wes Bos — photo-frame-dashboard](https://github.com/wesbos/photo-frame-dashboard)
@@ -34,7 +34,7 @@ Review upstream first, then decide deliberately. Dayframe keeps Astro/TypeScript
 
 ## 2. Delivery approach
 
-Deliver one demonstrable slice at a time. Keep task IDs in commits/PRs and update this document with validation evidence. M1 is delivered with local and Workers Free acceptance evidence below. M2 is publicly deployed (see its deployment follow-up below). M3 has local acceptance evidence below; private photo production activation remains pending. M4 onward are pending. A task is done only when its acceptance evidence exists; a mock or desktop-only test must be labeled as such.
+Deliver one demonstrable slice at a time. Keep task IDs in commits/PRs and update this document with validation evidence. M1 is delivered with local and Workers Free acceptance evidence below. M2 is publicly deployed (see its deployment follow-up below). M3 has local acceptance evidence and production authentication/KV activation below; household upload/delete testing and second-admin setup remain pending. M4 onward are pending. A task is done only when its acceptance evidence exists; a mock or desktop-only test must be labeled as such.
 
 ```text
 M1 foundation → M2 weather → M3 protected photos → M4 administration → M5 display behavior
@@ -165,7 +165,7 @@ For each milestone record: completed task IDs, checks run and results, screensho
 | Credential revocation bounds and private offline cache policy | M4–M5        | Explicit propagation/retention guarantees and tests.                                |
 | Classic 10 compatibility, kiosk, brightness, startup          | Discovery/M6 | Observations on the actual unit and a recovery path.                                |
 
-**Next implementation slice:** activate M3 photos with private production configuration and household identity verification, then M4 administration/provisioning. This document authorizes no hardware changes or paid infrastructure.
+**Next implementation slice:** owner production upload/delete testing, then M4 administration/provisioning. This document authorizes no hardware changes or paid infrastructure.
 
 ## M1 implementation record — 16 October 2026
 
@@ -277,3 +277,11 @@ Visual QA: inspected the [mobile admin](evidence/m3/admin-mobile.png), [1280×80
 Upstream review refreshed at `e97c50ba459c49ea8237259f69b95cd28054b628`: README, `dashboard/js/slideshow.js`, `dashboard/js/views/photos.js`, `dashboard/css/views/photos.css`, photo fixtures in `dashboard/js/data.js`, and image sourcing in `dashboard/js/app.js`. Adopted fullscreen/fit/shuffle concepts, independently authored all implementation, and deferred collage/favorites/captions. No upstream license file found; no upstream source/assets copied. New package license notices ship under `public/licenses/` and are identified in [third-party notices](../THIRD_PARTY_NOTICES.md).
 
 Activation and remaining limits: [photo operations](photos.md) documents the dedicated KV binding, explicit Free-plan verification, private Access configuration and both household identities, production smoke changes, measured CPU acceptance, and optional display prototype. These are not provisioned by this local change. M4 supplies final provisioning/recovery/IP restrictions and M6 verifies Classic 10; desktop engines and iPhone emulation do not establish physical compatibility. HEIC depends on browser decoding and provides JPEG-export recovery; calibrate perceptual similarity against real household examples before relying on it. No automatic paid fallback exists.
+
+### M3 production activation — 16 October 2026
+
+Activated one owner-approved administrator on Workers Free plus Zero Trust Free. The owner completed the Free signup payment/terms step personally; no paid plan/add-on was selected. Provisioned a dedicated KV namespace and installed the Access issuer/audience, private admin allowlist and activation toggle as Worker secrets. Access protects `/admin/*` using an exact-email allow policy, one-hour sessions and HttpOnly hostname-scoped cookies. The display credential remains unprovisioned.
+
+Confirmed anonymous catalog/image/session requests return 401, headerless upload returns 403, admin redirects to Access, and public dashboard/health still return 200. The actual approved Cloudflare identity signed in successfully: the Worker verified the token, enabled uploads, and read the empty production KV catalog. No private photo was uploaded or deleted during this activation; those manual product checks remain for the owner.
+
+Automatic deployment now generates ignored production config from the pinned Wrangler parser and GitHub’s private namespace-ID secret, preserving `PHOTOS` on every upload without committing identifiers. Missing/invalid IDs stop deployment. Runtime identity settings remain Worker secrets, outside verification/build steps. Updated production smoke expectations and documented recovery in [photo operations](photos.md). Local `pnpm verify` passed: 50 unit/integration tests, 85 browser checks, 3 existing skips, types/lint/build (two existing complexity warnings). Production smoke passed all ten checks. No hardware changes; final display provisioning/IP restrictions and actual-device/CPU measurements remain M4/M6 work.

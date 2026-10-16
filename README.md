@@ -13,7 +13,7 @@ pnpm verify
 pnpm preview
 ```
 
-Open `http://127.0.0.1:8787`; the admin shell is `/admin/photos`, and `/api/health` checks the Worker. `pnpm dev` provides Astro-only hot reload. Weather loads directly from Open-Meteo using public example coordinates; photo APIs remain disabled until private Access/KV configuration is supplied; config APIs remain pending. See [photo operations](docs/photos.md) for local synthetic testing and production activation. No household data or credentials are required.
+Open `http://127.0.0.1:8787`; the admin shell is `/admin/photos`, and `/api/health` checks the Worker. `pnpm dev` provides Astro-only hot reload. Weather loads directly from Open-Meteo using public example coordinates; the default local preview keeps photo APIs disabled; production photo administration is activated behind Cloudflare Access with KV storage. Config APIs remain pending. See [photo operations](docs/photos.md) for local synthetic testing and production activation. No household data or credentials are required.
 
 Styling uses UnoCSS's Wind4 preset and reset. Prefer utilities and small reusable shortcuts; custom CSS stays scoped, with only shared accessibility rules in global.css. Linting uses XO with its built-in Prettier support, following the existing Tetras, Les Mains de Sérénité, and Xen website conventions.
 

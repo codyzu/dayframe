@@ -12,7 +12,14 @@ if (process.env.CLOUDFLARE_FREE_PLAN_CONFIRMED !== 'true') {
 
 for (const args of [
   ['verify'],
-  ['exec', 'wrangler', 'deploy', '--env', 'production'],
+  ['exec', 'node', 'scripts/prepare-production.mjs'],
+  [
+    'exec',
+    'wrangler',
+    'deploy',
+    '--config',
+    'private/wrangler.production.jsonc',
+  ],
 ]) {
   const result = spawnSync('pnpm', args, {
     stdio: 'inherit',
