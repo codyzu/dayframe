@@ -23,18 +23,25 @@ export default defineConfig({
         async meteocons() {
           const {default: collection} =
             await import('@iconify-json/meteocons/icons.json');
-          // Embedded SVG animations ignore CSS reduced-motion rules. Strip them at build time.
-          for (const icon of Object.values(collection.icons)) {
-            icon.body = icon.body.replaceAll(
-              /<animate(?:Transform|Motion)?\b[^>]*(?:\/>|>[\s\S]*?<\/animate(?:Transform|Motion)?>)/gv,
-              '',
-            );
-            // Rain paths start transparent and rely on animation to become visible.
-            icon.body = icon.body.replaceAll(' opacity="0"', '');
-          }
-
           return collection;
         },
+      },
+      processor(css, {collection, svg}) {
+        if (collection !== 'meteocons') {
+          return;
+        }
+
+        // SVG image animations bypass page CSS. Bundle a separate still image
+        // for the weather component's reduced-motion media query.
+        const still = svg
+          .replaceAll(
+            /<animate(?:Transform|Motion)?\b[^>]*(?:\/>|>[\s\S]*?<\/animate(?:Transform|Motion)?>)/gv,
+            '',
+          )
+          // Rain paths start transparent and need to remain visible in the still.
+          .replaceAll(' opacity="0"', '');
+        css['--dayframe-static-icon'] =
+          `url("data:image/svg+xml,${encodeURIComponent(still)}")`;
       },
     }),
   ],

@@ -133,3 +133,39 @@ test('keyboard navigation and reduced motion', async ({page}) => {
     .evaluate((element) => getComputedStyle(element).backgroundImage);
   expect(decodeURIComponent(css)).not.toMatch(/<animate/v);
 });
+
+test('weather icons switch between animated and static images with motion preference', async ({
+  page,
+}) => {
+  await page.emulateMedia({reducedMotion: 'no-preference'});
+  await page.goto('/');
+  await expect(page.locator('[data-current-icon]')).toHaveClass(
+    /i-meteocons-partly-cloudy-day-fill/v,
+  );
+  const icons = page.locator('[data-weather] [class*="i-meteocons-"]');
+  await expect(
+    page.locator('[data-chart] [class*="i-meteocons-"]').first(),
+  ).toBeVisible();
+  const images = async () =>
+    icons.evaluateAll((elements) =>
+      elements.map((element) =>
+        decodeURIComponent(getComputedStyle(element).backgroundImage),
+      ),
+    );
+  const animated = await images();
+  expect(animated.length).toBeGreaterThan(1);
+  for (const image of animated) {
+    expect(image).toContain('<svg');
+    expect(image).toMatch(/<animate/v);
+  }
+
+  await page.emulateMedia({reducedMotion: 'reduce'});
+  for (const image of await images()) {
+    expect(image).toContain('<svg');
+    expect(image).not.toMatch(/<animate/v);
+    expect(image).not.toContain(' opacity="0"');
+  }
+
+  await page.emulateMedia({reducedMotion: 'no-preference'});
+  expect(await images()).toEqual(animated);
+});

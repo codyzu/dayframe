@@ -23,7 +23,9 @@ Twelve hourly samples start with the current hour. The temperature is a yellow l
 
 A forecast risk begins at **50% probability or 0.1 mm** in an hourly sample. Current precipitation uses the current code/amount, separately from the forecast probability. Snow, freezing precipitation and storms get specific current wording. Future advice names the first risk hour; a low-risk statement applies only to the displayed period, never the entire day. Short/missing forecast coverage has no dry-weather claim. These thresholds are product heuristics, not official alerts. No AI service is used.
 
-`conditions.ts` separates WMO codes, semantic conditions, French labels, and literal day/night Meteocons classes. All 29 specification codes (including 97), plus missing/unknown fallback, are tested against the installed icon collection. UnoCSS explicitly scans the browser TypeScript source. Existing build-time SVG animation removal remains in effect.
+`conditions.ts` separates WMO codes, semantic conditions, French labels, and literal day/night Meteocons classes. All 29 specification codes (including 97), plus missing/unknown fallback, are tested against the installed icon collection. UnoCSS explicitly scans the browser TypeScript source. Fill icons animate by default. The build also bundles a static SVG for each used icon, removing SVG animation elements and revealing initially transparent rain paths. The weather component selects these still images with `prefers-reduced-motion: reduce`, including when the preference changes while the page is open. This covers current and hourly icons without JavaScript or external requests. Actual-frame animation performance remains unverified pending M6.
+
+When upgrading an already-running dev server from the original static-only config, restart it (`pnpm exec astro dev stop`, then `pnpm run dev`). The original config mutated the imported icon collection in memory; hot reloading the config or refreshing the browser cannot restore animation elements in that cached collection. A fresh process loads the unmodified SVGs.
 
 ## Deterministic development
 
