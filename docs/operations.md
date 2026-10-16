@@ -57,7 +57,7 @@ M1 deployed on 16 October 2026 to [the fixture preview](https://dayframe-fixture
 
 1. Open [Actions → Deploy to Cloudflare](https://github.com/codyzu/dayframe/actions/workflows/deploy.yml).
 2. Choose **Run workflow**, select **main**, then start it.
-3. If the production environment requires review, approve the pending **production** deployment with **Review deployments**. Self-review must remain allowed for this single-maintainer repository.
+3. Approve the pending **production** deployment with **Review deployments**. The environment requires codyzu’s review and permits self-review for this single-maintainer repository.
 4. The workflow verifies the Free-plan assertion, installs the lockfile and test browsers, runs `pnpm verify`, uploads with Wrangler, then runs `pnpm smoke:production` against the public URL. Deployment details link to the site.
 
 Checks run automatically on every push and PR; deployments remain manual. The smoke check verifies the production stage, the exact deployed home HTML and disabled private endpoints. It uses public fixtures only. Workflow job timeouts are 20 minutes; newer pushes cancel superseded check runs, while production deployments are serialized.
@@ -65,3 +65,5 @@ Checks run automatically on every push and PR; deployments remain manual. The sm
 The production environment is configured with a main-only branch policy, codyzu as required reviewer, self-review allowed, the verified Free-plan flag, and the Cloudflare account ID secret. The dedicated Cloudflare API token is installed as CLOUDFLARE_API_TOKEN in that environment. No personal Wrangler OAuth credential may be copied into GitHub. The dedicated token uses Individual Workers Editor scoped only to dayframe-fixture-production, with a 90-day lifetime (the Cloudflare review page displays 15 January 2027 as expiry). Revoke or replace it in Cloudflare → Manage account → Account API tokens, then replace the GitHub production environment secret. Do not broaden its permissions without reviewing the exact missing permission.
 
 The production smoke check allows a short Cloudflare propagation window (up to 12 attempts, five seconds apart, with a 15-second timeout per request). It still requires the home HTML SHA-256 to match the verified build and checks API status, JSON, and cache headers. A persistent mismatch fails the deployment job.
+
+Initial GitHub deployment verification [passed on 16 October 2026](https://github.com/codyzu/dayframe/actions/runs/38877356532), including the production review gate, full checks, upload with the single-Worker token, and live smoke checks.
