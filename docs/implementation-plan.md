@@ -233,3 +233,11 @@ Owner requested animated Fill icons by default, with static images for reduced m
 Re-inspected upstream checkout `e97c50ba459c49ea8237259f69b95cd28054b628`: `dashboard/js/app.js` (`App.icon`), `dashboard/js/views/home.js` (current/hourly icons), and `dashboard/css/views/home.css` (weather sizing). Upstream uses inline stroked SVGs; Dayframe deliberately retains its locally bundled Meteocons Fill icons and independent reduced-motion implementation. The revision has no license file; no upstream code or assets copied.
 
 Validation: Astro/TypeScript checks, XO/Prettier lint, all 32 unit tests, production build, and all 36 Playwright checks passed across Chromium, Firefox, WebKit, and iPhone emulation. The new browser case checks animated current/hourly SVGs, animation-free still images with visible rain paths under reduced motion, and switching back without reloading. Physical Classic 10 animation performance remains an M6 check; this change is local and not deployed.
+
+## M1.5 automatic deployment follow-up — 16 October 2026
+
+At the owner's request, `Deploy to Cloudflare` now triggers on pushes to main, retaining manual dispatch for retries. Each deployment independently runs the Free-plan assertion and full `pnpm verify` before Wrangler upload, then public smoke checks. Production deployments remain serialized; credentials remain scoped to the upload step.
+
+Removed the GitHub production environment's required reviewer and wait timer through the repository API. Read-back confirmed only the branch policy remains, restricted to the `main` branch; `CLOUDFLARE_FREE_PLAN_CONFIRMED=true` and both deployment secret names remain configured. The assertion is a standing human confirmation, not a live billing lookup. No Cloudflare billing, services, token scope, dashboard code, or hardware changed. This supersedes the manual-deployment instructions in the historical M1 record above.
+
+Local validation passed: Astro/TypeScript, XO/Prettier, 32 unit tests, production build, and 36 browser tests. The browser test server required loopback access outside the filesystem sandbox; rerunning that stage with the required access passed. Workflow/docs formatting and `git diff --check` passed. Hosted push/deployment evidence will be recorded after publication.

@@ -24,4 +24,4 @@ Styling uses UnoCSS's Wind4 preset and reset. Prefer utilities and small reusabl
 - [Asset rights and attribution](THIRD_PARTY_NOTICES.md)
 - [Contributor instructions](AGENTS.md)
 
-[Public M1 preview](https://dayframe-fixture-production.cody-zuschlag.workers.dev) is deployed on verified Workers Free. No paid infrastructure was enabled. The [GitHub repository](https://github.com/codyzu/dayframe) runs checks on pushes and pull requests. Manual GitHub deployment setup is documented in [operations](docs/operations.md).
+[Public preview](https://dayframe-fixture-production.cody-zuschlag.workers.dev) runs on verified Workers Free. No paid infrastructure was enabled. The [GitHub repository](https://github.com/codyzu/dayframe) runs checks on pushes and pull requests; pushes to main also build, verify, and deploy automatically. GitHub deployment setup is documented in [operations](docs/operations.md).

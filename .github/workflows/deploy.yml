@@ -1,6 +1,8 @@
 name: Deploy to Cloudflare
 run-name: Deploy production from ${{ github.ref_name }}
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
