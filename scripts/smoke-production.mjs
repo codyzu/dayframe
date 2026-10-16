@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import {setTimeout as delay} from 'node:timers/promises';
 
 const base = 'https://dayframe-fixture-production.cody-zuschlag.workers.dev';
 const routes = [
@@ -16,38 +18,56 @@ const expectedHtml = await readFile(
   new URL('../dist/index.html', import.meta.url),
   'utf8',
 );
+const hash = (value) => createHash('sha256').update(value).digest('hex');
 await Promise.all(
   routes.map(async ({path, method, status}) => {
-    const response = await fetch(base + path, {
-      method,
-      signal: AbortSignal.timeout(15_000),
-    });
-    assert.equal(response.status, status, `${method} ${path}`);
-    const body = await response.text();
-    if (path.startsWith('/api/')) {
-      assert.equal(response.headers.get('cache-control'), 'no-store');
-      assert.match(
-        response.headers.get('content-type') ?? '',
-        /application\/json/v,
-      );
-    }
+    // Cloudflare can serve the previous version briefly after an upload succeeds.
+    /* eslint-disable no-await-in-loop -- Retry sequentially to avoid hammering the public endpoint. */
+    for (let attempt = 1; ; attempt++) {
+      try {
+        const response = await fetch(base + path, {
+          method,
+          signal: AbortSignal.timeout(15_000),
+        });
+        assert.equal(response.status, status, `${method} ${path}`);
+        const body = await response.text();
+        if (path.startsWith('/api/')) {
+          assert.equal(response.headers.get('cache-control'), 'no-store');
+          assert.match(
+            response.headers.get('content-type') ?? '',
+            /application\/json/v,
+          );
+        }
 
-    if (path === '/api/health' && method === 'GET') {
-      assert.deepEqual(JSON.parse(body), {
-        ok: true,
-        service: 'dayframe',
-        stage: 'production',
-      });
-    }
+        if (path === '/api/health' && method === 'GET') {
+          assert.deepEqual(JSON.parse(body), {
+            ok: true,
+            service: 'dayframe',
+            stage: 'production',
+          });
+        }
 
-    if (path === '/') {
-      assert.equal(
-        body,
-        expectedHtml,
-        'Live HTML must match the verified build',
-      );
-    }
+        if (path === '/') {
+          assert.equal(
+            hash(body),
+            hash(expectedHtml),
+            'Live HTML hash must match the verified build',
+          );
+        }
 
-    console.log(`${method} ${path}: ${response.status}`);
+        console.log(`${method} ${path}: ${response.status}`);
+        return;
+      } catch (error) {
+        if (attempt === 12) {
+          throw error;
+        }
+
+        console.log(
+          `${method} ${path}: retry ${attempt}/12 after ${error.message}`,
+        );
+        await delay(5000);
+      }
+    }
+    /* eslint-enable no-await-in-loop */
   }),
 );
