@@ -1,4 +1,6 @@
-export type Env = {
+import {photoApi, type PhotoEnv} from './photo-api.ts';
+
+export type Env = PhotoEnv & {
   ASSETS: {fetch(request: Request): Promise<Response>};
   DEPLOYMENT_STAGE: string;
 };
@@ -44,6 +46,15 @@ const worker = {
       return request.method === 'HEAD'
         ? new Response(null, response)
         : response;
+    }
+
+    if (
+      path === '/api/photos' ||
+      path === '/api/session' ||
+      path.startsWith('/api/photos/') ||
+      path.startsWith('/api/session/')
+    ) {
+      return photoApi(request, env);
     }
 
     // Never delegate API requests to static assets, including future private routes.

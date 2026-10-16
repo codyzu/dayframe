@@ -49,6 +49,14 @@ const config = [
       ],
     },
   },
+  // Retain broad browser compatibility instead of requiring Iterator helpers.
+  {
+    files: ['src/lib/photos/**/*.ts'],
+    rules: {
+      'unicorn/prefer-iterator-to-array': 'off',
+      'no-await-in-loop': 'off',
+    },
+  },
   {files: ['tests/**/*.ts'], rules: {'no-await-in-loop': 'off'}},
   {files: ['scripts/**/*.mjs'], rules: {'unicorn/no-process-exit': 'off'}},
   {files: ['astro.config.mjs'], rules: {'new-cap': 'off'}},

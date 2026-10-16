@@ -70,3 +70,7 @@ The production environment is configured with a main-only branch policy, no requ
 The production smoke check allows a short Cloudflare propagation window (up to 12 attempts, five seconds apart, with a 15-second timeout per request). It still requires the home HTML SHA-256 to match the verified build and checks API status, JSON, and cache headers. A persistent mismatch fails the deployment job.
 
 Initial GitHub deployment verification [passed on 16 October 2026](https://github.com/codyzu/dayframe/actions/runs/38877356532), including the production review gate, full checks, upload with the single-Worker token, and live smoke checks.
+
+## M3 photo activation
+
+The Worker now contains protected photo APIs, but the checked-in production configuration still has no photo binding, credentials, identity settings or activation flag. Photo routes remain disabled even if this code is deployed. Follow [photo operations](photos.md) and [ADR 0002](decisions/0002-protected-photos.md) before creating the private KV/Access configuration. The current CI verification uses synthetic identities and local KV; it does not establish real household Access login, production propagation or Workers CPU acceptance. The production smoke script intentionally still expects disabled photo routes.

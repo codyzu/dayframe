@@ -1,3 +1,4 @@
+import {mountSlideshow} from '../photos/slideshow.ts';
 import {mountWeather} from '../weather/view.ts';
 import {mountDensity} from './density.ts';
 import {
@@ -10,6 +11,8 @@ import {
 const dashboard = document.querySelector<HTMLElement>('[data-dashboard]');
 if (dashboard) {
   mountDensity(dashboard);
+  const photoRoot = dashboard.querySelector<HTMLElement>('[data-slideshow]');
+  const slideshow = photoRoot ? mountSlideshow(photoRoot) : undefined;
   const buttons =
     dashboard.querySelectorAll<HTMLButtonElement>('[data-mode-button]');
   const panels = dashboard.querySelectorAll<HTMLElement>('[data-mode-panel]');
@@ -19,6 +22,7 @@ if (dashboard) {
     }
 
     dashboard.dataset.mode = mode;
+    slideshow?.setActive(mode === 'photos' && !document.hidden);
     buttons.forEach((button) => {
       button.setAttribute(
         'aria-pressed',

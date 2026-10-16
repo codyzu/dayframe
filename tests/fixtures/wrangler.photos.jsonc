@@ -1,0 +1,6 @@
+{
+  "name": "dayframe-photo-test-only",
+  "main": "../../worker/index.ts",
+  "compatibility_date": "2026-10-16",
+  "kv_namespaces": [{"binding": "PHOTOS", "id": "synthetic-local-only"}],
+}

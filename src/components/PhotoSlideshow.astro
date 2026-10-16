@@ -1,0 +1,78 @@
+<section
+  data-mode-panel="photos"
+  data-slideshow
+  aria-labelledby="photos-title"
+  hidden
+  class="relative flex-1 grid place-items-center min-h-[500px] md:min-h-0 text-center"
+>
+  <div
+    data-photo-stage
+    data-fit="contain"
+    class="photo-stage fixed inset-0 bg-black"
+  ></div>
+  <div
+    data-photo-empty
+    class="surface relative z-1 mx-4 max-w-[650px] p-7 md:p-11"
+  >
+    <p class="eyebrow">Vos instants, au quotidien</p>
+    <h1 class="display-title" id="photos-title">
+      Une place pour vos souvenirs.
+    </h1>
+    <p class="mt-5 text-mist">
+      Votre collection privée s’affiche ici une fois cet écran connecté.
+    </p>
+  </div>
+  <div class="fixed top-4 right-4 z-2 flex items-center gap-3 rounded-xl bg-black/75 p-2 text-sm">
+    <label class="flex items-center gap-2">
+      Cadrage
+      <select
+        data-photo-fit
+        aria-label="Cadrage des photos"
+        class="min-h-11 rounded-lg bg-[#18333c] px-3 text-white"
+      >
+        <option value="contain">Photo entière</option>
+        <option value="cover">Remplir l’écran</option>
+      </select>
+    </label>
+    <button
+      data-photo-next
+      type="button"
+      class="min-h-11 rounded-lg border border-white/30 px-3"
+    >
+      Suivante
+    </button>
+  </div>
+  <p
+    data-photo-status
+    role="status"
+    class="fixed bottom-24 left-4 right-4 z-2 mx-auto w-fit max-w-[90vw] rounded-xl bg-black/80 px-4 py-2 text-sm"
+  ></p>
+</section>
+<style>
+  [data-photo-status]:empty {
+    display: none;
+  }
+  /* Images are created at runtime; component-owned styling keeps sizing local. */
+  .photo-stage :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    animation: photo-appear 350ms ease-out;
+  }
+  .photo-stage[data-fit='cover'] :global(img) {
+    object-fit: cover;
+  }
+  @keyframes photo-appear {
+    from {
+      opacity: 0.35;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .photo-stage :global(img) {
+      animation: none;
+    }
+  }
+</style>
