@@ -281,6 +281,19 @@ Routes are proposals, not immutable contracts. Validate content type, encoded si
 - **Administrator:** Two independent identities, authorized for photos/settings management.
 - **Display:** Read-only access to the approved photos and display configuration, with a revocable credential.
 
+### Dashboard access and private data
+
+The dashboard HTML shell and static assets may be public. Anonymous visits show only public example defaults, weather and non-private placeholders. Photos (including thumbnails and catalog metadata), household settings and any future calendar entries must never be embedded in public HTML, prerendered output, static assets or client bundles. Load private content only through Worker-authorized endpoints; protecting `/api` is sufficient only while every private read and mutation passes through that boundary, including image delivery and any future calendar integration.
+
+| Visitor | Public dashboard shell | Private dashboard content | Administration |
+| --- | --- | --- | --- |
+| Approved, authenticated administrator on any network | Allowed | Allowed | Allowed |
+| Provisioned frame with a valid display credential on the approved home network | Allowed | Read-only, approved display data | Denied |
+| Display credential outside the approved home network | Allowed | Denied | Denied |
+| Anonymous visitor, including on the home network | Allowed | Denied | Denied |
+
+Administrators must be able to view the ordinary dashboard, including its private photos and future approved calendar content, remotely after signing in; access is not limited to administration pages. Home IPv4/IPv6 restrictions apply to display credentials, not authenticated administrators. A home IP alone never grants private access. The display cookie may remain scoped to `/api`; the public shell does not require a credential or home IP. Future private endpoints outside `/api` require equivalent server-side authorization. Private responses must not enter public/shared caches. API denial clears private content and shows a sign-in/provisioning state; existing bounded offline retention rules still apply.
+
 Cloudflare Access is an authentication candidate, but its suitability for two human users, free-tier limitations, and interaction with Worker routes should be validated before selection. Avoid implementing a password database unless necessary.
 
 **Security sequencing:** Admin authentication and authorization checks must be present before any private upload or photo endpoints are exposed on a public deployment. M4 later completes the broader security and device-provisioning workflows; it does not postpone basic protection until after M3.

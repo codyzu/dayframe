@@ -117,6 +117,10 @@ Complete this before publishing any private photo route:
 
 **Exit:** Test the admin/display/anonymous authorization matrix across all routes, CSRF/origin handling, secret exclusion, expired credentials, off-network access, and revoked credentials after the documented propagation window. Verify image authentication survives browser restarts; hardware confirmation remains M6.
 
+**Privacy boundary clarified, 17 October 2026:** Keep the dashboard shell public. Protect every private resource at the Worker, including photos, thumbnails/catalog metadata, household configuration and future calendar entries. Verify an authenticated admin can view private content on the ordinary dashboard off-network; a display needs both its credential and the approved home network; anonymous visitors receive only public defaults/placeholders even at home. Public HTML/assets must contain no private data. Dashboard-page gating and widening the `/api` display cookie are not required. See the specification's dashboard access matrix. Calendar implementation remains future work.
+
+**Activation scope clarified, 17 October 2026:** The owner deferred adding the second administrator. Proceed with production activation and live checks using the existing approved administrator; the second identity's independent production acceptance remains pending and must not block that activation slice. Verified home-network configuration, Free-plan validation and live authorization/provisioning checks remain required.
+
 ## 7. M5 — Scheduling and offline display
 
 1. Implement a pure mode resolver using the configured IANA timezone and local wall-clock schedule. Define half-open intervals, overnight ranges, DST gaps/repeated hours, and invalid-config fallback. Use injected time in tests.
