@@ -1,6 +1,6 @@
 # M6 hardware stages and acceptance gates
 
-**Updated 17 October 2026:** [H1 complete](h1-discovery.md); [H2 accepted](h2-backup.md) after full-region capture/readback, independent comparisons, final structure/file-data review and identity checks. The owner accepted an unencrypted external destination and a single retained copy after deletion of the verified Mac copy; no reformatting occurred. H3 installation/rendering passed and final physical exit/relaunch confirmation is pending; H4–H8 remain PLANNED, and H8 also waits for delivery. This breakdown preserves the [main M1–M7 roadmap](../implementation-plan.md). M4 production acceptance and M5 display behavior remain dependencies for full hardware acceptance; early public-fixture browser experiments can be evaluated separately.
+**Updated 17 October 2026:** [H1 complete](h1-discovery.md); [H2 accepted](h2-backup.md) after full-region capture/readback, independent comparisons, final structure/file-data review and identity checks. The owner accepted an unencrypted external destination and a single retained copy after deletion of the verified Mac copy; no reformatting occurred. H3 installation/rendering passed and physical exit/relaunch is unresolved (touch works, but owner cannot find Android Home/Back controls); H4–H8 remain PLANNED, and H8 also waits for delivery. This breakdown preserves the [main M1–M7 roadmap](../implementation-plan.md). M4 production acceptance and M5 display behavior remain dependencies for full hardware acceptance; early public-fixture browser experiments can be evaluated separately.
 
 For every future stage: obtain authorization for the specific device actions, recheck identity/upstream changes, record date, firmware, browser/app version, Dayframe revision, actions and sanitized results. An acceptance checkbox requires actual evidence. Raw evidence stays private. Stop at the first unexplained identity, size, checksum or behavior mismatch; do not run a broader setup script as remediation.
 
@@ -24,7 +24,7 @@ For every future stage: obtain authorization for the specific device actions, re
 
 ## H3 — Firefox installation
 
-**17 October preflight:** official APK hash/ZIP/manifest/ABI and API 23 signature checks passed; Classic identity, space and Firefox absence rechecked. Owner confirmed initial physical Home/Settings access. Standard install succeeded after allowing the slow transfer to finish; installed version, public HTTPS Dayframe rendering and synthetic WebP/API checks passed. Final physical touch/exit/relaunch confirmation is pending. [H3 execution record](h3-firefox.md); H3 is not accepted.
+**17 October preflight:** official APK hash/ZIP/manifest/ABI and API 23 signature checks passed; Classic identity, space and Firefox absence rechecked. Owner confirmed initial physical Home/Settings access. Standard install succeeded after allowing the slow transfer to finish; installed version, public HTTPS Dayframe rendering and synthetic WebP/API checks passed. Owner confirmed touch works but cannot find Android Home/Back controls; physical exit/relaunch remains unresolved. One owner-approved normal restart restored Wi-Fi; a target-specific host reconnect restored root ADB and Firefox remains installed. Stock Settings/About inspection found no visible app-list/Firefox-launch entry. A physical exit/relaunch route remains unresolved; leave stock Home accessible until a separately scoped maintenance solution is approved. [H3 execution record](h3-firefox.md); H3 is not accepted.
 
 - **Prerequisites:** H2 accepted, H3 installation authorization, trusted official APK with all host checks including signature, stock Settings/home exit available. M4 production acceptance required before private provisioning.
 - **Objective/actions:** [Download/check/install/open procedure](firefox-installation.md); install only Firefox 143.0.4 ARMv7, finish onboarding, open deployed Dayframe frame profile. Keep launcher, WebView and manufacturer packages unchanged. Use public/synthetic content first.
@@ -32,6 +32,17 @@ For every future stage: obtain authorization for the specific device actions, re
 - **Verification:** Installed package/version, TLS, engine/API features, clock/chart/icons/WebP/touch. Physically exit and manually relaunch. Provision only a read-only display credential when backend is ready.
 - **Risks/stop:** Old engine security, insufficient RAM, install/signature errors, unusable exit, TLS failure. Stop and preserve evidence; no unofficial APK, system trust-store change or automatic root-install fallback.
 - **Acceptance:** Usable initial rendering, exact browser identity and known UI limitations; undo/reprovisioning documented. Fullscreen/boot automation not required yet.
+
+### H3.1 — Physical maintenance and manual Firefox relaunch (OPEN)
+
+This is the follow-up needed to close H3, before H4 acceptance. The owner confirmed that stock Settings exposes only photo-frame settings, with no app list or Android Settings entry. Dayframe rendering/touch and installed Firefox are verified; the physical exit/relaunch gate is not.
+
+- [ ] Evaluate a minimal app-level navigation/maintenance solution that provides physical access to stock Home/Settings and a way to reopen Firefox. Reuse the H5/H6 research where relevant; record the selected source/license, compatibility, permissions and undo. A new native helper/shell requires an explicit scope decision and ADR under the existing native-app non-goal.
+- [ ] Prepare the exact proposed installation/configuration for review, then obtain authorization for those specific device actions. The H3 Firefox installation approval and the single recovery-restart approval do not authorize another package, launcher replacement, permission grant or system modification.
+- [ ] Demonstrate the complete round trip by touch: Dayframe in Firefox → stock Home/Settings → Firefox/Dayframe. Repeat to establish a practical maintenance route; ADB navigation or a restart is not a substitute.
+- [ ] Record the measured result and limitations in [H3 execution evidence](h3-firefox.md), then close H3 only when its acceptance gates pass.
+
+Keep stock Home available and the current Firefox profile intact during evaluation. No firmware/framework edits are part of this follow-up. Fullscreen, boot automation and extended stability remain H5/H6/H4 work respectively; this follow-up does not mark those stages complete.
 
 ## H4 — Firefox performance testing
 
