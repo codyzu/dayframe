@@ -1,6 +1,6 @@
 # ADR 0004: A standalone maintenance helper for H3.1
 
-**Status:** Proposed for device trial; host implementation prepared. Owner approval of this scope exception and the exact device actions below is pending.
+**Status:** Accepted for the limited H3.1 device trial on 17 October 2026. Owner explicitly approved the native-maintenance scope exception, exact APK installation/launch, normal UI overlay consent and physical round-trip tests. Physical acceptance remains pending.
 
 **Date:** 17 October 2026
 

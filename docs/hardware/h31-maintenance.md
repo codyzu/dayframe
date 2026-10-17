@@ -1,6 +1,6 @@
 # H3.1 — Physical maintenance and manual Firefox relaunch
 
-**17 October 2026: host implementation prepared; native scope/device approval and physical acceptance pending.** H3 remains incomplete. This runbook is a reviewable proposal, not authorization to execute its device commands.
+**17 October 2026: owner-approved trial installed; normal UI overlay permission granted by owner; physical acceptance pending.** H3 remains incomplete. The approval covers only the exact trial below.
 
 ## Scope and artifact
 
@@ -54,6 +54,14 @@ Prepared and inspected locally on 17 October 2026 using OpenJDK 26.0.1, official
 - APK: `hardware/maintenance/build/dayframe-maintenance-0.1.0.apk`, **12,631 bytes**, SHA-256 `8c16f18dbaa4a3f396234ab388d681b63a4544b279a3e023c359f3b5247462ac`.
 - Trial signing certificate SHA-256: `3d65500a884b71fa37bdee1ca5e0ad3e7470119c45563f62c9cc3c5eceb347d4`. Key/password stay private; neither is a production browser credential.
 
-No installation or permission change has been performed. No runtime, physical round-trip, boot or stability acceptance is inferred from compilation. Keep APKs, signing keys, raw ADB output and screenshots ignored/private. Only sanitized results go in source control.
+The initial host-only preparation performed no installation or permission change. The approved device execution below supersedes that status. No runtime, physical round-trip, boot or stability acceptance is inferred from compilation. Keep APKs, signing keys, raw ADB output and screenshots ignored/private. Only sanitized results go in source control.
 
 Additional host checks passed: Python build-script syntax, compiled API 23 DEX version 035 with lambda desugaring, permission/exported-component boundary inspection, local Markdown links, formatting and `git diff --check`. `pnpm lint` passed with the same two pre-existing photo complexity warnings. No web application behavior changed; browser/unit suites were not repeated for this native utility. Actual runtime, layout and touch checks require the approved device trial.
+
+## Approved device execution — 17 October 2026
+
+The owner answered **“Approve the helper trial”** to the explicit scope/APK/normal-UI-permission/physical-test request. Rechecked the exact Classic firmware/API/ABI/board/root identity and retained Firefox 143.0.4; helper package was absent. Confirmed the retained external H2 manifest and expected full user-area gzip artifact remain available. Recovery/restore limitations remain unchanged. Refreshed upstream main: still `e97c50ba459c49ea8237259f69b95cd28054b628`.
+
+Standard `adb install` succeeded without replacement or broad permission flags. Installed version/code are 0.1.0/1; private installed `base.apk` readback is exactly 12,631 bytes and matches the reviewed SHA-256 above. Before consent, the helper's overlay app-op reported “No operations.” Opened the helper, then the normal per-app Android overlay consent screen. Its initially empty content finished rendering and showed the correct app with permission off. The owner enabled the visible switch and reported **“Enabled”**; read-only app-op verification then reports `SYSTEM_ALERT_WINDOW: allow`.
+
+Performed the single approved host return to the helper menu after consent. This setup assistance is not physical round-trip evidence. The owner started the floating button and explicitly confirmed **“DF works from Firefox”**, verifying physical access back to maintenance. Full repeated Home/Settings round trips remain pending. No app-op grant command, accessibility setting, launcher replacement, reboot, system write, private provisioning or Firefox profile change was performed. Raw execution evidence stays ignored under `diagnostics/h31/`.

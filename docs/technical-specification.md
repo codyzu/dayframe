@@ -29,6 +29,8 @@ The project is developed publicly but initially serves one household. Anyone clo
 
 No multi-tenant hosting, public account registration, generalized plugin system, native Android/iOS app, full-resolution photo archival, advanced image editing, AI-generated forecasts, or complete home automation system in the initial release.
 
+**Approved maintenance exception, 17 October 2026:** [ADR 0004](decisions/0004-frame-maintenance-helper.md) permits a small standalone Android maintenance utility for H3.1, providing physical access between the existing Firefox browser and stock Home/Settings. It does not replace the web application or browser engine; device-trial acceptance remains subject to the physical round-trip gates.
+
 ## 2. Target devices
 
 ### 2.1 Primary display
