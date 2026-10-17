@@ -8,7 +8,8 @@ const routes = [
   {path: '/', method: 'GET', status: 200},
   {path: '/admin/photos', method: 'GET', status: 302},
   {path: '/admin/settings', method: 'GET', status: 302},
-  {path: '/setup', method: 'GET', status: 200},
+  {path: '/setup', method: 'GET', status: 307},
+  {path: '/setup/', method: 'GET', status: 200},
   {path: '/api/health', method: 'GET', status: 200},
   {path: '/api/health', method: 'HEAD', status: 200},
   {path: '/api/health', method: 'POST', status: 405},
@@ -43,6 +44,14 @@ await Promise.all(
         });
         assert.equal(response.status, status, `${method} ${path}`);
         const body = await response.text();
+        if (path === '/setup') {
+          assert.equal(
+            new URL(response.headers.get('location') ?? '', base).href,
+            `${base}/setup/`,
+            'Setup must redirect only to its canonical same-origin page',
+          );
+        }
+
         if (path.startsWith('/api/')) {
           assert.match(
             response.headers.get('cache-control') ?? '',
