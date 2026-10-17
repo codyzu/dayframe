@@ -1,6 +1,6 @@
 # H3.1 — Physical maintenance and manual Firefox relaunch
 
-**17 October 2026: owner-approved trial installed; normal UI overlay permission granted by owner; physical acceptance pending.** H3 remains incomplete. The approval covers only the exact trial below.
+**Accepted 17 October 2026:** owner-approved helper installed, overlay consent granted in normal UI and physical Home/Settings/Firefox round trips confirmed. Settings is reached through stock Home; the direct Settings shortcut is unavailable. The approval covers only the exact trial below.
 
 ## Scope and artifact
 
@@ -64,4 +64,18 @@ The owner answered **“Approve the helper trial”** to the explicit scope/APK/
 
 Standard `adb install` succeeded without replacement or broad permission flags. Installed version/code are 0.1.0/1; private installed `base.apk` readback is exactly 12,631 bytes and matches the reviewed SHA-256 above. Before consent, the helper's overlay app-op reported “No operations.” Opened the helper, then the normal per-app Android overlay consent screen. Its initially empty content finished rendering and showed the correct app with permission off. The owner enabled the visible switch and reported **“Enabled”**; read-only app-op verification then reports `SYSTEM_ALERT_WINDOW: allow`.
 
-Performed the single approved host return to the helper menu after consent. This setup assistance is not physical round-trip evidence. The owner started the floating button and explicitly confirmed **“DF works from Firefox”**, verifying physical access back to maintenance. Full repeated Home/Settings round trips remain pending. No app-op grant command, accessibility setting, launcher replacement, reboot, system write, private provisioning or Firefox profile change was performed. Raw execution evidence stays ignored under `diagnostics/h31/`.
+Performed the single approved host return to the helper menu after consent. This setup assistance is not physical round-trip evidence. The owner started the floating button and explicitly confirmed **“DF works from Firefox”**, verifying physical access back to maintenance. The subsequent owner results below complete the repeated Home route and Settings fallback. No app-op grant command, accessibility setting, launcher replacement, reboot, system write, private provisioning or Firefox profile change was performed. Raw execution evidence stays ignored under `diagnostics/h31/`.
+
+### Owner touch-test follow-up
+
+The owner reports that the requested navigation worked except the direct **Réglages du cadre** button, which displayed the helper's inaccessible-screen error. Read-only ActivityManager diagnostics identify the cause: the vendor Settings activity is **not exported**, so Android rejects cross-app launch. This confirms the repeated stock Home/Firefox route from the requested test. The owner then completed the already-scoped route **DF → Accueil du cadre → stock Home's visible Settings control → DF → Firefox/Dayframe** and explicitly answered **“Settings via Home works; Dayframe returns.”** The fallback supplies physical stock Settings access and return without ADB navigation.
+
+On the physical Firefox launch, the owner encountered onboarding prompts (terms, toolbar placement and light appearance), accepted them, then used **Jump back in** on Firefox Home to reopen Dayframe. Dayframe loaded successfully. This is a demonstrated manual launch route; the helper's Firefox button launches the existing browser, not a guaranteed direct Dayframe URL. Browser toolbar remains visible at the top. Do not infer completed onboarding from the earlier remote launch or claim kiosk/fullscreen/startup acceptance.
+
+## Acceptance and operating limits
+
+**H3.1 accepted; H3's physical exit/manual relaunch gate passed.** The owner confirmed the requested repeated Home/Firefox round trips (the test requested two) and the separate Settings-through-Home round trip. DF remains reachable; the owner reported all other requested navigation worked and no additional chooser, blocked return, missed-tap or obstruction issue. Read-only service/window observations corroborate the running helper/overlay; the acceptance rests on owner physical touch reports, not ADB navigation. No elapsed touch/startup times were measured.
+
+Use **DF → Accueil du cadre → stock Settings** for maintenance, then **DF → Firefox / Dayframe** to return. Do not use the direct **Réglages du cadre** button in 0.1.0: it reports an error because the vendor activity is not exported, while leaving the helper usable. This known shortcut limitation does not prevent the verified physical route. No additional APK update or permission grant was made to bypass it.
+
+The helper is retained with its overlay running for this approved trial. Firefox onboarding was completed physically and Dayframe reopened from Jump back in when Firefox Home appeared. This does not promise automatic URL reopening. Browser chrome remains visible; fullscreen belongs to H5. Helper recovery after force-stop/process death/reboot remains unproven and may require the documented Mac ADB relaunch; boot automation belongs to H5/H6. H4 performance/48-hour testing, private display provisioning and protected slideshow acceptance remain separate. H3/H3.1 acceptance does not complete M6 or authorize any further device stage.

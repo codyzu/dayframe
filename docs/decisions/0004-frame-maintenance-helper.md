@@ -1,6 +1,6 @@
 # ADR 0004: A standalone maintenance helper for H3.1
 
-**Status:** Accepted for the limited H3.1 device trial on 17 October 2026. Owner explicitly approved the native-maintenance scope exception, exact APK installation/launch, normal UI overlay consent and physical round-trip tests. Physical acceptance remains pending.
+**Status:** Accepted for the limited H3.1 device trial on 17 October 2026. Owner explicitly approved the native-maintenance scope exception, exact APK installation/launch, normal UI overlay consent and physical round-trip tests. Physical H3.1 acceptance passed using Settings through stock Home; direct Settings launch is unavailable.
 
 **Date:** 17 October 2026
 
@@ -14,7 +14,7 @@ Propose a small, independently authored Android **maintenance utility**, separat
 
 `hardware/maintenance/` contains original MIT-licensed Java source, manifest and an offline host build script. Package `dev.dayframe.maintenance`, version `0.1.0` / code `1`, minimum/target SDK 23; overlay operation explicitly restricted to API 23. Pure DEX has no native libraries and therefore no additional ARM ABI dependency. It uses platform widgets and no third-party runtime dependencies.
 
-After an explicit start, a foreground service places one 64dp **DF** button at the right edge, vertically centered. Touching it opens a French maintenance menu with Firefox, stock Home and stock Settings actions. Firefox uses its package's launcher intent, preserving its current tabs/profile; it does not navigate to a hardcoded URL. Home uses the stock package's launcher intent. Settings targets the observed vendor activity, with an error message and retained menu if cross-app launch is denied. The overlay remains available on stock screens so the owner can return to Firefox without an app drawer.
+After an explicit start, a foreground service places one 64dp **DF** button at the right edge, vertically centered. Touching it opens a French maintenance menu with Firefox, stock Home and stock Settings actions. Firefox uses its package's launcher intent, preserving its current tabs/profile; it does not navigate to a hardcoded URL. Home uses the stock package's launcher intent. Settings targets the observed vendor activity, with an error message and retained menu if cross-app launch is denied. The physical trial later confirmed this activity is not exported: use stock Home's visible Settings control instead; the owner subsequently passed that fallback by touch. The overlay remains available on stock screens so the owner can return to Firefox without an app drawer.
 
 The only requested permission is `SYSTEM_ALERT_WINDOW`. Android 6 requires explicit overlay consent; first try its normal per-app permission screen. If that screen is absent or unusable, stop and review before any alternative grant. No accessibility service, content inspection, global key injection, Internet/storage permission, root code, HOME handler, boot receiver or settings-write permission. The service is private; only the launcher activity is exported, with no automatic actions from intent extras. The foreground notification uses Android's built-in maintenance icon.
 
@@ -40,4 +40,4 @@ Primary API contracts: Android [overlay consent](<https://developer.android.com/
 
 Exact proposed device actions, rollback and physical checks are in the [H3.1 runbook](../hardware/h31-maintenance.md). Approval must cover this native-maintenance scope exception, installing/launching the reviewed APK and granting only its per-app overlay permission through the normal UI. A broader fallback grant, boot/system/launcher change or reboot requires a new specific decision. Host compilation and artifact inspection are preparation, not device acceptance.
 
-H3.1 and H3 stay open until the owner repeats Dayframe → DF → stock Home/Settings → DF → Firefox/Dayframe by touch and the evidence is recorded. No private provisioning or H4–H6 acceptance follows from this trial.
+The owner repeated the Home/Firefox round trip and separately confirmed stock Settings through Home → DF → Firefox/Dayframe by touch; [recorded evidence](../hardware/h31-maintenance.md#acceptance-and-operating-limits) closes H3.1 and H3 with the direct Settings shortcut limitation explicit. No private provisioning or H4–H6 acceptance follows from this trial.

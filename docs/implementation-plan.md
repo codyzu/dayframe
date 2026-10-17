@@ -352,7 +352,7 @@ Owner confirmed the router listed the frame as disconnected, then explicitly app
 
 ### H3 follow-up ownership
 
-The owner confirmed that stock Settings offers only photo-frame settings. The remaining exit/manual relaunch blocker is tracked as [H3.1 — Physical maintenance and manual Firefox relaunch](hardware/implementation-plan.md#h31--physical-maintenance-and-manual-firefox-relaunch-open). H3 stays incomplete until the physical round trip passes; H3.1 includes solution/scope review and specific device-action authorization. Fullscreen and boot automation remain later stages.
+The owner confirmed that stock Settings offers only photo-frame settings. The remaining exit/manual relaunch blocker is tracked as [H3.1 — Physical maintenance and manual Firefox relaunch](hardware/implementation-plan.md#h31--physical-maintenance-and-manual-firefox-relaunch-accepted). H3 stays incomplete until the physical round trip passes; H3.1 includes solution/scope review and specific device-action authorization. Fullscreen and boot automation remain later stages.
 
 ### H3.1 host implementation — 17 October 2026
 
@@ -365,3 +365,9 @@ Upstream main remains `e97c50ba459c49ea8237259f69b95cd28054b628`; refreshed devi
 ### H3.1 approved trial installation — 17 October 2026
 
 The owner explicitly approved ADR 0004's narrow native-maintenance exception and the reviewed APK/normal UI overlay consent/physical trial. Reverified exact Classic identity and retained external H2 backup availability, then installed `dev.dayframe.maintenance` 0.1.0/1 using standard ADB. Installed APK readback matches the reviewed hash and size. The owner enabled its sole overlay permission in the normal Android per-app UI; read-only app-op verification confirms `allow`. Returned once to the helper menu for setup as approved. Physical DF/Firefox and repeated Home/Settings round-trip confirmation remain pending; H3/H3.1 stay open. No launcher/system/accessibility changes, reboot or private provisioning. See the [execution record](hardware/h31-maintenance.md#approved-device-execution--17-october-2026).
+
+### H3/H3.1 acceptance — 17 October 2026
+
+Owner physical testing closes H3.1 and H3: DF works from Firefox; the requested repeated stock Home/Firefox round trips passed; stock Settings through Home → DF → Firefox/Dayframe passed separately. The direct Settings shortcut is unavailable because the vendor activity is not exported (read-only ActivityManager evidence); use stock Home's visible Settings control. The owner completed Firefox onboarding and manually reopened Dayframe from Jump back in when Firefox Home appeared. Browser toolbar remains visible, and neither direct URL reopening nor unattended recovery is claimed.
+
+[Acceptance evidence, exact artifact, permissions and undo](hardware/h31-maintenance.md#acceptance-and-operating-limits) are recorded. Helper 0.1.0 remains installed with overlay permission and DF running; no additional grant, launcher change, system write, reboot or private provisioning followed the approved trial. Source/build checks and installed APK readback passed; final documentation formatting/link/diff checks passed. This closes the requested H3.1 slice only. H4 performance/soak, H5 fullscreen, H6 optional startup/recovery, M4 private display acceptance and overall M6 remain pending under their existing gates.

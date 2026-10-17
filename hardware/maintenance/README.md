@@ -1,8 +1,8 @@
 # Dayframe maintenance trial
 
-Host-prepared H3.1 utility for the Classic10 on Android 6/API 23. The owner approved the limited native scope and device trial on 17 October; the APK is installed and normal UI overlay consent is granted. Physical acceptance remains pending. See [ADR 0004](../../docs/decisions/0004-frame-maintenance-helper.md) and the [trial/undo runbook](../../docs/hardware/h31-maintenance.md).
+Host-prepared H3.1 utility for the Classic10 on Android 6/API 23. The owner approved the limited native scope and device trial on 17 October; the APK is installed and normal UI overlay consent is granted. Physical H3.1 acceptance passed using stock Home for Settings; direct Settings launch is unavailable. See [ADR 0004](../../docs/decisions/0004-frame-maintenance-helper.md) and the [trial/undo runbook](../../docs/hardware/h31-maintenance.md).
 
-Touch **DF** at the right center edge to open the menu; select stock Home, stock Settings or Firefox. Firefox opens its existing profile/tab. The helper requests only permission to draw over other apps, granted separately through Android's normal UI. Start its floating button explicitly from the menu. Hiding it requires confirmation because stock Home has no known app drawer.
+Touch **DF** at the right center edge to open the menu; select stock Home or Firefox. For Settings, use stock Home’s visible Settings control; the direct “Réglages du cadre” button in 0.1.0 displays an error because the vendor activity is not exported. The Home → Settings → DF → Firefox route passed owner touch testing. Firefox opens its existing profile/tab. The helper requests only permission to draw over other apps, granted separately through Android's normal UI. Start its floating button explicitly from the menu. Hiding it requires confirmation because stock Home has no known app drawer.
 
 This utility is original MIT-licensed source (see LICENSE). It contains no web engine, accessibility service, third-party Java dependencies or native libraries. It does not read browser content or credentials. It is intentionally limited to this API 23 trial; foreground-service and overlay rules on newer Android versions differ.
 
