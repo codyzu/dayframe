@@ -32,22 +32,22 @@ One visible Power button; SD slot, barrel-style power input, USB-A, owner-identi
 
 Source: [complete report at the reviewed revision](https://github.com/wesbos/photo-frame-dashboard/blob/e97c50ba459c49ea8237259f69b95cd28054b628/docs/dragontouch-modern10-charm.md), including the 14 October follow-up. These are **UPSTREAM VERIFIED** observations of one unit, not our pending delivery.
 
-| Property                        | Classic 10 (CONFIRMED unless noted)   | Upstream Modern10 Charm                                                                         |
-| ------------------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Model / purchase                | `Classic10`, ASIN `B0GXVW13YP`        | `Modern10 charm`, report purchase ASIN `B0DXV3HGH7`                                             |
-| Firmware                        | `Classic10_A33M187_20250910-1617_V09` | `Modern10 charm_A33MAU_202605151735_4.0_V01`                                                    |
-| Android / API                   | 6.0.1 / 23                            | 6.0.1 / 23                                                                                      |
-| Manufacturer / board / hardware | joyhong / exdroid / sun8i             | Same reported properties                                                                        |
-| ABI / likely processor          | ARMv7 / likely A33 (inference)        | ARMv7 / likely A33 (not physically inspected)                                                   |
-| Screen / density                | 1280 × 800 / 160 dpi                  | Same                                                                                            |
-| RAM                             | Approximately 1 GB                    | Not established in this report; do not infer from Classic 10                                    |
-| Storage                         | User area 31,272,730,624 bytes        | Captured user area 15,758,000,128 bytes; boot0 and boot1 each 4,194,304 bytes                   |
-| Root network ADB                | Available without observed prompt     | Available without prompt; persists after reported reboot                                        |
-| WebView                         | 44.0.2403.119                         | 44.0.2403.119                                                                                   |
-| Vendor packages                 | Same package IDs, measured in H1      | VPhoto `com.waophoto.smartframe`, updater `com.waophoto.fota`                                   |
-| Firefox                         | Not installed/tested by this work     | 143.0.4 ARMv7; fullscreen shortcut with Rootless 3.9.1                                          |
-| Kiosk                           | Not implemented/tested                | Contributor's GeckoView 143 variant, boot receiver, physical exit gesture, two-day use reported |
-| Recovery                        | Unknown                               | Capture verified; firmware restore and factory reset untested                                   |
+| Property                        | Classic 10 (CONFIRMED unless noted)                                            | Upstream Modern10 Charm                                                                         |
+| ------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| Model / purchase                | `Classic10`, ASIN `B0GXVW13YP`                                                 | `Modern10 charm`, report purchase ASIN `B0DXV3HGH7`                                             |
+| Firmware                        | `Classic10_A33M187_20250910-1617_V09`                                          | `Modern10 charm_A33MAU_202605151735_4.0_V01`                                                    |
+| Android / API                   | 6.0.1 / 23                                                                     | 6.0.1 / 23                                                                                      |
+| Manufacturer / board / hardware | joyhong / exdroid / sun8i                                                      | Same reported properties                                                                        |
+| ABI / likely processor          | ARMv7 / likely A33 (inference)                                                 | ARMv7 / likely A33 (not physically inspected)                                                   |
+| Screen / density                | 1280 × 800 / 160 dpi                                                           | Same                                                                                            |
+| RAM                             | Approximately 1 GB                                                             | Not established in this report; do not infer from Classic 10                                    |
+| Storage                         | User area 31,272,730,624 bytes                                                 | Captured user area 15,758,000,128 bytes; boot0 and boot1 each 4,194,304 bytes                   |
+| Root network ADB                | Available without observed prompt                                              | Available without prompt; persists after reported reboot                                        |
+| WebView                         | 44.0.2403.119                                                                  | 44.0.2403.119                                                                                   |
+| Vendor packages                 | Same package IDs, measured in H1                                               | VPhoto `com.waophoto.smartframe`, updater `com.waophoto.fota`                                   |
+| Firefox                         | 143.0.4 installed; H3 rendering/API checks passed; physical round trip pending | 143.0.4 ARMv7; fullscreen shortcut with Rootless 3.9.1                                          |
+| Kiosk                           | Not implemented/tested                                                         | Contributor's GeckoView 143 variant, boot receiver, physical exit gesture, two-day use reported |
+| Recovery                        | Unknown                                                                        | Capture verified; firmware restore and factory reset untested                                   |
 
 Shared platform properties make an ARMv7 Firefox experiment plausible. They do **not** establish identical boot loaders, RAM timing, storage devices, offsets, partition tables, Wi-Fi drivers or recovery entry. `A33M187` and `A33MAU` firmware are not interchangeable. Do not flash either device from the other device's backup.
 

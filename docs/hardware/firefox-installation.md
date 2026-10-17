@@ -1,6 +1,6 @@
 # Firefox installation and performance plan
 
-**PLANNED on Classic 10.** Installation/launch commands below write application state and belong only to a separately approved H3 session, after H2 acceptance. No launcher replacement, WebView modification, vendor-app disabling, CA changes or system writes are included.
+**H3 executed on Classic 10, 17 October 2026; final physical exit/relaunch confirmation pending.** See the [execution record](h3-firefox.md) for verified installation, actual rendering/API evidence and limitations. Commands below are the reusable procedure; installation/launch writes application state and requires its own H3 authorization after H2 acceptance. No launcher replacement, WebView modification, vendor-app disabling, CA changes or system writes are included.
 
 ## Host verification evidence, 16 October 2026
 
@@ -12,11 +12,11 @@ af560738627d4efc9ace75e708fc48aad6a24c78ef43a89daca27e16ff3829f8
 
 This independently matches the owner's value and [upstream report](https://github.com/wesbos/photo-frame-dashboard/blob/e97c50ba459c49ea8237259f69b95cd28054b628/docs/dragontouch-modern10-charm.md). A host-only binary AndroidManifest.xml inspection found package `org.mozilla.firefox`, versionName `143.0.4`, versionCode `2016118128`, minimum SDK **21**, target SDK **36**. ZIP inspection found native libraries under `lib/armeabi-v7a/`. Our API 23 / ARMv7 unit therefore meets declared OS/ABI requirements. These checks do not prove graphics-driver compatibility, sufficient memory or successful execution.
 
-The upstream contributor reports Android signature validation and execution on Modern10 Charm. **Local cryptographic APK signature verification was not performed:** Android SDK build-tools were not available in the inspected host locations. Re-run the checks below with reviewed official SDK tools before installation. Hash agreement with an upstream value is useful integrity evidence, not an independently authenticated signer identity. Firefox 143 is a historical compatibility experiment, not a current-security baseline; review maintenance options before long-term use.
+The upstream contributor reports Android signature validation and execution on Modern10 Charm. **At initial planning, local cryptographic APK signature verification had not been performed:** Android SDK build-tools were not available in the inspected host locations. The [17 October H3 preflight](h3-firefox.md) now records successful official-tool verification; installation has since succeeded, while final physical exit/relaunch acceptance remains pending. Hash agreement with an upstream value is useful integrity evidence, not an independently authenticated signer identity. Firefox 143 is a historical compatibility experiment, not a current-security baseline; review maintenance options before long-term use.
 
 ## H3 procedure for a later session
 
-Prerequisites: verified region coverage, manifest and second backup copy; device identity rechecked; stock launcher/Settings accessible by touch; specific installation authorization. Review current upstream changes and any new Mozilla compatibility information. Work in a private host directory.
+Prerequisites: H2 accepted with verified region coverage and manifest (including its recorded owner exceptions for encryption and single-copy retention); device identity rechecked; stock launcher/Settings accessible by touch; specific installation authorization. Review current upstream changes and any new Mozilla compatibility information. Work in a private host directory.
 
 ```sh
 APK='fenix-143.0.4.multi.android-armeabi-v7a.apk'
