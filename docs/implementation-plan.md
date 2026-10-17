@@ -353,3 +353,11 @@ Owner confirmed the router listed the frame as disconnected, then explicitly app
 ### H3 follow-up ownership
 
 The owner confirmed that stock Settings offers only photo-frame settings. The remaining exit/manual relaunch blocker is tracked as [H3.1 — Physical maintenance and manual Firefox relaunch](hardware/implementation-plan.md#h31--physical-maintenance-and-manual-firefox-relaunch-open). H3 stays incomplete until the physical round trip passes; H3.1 includes solution/scope review and specific device-action authorization. Fullscreen and boot automation remain later stages.
+
+### H3.1 host implementation — 17 October 2026
+
+Committed the remaining H3 navigation/recovery evidence as `4a32346`. Reidentified the connected Classic10 read-only (expected firmware/API/ARMv7/root), retained Firefox 143.0.4 and confirmed the proposed helper package is absent. No package, permission, launcher, Android setting or firmware change was performed.
+
+Prepared an original MIT-licensed API 23 maintenance helper under `hardware/maintenance/`: one floating DF button opens explicit stock Home/Settings and existing Firefox launch actions. Only overlay permission is requested; no accessibility service, web engine or boot receiver. [ADR 0004](decisions/0004-frame-maintenance-helper.md) proposes the required native scope exception; the [exact trial/undo and artifact evidence](hardware/h31-maintenance.md) are ready for review. API 23 compilation, D8 desugaring, ZIP/alignment and v1/v2/v3 signature checks passed. This is host preparation; device authorization and repeated owner touch round trips remain pending, so H3/H3.1 stay open.
+
+Upstream main remains `e97c50ba459c49ea8237259f69b95cd28054b628`; refreshed device/kiosk source and current open issues/PRs, including newly relevant #165/#166. The latter reports the same Classic firmware with different WebView/system changes; those are not adopted. No upstream code/assets copied; provenance and intentional differences are in ADR 0004.
