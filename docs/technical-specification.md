@@ -429,7 +429,7 @@ Record significant design changes as architecture decision records. Keep an impl
 
 ### M6: Dragon Touch integration
 
-**Deliverables:** Hardware inspection, verified private firmware backup with recovery limitations, compatible browser/kiosk, fullscreen deployment, automatic launch where feasible, network recovery, performance/stability testing, setup instructions. See [H1–H8 hardware breakdown](hardware/implementation-plan.md); stages are planned, not completed.
+**Deliverables:** Hardware inspection, verified private firmware backup with recovery limitations, compatible browser/kiosk, fullscreen deployment, automatic launch where feasible, network recovery, performance/stability testing, setup instructions. See [H1–H8 hardware breakdown](hardware/implementation-plan.md) for actual stage status; H1 and H2 are accepted; H2 has explicit owner exceptions for encryption and single-copy retention, documented in its execution record. M6 is not complete.
 
 **Done when:** Dashboard fits native screen; touch and media work; protected images authenticate without admin login; restart behavior is documented; extended run is stable. If this frame is unsupported, document blockers and retain usable browser app.
 

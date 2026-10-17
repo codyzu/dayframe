@@ -1,6 +1,6 @@
 # M6 hardware stages and acceptance gates
 
-**Updated 16 October 2026:** [H1 complete](h1-discovery.md); exact storage checks passed, private map recorded and owner visual ports/power/buttons inventory supplied. H2–H8 remain PLANNED; H8 also waits for delivery. This breakdown preserves the [main M1–M7 roadmap](../implementation-plan.md). M4 production acceptance and M5 display behavior remain dependencies for full hardware acceptance; early public-fixture browser experiments can be evaluated separately.
+**Updated 17 October 2026:** [H1 complete](h1-discovery.md); [H2 accepted](h2-backup.md) after full-region capture/readback, independent comparisons, final structure/file-data review and identity checks. The owner accepted an unencrypted external destination and a single retained copy after deletion of the verified Mac copy; no reformatting occurred. H3–H8 remain PLANNED; H8 also waits for delivery. This breakdown preserves the [main M1–M7 roadmap](../implementation-plan.md). M4 production acceptance and M5 display behavior remain dependencies for full hardware acceptance; early public-fixture browser experiments can be evaluated separately.
 
 For every future stage: obtain authorization for the specific device actions, recheck identity/upstream changes, record date, firmware, browser/app version, Dayframe revision, actions and sanitized results. An acceptance checkbox requires actual evidence. Raw evidence stays private. Stop at the first unexplained identity, size, checksum or behavior mismatch; do not run a broader setup script as remediation.
 
@@ -13,12 +13,12 @@ For every future stage: obtain authorization for the specific device actions, re
 - **Risks/stop:** Root ADB exposure, wrong DHCP target, unique data in outputs. Stop if not the identified unit, non-eMMC storage, unknown map or unclean binary transport.
 - **Acceptance:** All H2 region paths/sizes derivable from evidence, known omissions recorded. Current status: identity/RAM/display/root/WebView confirmed; all H2 candidate paths/sizes derived and reconciled privately. Generated binary transport passed; block-reader preflight remains H2. Owner visual physical inventory recorded; recovery/USB data unverified. H1 accepted with these omissions explicit. See [execution evidence](h1-discovery.md).
 
-## H2 — Firmware backup
+## H2 — Firmware backup (complete with owner exceptions)
 
-- **Prerequisites:** H1 storage map reviewed, specific read-capture authorization, private encrypted host destination, enough disk space and stable power/network. No APKs or persistent changes yet.
+- **Prerequisites:** H1 storage map reviewed, specific read-capture authorization, private encrypted host destination (owner exception recorded for this capture), enough disk space and stable power/network. No APKs or persistent changes yet.
 - **Objective/actions:** Follow [backup runbook](backup-and-recovery.md), read complete user area and accessible hardware boot areas, retain metadata and per-region manifest. No device-side writes or offline boot experiments.
 - **Expected result:** Complete defined region coverage saved privately, with live/non-atomic limitations explicit.
-- **Verification:** Exact incoming/decompressed byte counts, raw/compressed SHA-256, gzip integrity, no unexplained filler/errors, independent boot/static-partition/header/system-data comparisons, map bounds and second private copy verified.
+- **Verification:** Exact incoming/decompressed byte counts, raw/compressed SHA-256, gzip integrity, no unexplained filler/errors, independent boot/static-partition/header/system-data comparisons, map bounds and second private copy verified. The owner subsequently accepted deletion of the second copy and single-copy retention for this capture.
 - **Risks/stop:** Truncation, disk exhaustion, mixed binary/text, mutable filesystems, unreadable region. Stop on any unexplained difference; no acceptance based only on a compressed file's existence.
 - **Acceptance:** Reviewed manifest marks capture/readback/independent checks complete for every required region, coverage exclusions and recovery status explicit. Restore remains unproven unless separately tested. Firmware/system work remains blocked until a usable recovery route exists.
 
@@ -108,4 +108,4 @@ Basic exposure assessment starts at H1; H7 is not permission to leave root ADB b
 | Can network ADB be safely restricted/disabled persistently?         | H7 router capability, denied/allowed tests, independent maintenance path and later authorized restart                                                                                |
 | Our Modern10 RAM, storage and firmware?                             | H8 after delivery; do not infer from upstream or Classic                                                                                                                             |
 
-H1 is complete, including owner visual ports/power/buttons confirmation. H2 is the highest-priority follow-on, requiring separate read-capture authorization, the reviewed private exact map and a private encrypted destination. Documentation readiness does not mark M6 complete.
+H1 is complete, including owner visual ports/power/buttons confirmation. H2 is accepted with the owner’s encryption and single-copy retention exceptions; all required read-capture and verification checks passed. See the [H2 execution record](h2-backup.md). H3–H8 and M6 remain incomplete; no additional device action is authorized by H2 acceptance.
