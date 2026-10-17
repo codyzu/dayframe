@@ -171,7 +171,7 @@ For each milestone record: completed task IDs, checks run and results, screensho
 | Credential revocation bounds and private offline cache policy | M4–M5        | Explicit propagation/retention guarantees and tests.                                |
 | Classic 10 compatibility, kiosk, brightness, startup          | Discovery/M6 | Observations on the actual unit and a recovery path.                                |
 
-**Next implementation slice:** complete M4 production acceptance with the second approved admin, verified home addresses and live provisioning checks; owner production upload/delete testing also remains pending. This document authorizes no hardware changes or paid infrastructure.
+**Next implementation slice:** activate M4 with the existing approved administrator, verified home-network configuration and live provisioning checks; the owner deferred the second identity, whose independent production acceptance remains pending. Owner production upload/delete testing also remains pending. This document authorizes no hardware changes or paid infrastructure.
 
 ## M1 implementation record — 16 October 2026
 
@@ -325,3 +325,11 @@ Owner-authorized read-only Classic 10 inspection verified model/firmware, WebVie
 ## H3 preflight — 17 October 2026
 
 [H3 host/device preflight](hardware/h3-firefox.md) passed: official Mozilla APK and Android build-tools provenance, exact hash/ZIP/ARMv7/manifest checks, API 23 v1/v2 signature verification, actual Classic firmware/space and Firefox absence. The owner confirmed physical stock Home/Settings access. The standard install succeeded after a transfer timeout on its first five-minute attempt; no root-install fallback or private provisioning was used. Installed Firefox 143.0.4 renders the deployed public Dayframe frame profile; synthetic WebP/module/fetch/Intl/storage/CSS/SVG checks passed. Browser chrome leaves a 1280 × 744 viewport and clips the bottom controls. The temporary local test server was stopped. Final physical touch/exit/manual relaunch confirmation is pending; H3 remains incomplete. Upstream main remains `e97c50ba459c49ea8237259f69b95cd28054b628`; device notes and current issue/PR research refreshed, with no copied source/assets or launcher/system changes.
+
+## M4 activation preflight — 17 October 2026
+
+The owner authorized production preparation, push/deployment and live provisioning checks. Workers Free ($0, current plan) and Zero Trust Free ($0/month) were rechecked in the authenticated Cloudflare dashboard. The existing Access application covers `/admin/*`; the GitHub production Free-plan assertion remains enabled. No paid service or identity expansion was enabled.
+
+The home Mac’s IPv4 egress independently matches the owner’s router screenshot. Installed the exact verified IPv4 as the private `HOME_NETWORKS` Worker secret; no address is recorded here. IPv6 connectivity exists on the Mac, but the frame’s IPv6 address/prefix remains unverified and no IPv6 entry was added. Such display requests fail closed. The frame responds at its owner-confirmed LAN address and its ADB TCP port is reachable, but the transport remains offline after the router restart, including after host-only reconnect/server restart. No frame settings or reboot were performed. Provisioning, actual-frame IPv6 and physical exit/relaunch acceptance remain pending.
+
+Types/lint passed (the same two existing complexity warnings); 59 unit/integration tests and 101 browser checks passed with three existing skips. Integration/browser checks required host localhost permissions after the sandbox blocked listeners. Test-generated screenshots were restored to preserve historical evidence. Production packaging dry-run passed at 62.04 KiB / 17.47 KiB gzip, preserving `PHOTOS`, `ADMINISTRATION` and its SQLite migration. Deployment and live acceptance are not established by this preflight.
