@@ -1,5 +1,6 @@
 import {expect, test} from '@playwright/test';
 import {fixtureNow, weatherFixture} from '../fixtures/weather.ts';
+import {conditionFor} from '../../src/lib/weather/conditions.ts';
 
 test.beforeEach(async ({page}) => {
   await page.clock.install({time: fixtureNow});
@@ -227,5 +228,104 @@ test('overcast cloud stays visible at both animation extremes', async ({
         ),
     ).toBe(true);
     await icon.screenshot({path: testInfo.outputPath(`overcast-${time}s.png`)});
+  }
+});
+
+test('precipitation and lightning keep repeating in the bundled current icon', async ({
+  page,
+}, testInfo) => {
+  await page.emulateMedia({reducedMotion: 'no-preference'});
+  await page.clock.resume();
+  await page.addInitScript(() => {
+    localStorage.clear();
+  });
+  // Sleet combines the two-second drizzle and three-second snow loops.
+  for (const [code, period] of [
+    [51, 2],
+    [56, 6],
+    [61, 1],
+    [71, 3],
+    [80, 1],
+    [95, 2],
+    [96, 1],
+  ]) {
+    for (const isDay of [1, 0]) {
+      await page.unroute('https://api.open-meteo.com/**');
+      await page.route('https://api.open-meteo.com/**', async (route) => {
+        const raw = weatherFixture();
+        raw.current.weather_code = code;
+        raw.current.is_day = isDay;
+        await route.fulfill({json: raw});
+      });
+      await page.goto('/');
+      const icon = page.locator('[data-current-icon]');
+      await expect(icon).toHaveClass(
+        new RegExp(conditionFor(code, isDay === 1).icon, 'v'),
+      );
+      // Use the exact production CSS image, inlined only to seek SMIL time.
+      const markup = await icon.evaluate((element) => {
+        const image = decodeURIComponent(
+          getComputedStyle(element).backgroundImage,
+        );
+        return image.slice(
+          image.indexOf('<svg'),
+          image.lastIndexOf('</svg>') + 6,
+        );
+      });
+      const readAt = async (seconds: number) => {
+        // Start each sample with a fresh timeline: WebKit retains syncbase
+        // event history across seeks, which differs from ordinary playback.
+        await icon.evaluate(
+          async (element, {source, time}) => {
+            const svg = document.importNode(
+              new DOMParser().parseFromString(source, 'image/svg+xml')
+                .documentElement,
+              true,
+            ) as unknown as SVGSVGElement;
+            svg.setAttribute('width', '100%');
+            svg.setAttribute('height', '100%');
+            element.replaceChildren(svg);
+            (element as HTMLElement).style.backgroundImage = 'none';
+            svg.pauseAnimations();
+            svg.setCurrentTime(time);
+            await new Promise<void>((resolve) => {
+              requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                  resolve();
+                });
+              });
+            });
+          },
+          {source: markup, time: seconds},
+        );
+        // Read the sampled SMIL value rather than just checking for elements.
+        return icon
+          .locator('animate[attributeName="opacity"]')
+          .evaluateAll((animations) =>
+            animations.map((animation) =>
+              Number(getComputedStyle(animation.parentElement!).opacity),
+            ),
+          );
+      };
+
+      const phases = [await readAt(0.4), await readAt(1)];
+      expect(phases[0].length).toBeGreaterThan(0);
+      for (const cycle of [3, 10]) {
+        for (const [index, phase] of [0.4, 1].entries()) {
+          const repeated = await readAt(cycle * period + phase);
+          expect(
+            repeated,
+            `${code}/${isDay} at ${cycle * period + phase}s`,
+          ).toEqual(phases[index].map((opacity) => expect.closeTo(opacity, 3)));
+        }
+      }
+
+      expect(phases[0]).not.toEqual(phases[1]);
+      expect(phases.flat().some((opacity) => opacity > 0)).toBe(true);
+
+      await icon.screenshot({
+        path: testInfo.outputPath(`repeated-${code}-${isDay}.png`),
+      });
+    }
   }
 });

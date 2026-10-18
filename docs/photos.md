@@ -1,8 +1,8 @@
 # Photo operations
 
-M3 photo administration is active in production as of 16 October 2026, with a dedicated KV namespace, an Access application for `/admin/*`, and one privately configured administrator. Display provisioning and a second administrator remain pending. Configuration remains fail-closed. See [ADR 0002](decisions/0002-protected-photos.md) for the identity model and consistency limits.
+M3 photo administration is active in production as of 16 October 2026, with a dedicated KV namespace, an Access application for `/admin/*`, and one privately configured administrator. Display provisioning has since passed on the actual Classic 10; a second administrator remains deferred. Configuration remains fail-closed. See [ADR 0002](decisions/0002-protected-photos.md) for the identity model and consistency limits.
 
-M4 update: [administration operations](administration.md) supersedes prototype display-token and pending-settings instructions below. Production M4 activation remains pending. The final credential is stored as a digest in a strongly consistent SQLite Durable Object; display requests require the private home-network allowlist.
+M4 update: [administration operations](administration.md) supersedes prototype display-token and pending-settings instructions below. M4 is deployed with partial live acceptance; see the [current status and validation gaps](status.md). The final credential is stored as a digest in a strongly consistent SQLite Durable Object; display requests require the private home-network allowlist.
 
 ## Local acceptance
 

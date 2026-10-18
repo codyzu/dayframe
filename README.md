@@ -2,7 +2,7 @@
 
 A French household dashboard for a browser-based photo frame. M2 adds live Annecy weather from Open-Meteo, a temperature/rain chart, French day/night conditions, deterministic rain advice, and cached-weather recovery. The Astro shell includes a Paris clock, manual modes, responsive photo administration, and a Cloudflare Worker API. M3 adds protected KV photo storage, sequential WebP uploads (including a Safari encoder fallback), duplicate review and a bounded slideshow.
 
-**Based on Wes Bos's work in [photo-frame-dashboard](https://github.com/wesbos/photo-frame-dashboard).** His dashboard and Android frame research are the starting reference. [ADR 0001](docs/decisions/0001-upstream-foundation.md) records the reviewed revision, source paths, license findings, and independent implementation choices. Dragon Touch Classic 10 compatibility remains unverified.
+**Based on Wes Bos's work in [photo-frame-dashboard](https://github.com/wesbos/photo-frame-dashboard).** His dashboard and Android frame research are the starting reference. [ADR 0001](docs/decisions/0001-upstream-foundation.md) records the reviewed revision, source paths, license findings, and independent implementation choices. Firefox rendering, protected photos and physical maintenance access work on the Classic 10; extended stability, fullscreen and unattended recovery remain pending. See the [current status and skipped validation](docs/status.md).
 
 Use Node 24.16.0 and pnpm 10.23.0:
 
@@ -13,7 +13,7 @@ pnpm verify
 pnpm preview
 ```
 
-Open `http://127.0.0.1:8787`; the admin shell is `/admin/photos`, and `/api/health` checks the Worker. `pnpm dev` provides Astro-only hot reload. Weather loads directly from Open-Meteo using public example coordinates; the default local preview keeps photo APIs disabled; production photo administration is activated behind Cloudflare Access with KV storage. M4 implements persisted settings at `/admin/settings`, read-only frame setup at `/setup`, credential rotation/revocation and home-network restrictions; production M4 activation remains pending. See [photo operations](docs/photos.md) for local synthetic testing and production activation. No household data or credentials are required.
+Open `http://127.0.0.1:8787`; the admin shell is `/admin/photos`, and `/api/health` checks the Worker. `pnpm dev` provides Astro-only hot reload. Weather loads directly from Open-Meteo using public example coordinates; the default local preview keeps photo APIs disabled; production photo administration is activated behind Cloudflare Access with KV storage. M4 implements persisted settings at `/admin/settings`, read-only frame setup at `/setup`, credential rotation/revocation and home-network restrictions; M4 is deployed with partial live acceptance; M5 scheduling and offline recovery are implemented and pushed, with deployment tracked in the [status record](docs/status.md). See [photo operations](docs/photos.md) for local synthetic testing and production activation. No household data or credentials are required.
 
 Styling uses UnoCSS's Wind4 preset and reset. Prefer utilities and small reusable shortcuts; custom CSS stays scoped, with only shared accessibility rules in global.css. Linting uses XO with its built-in Prettier support, following the existing Tetras, Les Mains de Sérénité, and Xen website conventions.
 

@@ -1,11 +1,13 @@
 # Dayframe: Implementation Plan
 
-**Status:** M1–M2 complete; M3 implemented and production admin activated for one administrator; M4 deployed with partial live acceptance and explicit deferred checks; preliminary H4 Photos/weather collection complete (acceptance pending); M5 complete locally, not deployed; M6 acceptance pending
+**Status:** M1–M2 complete; M3 implemented and production admin activated for one administrator; M4 deployed with partial live acceptance and explicit deferred checks; preliminary H4 Photos/weather collection complete (acceptance pending); M5 locally verified and pushed; deployment workflow in progress at status review; M6 acceptance pending
 **Date:** 16 October 2026  
 **Requirements:** [Family Dashboard: Technical Specification](technical-specification.md)  
 **Primary upstream:** [Wes Bos — photo-frame-dashboard](https://github.com/wesbos/photo-frame-dashboard)
 
 > **Start here, including implementation agents:** Dayframe is based on Wes Bos's dashboard and photo-frame work. Inspect the relevant upstream implementation and research before starting a related task. Preserve attribution, record reuse and deliberate differences, and verify hardware assumptions on our actual device. The local specification remains the authority for Dayframe's requirements.
+
+**Current handoff (reviewed 18 October 2026):** [Project status, skipped validation and next step](status.md). This dated summary supersedes historical “local only / not pushed” statements below; execution records retain their original context.
 
 ## 1. Upstream foundation and provenance
 
@@ -34,7 +36,7 @@ Review upstream first, then decide deliberately. Dayframe keeps Astro/TypeScript
 
 ## 2. Delivery approach
 
-Deliver one demonstrable slice at a time. Keep task IDs in commits/PRs and update this document with validation evidence. M1 is delivered with local and Workers Free acceptance evidence below. M2 is publicly deployed (see its deployment follow-up below). M3 has local acceptance evidence and production authentication/KV activation below; household upload/delete testing and second-admin setup remain pending. M4 is deployed with the explicit live acceptance gaps recorded below. M5 has local synthetic acceptance evidence below and is not deployed. M6 physical acceptance remains pending. A task is done only when its acceptance evidence exists; a mock or desktop-only test must be labeled as such.
+Deliver one demonstrable slice at a time. Keep task IDs in commits/PRs and update this document with validation evidence. M1 is delivered with local and Workers Free acceptance evidence below. M2 is publicly deployed (see its deployment follow-up below). M3 has local acceptance evidence and production authentication/KV activation below; household upload/delete testing and second-admin setup remain pending. M4 is deployed with the explicit live acceptance gaps recorded below. M5 has local synthetic acceptance evidence below and is committed/pushed; the latest deployment state is recorded in the [current handoff](status.md). M6 physical acceptance remains pending. A task is done only when its acceptance evidence exists; a mock or desktop-only test must be labeled as such.
 
 ```text
 M1 foundation → M2 weather → M3 protected photos → M4 administration → M5 display behavior
@@ -171,7 +173,7 @@ For each milestone record: completed task IDs, checks run and results, screensho
 | Credential revocation bounds and private offline cache policy | M4–M5        | Explicit propagation/retention guarantees and tests.                                |
 | Classic 10 compatibility, kiosk, brightness, startup          | Discovery/M6 | Observations on the actual unit and a recovery path.                                |
 
-**Next implementation slice:** review the local M5 diff and separately authorize its eventual deployment and fixed-build physical acceptance. Preserve the current M4 production deployment for pending H4 work. The owner deferred the second administrator, standalone revocation and other live M4 gaps recorded below. This document authorizes no hardware changes or paid infrastructure.
+**Next implementation slice:** verify the already-triggered M5 deployment result, then review/deploy the local collection-wide SVG timing repair recorded below. The repair restores the animated current icon; hourly icons remain static. Follow with a short actual-frame M5 check on the exact deployed revision before fullscreen/startup work or a later 48-hour run. Keep skipped/deferred checks explicit in the [validation register](status.md#validation-register). The owner deferred the second administrator, standalone revocation and other live M4 gaps recorded below. This document authorizes no hardware changes or paid infrastructure.
 
 ## M1 implementation record — 16 October 2026
 
@@ -437,3 +439,13 @@ Owner requested animation only on the large current-conditions icon. Hourly char
 Re-inspected upstream checkout `e97c50ba459c49ea8237259f69b95cd28054b628`: `dashboard/js/app.js` (`App.icon`), `dashboard/js/views/home.js` (60px current / 22px hourly hierarchy), and `dashboard/css/views/home.css`. Retained the large-current/small-hourly hierarchy; Dayframe independently uses animated Meteocons only for current conditions rather than upstream's inline stroked SVGs. No upstream license file found; no upstream code/assets copied. Existing Meteocons MIT notices apply.
 
 Validation passed: Astro/TypeScript checks, lint (the two existing photo complexity warnings), production build, and all four targeted browser checks (Chromium, Firefox, WebKit and iPhone emulation). Updated motion coverage asserts animated current/static hourly icons, visible static precipitation paths, and live reduced-motion switching. Browser servers required loopback access outside the sandbox. Documentation formatting and `git diff --check` passed. Local change only; actual-frame performance and deployment remain separate.
+
+### M2 collection-wide icon timing repair — 18 October 2026
+
+Owner requested a local fix durable across other icons with the same defect. The collection loader now runs the independently authored `src/lib/weather/icon-timing.ts` before UnoCSS image generation. The installed `@iconify-json/meteocons` 1.2.4 contains 450 icons, 158 with dangling restart references. The transform derives legacy → existing ID mappings from the known numeric-start/self-end pattern, preserving starts, delays and durations, existing valid references, independent loops and original artwork. Shared restart events (including wind-snow and smoke) use the same mapping; conflicting starts/durations or remaining unknown references fail the build. Correct/already-repaired bodies are unchanged. No dependency patch, hard-coded generated-ID list, runtime DOM processing, external asset or paid service was added. Current-only animation, static hourly icons and reduced-motion behavior remain in place.
+
+Re-read the local specification and upstream foundation section; inspected upstream checkout `e97c50ba459c49ea8237259f69b95cd28054b628`, `dashboard/js/app.js` (`App.icon`) and `dashboard/js/views/home.js` (current/hourly hierarchy). Upstream uses inline stroked icons and supplies no Meteocons timing repair; no upstream code/assets copied. Earlier source comparison verified intact `x1`/`y1` timing in the [original Meteocons rain SVG](https://github.com/basmilius/meteocons/blob/f4266e16268d645f0f47692ba5ffe0c8f0198745/production/fill/svg/partly-cloudy-day-rain.svg) versus renamed IDs/stale references in the installed Iconify JSON. The local transform operates on the already-bundled MIT artwork; notices were updated to describe all modifications.
+
+Validation passed: strict Astro/TypeScript checks (60 files, zero diagnostics), XO/Prettier (only the two existing photo complexity warnings), production build, 28 focused weather/icon unit tests and all 12 focused browser checks across Chromium, Firefox, WebKit and iPhone emulation. Documentation formatting and `git diff --check` passed. Structural coverage checks all installed icons, idempotency, valid links, shared events and unsupported/ambiguous input. The browser regression consumes the exact production CSS SVG, inlined only for deterministic SMIL seeking, and checks day/night drizzle, sleet, rain, snow, showers, lightning and hail after three and ten cycles. A probe against the old build failed on disappeared droplets as expected. During test development, fixture caches and SVG sampling were made explicit, using fresh timelines per sample to avoid WebKit seeking-history artifacts; superseded browser failures are not the final result.
+
+Not run for this slice: full `pnpm verify`/unrelated photo/admin/scheduling suites, production deployment/smoke, actual Classic 10 repeated playback, motion cost or physical acceptance, real outages and the 48-hour soak. Existing M4/H4/M6 deferrals remain; the historical frame rain failure is not closed by desktop playback. This change remains local and uncommitted; no frame/browser/network/settings/credential changes were performed.

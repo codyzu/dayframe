@@ -5,7 +5,7 @@ The project foundation is Wes Bos's [photo-frame-dashboard](https://github.com/w
 Bundled runtime assets:
 
 - **Manrope**, Mikhail Sharanda and contributors, via `@fontsource/manrope` 5.3.0. SIL Open Font License 1.1. The full [OFL notice](public/licenses/manrope-OFL.txt) ships with the site. Only Latin weights 400/600/700 are imported, with local WOFF2 and WOFF fallback files.
-- **Meteocons**, copyright 2020–2022 Bas Milius, via `@iconify-json/meteocons` 1.2.4. MIT license. The full [MIT notice](public/licenses/meteocons-MIT.txt) ships with the site. The icon loader strips SVG animation elements for restrained motion and reduced CPU usage; artwork and credit are retained. Source: [weather-icons](https://github.com/basmilius/weather-icons).
+- **Meteocons**, copyright 2020–2022 Bas Milius, via `@iconify-json/meteocons` 1.2.4. MIT license. The full [MIT notice](public/licenses/meteocons-MIT.txt) ships with the site. Dayframe repairs broken animation timing references and permits nested symbol overflow at build time. The current weather icon animates; hourly icons and the reduced-motion current icon use generated still SVGs with animation elements removed and precipitation paths made visible. Artwork and credit are retained. Source: [weather-icons](https://github.com/basmilius/weather-icons).
 - `public/annecy.svg` and `public/favicon.svg` are original Dayframe illustrations authored for this repository; no external photos, upstream artwork, or generated raster assets are included.
 
 Photo runtime dependencies in M3:

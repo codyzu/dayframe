@@ -1,5 +1,27 @@
 import {defineConfig, presetIcons} from 'unocss';
 import presetWind4 from '@unocss/preset-wind4';
+import iconCollection from '@iconify-json/meteocons/icons.json';
+import {repairMeteoconsTiming} from './src/lib/weather/icon-timing.ts';
+
+// Validate before entering Iconify's loader, which catches collection errors.
+// Copy rather than mutate the module cached by the dev server.
+const meteocons = {
+  ...iconCollection,
+  icons: Object.fromEntries(
+    Object.entries(iconCollection.icons).map(([name, icon]) => [
+      name,
+      {
+        ...icon,
+        // Cloud translations cross nested symbol view boxes. Let those
+        // symbols overflow inside the unchanged outer 512×512 icon canvas.
+        body: repairMeteoconsTiming(icon.body).replaceAll(
+          '<symbol ',
+          '<symbol overflow="visible" ',
+        ),
+      },
+    ]),
+  ),
+};
 
 export default defineConfig({
   // Astro scans templates by default; weather classes also live in browser-only TS.
@@ -25,27 +47,8 @@ export default defineConfig({
     presetWind4({preflights: {reset: false}}),
     presetIcons({
       collections: {
-        async meteocons() {
-          const {default: collection} =
-            await import('@iconify-json/meteocons/icons.json');
-          // Cloud translations cross nested symbol view boxes. Let those
-          // symbols overflow inside the unchanged outer 512×512 icon canvas.
-          // Copy rather than mutate the module cached by the dev server.
-          return {
-            ...collection,
-            icons: Object.fromEntries(
-              Object.entries(collection.icons).map(([name, icon]) => [
-                name,
-                {
-                  ...icon,
-                  body: icon.body.replaceAll(
-                    '<symbol ',
-                    '<symbol overflow="visible" ',
-                  ),
-                },
-              ]),
-            ),
-          };
+        meteocons() {
+          return meteocons;
         },
       },
       processor(css, {collection, svg}) {
