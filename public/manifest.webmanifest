@@ -1,0 +1,26 @@
+{
+  "id": "/?display=frame",
+  "name": "Dayframe",
+  "short_name": "Dayframe",
+  "lang": "fr",
+  "start_url": "/?display=frame",
+  "scope": "/",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#143c48",
+  "theme_color": "#143c48",
+  "icons": [
+    {
+      "src": "/icons/dayframe-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/dayframe-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

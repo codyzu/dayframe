@@ -7,8 +7,9 @@ import '../styles/global.css';
 interface Props {
   title: string;
   bodyClass?: string;
+  displayManifest?: boolean;
 }
-const {title, bodyClass = ''} = Astro.props;
+const {title, bodyClass = '', displayManifest = false} = Astro.props;
 ---
 
 <!doctype html>
@@ -22,6 +23,7 @@ const {title, bodyClass = ''} = Astro.props;
       content="Dayframe, le tableau de bord de la maison. Aperçu de démonstration."
     />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    {displayManifest && <link rel="manifest" href="/manifest.webmanifest" />}
     <title>{title} · Dayframe</title>
   </head>
   <body class:list={['font-sans', bodyClass || 'bg-[#143c48] text-[#f5f6ef]']}>

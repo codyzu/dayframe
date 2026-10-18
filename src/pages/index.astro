@@ -6,7 +6,11 @@ import ModeNavigation from '../components/ModeNavigation.astro';
 import {displayConfig} from '../lib/dashboard/config';
 ---
 
-<BaseLayout title="À la maison" bodyClass="display-page text-[#f5f6ef]">
+<BaseLayout
+  title="À la maison"
+  bodyClass="display-page text-[#f5f6ef]"
+  displayManifest
+>
   <main
     class="dashboard min-h-screen flex flex-col px-4.5 py-5.5 md:p-6 lg:px-11 lg:pt-7.5 lg:pb-6"
     data-density="standard"

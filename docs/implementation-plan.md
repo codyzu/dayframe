@@ -1,6 +1,6 @@
 # Dayframe: Implementation Plan
 
-**Status:** M1–M2 complete; M3 implemented and production admin activated for one administrator; M4 deployed with partial live acceptance and explicit deferred checks; preliminary H4 Photos/weather collection complete (acceptance pending); M5 locally verified and pushed; deployment workflow in progress at status review; M6 acceptance pending
+**Status:** M1–M2 delivered; M3/M4 production active with deferred live acceptance; M5 and icon timing repair deployed at `ca922ad`; short Classic 10 checks passed, ready for H5 evaluation under owner-approved deferrals; full H4/M4/M5/M6 acceptance remains open
 **Date:** 16 October 2026  
 **Requirements:** [Family Dashboard: Technical Specification](technical-specification.md)  
 **Primary upstream:** [Wes Bos — photo-frame-dashboard](https://github.com/wesbos/photo-frame-dashboard)
@@ -449,3 +449,11 @@ Re-read the local specification and upstream foundation section; inspected upstr
 Validation passed: strict Astro/TypeScript checks (60 files, zero diagnostics), XO/Prettier (only the two existing photo complexity warnings), production build, 28 focused weather/icon unit tests and all 12 focused browser checks across Chromium, Firefox, WebKit and iPhone emulation. Documentation formatting and `git diff --check` passed. Structural coverage checks all installed icons, idempotency, valid links, shared events and unsupported/ambiguous input. The browser regression consumes the exact production CSS SVG, inlined only for deterministic SMIL seeking, and checks day/night drizzle, sleet, rain, snow, showers, lightning and hail after three and ten cycles. A probe against the old build failed on disappeared droplets as expected. During test development, fixture caches and SVG sampling were made explicit, using fresh timelines per sample to avoid WebKit seeking-history artifacts; superseded browser failures are not the final result.
 
 Not run for this slice: full `pnpm verify`/unrelated photo/admin/scheduling suites, production deployment/smoke, actual Classic 10 repeated playback, motion cost or physical acceptance, real outages and the 48-hour soak. Existing M4/H4/M6 deferrals remain; the historical frame rain failure is not closed by desktop playback. This change remains local and uncommitted; no frame/browser/network/settings/credential changes were performed.
+
+### H5 readiness after short actual-frame checks — 18 October 2026
+
+Confirmed [production run 39125002690](https://github.com/codyzu/dayframe/actions/runs/39125002690) successfully verified, uploaded and smoke-tested revision `ca922ad930bc65556b163f709aaaae5d03776608`. This supersedes historical local-only/uncommitted repair and in-progress deployment statements. The successful workflow recorded 84 unit/integration tests, 113 browser passes and the same three intentional skips.
+
+Reverified Classic10 identity/firmware/Firefox and one retained tab. Production protected photos and Night/Morning navigation worked; current-build synthetic actual-frame tests passed repeated rain playback with static hourly icons, one Europe/Paris real-clock Morning → Night boundary, Photos override/30-second inactivity expiry, zero retained Blob URLs/photo elements after mode exit, and Home/Night rendering. Browser toolbar clipping remains H5 work. [Detailed execution, provenance and limits](hardware/h4-performance.md#short-fixed-build-checks-and-h5-handoff--18-october-2026).
+
+The owner authorized moving to H5 with all previously skipped checks kept deferred. H5 may now begin with manifest/existing-launcher shortcut evaluation and the accepted H3.1 maintenance route; no H5 device action is claimed. Full H4/M4/M5/M6 acceptance, the live security matrix, motion performance, failure/outage/recovery cases, physical observations, broader lifecycle/DST and the 48-hour run remain open. No household configuration, credentials, network, Android/browser settings, packages or firmware changed.
