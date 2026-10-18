@@ -50,6 +50,7 @@ public final class MaintenanceActivity extends Activity {
       startService(new Intent(this, MaintenanceService.class));
       updateStatus();
     });
+    addButton(content, "Raccourcis Dayframe", () -> openPackage("amirz.rootless.nexuslauncher"));
     addButton(content, "Firefox / Dayframe", () -> openPackage("org.mozilla.firefox"));
     addButton(content, "Accueil du cadre", () -> openPackage("com.waophoto.smartframe"));
     addButton(content, "Réglages du cadre", () -> open(new Intent().setComponent(
@@ -78,7 +79,7 @@ public final class MaintenanceActivity extends Activity {
   }
 
   private void updateStatus() {
-    status.setText("Essai H3.1 · Android 6 uniquement\nAutorisation : "
+    status.setText("Maintenance H5 · Android 6 uniquement\nAutorisation : "
         + (Settings.canDrawOverlays(this) ? "accordée" : "à accorder")
         + "\nActivez le bouton avec « Afficher le bouton DF »."
         + "\nTouchez DF depuis Firefox ou l’accueil pour revenir ici. "

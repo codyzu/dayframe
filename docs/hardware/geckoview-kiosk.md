@@ -1,6 +1,6 @@
 # Fullscreen and GeckoView kiosk plan
 
-**PLANNED only.** First prove Firefox rendering and stability; H6 is optional if H5 already meets household needs. A native wrapper needs a separate ADR under the web-app specification's native-app non-goal. It does not change the Astro/Workers architecture or €0 service budget.
+**H5 in progress; H6 planned.** The [H5 execution record](h5-fullscreen.md) covers the deployed manifest, approved Rootless trial and remaining physical/boot gates. Earlier H4 omissions remain deferred; H6 is optional if H5 meets household needs. A native wrapper needs a separate ADR under the web-app specification's native-app non-goal. It does not change the Astro/Workers architecture or €0 service budget.
 
 ## What upstream actually supplies
 
@@ -13,10 +13,12 @@ The available WebView wrapper supplies ideas for fullscreen, saved URL, touch ma
 | Option                         | Engine / benefits                                                                                            | Limits / next gate                                                                                                                                                                             |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Firefox + home-screen shortcut | Bundled Gecko; upstream Rootless 3.9.1 shortcut opens `ExternalAppBrowserActivity` without normal toolbar    | Classic vendor launcher may not support shortcut; browser manifest/shortcut behavior must be measured. No built-in watchdog or demonstrated boot startup on our unit. Start here in H5.        |
-| Native Android WebView kiosk   | Small wrapper, immersive display and native navigation; engine supplied by Android                           | Classic WebView version unknown. Upstream Modern10 WebView 44 cannot run its modern app. Installing this wrapper does not upgrade the engine. No system WebView swap planned.                  |
+| Native Android WebView kiosk   | Small wrapper, immersive display and native navigation; engine supplied by Android                           | Classic stock WebView is 44.0.2403.119. Upstream Modern10 WebView 44 cannot run its modern app. Installing this wrapper does not upgrade the engine. No system WebView swap planned.           |
 | Custom GeckoView kiosk         | Bundled pinned Gecko runtime, native immersive controls, lifecycle/load watchdogs and boot receiver possible | New Android build/signing/update responsibility, larger memory/storage use, engine maintenance ceiling and hardware validation. Separate profile from Firefox; reprovision display credential. |
 
 ## H5: incremental fullscreen evaluation
+
+Current execution: [H5 fullscreen shortcut](h5-fullscreen.md). Manifest/icons are deployed at `3763694`, stock launcher was rechecked, and the owner approved the exact Rootless trial. Standalone Firefox has been observed at 1280 × 800 with existing protected photos; physical return and boot acceptance remain pending. The sequence below retains the original incremental gates.
 
 After H4, inspect whether Dayframe serves an appropriate manifest and Firefox offers **Add to Home screen** on the existing launcher. The upstream demo's fullscreen/landscape manifest is not evidence that Dayframe has equivalent metadata; current repository inspection found no web app manifest. If missing, propose that small web change separately before assuming a shortcut hides browser chrome.
 

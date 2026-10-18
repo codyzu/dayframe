@@ -2,6 +2,8 @@
 
 Host-prepared H3.1 utility for the Classic10 on Android 6/API 23. The owner approved the limited native scope and device trial on 17 October; the APK is installed and normal UI overlay consent is granted. Physical H3.1 acceptance passed using stock Home for Settings; direct Settings launch is unavailable. See [ADR 0004](../../docs/decisions/0004-frame-maintenance-helper.md) and the [trial/undo runbook](../../docs/hardware/h31-maintenance.md).
 
+H5 source 0.2.0 adds **Raccourcis Dayframe**, opening the installed Rootless launcher so its Dayframe shortcut can be selected. The exact update remains subject to the [H5 artifact/approval record](../../docs/hardware/h5-fullscreen.md); the H3.1 acceptance above describes 0.1.0. No additional permission or boot behavior is added.
+
 Touch **DF** at the right center edge to open the menu; select stock Home or Firefox. For Settings, use stock Home’s visible Settings control; the direct “Réglages du cadre” button in 0.1.0 displays an error because the vendor activity is not exported. The Home → Settings → DF → Firefox route passed owner touch testing. Firefox opens its existing profile/tab. The helper requests only permission to draw over other apps, granted separately through Android's normal UI. Start its floating button explicitly from the menu. Hiding it requires confirmation because stock Home has no known app drawer.
 
 This utility is original MIT-licensed source (see LICENSE). It contains no web engine, accessibility service, third-party Java dependencies or native libraries. It does not read browser content or credentials. It is intentionally limited to this API 23 trial; foreground-service and overlay rules on newer Android versions differ.
@@ -16,7 +18,7 @@ python3 hardware/maintenance/build.py \
   --build-tools "$ANDROID_BUILD_TOOLS" \
   --keystore "$H31_KEYSTORE" \
   --password-file "$H31_PASSWORD_FILE" \
-  --output hardware/maintenance/build/dayframe-maintenance-0.1.0.apk
+  --output hardware/maintenance/build/dayframe-maintenance-0.2.0.apk
 ```
 
 The script refuses to overwrite an existing artifact. It compiles against API 23 plus the build-tools' compile-only lambda stubs, desugars Java 8 lambdas with D8 for API 23, packages the manifest/DEX, aligns, signs and verifies the APK, checks ZIP integrity/absence of native libraries, and prints the artifact hash/size and manifest badging. The lambda stubs are not shipped. Tool provenance and the tested artifact identity are recorded in the runbook; another signing key or changed source yields a different artifact to review.
