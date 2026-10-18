@@ -47,6 +47,8 @@ Keep stock Home available and the current Firefox profile intact during evaluati
 
 ## H4 — Firefox performance testing
 
+**18 October progress:** preliminary Photos and weather hours collected with four tabs; weather 61/61 samples OK, no observed process churn, median whole-browser CPU 1.535 cores. This is multi-tab stress/functional evidence, not representative single-tab performance. Owner identified VIEW-intent tab accumulation; duplicate API/dashboard tabs were closed and exactly one retained synthetic tab verified. Subsequent tests reuse it. [Full evidence and limitations](h4-performance.md#weather-hour-result-and-single-tab-correction--18-october-2026). Paired motion, physical observations and approved router outages remain open; the owner excludes the 48-hour run from the current request.
+
 **17 October preparation:** the owner authorized H4 tools/runbook preparation followed by M4 display checks and a short baseline. The [measurement runbook](h4-performance.md) and independent host sampler/summary/tests are prepared. An actual read-only two-snapshot collection verified all five Firefox processes; this is tooling validation only. A one-hour preliminary production Photos run subsequently started after the non-disruptive M4 checks; controlled synthetic baseline, paired motion trial and 48-hour acceptance remain pending. Network interruptions retain their separate approval gate.
 
 - **Prerequisites:** H3 works; H4 test authorization and synthetic dataset; separately approved network interruptions if needed.
@@ -125,3 +127,5 @@ Basic exposure assessment starts at H1; H7 is not permission to leave root ADB b
 | Our Modern10 RAM, storage and firmware?                             | H8 after delivery; do not infer from upstream or Classic                                                                                                                             |
 
 H1 is complete, including owner visual ports/power/buttons confirmation. H2 is accepted with the owner’s encryption and single-copy retention exceptions; all required read-capture and verification checks passed. See the [H2 execution record](h2-backup.md). H3–H8 and M6 remain incomplete; no additional device action is authorized by H2 acceptance.
+
+**18 October accelerated H4 closeout (owner request to conserve credits):** retained the completed four-tab preliminary Photos/weather hours and shortened one-tab synthetic Photos run (10 samples / 539.73 s). Actual frame decoded all three WebPs with peak two instrumented Blob URLs; sustained rain animation **FAIL** from broken SVG timing references. Remaining duration, motion pair, HTTP-failure/lease/recovery, router-outage and unavailable physical checks were explicitly **skipped**, not passed; existing M4 deferrals and 48-hour exclusion remain. No H4/M6 acceptance. See [completed, failed and skipped checks](h4-performance.md#owner-requested-accelerated-closeout--18-october-2026).

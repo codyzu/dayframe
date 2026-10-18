@@ -12,7 +12,8 @@ def summary(rows):
     good = [row for row in rows if row['status'] == 'ok']
     result = {'rows': len(rows), 'ok': len(good),
               'incomplete_or_absent': len(rows) - len(good)}
-    for name in ['pss_kib', 'mem_free_kib', 'swap_free_kib', 'cpu_capacity_percent']:
+    for name in ['pss_kib', 'mem_free_kib', 'swap_free_kib', 'cpu_capacity_percent',
+                 'cpu_core_equivalents']:
         values = [float(row[name]) for row in good if row.get(name)]
         result[name] = ({'first': values[0], 'last': values[-1],
                          'min': min(values), 'median': statistics.median(values),
@@ -22,6 +23,7 @@ def summary(rows):
     result['max_sample_gap_seconds'] = max((b - a for a, b in zip(elapsed, elapsed[1:])), default=0)
     result['main_pid_changes'] = sum(row.get('main_pid_changed') == 'True' for row in rows)
     result['process_set_changes'] = sum(row.get('process_set_changed') == 'True' for row in rows)
+    result['cpu_core_intervals'] = sum(bool(row.get('cpu_core_equivalents')) for row in good)
     result['acceptance'] = 'Manual review required; statistics do not prove page health or a memory leak.'
     return result
 

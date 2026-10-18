@@ -1,13 +1,43 @@
 """Host-only measurement checks; never connect to a real frame."""
 
 import unittest
+import struct
 from unittest.mock import patch
 
-from measure import Reader, cpu_share, cpu_total, proc_stat
+from measure import Reader, clock_ticks, cpu_cores, cpu_share, cpu_total, proc_stat
 from summarize import summary
 
 
 class MeasurementTests(unittest.TestCase):
+    def test_device_auxv_tick_rate(self):
+        self.assertEqual(clock_ticks(struct.pack('<IIII', 17, 100, 0, 0)), 100)
+        for invalid in [b'x', struct.pack('<II', 0, 0), struct.pack('<II', 17, 0)]:
+            with self.assertRaises(RuntimeError):
+                clock_ticks(invalid)
+
+    def test_core_equivalents_survive_hotplug(self):
+        before = {'uptime': 1, 'online': '0', 'cpu_total': 100,
+                  'processes': {'12': {'start': 3, 'ticks': 10, 'sample_monotonic': 5}}}
+        after = {'uptime': 61, 'online': '0-2', 'cpu_total': 110,
+                 'processes': {'12': {'start': 3, 'ticks': 610, 'sample_monotonic': 65}}}
+        self.assertIsNone(cpu_share(before, after))
+        self.assertEqual(cpu_cores(before, after, 100), 0.1)
+        after['processes']['12']['start'] = 4
+        self.assertIsNone(cpu_cores(before, after, 100))
+        after['processes']['12']['start'] = 3
+        after['processes']['12']['ticks'] = 9
+        self.assertIsNone(cpu_cores(before, after, 100))
+
+    def test_reject_aggregate_regression_and_impossible_share(self):
+        before = {'uptime': 1, 'cpu_total': 100, 'raw': {'cpu': 'cpu 10 0 0 90'},
+                  'processes': {'12': {'start': 3, 'ticks': 10}}}
+        after = {'uptime': 2, 'cpu_total': 110, 'raw': {'cpu': 'cpu 30 0 0 80'},
+                 'processes': {'12': {'start': 3, 'ticks': 12}}}
+        self.assertIsNone(cpu_share(before, after))
+        after['raw']['cpu'] = 'cpu 20 0 0 90'
+        after['processes']['12']['ticks'] = 21
+        self.assertIsNone(cpu_share(before, after))
+
     def test_summary_preserves_incomplete_and_missing_measurements(self):
         result = summary([{'status': 'incomplete'}, {'status': 'browser-absent'}])
         self.assertEqual(result['incomplete_or_absent'], 2)

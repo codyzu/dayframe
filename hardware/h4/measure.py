@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import struct
 import time
 
 
@@ -46,12 +47,53 @@ def cpu_share(previous, current):
     delta = current['cpu_total'] - previous['cpu_total']
     if delta <= 0:
         return None
+    if previous.get('online') != current.get('online'):
+        return None
+    # This kernel's aggregate idle counters can regress during CPU hotplug.
+    if 'raw' in previous and 'raw' in current:
+        before = list(map(int, previous['raw']['cpu'].splitlines()[0].split()[1:9]))
+        after = list(map(int, current['raw']['cpu'].splitlines()[0].split()[1:9]))
+        if any(b < a for a, b in zip(before, after)):
+            return None
     ticks = 0
     for pid, process in current['processes'].items():
         before = previous['processes'].get(pid)
         if before and before['start'] == process['start']:
-            ticks += max(0, process['ticks'] - before['ticks'])
+            if process['ticks'] < before['ticks']:
+                return None
+            ticks += process['ticks'] - before['ticks']
+    if ticks > delta:
+        return None
     return round(100 * ticks / delta, 3)
+
+
+def clock_ticks(auxv):
+    """AT_CLKTCK from the verified ARMv7 device, never the host's sysconf."""
+    if len(auxv) % 8:
+        raise RuntimeError('Invalid ARMv7 auxiliary vector')
+    value = dict(struct.iter_unpack('<II', auxv)).get(17)
+    if not value or value > 1000000:
+        raise RuntimeError('Device AT_CLKTCK unavailable')
+    return value
+
+
+def cpu_cores(previous, current, ticks_per_second):
+    """Whole-browser core equivalents, independent of aggregate hotplug counters."""
+    if not previous or current['uptime'] <= previous['uptime']:
+        return None
+    if {(pid, p['start']) for pid, p in previous['processes'].items()} != {
+        (pid, p['start']) for pid, p in current['processes'].items()
+    } or not current['processes']:
+        return None
+    rates = []
+    for pid, process in current['processes'].items():
+        before = previous['processes'][pid]
+        elapsed = process['sample_monotonic'] - before['sample_monotonic']
+        ticks = process['ticks'] - before['ticks']
+        if elapsed <= 0 or ticks < 0:
+            return None
+        rates.append(ticks / ticks_per_second / elapsed)
+    return round(sum(rates), 4)
 
 
 class Reader:
@@ -78,6 +120,15 @@ class Reader:
             raise RuntimeError('Firefox version mismatch; review before sampling')
         return {**observed, 'firefox': match[1]}
 
+    def clock_ticks(self):
+        result = subprocess.run(
+            [self.adb, '-s', self.target, 'exec-out', 'cat', '/proc/self/auxv'],
+            capture_output=True, timeout=30, check=False,
+        )
+        if result.returncode or result.stderr:
+            raise RuntimeError('Device tick-rate read failed')
+        return clock_ticks(result.stdout)
+
     def sample(self):
         raw = {name: self.shell(command) for name, command in {
             'ps': 'ps', 'meminfo': 'cat /proc/meminfo',
@@ -95,13 +146,15 @@ class Reader:
                 raise RuntimeError('Unexpected ps PID layout')
             # A process disappearing during collection is an incomplete sample, not zero memory.
             stat = self.shell('cat /proc/' + pid + '/stat')
+            sampled_at = time.monotonic()
             memory = self.shell('dumpsys meminfo ' + pid)
             raw['stat-' + pid] = stat
             raw['memory-' + pid] = memory
             total = re.search(r'^\s*TOTAL\s+(\d+)\b', memory, re.MULTILINE)
             if not total:
                 raise RuntimeError('Missing per-process PSS; incomplete sample')
-            processes[pid] = {**proc_stat(stat), 'name': fields[-1], 'pss_kib': int(total[1])}
+            processes[pid] = {**proc_stat(stat), 'name': fields[-1],
+                              'sample_monotonic': sampled_at, 'pss_kib': int(total[1])}
         memory = {key: int(value) for key, value in re.findall(r'^(\w+):\s+(\d+)', raw['meminfo'], re.MULTILINE)}
         return {
             'utc': datetime.now(timezone.utc).isoformat(),
@@ -131,11 +184,15 @@ def main():
     out.mkdir(parents=True, exist_ok=False, mode=0o700)
     reader = Reader(args.target)
     identity = reader.identity()
+    ticks_per_second = reader.clock_ticks()
     revision = subprocess.check_output(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], text=True).strip()
     (out / 'run.json').write_text(json.dumps({
         'identity': identity, 'host_revision': revision,
         'deployment': args.deployment, 'label': args.label,
         'duration_seconds': args.duration, 'interval_seconds': args.interval,
+        'device_clk_tck': ticks_per_second,
+        'host_dirty': bool(subprocess.check_output(
+            ['git', '-C', str(ROOT), 'status', '--porcelain'], text=True).strip()),
     }, indent=2) + '\n')
     (out / 'incidents.csv').write_text('utc,event,observation,action,recovered_utc\n')
     previous = None
@@ -143,7 +200,8 @@ def main():
     deadline = started + args.duration
     columns = ['utc', 'elapsed_seconds', 'status', 'process_count', 'pss_kib',
                'mem_available_kib', 'mem_free_kib', 'swap_free_kib',
-               'cpu_capacity_percent', 'online', 'main_pid_changed', 'process_set_changed']
+               'cpu_capacity_percent', 'cpu_core_equivalents', 'online',
+               'main_pid_changed', 'process_set_changed']
     with (out / 'samples.csv').open('w', newline='') as stream:
         writer = csv.DictWriter(stream, fieldnames=columns)
         writer.writeheader()
@@ -160,6 +218,7 @@ def main():
                     'mem_free_kib': sample['memory'].get('MemFree'),
                     'swap_free_kib': sample['memory'].get('SwapFree'),
                     'cpu_capacity_percent': cpu_share(previous, sample), 'online': sample['online'],
+                    'cpu_core_equivalents': cpu_cores(previous, sample, ticks_per_second),
                 }
                 if previous:
                     def identities(value, main=False):
