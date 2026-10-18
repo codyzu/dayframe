@@ -1,6 +1,6 @@
 # Dayframe: Implementation Plan
 
-**Status:** M1–M2 complete; M3 implemented and production admin activated for one administrator; M4 implemented locally; production activation pending; M5 onward pending
+**Status:** M1–M2 complete; M3 implemented and production admin activated for one administrator; M4 deployed with partial live acceptance and explicit deferred checks; preliminary H4 Photos collection complete (acceptance pending); M5 onward pending
 **Date:** 16 October 2026  
 **Requirements:** [Family Dashboard: Technical Specification](technical-specification.md)  
 **Primary upstream:** [Wes Bos — photo-frame-dashboard](https://github.com/wesbos/photo-frame-dashboard)
@@ -34,7 +34,7 @@ Review upstream first, then decide deliberately. Dayframe keeps Astro/TypeScript
 
 ## 2. Delivery approach
 
-Deliver one demonstrable slice at a time. Keep task IDs in commits/PRs and update this document with validation evidence. M1 is delivered with local and Workers Free acceptance evidence below. M2 is publicly deployed (see its deployment follow-up below). M3 has local acceptance evidence and production authentication/KV activation below; household upload/delete testing and second-admin setup remain pending. M4 has local implementation and synthetic acceptance evidence below; production activation remains pending. M5 onward are pending. A task is done only when its acceptance evidence exists; a mock or desktop-only test must be labeled as such.
+Deliver one demonstrable slice at a time. Keep task IDs in commits/PRs and update this document with validation evidence. M1 is delivered with local and Workers Free acceptance evidence below. M2 is publicly deployed (see its deployment follow-up below). M3 has local acceptance evidence and production authentication/KV activation below; household upload/delete testing and second-admin setup remain pending. M4 is deployed with the explicit live acceptance gaps recorded below. M5 onward are pending. A task is done only when its acceptance evidence exists; a mock or desktop-only test must be labeled as such.
 
 ```text
 M1 foundation → M2 weather → M3 protected photos → M4 administration → M5 display behavior
@@ -171,7 +171,7 @@ For each milestone record: completed task IDs, checks run and results, screensho
 | Credential revocation bounds and private offline cache policy | M4–M5        | Explicit propagation/retention guarantees and tests.                                |
 | Classic 10 compatibility, kiosk, brightness, startup          | Discovery/M6 | Observations on the actual unit and a recovery path.                                |
 
-**Next implementation slice:** activate M4 with the existing approved administrator, verified home-network configuration and live provisioning checks; the owner deferred the second identity, whose independent production acceptance remains pending. Owner production upload/delete testing also remains pending. This document authorizes no hardware changes or paid infrastructure.
+**Next implementation slice:** implement M5 locally while preserving the deployed M4 build for pending H4 weather and paired-motion measurements. The owner deferred the second administrator, standalone revocation and other live M4 gaps recorded below. This document authorizes no hardware changes or paid infrastructure.
 
 ## M1 implementation record — 16 October 2026
 
@@ -371,3 +371,31 @@ The owner explicitly approved ADR 0004's narrow native-maintenance exception and
 Owner physical testing closes H3.1 and H3: DF works from Firefox; the requested repeated stock Home/Firefox round trips passed; stock Settings through Home → DF → Firefox/Dayframe passed separately. The direct Settings shortcut is unavailable because the vendor activity is not exported (read-only ActivityManager evidence); use stock Home's visible Settings control. The owner completed Firefox onboarding and manually reopened Dayframe from Jump back in when Firefox Home appeared. Browser toolbar remains visible, and neither direct URL reopening nor unattended recovery is claimed.
 
 [Acceptance evidence, exact artifact, permissions and undo](hardware/h31-maintenance.md#acceptance-and-operating-limits) are recorded. Helper 0.1.0 remains installed with overlay permission and DF running; no additional grant, launcher change, system write, reboot or private provisioning followed the approved trial. Source/build checks and installed APK readback passed; final documentation formatting/link/diff checks passed. This closes the requested H3.1 slice only. H4 performance/soak, H5 fullscreen, H6 optional startup/recovery, M4 private display acceptance and overall M6 remain pending under their existing gates.
+
+### H4 preparation and M4 display checks — 17 October 2026
+
+Owner authorized measurement tools/runbook preparation, then M4 display checks and a short baseline before M5. Added independent read-only Python sampler, summary tool and six host tests under `hardware/h4/`; [H4 runbook](hardware/h4-performance.md) records exact use, privacy/failure behavior, test sequence and outstanding acceptance. Refreshed upstream HEAD `e97c50ba459c49ea8237259f69b95cd28054b628`, device index/Modern10 follow-up and animation discussion; no upstream source/assets copied. Actual Classic10/firmware/board/Android/Firefox identity rechecked and two private samples successfully include main, content, GPU and crashhelper processes. This is collection validation only, not stability or a 48-hour result.
+
+Production administrator sign-in and saving existing settings succeeded; anonymous display configuration reads denied over real IPv4 and IPv6. Production smoke passed 19 route checks but failed the exact HTML comparison: local/public HTML differs only by stylesheet fingerprint, with equal stylesheet token multisets and different declaration ordering. Strict comparison remains unchanged; no deployment made. Owner approved read-only display-key creation and physical setup entry, but browser confirmation automation did not complete issuance; physical handoff and all credential/device/off-home acceptance remain pending. [Detailed result table](hardware/h4-performance.md#provenance-and-execution-evidence--17-october-2026).
+
+Six Python tests, production build, lint (two existing photo complexity warnings), Markdown formatting and diff whitespace checks passed. No package/settings/launcher/system change or reboot on the frame, no paid service, no baseline/soak left running, and no M5 implementation in this slice.
+
+### M4 actual-frame provisioning follow-up — 17 October 2026
+
+The owner created the read-only display key, entered it physically on `/setup/`, returned to Dayframe and selected Photos; protected photos now display on the actual Classic 10. Provisioning/image delivery accepted from owner observation. The long key entry is a recorded usability issue; no credential strength or network policy changed.
+
+Executed the planned Firefox-only persistence test after rechecking identity: recorded pre-restart processes, force-stopped only Firefox, verified all Firefox processes absent, then launched the existing Firefox with an explicit HTTPS Dayframe intent. Main PID changed. The immediate private screen capture showed DF maintenance rather than photo evidence; the owner subsequently confirmed that protected photos still display without re-entering the key, completing actual-browser restart persistence. No data clearing or frame reboot. Role denial, rotation/revocation, off-home/dual-stack credential checks, metrics and H4 baseline remain pending. See the [H4 execution record](hardware/h4-performance.md#provisioning-and-firefox-restart-follow-up--17-october-2026).
+
+The owner subsequently replaced the key and confirmed that the frame's old credential is denied and private photos clear on the next mode/reload request. Rotation invalidation and private-pixel denial cleanup pass on the actual frame. Replacement entry is handed to the owner; final reprovisioning, standalone DELETE revocation, display-role denial, off-home/dual-stack paths and metrics remain pending. Do not equate rotation testing with independent DELETE endpoint acceptance.
+
+### M4 non-disruptive acceptance and H4 baseline start — 17 October 2026
+
+The owner confirmed cellular administrator sign-in/private dashboard photos, authorized remaining checks and baseline start, and required preserving the current key. Saved settings reread correctly. Actual Classic/Firefox identity rechecked; frame session returned role `display`, and its authenticated `/api/config` read returned `FORBIDDEN`. Separate credential-management GET evidence was inconclusive because navigation returned anonymous/malformed-route results; no mutation-role production acceptance is inferred. No cookie/profile extraction, rotation/revocation, network interruption, installation, system change or frame reboot.
+
+Rechecked Workers Free $0 current and observed low-volume Worker CPU/errors, Administration request/duration/SQL and photo KV usage below displayed Free limits. The active version matches successful [deployment run 39025857342](https://github.com/codyzu/dayframe/actions/runs/39025857342), whose own 20-route exact-artifact smoke passed. Earlier local-vs-production fingerprint failure is a separate build-reproducibility follow-up; strict smoke remains unchanged. No deployment or billed service was performed.
+
+Started the owner-authorized one-hour preliminary production Photos baseline with once-minute read-only sampling and private evidence/summary. First sample succeeded; no completed-baseline or H4/M6 acceptance claim. It preserves the actual four-tab/browser-chrome environment rather than claiming a controlled synthetic benchmark. Temporary host idle-sleep prevention lasts only for the sampler process. [Current execution details and limits](hardware/h4-performance.md#remaining-non-disruptive-checks-and-preliminary-baseline--17-october-2026). Standalone revocation and second identity are deferred; credentialed off-home/dual-stack and remaining real-frame role checks remain unproven. M5 has not started.
+
+### H4 Photos collection result — 18 October 2026
+
+The 17 October one-hour preliminary Photos run completed at 22:22:26 Paris: 61/61 samples OK, stable observed Firefox PID/process set, final PSS lower than initial. This is collection/process evidence, not continuous visual/touch or H4/M6 acceptance. One CPU result exceeds 100% with CPU hotplug and inconsistent aggregate/process tick deltas; raw evidence is preserved and CPU conclusions require measurement review. Next: preliminary weather hour and later paired motion test; full 48-hour acceptance follows stable M5 behavior. M5 has not been implemented by this chat. See [morning review](hardware/h4-performance.md#morning-review--18-october-2026).

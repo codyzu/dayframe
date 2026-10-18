@@ -1,6 +1,6 @@
 # ADR 0003 — M4 administration and display credentials
 
-Status: implemented locally; production activation and actual-device acceptance pending.
+Status: implemented and deployed; partial production/actual-device acceptance recorded in the [current operations record](../administration.md). Standalone revocation and second identity are deferred; remaining role/network-path limits are explicit.
 
 ## Decision
 
@@ -32,7 +32,7 @@ Reviewed 16 October 2026: [Durable Objects pricing](https://developers.cloudflar
 
 One display at 20 seconds uses approximately 4,321 image authorizations plus 288 catalog authorizations/day, plus startup/session checks; each requires one object read. Two admins with a continuously open photo tab add at most 5,760 session requests/day combined. State is a single small record, written only by explicit settings/key changes. There are no alarms, sockets, polling inside the object, or background work. Requests await short storage transactions; inactive objects may hibernate. Quotas are account-wide and abuse can exhaust them. Object outages fail display authorization/settings with 503; independently verified admins can still use photo APIs. No paid fallback exists. Production account-plan and observed CPU/duration validation remain activation gates, not claims from local emulation.
 
-Wrangler includes the SQLite migration and binding in local and production config. The ignored production config generator preserves both alongside the private photo namespace. No deployment has been performed for M4.
+Wrangler includes the SQLite migration and binding in local and production config. The ignored production config generator preserves both alongside the private photo namespace. M4 was subsequently deployed; its active version and live acceptance evidence are recorded in the [H4/M4 follow-up](../hardware/h4-performance.md#remaining-non-disruptive-checks-and-preliminary-baseline--17-october-2026).
 
 ## Upstream provenance
 

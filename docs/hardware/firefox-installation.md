@@ -55,6 +55,8 @@ Before leaving H3, physically demonstrate returning to stock Settings/home and m
 
 ## H4 validation matrix
 
+Use the [H4 measurement runbook](h4-performance.md) for the host sampler, private evidence, M4 display acceptance sequence, short baseline and later fixed-deployment 48-hour run.
+
 Record firmware, installed browser version, Dayframe revision/deployment, profile/density and test duration. Use synthetic photos until privacy/authentication passes. Retain raw logs/screenshots privately and publish sanitized summaries only.
 
 | Check           | Action / expected evidence                                                                                                                                                                                                                                                                                                                               |

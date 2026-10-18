@@ -18,3 +18,4 @@ frames/
 .DS_Store
 .pnpm-store/
 .cache/
+__pycache__/
