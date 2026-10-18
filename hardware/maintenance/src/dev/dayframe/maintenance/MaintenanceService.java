@@ -5,9 +5,13 @@ import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.Handler;
+import android.os.SystemClock;
 import android.provider.Settings;
 import android.view.Gravity;
 import android.view.WindowManager;
@@ -16,6 +20,35 @@ import android.widget.Toast;
 
 /** Owns one small overlay. It neither observes other apps nor handles web content. */
 public final class MaintenanceService extends Service {
+  static final String BOOT = "dev.dayframe.maintenance.BOOT";
+  static final String CANCEL = "dev.dayframe.maintenance.CANCEL";
+  private final Handler handler = new Handler();
+  private StartupPolicy startup;
+  private boolean bootSeen;
+  private final Runnable checkStartup = new Runnable() {
+    @Override public void run() {
+      if (startup == null) return;
+      long now = SystemClock.elapsedRealtime();
+      if (!DayframeLaunch.preferences(MaintenanceService.this).getBoolean("enabled", false)
+          || startup.expired(now)) {
+        cancelStartup();
+        return;
+      }
+      ConnectivityManager connectivity = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+      NetworkInfo network = connectivity.getActiveNetworkInfo();
+      if (startup.ready(now, System.currentTimeMillis(), network != null && network.isConnected())) {
+        cancelStartup();
+        try {
+          DayframeLaunch.open(MaintenanceService.this);
+        } catch (RuntimeException error) {
+          Toast.makeText(MaintenanceService.this,
+              "Démarrage Dayframe impossible. Touchez DF pour réessayer.", Toast.LENGTH_LONG).show();
+        }
+        return;
+      }
+      handler.postDelayed(this, 2000);
+    }
+  };
   private boolean visible;
   private WindowManager manager;
   private Button access;
@@ -24,6 +57,12 @@ public final class MaintenanceService extends Service {
     if (Build.VERSION.SDK_INT != 23 || !Settings.canDrawOverlays(this)) {
       stopSelf();
       return START_NOT_STICKY;
+    }
+    if (intent != null && CANCEL.equals(intent.getAction())) cancelStartup();
+    if (intent != null && BOOT.equals(intent.getAction()) && !bootSeen) {
+      bootSeen = true;
+      startup = new StartupPolicy(SystemClock.elapsedRealtime());
+      handler.post(checkStartup);
     }
     if (visible) return START_NOT_STICKY;
     Intent menu = new Intent(this, MaintenanceActivity.class)
@@ -58,11 +97,12 @@ public final class MaintenanceService extends Service {
           Toast.LENGTH_LONG).show();
       stopSelf();
     }
-    // No unattended restart promise: H5/H6 own boot and process-death recovery.
+    // One bounded boot job only. No browser/process watchdog or foreground-stealing loop.
     return START_NOT_STICKY;
   }
 
   @Override public void onDestroy() {
+    cancelStartup();
     if (visible) manager.removeView(access);
     visible = false;
     stopForeground(true);
@@ -70,4 +110,9 @@ public final class MaintenanceService extends Service {
   }
 
   @Override public IBinder onBind(Intent intent) { return null; }
+
+  private void cancelStartup() {
+    startup = null;
+    handler.removeCallbacks(checkStartup);
+  }
 }

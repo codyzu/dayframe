@@ -11,6 +11,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -50,6 +51,48 @@ public final class MaintenanceActivity extends Activity {
       startService(new Intent(this, MaintenanceService.class));
       updateStatus();
     });
+    addButton(content, "Ouvrir Dayframe plein écran", () -> {
+      try {
+        DayframeLaunch.open(this);
+      } catch (RuntimeException error) {
+        message("Vérifiez l’adresse Dayframe et le raccourci Firefox installé.");
+      }
+    });
+    addButton(content, "Configurer le démarrage automatique…", () -> {
+      if (!supported()) return;
+      EditText address = new EditText(this);
+      address.setSingleLine(true);
+      address.setHint("https://votre-site.example/?display=frame");
+      address.setText(DayframeLaunch.preferences(this).getString("address", ""));
+      AlertDialog dialog = new AlertDialog.Builder(this)
+          .setTitle("Démarrage automatique Dayframe")
+          .setMessage("Adresse publique uniquement, sans clé ni identifiant. "
+              + "Le raccourci Firefox doit déjà fonctionner. DF restera disponible. "
+              + "Après le démarrage, attente du réseau et de l’horloge (10 minutes maximum).")
+          .setView(address).setNegativeButton("Annuler", null)
+          .setPositiveButton("Activer", null).create();
+      dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+          .setOnClickListener(view -> {
+            String value = address.getText().toString().trim();
+            if (!Settings.canDrawOverlays(this) || !DayframeLaunch.validAddress(value)) {
+              address.setError("Autorisez DF et utilisez https://hôte/?display=frame sans secret.");
+              return;
+            }
+            if (!DayframeLaunch.preferences(this).edit().putString("address", value)
+                .putBoolean("enabled", true).commit()) {
+              message("Configuration non enregistrée. Réessayez.");
+              return;
+            }
+            updateStatus();
+            dialog.dismiss();
+          }));
+      dialog.show();
+    });
+    addButton(content, "Désactiver le démarrage automatique", () -> {
+      DayframeLaunch.preferences(this).edit().putBoolean("enabled", false).apply();
+      startService(new Intent(this, MaintenanceService.class).setAction(MaintenanceService.CANCEL));
+      updateStatus();
+    });
     addButton(content, "Raccourcis Dayframe", () -> openPackage("amirz.rootless.nexuslauncher"));
     addButton(content, "Firefox / Dayframe", () -> openPackage("org.mozilla.firefox"));
     addButton(content, "Accueil du cadre", () -> openPackage("com.waophoto.smartframe"));
@@ -69,6 +112,10 @@ public final class MaintenanceActivity extends Activity {
 
   @Override public void onResume() {
     super.onResume();
+    // Includes returning to the existing singleTask menu: never steal focus from maintenance.
+    if (Settings.canDrawOverlays(this)) {
+      startService(new Intent(this, MaintenanceService.class).setAction(MaintenanceService.CANCEL));
+    }
     updateStatus();
   }
 
@@ -79,11 +126,13 @@ public final class MaintenanceActivity extends Activity {
   }
 
   private void updateStatus() {
-    status.setText("Maintenance H5 · Android 6 uniquement\nAutorisation : "
+    status.setText("Maintenance H6 · Android 6 uniquement\nAutorisation : "
         + (Settings.canDrawOverlays(this) ? "accordée" : "à accorder")
         + "\nActivez le bouton avec « Afficher le bouton DF »."
+        + "\nDémarrage automatique : "
+        + (DayframeLaunch.preferences(this).getBoolean("enabled", false) ? "activé" : "désactivé")
         + "\nTouchez DF depuis Firefox ou l’accueil pour revenir ici. "
-        + "Après redémarrage ou arrêt de l’application, le Mac peut être nécessaire.");
+        + "Un arrêt forcé exige une relance manuelle ; le Mac reste le secours.");
   }
 
   private void addButton(LinearLayout content, String label, Runnable action) {

@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="dev.dayframe.maintenance" android:versionCode="2" android:versionName="0.2.0">
+    package="dev.dayframe.maintenance" android:versionCode="3" android:versionName="0.3.0">
   <uses-sdk android:minSdkVersion="23" android:targetSdkVersion="23" />
   <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
   <application android:label="Dayframe maintenance" android:allowBackup="false"
       android:theme="@android:style/Theme.Material.Light.NoActionBar">
     <activity android:name=".MaintenanceActivity" android:exported="true"
@@ -13,5 +15,10 @@
       </intent-filter>
     </activity>
     <service android:name=".MaintenanceService" android:exported="false" />
+    <receiver android:name=".BootReceiver" android:exported="true">
+      <intent-filter>
+        <action android:name="android.intent.action.BOOT_COMPLETED" />
+      </intent-filter>
+    </receiver>
   </application>
 </manifest>
