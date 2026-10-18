@@ -1,6 +1,7 @@
 import {Buffer} from 'node:buffer';
 import {expect, test, type Page} from '@playwright/test';
-import {weatherFixture} from '../fixtures/weather.ts';
+import {defaultSettings} from '../../src/lib/dashboard/settings.ts';
+import {fixtureNow, weatherFixture} from '../fixtures/weather.ts';
 
 const origin = 'https://127.0.0.1:8789';
 test.use({baseURL: origin, ignoreHTTPSErrors: true});
@@ -68,6 +69,7 @@ async function login(page: Page, admin = 'one') {
 }
 
 test.beforeEach(async ({page}) => {
+  await page.clock.install({time: fixtureNow});
   await page.request.get('/__test/reset');
   await page.route('https://api.open-meteo.com/**', async (route) =>
     route.fulfill({json: weatherFixture()}),
@@ -110,7 +112,7 @@ test('two admins upload WebP, review duplicates, see protected thumbnails and co
     ),
   ).toBe(true);
   await page.screenshot({
-    path: `docs/evidence/m3/admin-${info.project.name}.png`,
+    path: info.outputPath(`admin-${info.project.name}.png`),
     fullPage: true,
     animations: 'disabled',
   });
@@ -165,7 +167,7 @@ test('read-only cookie delivers images, slideshow refreshes, outages retain curr
   await page.getByLabel('Cadrage des photos').selectOption('cover');
   await expect(image).toHaveCSS('object-fit', 'cover');
   await page.screenshot({
-    path: `docs/evidence/m3/slideshow-${info.project.name}.png`,
+    path: info.outputPath(`slideshow-${info.project.name}.png`),
     animations: 'disabled',
   });
   const original = await image.getAttribute('src');
@@ -173,6 +175,16 @@ test('read-only cookie delivers images, slideshow refreshes, outages retain curr
   await page.getByRole('button', {name: 'Suivante', exact: true}).click();
   await expect(image).toHaveAttribute('src', original!);
   await context.setOffline(false);
+  // Denial during a settings refresh must clear already painted private pixels.
+  await context.clearCookies();
+  await page.getByRole('button', {name: 'Réessayer la connexion'}).click();
+  await expect(image).toHaveCount(0);
+  await expect(page.locator('[data-photo-status]')).toContainText(
+    'Accès privé requis',
+  );
+  await page.request.get('/__test/display');
+  await page.getByRole('button', {name: 'Réessayer la connexion'}).click();
+  await expect(image).toBeVisible();
   await page.getByRole('button', {name: 'Matin', exact: true}).click();
   await expect(image).toHaveCount(0);
   await context.clearCookies();
@@ -313,6 +325,11 @@ test('slideshow polls for additions and keeps at most two image URLs', async ({
   page,
   browser,
 }) => {
+  await page.route('**/api/config/display', async (route) =>
+    route.fulfill({
+      json: {...defaultSettings, overrideTimeoutSeconds: 3600},
+    }),
+  );
   await login(page);
   await page
     .locator('[data-photo-files]')
@@ -340,7 +357,7 @@ test('slideshow polls for additions and keeps at most two image URLs', async ({
     };
   });
   await page.goto('/');
-  await page.clock.install();
+
   await page.getByRole('button', {name: 'Photos', exact: true}).click();
   await expect(page.locator('[data-photo-stage] img')).toBeVisible();
   const first = await page
@@ -370,6 +387,7 @@ test('slideshow polls for additions and keeps at most two image URLs', async ({
       'data-private-urls',
       '2',
     );
+    await page.locator('[data-dashboard]').dispatchEvent('pointerdown');
     await page.getByRole('button', {name: 'Suivante', exact: true}).click();
     await expect(page.locator('[data-photo-stage] img')).not.toHaveAttribute(
       'src',
@@ -444,6 +462,11 @@ test('private slideshow pixels expire after five offline minutes', async ({
   page,
   context,
 }) => {
+  await page.route('**/api/config/display', async (route) =>
+    route.fulfill({
+      json: {...defaultSettings, overrideTimeoutSeconds: 3600},
+    }),
+  );
   await login(page);
   await page
     .locator('[data-photo-files]')
@@ -452,10 +475,33 @@ test('private slideshow pixels expire after five offline minutes', async ({
   await context.clearCookies();
   await page.request.get('/__test/display');
   await page.goto('/');
-  await page.clock.install();
+
   await page.getByRole('button', {name: 'Photos', exact: true}).click();
   await expect(page.locator('[data-photo-stage] img')).toBeVisible();
   await context.setOffline(true);
+  // A wall-clock correction must not extend private-pixel retention.
+  await page.clock.setSystemTime(fixtureNow - 3_600_000);
   await page.clock.fastForward(301_000);
   await expect(page.locator('[data-photo-stage] img')).toHaveCount(0);
+  await expect(page.locator('[data-dashboard]')).toHaveAttribute(
+    'data-mode',
+    'photos',
+  );
+  await context.setOffline(false);
+  await page.evaluate(() => globalThis.dispatchEvent(new Event('online')));
+  await expect(page.locator('[data-photo-stage] img')).toBeVisible();
+  expect(
+    await page.evaluate(() =>
+      Object.keys(localStorage).some((key) =>
+        /photo|catalog|override/v.test(key),
+      ),
+    ),
+  ).toBe(false);
+  expect(await page.evaluate(async () => globalThis.caches.keys())).toEqual([]);
+  expect(
+    await page.evaluate(async () => {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      return registrations.length;
+    }),
+  ).toBe(0);
 });

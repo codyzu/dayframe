@@ -16,9 +16,9 @@ Local `pnpm verify` uses synthetic identities, local KV and an actual workerd SQ
 
 ## Everyday settings
 
-Open `/admin/settings`. Set the place name, coordinates, timezone, photo duration (5–3,600 seconds), inactivity override duration (30–86,400 seconds), fit preference and daily periods. Periods can cross midnight; touching boundaries are allowed and overlaps rejected. Partial API updates preserve other settings. Missing fields use the public defaults in `settings.ts`. Gaps will use Morning when M5 implements the scheduler; M4 does not switch modes automatically.
+Open `/admin/settings`. Set the place name, coordinates, timezone, photo duration (5–3,600 seconds), inactivity override duration (30–86,400 seconds), fit preference and daily periods. Periods can cross midnight; touching boundaries are allowed and overlaps rejected. Partial API updates preserve other settings. Missing fields use the public defaults in `settings.ts`. The local M5 scheduler uses Morning in schedule gaps. Its periods include the start and exclude the end; overnight ranges cross midnight. Skipped DST minutes never occur, and repeated minutes use the same mode on both passes. The current production M4 build still requires manual mode selection until M5 is deployed.
 
-Save then reload the display to apply settings. Changing location/timezone uses a different weather-cache key. Settings responses expose only display settings; private network and identity configuration are managed as deployment secrets. Credentials are never exported with settings.
+In local M5, settings refresh within five minutes and on resume/online recovery; failed requests retry after one minute while retaining the last validated settings. Touch reveals navigation for 15 seconds and renews any display-local temporary override; inactivity returns to the current schedule. Reload clears the override. The visible connection retry control also refreshes settings and Photos. On production M4, save then reload the display to apply settings. Changing location/timezone uses a different weather-cache key. Settings responses expose only display settings; private network and identity configuration are managed as deployment secrets. Credentials are never exported with settings.
 
 ## Provision, rotate or replace the frame
 

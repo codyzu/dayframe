@@ -64,7 +64,7 @@ test('both administrators persist settings, export, validate schedules and recov
   await page.getByRole('button', {name: 'Enregistrer les réglages'}).click();
   await expect(page.locator('[data-status]')).toContainText('chevauchement');
   await page.screenshot({
-    path: `docs/evidence/m4/settings-${info.project.name}.png`,
+    path: info.outputPath(`settings-${info.project.name}.png`),
     fullPage: true,
   });
   expect(
@@ -127,7 +127,7 @@ test('frame provisioning persists across browser contexts, rejects off-network r
     );
     await frame.goto('/setup');
     await frame.screenshot({
-      path: `docs/evidence/m4/setup-${info.project.name}.png`,
+      path: info.outputPath(`setup-${info.project.name}.png`),
       fullPage: true,
     });
     await frame.getByLabel('Clé du cadre').fill(key!);

@@ -90,9 +90,7 @@ import {displayConfig} from '../lib/dashboard/config';
         <h1 class="text-2xl font-semibold" id="night-title">
           Bonne nuit.
         </h1>
-        <p class="mt-5 text-xs">
-          Aperçu du mode nuit · luminosité de l’appareil inchangée
-        </p>
+        <p class="mt-5 text-xs">Luminosité de l’appareil inchangée</p>
       </div>
     </section>
     <footer
@@ -111,6 +109,13 @@ import {displayConfig} from '../lib/dashboard/config';
         </select>
       </label>
       <ModeNavigation />
+      <button
+        type="button"
+        data-display-retry
+        class="min-h-11 rounded-xl border border-white/30 bg-[#0d2731] px-3 text-sm"
+      >
+        Réessayer la connexion
+      </button>
       <span data-location-footer class="text-[11px] text-mist">
         Annecy · Europe/Paris
       </span>
@@ -180,14 +185,27 @@ import {displayConfig} from '../lib/dashboard/config';
     left: 1rem;
     right: 1rem;
   }
-  .dashboard[data-mode='photos'] [data-dashboard-footer] > :not(nav) {
+  .dashboard[data-mode='photos']
+    [data-dashboard-footer]
+    > :not(nav):not([data-display-retry]) {
     display: none;
   }
   .dashboard[data-mode='photos'] [data-dashboard-footer] {
     justify-content: center;
   }
   .dashboard[data-mode='night'] {
-    background: #080f16;
+    background: #030507;
+    color: #68717a;
+  }
+  /* Keep layout stable while hiding controls; tapping anywhere reveals them. */
+  .dashboard[data-navigation='hidden'] :global([data-photo-controls]) {
+    visibility: hidden;
+  }
+  .dashboard[data-mode='night'] [data-dashboard-header] {
+    visibility: hidden;
+  }
+  .dashboard[data-mode='night'] [data-mode-panel='night'] {
+    opacity: 0.45;
   }
   @media (min-width: 1000px) {
     .dashboard[data-density='large'] {

@@ -104,6 +104,7 @@ test('cached weather survives reload offline, ages visibly and recovers', async 
   await context.setOffline(true);
   await page.clock.fastForward(60_000);
   await expect(page.locator('[data-clock]').first()).toHaveText('09:16');
+  await page.locator('[data-dashboard]').dispatchEvent('pointerdown');
   await page.getByRole('button', {name: 'Photos', exact: true}).click();
   await expect(
     page.getByRole('heading', {name: 'Une place pour vos souvenirs.'}),
@@ -148,6 +149,7 @@ test('initial failure and malformed response keep clock/navigation and retry', a
   await page.getByRole('button', {name: 'Nuit', exact: true}).click();
   await expect(page.getByRole('heading', {name: 'Bonne nuit.'})).toBeVisible();
   await page.clock.fastForward(60_000);
+  await page.locator('[data-dashboard]').dispatchEvent('pointerdown');
   await page.getByRole('button', {name: 'Matin', exact: true}).click();
   await expect(page.locator('[data-temperature]')).toHaveText('12°');
   expect(calls).toBe(2);

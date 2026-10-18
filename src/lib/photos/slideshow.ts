@@ -47,6 +47,8 @@ export function mountSlideshow(
   let refreshAt = 0;
   let privacyTimer: ReturnType<typeof setTimeout> | undefined;
   let controller = new AbortController();
+  let leaseWall = 0;
+  let leaseMonotonic = 0;
   const release = (photo: LoadedPhoto | undefined) => {
     if (!photo) {
       return;
@@ -67,22 +69,26 @@ export function mountSlideshow(
     empty.hidden = false;
   };
 
-  function renewPrivacyLease() {
+  function expirePrivacy() {
+    generation++;
+    controller.abort();
+    controller = new AbortController();
+    clearTimeout(timer);
     clearTimeout(privacyTimer);
-    privacyTimer = setTimeout(() => {
-      generation++;
-      controller.abort();
-      controller = new AbortController();
-      clearTimeout(timer);
-      clearTimeout(privacyTimer);
-      clear();
-      refreshAt = 0;
-      status.textContent =
-        'Accès privé à vérifier. Reconnectez le cadre au réseau.';
-      if (isActive) {
-        void tick();
-      }
-    }, 300_000);
+    clear();
+    refreshAt = 0;
+    status.textContent =
+      'Accès privé à vérifier. Reconnectez le cadre au réseau.';
+    if (isActive) {
+      void tick();
+    }
+  }
+
+  function renewPrivacyLease() {
+    leaseWall = Date.now() + 300_000;
+    leaseMonotonic = performance.now() + 300_000;
+    clearTimeout(privacyTimer);
+    privacyTimer = setTimeout(expirePrivacy, 300_000);
   }
 
   fit.addEventListener('change', () => {
@@ -273,14 +279,47 @@ export function mountSlideshow(
     controller = new AbortController();
     void tick();
   });
-  document.addEventListener('visibilitychange', () => {
-    setActive(!document.hidden && !root.hasAttribute('hidden'));
-  });
-  globalThis.addEventListener('pagehide', () => {
-    setActive(false);
-  });
-  globalThis.addEventListener('pageshow', () => {
-    setActive(!document.hidden && !root.hasAttribute('hidden'));
-  });
-  return {setActive};
+  function wake() {
+    if (!isActive) {
+      return;
+    }
+
+    generation++;
+    controller.abort();
+    controller = new AbortController();
+    clearTimeout(timer);
+    refreshAt = 0;
+    void tick();
+  }
+
+  return {
+    setActive,
+    wake,
+    checkPrivacy() {
+      if (
+        current &&
+        (Date.now() >= leaseWall || performance.now() >= leaseMonotonic)
+      ) {
+        expirePrivacy();
+      }
+    },
+    configure(value: Settings) {
+      settings = value;
+      stage.dataset.fit = settings.fit;
+      fit.value = settings.fit;
+    },
+    deny() {
+      generation++;
+      controller.abort();
+      controller = new AbortController();
+      clearTimeout(timer);
+      clearTimeout(privacyTimer);
+      clear();
+      refreshAt = 0;
+      status.textContent = 'Accès privé requis. Reconnectez cet affichage.';
+      if (isActive) {
+        timer = setTimeout(wake, 60_000);
+      }
+    },
+  };
 }

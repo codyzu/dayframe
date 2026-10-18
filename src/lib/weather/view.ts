@@ -152,19 +152,43 @@ export function mountWeather(root: HTMLElement) {
 
   const service = createWeatherService(render, storage);
   service.start();
-  globalThis.addEventListener('pagehide', () => {
-    service.stop();
-  });
-  globalThis.addEventListener('pageshow', () => {
-    service.start();
-    service.wake();
-  });
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) {
+  const lifecycle = new AbortController();
+  const options = {signal: lifecycle.signal};
+  globalThis.addEventListener(
+    'pagehide',
+    () => {
+      service.stop();
+    },
+    options,
+  );
+  globalThis.addEventListener(
+    'pageshow',
+    () => {
+      service.start();
       service.wake();
-    }
-  });
-  globalThis.addEventListener('online', () => {
-    service.wake();
-  });
+    },
+    options,
+  );
+  document.addEventListener(
+    'visibilitychange',
+    () => {
+      if (!document.hidden) {
+        service.wake();
+      }
+    },
+    options,
+  );
+  globalThis.addEventListener(
+    'online',
+    () => {
+      service.wake();
+    },
+    options,
+  );
+  return {
+    dispose() {
+      lifecycle.abort();
+      service.stop();
+    },
+  };
 }

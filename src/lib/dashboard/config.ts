@@ -18,7 +18,7 @@ export const displayConfig = {
   ],
 } as const;
 
-// Updated only from a validated, authorized display configuration at startup.
+// Updated only from a validated, authorized display configuration on startup and refresh.
 export const runtimeConfig: {
   timezone: string;
   location: string;
