@@ -134,7 +134,7 @@ test('keyboard navigation and reduced motion', async ({page}) => {
   expect(decodeURIComponent(css)).not.toMatch(/<animate/v);
 });
 
-test('weather icons switch between animated and static images with motion preference', async ({
+test('only current weather animates and respects motion preference', async ({
   page,
 }) => {
   await page.emulateMedia({reducedMotion: 'no-preference'});
@@ -154,16 +154,24 @@ test('weather icons switch between animated and static images with motion prefer
     );
   const animated = await images();
   expect(animated.length).toBeGreaterThan(1);
-  for (const image of animated) {
+  for (const [index, image] of animated.entries()) {
     expect(image).toContain('<svg');
-    expect(image).toMatch(/<animate/v);
+    if (index === 0) {
+      expect(image).toMatch(/<animate/v);
+    } else {
+      expect(image).not.toMatch(/<animate/v);
+      expect(image).not.toContain(' opacity="0"');
+    }
+
     for (const symbol of image.matchAll(/<symbol\b[^>]*>/gv)) {
       expect(symbol[0]).toMatch(/overflow=["']visible["']/v);
     }
   }
 
   await page.emulateMedia({reducedMotion: 'reduce'});
-  for (const image of await images()) {
+  const reduced = await images();
+  expect(reduced.slice(1)).toEqual(animated.slice(1));
+  for (const image of reduced) {
     expect(image).toContain('<svg');
     expect(image).not.toMatch(/<animate/v);
     expect(image).not.toContain(' opacity="0"');

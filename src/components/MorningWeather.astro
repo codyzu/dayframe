@@ -100,9 +100,13 @@
 </div>
 
 <style>
+  /* SVG image animations bypass page CSS; use the bundled still for the chart. */
+  [data-chart] :global([class*='i-meteocons-']) {
+    background-image: var(--dayframe-static-icon);
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    /* Includes hourly icons created by the browser weather renderer. */
-    [data-weather] :global([class*='i-meteocons-']) {
+    [data-current-icon] {
       background-image: var(--dayframe-static-icon);
     }
   }

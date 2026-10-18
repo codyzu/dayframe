@@ -54,7 +54,7 @@ export default defineConfig({
         }
 
         // SVG image animations bypass page CSS. Bundle a separate still image
-        // for the weather component's reduced-motion media query.
+        // for hourly forecasts and the current icon's reduced-motion fallback.
         const still = svg
           .replaceAll(
             /<animate(?:Transform|Motion)?\b[^>]*(?:\/>|>[\s\S]*?<\/animate(?:Transform|Motion)?>)/gv,
