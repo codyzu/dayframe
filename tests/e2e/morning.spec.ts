@@ -109,3 +109,66 @@ test('stale and unavailable weather keep essential content within the frame', as
     await page.evaluate(() => globalThis.document.documentElement.scrollHeight),
   ).toBeLessThanOrEqual(800);
 });
+
+test('rain scale and one peak label stay readable for dry, wet and maximum forecasts', async ({
+  page,
+}, info) => {
+  await page.unroute('https://api.open-meteo.com/**');
+  await page.addInitScript(() => {
+    localStorage.clear();
+  });
+  let probability = 0;
+  await page.route('https://api.open-meteo.com/**', async (route) => {
+    const raw = weatherFixture();
+    raw.hourly.precipitation_probability.fill(0);
+    raw.hourly.precipitation_probability[20] = probability;
+    await route.fulfill({json: raw});
+  });
+  for (const value of [0, 65, 100]) {
+    probability = value;
+    await page.goto('/?display=frame');
+    const scale = page.locator('[data-rain-scale]');
+    await expect(scale.locator('span')).toHaveText(['100 %', '50 %', '0 %']);
+    const peak = page.locator('[data-rain-peak]');
+    await expect(peak).toHaveCount(1);
+    await expect(peak).toHaveText(`${value} %`);
+    await expect(peak).toHaveAttribute(
+      'aria-label',
+      `${value === 0 ? '06:00–08:00' : '20:00–22:00'} : maximum horaire ${value} %`,
+    );
+    const plot = (await page.locator('[data-chart-plot]').boundingBox())!;
+    const label = (await peak.boundingBox())!;
+    expect(label.x).toBeGreaterThanOrEqual(plot.x);
+    expect(label.x + label.width).toBeLessThanOrEqual(plot.x + plot.width);
+    expect(label.y).toBeGreaterThanOrEqual(plot.y);
+    expect(label.y + label.height).toBeLessThanOrEqual(
+      plot.y + 100 - value * 0.8,
+    );
+    const now = (await page.locator('[data-chart-plot] > span').boundingBox())!;
+    expect(
+      label.y + label.height <= now.y || now.y + now.height <= label.y,
+    ).toBe(true);
+    expect(
+      await peak.evaluate((element) =>
+        Number(getComputedStyle(element).fontSize.replace('px', '')),
+      ),
+    ).toBeGreaterThanOrEqual(18);
+    expect(
+      await page.evaluate(
+        () => globalThis.document.documentElement.scrollWidth,
+      ),
+    ).toBeLessThanOrEqual(page.viewportSize()!.width);
+    if (info.project.name !== 'mobile') {
+      expect(
+        await page.evaluate(
+          () => globalThis.document.documentElement.scrollHeight,
+        ),
+      ).toBeLessThanOrEqual(800);
+    }
+
+    await page.screenshot({
+      path: info.outputPath(`rain-${value}.png`),
+      fullPage: true,
+    });
+  }
+});

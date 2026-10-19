@@ -28,7 +28,7 @@ function chart(weather: Weather, now: number) {
   const x = (time: number) =>
     ((time - hours[0].time) / (hours.at(-1)!.time - hours[0].time)) * 600;
   const y = (temperature: number) =>
-    90 - ((temperature - low) / (high - low)) * 80;
+    92 - ((temperature - low) / (high - low)) * 64;
   // Horizontal cubic handles give a smooth bounded curve, without overshoot.
   let path = `M${x(hours[0].time)},${y(hours[0].temperature)}`;
   for (let index = 1; index < hours.length; index++) {
@@ -40,23 +40,36 @@ function chart(weather: Weather, now: number) {
 
   const marker = x(now);
   const rain = twoHourRain(hours);
+  // Label only the first highest interval; dry days still get a useful 0% label.
+  let peak: (typeof rain)[number] | undefined;
+  for (const bar of rain) {
+    if (!peak || bar.probability > peak.probability) {
+      peak = bar;
+    }
+  }
+
   return `<div class="weather-chart w-full">
     <div class="flex justify-between gap-2 text-sm text-secondary mb-1">
       <span class="font-semibold text-temperature">Température · ${rounded(low + 3)} à ${rounded(high - 3)}C</span>
       <span class="text-rain">Pluie · max. horaire / 2 h</span>
     </div>
-    <div class="mx-3 relative">
+    <div class="mx-3 grid grid-cols-[minmax(0,1fr)_3.5rem] gap-x-2">
       <div class="relative h-[100px]" data-chart-plot>
         <svg class="absolute inset-0 size-full overflow-visible" viewBox="0 0 600 100" preserveAspectRatio="none" role="img" aria-labelledby="chart-title chart-description">
           <title id="chart-title">Température et probabilité de précipitations</title>
           <desc id="chart-description">Courbe cuivre : température en degrés Celsius. Barres bleues : maximum des probabilités horaires de chaque tranche de deux heures, de 0 à 100 %, et non probabilité sur toute la tranche. Trait pointillé : maintenant, si dans la période. Tableau horaire détaillé disponible après le graphique.</desc>
           <line x1="0" x2="600" y1="100" y2="100" stroke="var(--colors-border)" stroke-width="2"/>
-          ${rain.map((bar) => `<rect x="${x(bar.start) + 4}" y="${100 - bar.probability}" width="${Math.max(1, x(bar.end) - x(bar.start) - 8)}" height="${bar.probability}" rx="4" fill="var(--colors-rain)" fill-opacity="0.85"><title>${hourLabel(bar.start)}–${hourLabel(bar.end)} : maximum horaire ${bar.probability} %</title></rect>`).join('')}
+          <line x1="0" x2="600" y1="60" y2="60" stroke="var(--colors-border)" stroke-dasharray="4 6" vector-effect="non-scaling-stroke"/>
+          ${rain.map((bar) => `<rect x="${x(bar.start) + 4}" y="${100 - bar.probability * 0.8}" width="${Math.max(1, x(bar.end) - x(bar.start) - 8)}" height="${bar.probability * 0.8}" rx="4" fill="var(--colors-rain)" fill-opacity="0.85"><title>${hourLabel(bar.start)}–${hourLabel(bar.end)} : maximum horaire ${bar.probability} %</title></rect>`).join('')}
           <path d="${path}" fill="none" stroke="var(--colors-surface)" stroke-width="8" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
           <path d="${path}" fill="none" stroke="var(--colors-temperature)" stroke-width="4" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
-          ${marker >= 0 && marker <= 600 ? `<line x1="${marker}" x2="${marker}" y1="0" y2="100" stroke="var(--colors-primary)" stroke-width="2" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>` : ''}
+          ${marker >= 0 && marker <= 600 ? `<line x1="${marker}" x2="${marker}" y1="20" y2="100" stroke="var(--colors-primary)" stroke-width="2" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>` : ''}
         </svg>
-        ${marker >= 0 && marker <= 600 ? `<span class="absolute top-0 text-sm bg-surface px-1 font-semibold" style="left:clamp(0%, ${marker / 6}%, 75%)">Maintenant</span>` : ''}
+        ${peak ? `<div data-rain-peak class="whitespace-nowrap absolute -translate-x-1/2 rounded bg-surface px-1 text-[length:var(--font-chart-time)] leading-none font-bold tabular-nums text-rain" style="left:clamp(2rem, ${x((peak.start + peak.end) / 2) / 6}%, calc(100% - 2rem));top:${80 - peak.probability * 0.8}px" aria-label="${hourLabel(peak.start)}–${hourLabel(peak.end)} : maximum horaire ${peak.probability} %">${peak.probability} %</div>` : ''}
+        ${marker >= 0 && marker <= 600 ? `<span class="absolute ${peak && peak.probability >= 75 ? 'bottom-0' : 'top-0'} text-sm bg-surface px-1 font-semibold" style="left:clamp(0%, ${marker / 6}%, 75%)">Maintenant</span>` : ''}
+      </div>
+      <div class="relative text-[length:var(--font-chart-time)] leading-tight font-semibold tabular-nums text-rain" data-rain-scale aria-hidden="true">
+        ${[100, 50, 0].map((probability) => `<span class="absolute right-0 -translate-y-1/2" style="top:${100 - probability * 0.8}px">${probability} %</span>`).join('')}
       </div>
       <div class="relative h-6 mt-1" aria-hidden="true">${hours
         .filter((hour) => Number(hourLabel(hour.time).slice(0, 2)) % 2 === 0)
