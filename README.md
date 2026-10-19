@@ -2,7 +2,7 @@
 
 A French household dashboard for a browser-based photo frame. M2 adds live Annecy weather from Open-Meteo, a temperature/rain chart, French day/night conditions, deterministic rain advice, and cached-weather recovery. The Astro shell includes a Paris clock, manual modes, responsive photo administration, and a Cloudflare Worker API. M3 adds protected KV photo storage, sequential WebP uploads (including a Safari encoder fallback), duplicate review and a bounded slideshow.
 
-**Based on Wes Bos's work in [photo-frame-dashboard](https://github.com/wesbos/photo-frame-dashboard).** His dashboard and Android frame research are the starting reference. [ADR 0001](docs/decisions/0001-upstream-foundation.md) records the reviewed revision, source paths, license findings, and independent implementation choices. Firefox rendering, protected photos and physical maintenance access work on the Classic 10; extended stability, fullscreen and unattended recovery remain pending. See the [current status and skipped validation](docs/status.md).
+**Based on Wes Bos's work in [photo-frame-dashboard](https://github.com/wesbos/photo-frame-dashboard).** His dashboard and Android frame research are the starting reference. [ADR 0001](docs/decisions/0001-upstream-foundation.md) records the reviewed revision, source paths, license findings, and independent implementation choices. The Classic 10 has accepted fullscreen rendering, protected photos, physical maintenance and native automatic startup/recovery. Extended stability and the other recorded physical/network checks remain deferred; hardening is also deferred at the owner’s request. See the [current status and skipped validation](docs/status.md).
 
 Use Node 24.16.0 and pnpm 10.23.0:
 
@@ -17,6 +17,7 @@ Open `http://127.0.0.1:8787`; the admin shell is `/admin/photos`, and `/api/heal
 
 Styling uses UnoCSS's Wind4 preset and reset. Prefer utilities and small reusable shortcuts; custom CSS stays scoped, with only shared accessibility rules in global.css. Linting uses XO with its built-in Prettier support, following the existing Tetras, Les Mains de Sérénité, and Xen website conventions.
 
+- [Classic 10 setup and everyday operation](docs/hardware/operating-guide.md)
 - [Classic 10 hardware inventory, backup and M6 integration plan](docs/hardware/README.md)
 - [Requirements](docs/technical-specification.md)
 - [Weather behavior, provider terms and request budget](docs/weather.md)

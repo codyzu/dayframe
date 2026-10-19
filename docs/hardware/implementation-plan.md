@@ -88,6 +88,8 @@ Keep stock Home available and the current Firefox profile intact during evaluati
 
 ## H7 — Security hardening
 
+**19 October owner direction:** do not implement hardening yet. H7 is deferred; no router/device/ADB change or live H7 probe has run. The uncommitted host-tool/runbook draft was withdrawn. Preserve the working maintenance path and existing backend restrictions. [Current operation and M6 audit](operating-guide.md).
+
 - **Prerequisites:** H2 accepted; working display and physically tested maintenance. Specific authorization for router/device changes; independent recovery/maintenance route tested before restricting the only path.
 - **Objective/actions:** Apply the network/credential policy below incrementally. Start with router isolation while preserving a restricted admin route. Test before/after each firewall or ADB change. Keep rollback instructions and access to the router outside the frame.
 - **Expected result:** Reduced attack surface and display-only backend scope, with a practical maintenance route.

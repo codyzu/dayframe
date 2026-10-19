@@ -1,5 +1,7 @@
 # Dayframe hardware integration
 
+For the current installed configuration and recovery instructions, start with the [Classic 10 operating guide](operating-guide.md). H6 native operational recovery is accepted; H7 hardening is explicitly deferred by the owner on 19 October. Full M6 acceptance retains the documented performance/network/physical/stability deferrals. The planning and execution entries below retain their historical scope.
+
 Planning record, 16 October 2026. This is the detailed breakdown of [M6](../implementation-plan.md#8-m6--dragon-touch-classic-10), not a replacement for M1–M7. Astro, TypeScript, UnoCSS, Workers/KV, protected photo delivery and the €0 recurring-cost requirement remain unchanged. A native kiosk would be an optional device shell, requiring a separate implementation decision under the specification's native-app non-goal.
 
 **Initial planning was documentation-only.** The later [H1 execution record](h1-discovery.md) documents owner-authorized read-only ADB discovery on 16 October 2026. H1 is complete: software/storage checks passed and the owner supplied the visual ports/power/buttons inventory. [H2 is accepted](h2-backup.md) as of 17 October 2026, with explicit owner exceptions for an unencrypted external destination and one retained copy after deletion of the verified Mac copy; the existing external filesystem was preserved. [H3](h3-firefox.md) installed Firefox 143.0.4 and verified initial rendering/WebP/APIs on 17 October; physical exit/manual relaunch has since passed through the separately approved [H3.1 helper](h31-maintenance.md), using Settings through stock Home. H4 measurement preparation and subsequent M4 display checks were authorized on 17 October; the one-hour preliminary Photos collection completed (61/61 samples); weather/CPU measurement review and acceptance remain pending. H5–H8 retain their own stage authorization gates. The owner enabled the helper’s per-app overlay permission through normal UI; one earlier owner-approved recovery restart is recorded under H3. No firmware/framework/system write was performed.
@@ -21,6 +23,8 @@ Read in order:
 6. [Research sources and provenance](sources.md).
 7. [H4 measurement tools, M4 display checks and baseline runbook](h4-performance.md).
 8. [H5 manual fullscreen evidence](h5-fullscreen.md), [H6 automatic Firefox startup](h6-startup.md) and [H6 native recovery closeout and limits](h6-recovery.md).
+
+9. [Current Classic 10 setup, everyday operation and M6 requirement audit](operating-guide.md).
 
 The Classic 10 (€49.99) is received and partly inspected. Our Modern10 Charm (€62.27) is ordered, awaiting delivery and has no local diagnostic evidence. Its upstream namesake is only a comparison unit.
 
