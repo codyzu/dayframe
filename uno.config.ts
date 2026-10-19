@@ -1,6 +1,7 @@
 import {defineConfig, presetIcons} from 'unocss';
 import presetWind4 from '@unocss/preset-wind4';
 import iconCollection from '@iconify-json/meteocons/icons.json';
+import {expandMeteoconsSymbols} from './src/lib/weather/icon-symbols.ts';
 import {repairMeteoconsTiming} from './src/lib/weather/icon-timing.ts';
 
 // Validate before entering Iconify's loader, which catches collection errors.
@@ -12,12 +13,9 @@ const meteocons = {
       name,
       {
         ...icon,
-        // Cloud translations cross nested symbol view boxes. Let those
-        // symbols overflow inside the unchanged outer 512×512 icon canvas.
-        body: repairMeteoconsTiming(icon.body).replaceAll(
-          '<symbol ',
-          '<symbol overflow="visible" ',
-        ),
+        // Expand animated symbols for WebKit, retaining view-box scaling
+        // on the unchanged outer 512×512 canvas and a single SVG timeline.
+        body: expandMeteoconsSymbols(repairMeteoconsTiming(icon.body)),
       },
     ]),
   ),

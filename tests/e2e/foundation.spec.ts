@@ -158,10 +158,6 @@ test('current weather and checkpoint Meteocons animate and respect motion prefer
   for (const image of animated) {
     expect(image).toContain('<svg');
     expect(image).toMatch(/<animate/v);
-
-    for (const symbol of image.matchAll(/<symbol\b[^>]*>/gv)) {
-      expect(symbol[0]).toMatch(/overflow=["']visible["']/v);
-    }
   }
 
   await page.emulateMedia({reducedMotion: 'reduce'});
@@ -174,6 +170,62 @@ test('current weather and checkpoint Meteocons animate and respect motion prefer
 
   await page.emulateMedia({reducedMotion: 'no-preference'});
   expect(await images()).toEqual(animated);
+});
+
+test('built current icon visibly animates and becomes still with reduced motion', async ({
+  page,
+}) => {
+  // Real image timelines must advance: markup containing <animate> is insufficient.
+  const now = fixtureNow + 2 * 3_600_000;
+  await page.clock.setSystemTime(now);
+  await page.clock.resume();
+  await page.unroute('https://api.open-meteo.com/**');
+  await page.route('https://api.open-meteo.com/**', async (route) =>
+    route.fulfill({json: weatherFixture(now)}),
+  );
+  await page.emulateMedia({reducedMotion: 'no-preference'});
+  await page.goto('/?display=frame');
+  await expect(page.locator('[data-dashboard]')).toHaveAttribute(
+    'data-mode',
+    'photos',
+  );
+  await expect(page.locator('[data-temperature]')).toHaveText('12°');
+  await page.getByRole('button', {name: 'Matin', exact: true}).click();
+  const icon = page.locator('[data-current-icon]');
+  await expect(icon).toHaveClass(/partly-cloudy-day-fill/v);
+  await new Promise<void>((resolve) => {
+    setTimeout(resolve, 600);
+  });
+  const first = await icon.screenshot({animations: 'allow'});
+  await expect
+    .poll(
+      async () => {
+        const frame = await icon.screenshot({animations: 'allow'});
+        return frame.equals(first);
+      },
+      {
+        timeout: 8000,
+        intervals: [400, 800, 1200],
+      },
+    )
+    .toBe(false);
+  await page.emulateMedia({reducedMotion: 'reduce'});
+  await expect
+    .poll(async () =>
+      decodeURIComponent(
+        await icon.evaluate(
+          (element) => getComputedStyle(element).backgroundImage,
+        ),
+      ).includes('<animate'),
+    )
+    .toBe(false);
+  const still = await icon.screenshot({animations: 'allow'});
+  // An elapsed interval is intentional here: verify rendered stillness, not just SVG tags.
+  await new Promise<void>((resolve) => {
+    setTimeout(resolve, 900);
+  });
+  const after = await icon.screenshot({animations: 'allow'});
+  expect(after.equals(still)).toBe(true);
 });
 
 test('overcast cloud stays visible at both animation extremes', async ({
@@ -205,7 +257,7 @@ test('overcast cloud stays visible at both animation extremes', async ({
     element.replaceChildren(document.importNode(svg, true));
     (element as HTMLElement).style.backgroundImage = 'none';
   });
-  expect(await icon.locator('symbol').count()).toBeGreaterThan(0);
+  expect(await icon.locator('svg g[overflow]').count()).toBeGreaterThan(0);
   for (const time of [0, 3]) {
     await icon.evaluate((element, seconds) => {
       const svg = element.querySelector('svg')!;
@@ -214,7 +266,7 @@ test('overcast cloud stays visible at both animation extremes', async ({
     }, time);
     expect(
       await icon
-        .locator('symbol')
+        .locator('svg g[overflow]')
         .evaluateAll((symbols) =>
           symbols.every(
             (symbol) => getComputedStyle(symbol).overflow === 'visible',
