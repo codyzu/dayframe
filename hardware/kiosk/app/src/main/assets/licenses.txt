@@ -1,0 +1,41 @@
+Dayframe kiosk trial 0.1.0 — licenses and corresponding sources
+
+Original Dayframe shell, recovery policies, supervisor and local heartbeat probe:
+Copyright (c) 2026 Dayframe contributors. MIT; full text: assets/licenses/MIT.txt.
+Source: hardware/kiosk/ in the Dayframe repository, https://github.com/codyzu/dayframe.
+No Wes Bos Home HQ source or artwork is copied into this app.
+
+Mozilla GeckoView and geckoview-exoplayer2 143.0.20251003115653:
+Mozilla Public License 2.0; full text: assets/licenses/MPL-2.0.txt.
+The bundled Mozilla binaries are unmodified. Corresponding Mozilla source revision:
+08388fb6b18c61dbb3d0baa9bee4e7440b85f671
+https://hg.mozilla.org/releases/mozilla-release/rev/08388fb6b18c61dbb3d0baa9bee4e7440b85f671
+https://hg.mozilla.org/releases/mozilla-release/archive/08388fb6b18c61dbb3d0baa9bee4e7440b85f671.tar.gz
+Java sources also available as -sources.jar for each pinned artifact at:
+https://maven.mozilla.org/maven2/org/mozilla/geckoview/
+Mozilla's complete bundled-engine third-party notices remain inside assets/omni.ja
+(chrome/toolkit/content/global/license.html). Do not strip or modify those notices.
+
+AndroidX libraries, Kotlin 2.2.10, kotlinx-coroutines 1.8.1, JetBrains annotations,
+JSpecify, Guava listenablefuture and SnakeYAML 2.2:
+Apache License 2.0; full text: assets/licenses/Apache-2.0.txt.
+Original upstream copyright/license resources in dependencies are retained/merged.
+Exact resolved coordinates, filenames and SHA-256 digests:
+assets/licenses/runtime-artifacts.json; build graph: app/gradle.lockfile in source.
+Corresponding source artifacts are published by the same Maven coordinates with
+-sources.jar where provided; AndroidX source: https://cs.android.com/androidx/.
+Kotlin source: https://github.com/JetBrains/kotlin/tree/v2.2.10
+Coroutines source: https://github.com/Kotlin/kotlinx.coroutines/tree/1.8.1
+SnakeYAML source is identified by its org.yaml:snakeyaml:2.2 POM on Maven Central.
+
+Google Play services base 18.5.0, basement 18.5.0, tasks 18.2.0 and fido 21.2.0:
+These are transitive dependencies of the official GeckoView artifact. Their POMs
+identify the Android Software Development Kit License, not MIT/Apache licensing:
+https://developer.android.com/studio/terms.html
+No Google account, Google Play services system APK or new Google permission is
+installed/configured by this shell. Public APK redistribution is not part of the
+private hardware trial. Do not relabel these components as open-source software.
+
+Build tools, Gradle, JDK and Android SDK are not embedded or redistributed in this
+repository. Keep the trial APK private/ignored. Review the complete dependency
+rights before any separate public binary release.

@@ -1,0 +1,60 @@
+plugins {
+  id 'com.android.application'
+}
+
+android {
+  namespace 'dev.dayframe.kiosk'
+  compileSdk 35
+  buildToolsVersion '36.0.0'
+
+  defaultConfig {
+    applicationId 'dev.dayframe.kiosk'
+    minSdk 23
+    targetSdk 23
+    versionCode 4
+    versionName '0.1.3'
+    ndk { abiFilters 'armeabi-v7a' }
+  }
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+  }
+  buildTypes {
+    release {
+      minifyEnabled false
+      debuggable false
+    }
+  }
+  packaging {
+    resources {
+      excludes += ['META-INF/*.kotlin_module']
+      merges += ['META-INF/DEPENDENCIES', 'META-INF/LICENSE*', 'META-INF/NOTICE*']
+    }
+  }
+  lint {
+    abortOnError true
+    // Sideloaded Classic 10 / API 23 / ARMv7 trial, not a Play/ChromeOS distribution.
+    disable 'ExpiredTargetSdkVersion', 'ChromeOsAbiSupport'
+  }
+}
+
+dependencyLocking {
+  lockAllConfigurations()
+}
+
+dependencies {
+  implementation 'org.mozilla.geckoview:geckoview:143.0.20251003115653'
+  testImplementation 'junit:junit:4.13.2'
+}
+
+tasks.register('runtimeInventory') {
+  doLast {
+    def artifacts = configurations.releaseRuntimeClasspath.resolvedConfiguration.resolvedArtifacts.collect { artifact ->
+      [coordinate: artifact.moduleVersion.id.toString(), file: artifact.file.name,
+       sha256: java.security.MessageDigest.getInstance('SHA-256').digest(artifact.file.bytes).encodeHex().toString()]
+    }.sort { it.coordinate }
+    def destination = layout.buildDirectory.file('reports/runtime-artifacts.json').get().asFile
+    destination.parentFile.mkdirs()
+    destination.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(artifacts)) + '\n'
+  }
+}

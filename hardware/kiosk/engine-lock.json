@@ -1,0 +1,21 @@
+{
+  "geckoview": {
+    "version": "143.0.20251003115653",
+    "aarSha256": "aa01a684fa13344b56df89fb3b3042b8234d6f11a69f5af144d129598e3bfae1",
+    "sourcesJarSha256": "165d5d231e4ac8e24e6a548abef7455b556258fcf9bd1e4f9ef6be8786132406",
+    "sourceRevision": "08388fb6b18c61dbb3d0baa9bee4e7440b85f671",
+    "mavenRoot": "https://maven.mozilla.org/maven2/",
+    "aarMinSdk": 21,
+    "packagedAbi": "armeabi-v7a"
+  },
+  "build": {
+    "gradle": "8.11.1",
+    "gradleZipSha256": "f397b287023acdba1e9f6fc5ea72d22dd63669d59ed4a289a29b1a76eee151c6",
+    "androidGradlePlugin": "8.9.2",
+    "compileSdk": 35,
+    "buildTools": "36.0.0",
+    "javaMajor": 21,
+    "appMinSdk": 23,
+    "appTargetSdk": 23
+  }
+}

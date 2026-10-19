@@ -20,7 +20,7 @@ Read in order:
 5. [H1–H8 stages, security and unresolved questions](implementation-plan.md).
 6. [Research sources and provenance](sources.md).
 7. [H4 measurement tools, M4 display checks and baseline runbook](h4-performance.md).
-8. [H5 manual fullscreen evidence](h5-fullscreen.md) and [H6 automatic Firefox startup](h6-startup.md).
+8. [H5 manual fullscreen evidence](h5-fullscreen.md), [H6 automatic Firefox startup](h6-startup.md) and [H6 native recovery closeout and limits](h6-recovery.md).
 
 The Classic 10 (€49.99) is received and partly inspected. Our Modern10 Charm (€62.27) is ordered, awaiting delivery and has no local diagnostic evidence. Its upstream namesake is only a comparison unit.
 

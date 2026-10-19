@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+  <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+  <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+  <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" tools:node="remove" />
+  <uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS" tools:node="remove" />
+  <application android:name=".KioskApplication" android:label="Dayframe kiosk trial"
+      android:icon="@drawable/ic_dayframe"
+      android:allowBackup="false" android:usesCleartextTraffic="false"
+      android:theme="@android:style/Theme.Material.Light.NoActionBar">
+    <!-- Fixed 1280x800 landscape frame trial; other form factors are outside this package. -->
+    <activity tools:ignore="DiscouragedApi" android:name=".KioskActivity" android:exported="true"
+        android:launchMode="singleTask" android:screenOrientation="landscape"
+        android:configChanges="orientation|screenSize|keyboardHidden">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+    </activity>
+    <receiver android:name=".BootReceiver" android:exported="true">
+      <intent-filter>
+        <action android:name="android.intent.action.BOOT_COMPLETED" />
+      </intent-filter>
+    </receiver>
+    <!-- Runtime-only AndroidX profiling receiver is removed, not referenced; lint sees only
+         the compile classpath and cannot resolve this removal marker. -->
+    <receiver android:name="androidx.profileinstaller.ProfileInstallReceiver" tools:node="remove"
+        tools:ignore="MissingClass" />
+    <service android:name=".SupervisorService" android:process=":supervisor"
+        android:exported="false" />
+  </application>
+</manifest>
