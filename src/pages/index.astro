@@ -201,6 +201,21 @@ import {displayConfig} from '../lib/dashboard/config';
     right: 1rem;
     justify-content: center;
   }
+  /* Recovery can hide retry during pointerdown. Keep navigation anchored so
+     the button under a finger cannot change before pointerup. */
+  .dashboard[data-mode='photos'] [data-dashboard-footer] :global(nav) {
+    position: fixed;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: calc(100vw - 2rem);
+  }
+  .dashboard[data-mode='photos'] [data-display-retry] {
+    position: fixed;
+    top: 5.5rem;
+    right: 1rem;
+  }
   .dashboard[data-mode='photos']
     [data-dashboard-footer]
     > :not(nav):not([data-display-retry]) {

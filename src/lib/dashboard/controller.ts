@@ -58,7 +58,9 @@ function initializeDashboard(root: HTMLElement) {
     const retry = root.querySelector<HTMLButtonElement>('[data-display-retry]');
     if (retry) {
       retry.hidden = !(
-        isConfigurationFailed || weatherRoot.dataset.failed === 'true'
+        isConfigurationFailed ||
+        weatherRoot.dataset.failed === 'true' ||
+        (mode === 'photos' && slideshow.hasFailed)
       );
     }
 

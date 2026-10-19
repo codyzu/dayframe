@@ -183,6 +183,7 @@ test('read-only cookie delivers images, slideshow refreshes, outages retain curr
     'Accès privé requis',
   );
   await page.request.get('/__test/display');
+  await page.locator('[data-dashboard]').dispatchEvent('pointerdown');
   await page.getByRole('button', {name: 'Réessayer la connexion'}).click();
   await expect(image).toBeVisible();
   await page.getByRole('button', {name: 'Matin', exact: true}).click();
@@ -193,6 +194,47 @@ test('read-only cookie delivers images, slideshow refreshes, outages retain curr
     'Accès privé requis',
   );
   await expect(image).toHaveCount(0);
+});
+
+test('photo access failures keep retry available when configuration and weather succeed', async ({
+  page,
+  context,
+}) => {
+  await login(page);
+  await page
+    .locator('[data-photo-files]')
+    .setInputFiles(await syntheticPhoto(page));
+  await expect(page.locator('[data-storage]')).toContainText('1 photo');
+  await context.clearCookies();
+  await page.request.get('/__test/display');
+  await page.route('**/api/config/display', async (route) =>
+    route.fulfill({json: defaultSettings}),
+  );
+  await page.route('**/api/photos', async (route) =>
+    route.fulfill({
+      status: 401,
+      json: {error: {message: 'Synthetic photo access failure'}},
+    }),
+  );
+  await page.goto('/');
+  await expect(page.locator('[data-temperature]')).toHaveText('12°');
+  const retry = page.getByRole('button', {name: 'Réessayer la connexion'});
+  await expect(retry).toBeHidden();
+  await page.getByRole('button', {name: 'Photos', exact: true}).click();
+  await expect(page.locator('[data-photo-status]')).toContainText(
+    'Accès privé requis',
+  );
+  await expect(retry).toBeVisible();
+  const navigation = page.getByRole('navigation', {name: 'Modes d’affichage'});
+  const before = await navigation.boundingBox();
+  // Keep configuration healthy during recovery; it must not hide photo errors.
+  await page.unroute('**/api/photos');
+  await retry.click();
+  await expect(page.locator('[data-photo-stage] img')).toBeVisible();
+  await expect(retry).toBeHidden();
+  const after = await navigation.boundingBox();
+  expect(after!.x).toBeCloseTo(before!.x, 1);
+  expect(after!.y).toBeCloseTo(before!.y, 1);
 });
 
 test('unsupported formats report per-file errors and preserve a safe retry', async ({

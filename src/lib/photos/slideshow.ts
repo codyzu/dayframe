@@ -42,6 +42,7 @@ export function mountSlideshow(
   let current: LoadedPhoto | undefined;
   let next: LoadedPhoto | undefined;
   let isActive = false;
+  let hasFailed = false;
   let generation = 0;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let refreshAt = 0;
@@ -70,6 +71,7 @@ export function mountSlideshow(
   };
 
   function expirePrivacy() {
+    hasFailed = true;
     generation++;
     controller.abort();
     controller = new AbortController();
@@ -152,6 +154,7 @@ export function mountSlideshow(
 
     refreshAt = Date.now() + 300_000;
     if (catalog.length === 0) {
+      hasFailed = false;
       clear();
       status.textContent =
         'Ajoutez vos premiers souvenirs depuis l’espace privé.';
@@ -221,11 +224,14 @@ export function mountSlideshow(
 
         next = loaded;
       }
+
+      hasFailed = false;
     } catch (error) {
       if (run !== generation) {
         return;
       }
 
+      hasFailed = true;
       if (error instanceof ApiError && [401, 403].includes(error.status)) {
         clear();
         status.textContent = 'Accès privé requis. Reconnectez cet affichage.';
@@ -295,6 +301,9 @@ export function mountSlideshow(
   return {
     setActive,
     wake,
+    get hasFailed() {
+      return hasFailed;
+    },
     checkPrivacy() {
       if (
         current &&
@@ -309,6 +318,7 @@ export function mountSlideshow(
       fit.value = settings.fit;
     },
     deny() {
+      hasFailed = true;
       generation++;
       controller.abort();
       controller = new AbortController();
