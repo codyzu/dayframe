@@ -56,3 +56,20 @@ Seventeen tests cover the UID/capability shell guard, target scope/reuse, remote
 `load-stall` is separate from `renderer-stall`. It validates native maintenance/reload controls before STOP, triggers only the ordinary same-session reload, and requires actual same-session LOADING before counting session-replacement recovery. It never substitutes a manual new session for the load watchdog. The existing exact-PID cleanup and two-minute deadline apply; no device fault is executed by host tests.
 
 The current host fault runner pins installed **0.1.3**. The 0.1.2 acceptance record remains retired after its boot stop; the owner physical 0.1.3 pass enabled the exact-artifact gate and both approved faults passed. The additional normal reboot passed; the owner-operated cold cycle is used and automatic startup is owner-confirmed, with timing unverified and final physical maintenance passed. No extra fault/reboot allowance is inferred. `events.json` in the 0.1.3 candidate is private, bounded to 64 fixed-label monotonic events and never accepts page/URL/credential data.
+
+## Bounded overnight observation
+
+`soak.py` samples the current installed 0.1.3 native package (including its supervisor and renderer children), using the H4 sampler's per-process PSS and device-tick core equivalents. It rechecks Classic identity, exact installed artifact at preflight/finalization, native state/foreground and device boot identity. State timestamps in `health.json` change only when state changes; they are not periodic liveness heartbeats. This tool therefore reports sampled operational state and process stability, not independently verified continuous painting or touch responsiveness.
+
+The observer defaults to ten hours at one-minute cadence, retains every raw sample privately and stops on read/identity/health errors or a host-sleep collection gap. It never connects a new target, signals a process, injects input, reloads a page, changes mode/settings/credentials/network or restarts anything. Use only for an owner-authorized observation on the saved verified unit. The earlier Firefox sampler remains Firefox-specific by default; native reuse explicitly supplies `dev.dayframe.kiosk` for process accounting.
+
+```sh
+python3 hardware/kiosk/soak.py \
+  --target-file private/m4-display-checks/frame-target.txt \
+  --output private/NEW_NATIVE_OBSERVATION_DIRECTORY \
+  --duration 36000 --interval 60
+```
+
+Output must be a new directory below ignored `private/`. `run.json` is updated atomically with progress/terminal status; `samples.jsonl` is flushed after each complete sample. A progress file alone is not proof that its collector is still live. Keep the host on the maintenance network and awake; an optional process-lifetime `caffeinate -i` does not survive host shutdown/lid sleep. Do not silently restart interrupted observations or add separate shorter runs together as uninterrupted stability evidence.
+
+Host-only observer checks: `python3 -m unittest discover -s hardware/kiosk/tests -p 'soak_test.py' -v`. The new four checks passed; the nine existing measurement checks also passed after the process-selector extension. No web suite, APK rebuild or completed boot/fault test was repeated. Morning versus Night workload and the actual observed span must be reported separately from any 48-hour acceptance claim.

@@ -97,9 +97,10 @@ def cpu_cores(previous, current, ticks_per_second):
 
 
 class Reader:
-    def __init__(self, target, adb='adb'):
+    def __init__(self, target, adb='adb', package=PACKAGE):
         self.target = target
         self.adb = adb
+        self.package = package
 
     def shell(self, command):
         result = subprocess.run(
@@ -139,7 +140,7 @@ class Reader:
         processes = {}
         for line in raw['ps'].splitlines()[1:]:
             fields = line.split()
-            if len(fields) < 3 or not (fields[-1] == PACKAGE or fields[-1].startswith(PACKAGE + ':')):
+            if len(fields) < 3 or not (fields[-1] == self.package or fields[-1].startswith(self.package + ':')):
                 continue
             pid = fields[1]
             if not pid.isdecimal():
