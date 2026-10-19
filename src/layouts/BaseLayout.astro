@@ -17,7 +17,7 @@ const {title, bodyClass = '', displayManifest = false} = Astro.props;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#143c48" />
+    <meta name="theme-color" content="#F5EBD8" />
     <meta
       name="description"
       content="Dayframe, le tableau de bord de la maison. Aperçu de démonstration."
@@ -26,7 +26,7 @@ const {title, bodyClass = '', displayManifest = false} = Astro.props;
     {displayManifest && <link rel="manifest" href="/manifest.webmanifest" />}
     <title>{title} · Dayframe</title>
   </head>
-  <body class:list={['font-sans', bodyClass || 'bg-[#143c48] text-[#f5f6ef]']}>
+  <body class:list={['font-sans', bodyClass || 'bg-background text-primary']}>
     <slot />
   </body>
 </html>

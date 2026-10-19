@@ -6,7 +6,7 @@
   font-synthesis: none;
 }
 :focus-visible {
-  outline: 3px solid #f1cc8f;
+  outline: 3px solid var(--colors-accent);
   outline-offset: 5px;
 }
 [hidden] {

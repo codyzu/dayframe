@@ -17,7 +17,7 @@ export const defaultSettings: Settings = {
   longitude: displayConfig.longitude,
   slideshowIntervalSeconds: displayConfig.slideshowIntervalSeconds,
   overrideTimeoutSeconds: displayConfig.overrideTimeoutSeconds,
-  fit: 'contain',
+  fit: 'cover',
   schedule: displayConfig.schedule.map((entry) => ({...entry})),
 };
 const keys = Object.keys(defaultSettings);

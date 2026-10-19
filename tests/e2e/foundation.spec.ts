@@ -135,7 +135,7 @@ test('keyboard navigation and reduced motion', async ({page}) => {
   expect(decodeURIComponent(css)).not.toMatch(/<animate/v);
 });
 
-test('only current weather animates and respects motion preference', async ({
+test('current weather and checkpoint Meteocons animate and respect motion preference', async ({
   page,
 }) => {
   await page.emulateMedia({reducedMotion: 'no-preference'});
@@ -145,7 +145,7 @@ test('only current weather animates and respects motion preference', async ({
   );
   const icons = page.locator('[data-weather] [class*="i-meteocons-"]');
   await expect(
-    page.locator('[data-chart] [class*="i-meteocons-"]').first(),
+    page.locator('[data-checkpoints] [class*="i-meteocons-"]').first(),
   ).toBeVisible();
   const images = async () =>
     icons.evaluateAll((elements) =>
@@ -155,14 +155,9 @@ test('only current weather animates and respects motion preference', async ({
     );
   const animated = await images();
   expect(animated.length).toBeGreaterThan(1);
-  for (const [index, image] of animated.entries()) {
+  for (const image of animated) {
     expect(image).toContain('<svg');
-    if (index === 0) {
-      expect(image).toMatch(/<animate/v);
-    } else {
-      expect(image).not.toMatch(/<animate/v);
-      expect(image).not.toContain(' opacity="0"');
-    }
+    expect(image).toMatch(/<animate/v);
 
     for (const symbol of image.matchAll(/<symbol\b[^>]*>/gv)) {
       expect(symbol[0]).toMatch(/overflow=["']visible["']/v);
@@ -171,7 +166,6 @@ test('only current weather animates and respects motion preference', async ({
 
   await page.emulateMedia({reducedMotion: 'reduce'});
   const reduced = await images();
-  expect(reduced.slice(1)).toEqual(animated.slice(1));
   for (const image of reduced) {
     expect(image).toContain('<svg');
     expect(image).not.toMatch(/<animate/v);

@@ -148,7 +148,7 @@ function mountAdmin(root: HTMLElement) {
       image.src = src;
       image.alt = index === 0 ? 'Nouvelle photo' : 'Photo similaire existante';
       image.className =
-        'w-full aspect-[4/3] object-contain bg-[#eaece5] rounded-lg';
+        'w-full aspect-[4/3] object-contain bg-background rounded-lg';
       images.append(image);
     }
 

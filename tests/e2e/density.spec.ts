@@ -166,7 +166,7 @@ test('large display retains long freezing conditions and full-scale rain', async
   );
   await expect(page.locator('[data-chart] rect').first()).toHaveAttribute(
     'height',
-    '160',
+    '100',
   );
   expect(
     await page.evaluate(

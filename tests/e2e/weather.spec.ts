@@ -29,15 +29,17 @@ test('live day/night data, accessible graph and 30-minute refresh', async ({
     }),
   ).toBeVisible();
   await expect(page.getByText('Maintenant', {exact: true})).toBeVisible();
-  await expect(page.locator('table tbody tr')).toHaveCount(12);
-  await expect(page.locator('[data-summary]')).toContainText('15:00');
-  await expect(page.getByRole('link', {name: 'Open-Meteo'})).toBeVisible();
+  await expect(page.locator('table tbody tr')).toHaveCount(17);
+  await expect(page.locator('[data-summary]')).toContainText('16h30');
+  await expect(
+    page.getByRole('link', {name: 'Météo : Open-Meteo · CC BY 4.0'}),
+  ).toBeVisible();
   const icons = await page
-    .locator('[data-chart] [aria-hidden] span span')
+    .locator('[data-checkpoints] [class*="i-meteocons-"]')
     .evaluateAll((elements) =>
       elements.map((element) => getComputedStyle(element).backgroundImage),
     );
-  expect(icons.length).toBe(6);
+  expect(icons.length).toBe(4);
   expect(icons.every((icon) => icon.includes('data:image/svg+xml'))).toBe(true);
   expect(
     await page.evaluate(
@@ -177,5 +179,5 @@ test('blocked storage and unknown codes degrade safely', async ({page}) => {
     'background-image',
     /data:image\/svg\+xml/v,
   );
-  await expect(page.locator('[data-summary]')).toContainText('15:00');
+  await expect(page.locator('[data-summary]')).toContainText('16h30');
 });

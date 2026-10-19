@@ -20,7 +20,7 @@ test('both administrators persist settings, export, validate schedules and recov
   await expect(page.locator('[data-status]')).toContainText('one@example.test');
   await page.getByLabel('Lieu', {exact: true}).fill('Maison de test');
   await page.getByLabel('Durée d’une photo').fill('45');
-  await page.getByLabel('Cadrage par défaut').selectOption('cover');
+  await page.getByLabel('Cadrage par défaut').selectOption('contain');
   await page.getByRole('button', {name: 'Enregistrer les réglages'}).click();
   await expect(page.locator('[data-status]')).toHaveText(
     'Réglages enregistrés.',
@@ -43,7 +43,7 @@ test('both administrators persist settings, export, validate schedules and recov
   );
   await expect(page.locator('[data-photo-stage]')).toHaveAttribute(
     'data-fit',
-    'cover',
+    'contain',
   );
   await expect(page.locator('[data-location-greeting]')).toHaveText(
     'Bonjour, Maison de test.',

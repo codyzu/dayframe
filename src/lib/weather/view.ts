@@ -1,7 +1,14 @@
 // @unocss-include
 import {dateKey, hourLabel, staleAfter, type Weather} from './adapter.ts';
 import {conditionFor} from './conditions.ts';
-import {forecastHours, summarize} from './summary.ts';
+import {summarize} from './summary.ts';
+import {
+  checkpointForecasts,
+  dayHours,
+  isWeekend,
+  morningAdvice,
+  twoHourRain,
+} from './morning.ts';
 import {
   createWeatherService,
   type WeatherCache,
@@ -11,62 +18,73 @@ import {
 const rounded = (value: number) => `${Math.round(value)}°`;
 
 function chart(weather: Weather, now: number) {
-  const hours = forecastHours(weather, now);
+  const hours = dayHours(weather, now);
   if (hours.length < 2) {
-    return '<p class="py-10 text-mist">Prévisions à venir indisponibles.</p>';
+    return '<p class="py-5 text-secondary">Prévisions de la journée indisponibles.</p>';
   }
 
-  const low = Math.floor(
-    Math.min(...hours.map((hour) => hour.temperature)) - 2,
-  );
-  const high = Math.ceil(
-    Math.max(...hours.map((hour) => hour.temperature)) + 2,
-  );
+  const low = Math.min(...hours.map((hour) => hour.temperature)) - 3;
+  const high = Math.max(...hours.map((hour) => hour.temperature)) + 3;
   const x = (time: number) =>
-    ((time - hours[0].time) / (hours.at(-1)!.time - hours[0].time)) * 100;
+    ((time - hours[0].time) / (hours.at(-1)!.time - hours[0].time)) * 600;
   const y = (temperature: number) =>
-    100 - ((temperature - low) / (high - low)) * 100;
-  const marker = Math.max(0, Math.min(100, x(now)));
-  const points = hours
-    .map((hour) => `${x(hour.time) * 6},${y(hour.temperature) * 1.6}`)
-    .join(' ');
-  // HTML labels stay in rem at every viewport; only the numeric plot stretches.
-  // Both axes share the exact same plot bounds, rain always uses 0–100%.
-  return `<div class="weather-chart w-full py-3">
-    <div class="flex flex-wrap justify-between gap-2 text-[length:var(--font-chart-time)] mb-8">
-      <span class="text-[#fff0cd]">Température °C</span>
-      <span class="text-[#b5dfed]">Pluie · probabilité 0–100 %</span>
+    90 - ((temperature - low) / (high - low)) * 80;
+  // Horizontal cubic handles give a smooth bounded curve, without overshoot.
+  let path = `M${x(hours[0].time)},${y(hours[0].temperature)}`;
+  for (let index = 1; index < hours.length; index++) {
+    const before = hours[index - 1];
+    const hour = hours[index];
+    const middle = (x(before.time) + x(hour.time)) / 2;
+    path += ` C${middle},${y(before.temperature)} ${middle},${y(hour.temperature)} ${x(hour.time)},${y(hour.temperature)}`;
+  }
+
+  const marker = x(now);
+  const rain = twoHourRain(hours);
+  return `<div class="weather-chart w-full">
+    <div class="flex justify-between gap-2 text-sm text-secondary mb-1">
+      <span class="font-semibold text-temperature">Température · ${rounded(low + 3)} à ${rounded(high - 3)}C</span>
+      <span class="text-rain">Pluie · max. horaire / 2 h</span>
     </div>
-    <div class="mx-7 relative">
-      <div class="relative h-[160px] mb-2" data-chart-plot>
-        <svg class="absolute inset-0 size-full overflow-visible" viewBox="0 0 600 160" preserveAspectRatio="none" role="img" aria-labelledby="chart-title chart-description">
+    <div class="mx-3 relative">
+      <div class="relative h-[100px]" data-chart-plot>
+        <svg class="absolute inset-0 size-full overflow-visible" viewBox="0 0 600 100" preserveAspectRatio="none" role="img" aria-labelledby="chart-title chart-description">
           <title id="chart-title">Température et probabilité de précipitations</title>
-          <desc id="chart-description">Courbe jaune : température en degrés Celsius, valeurs sur la courbe. Barres bleues : probabilité de précipitations de 0 % en bas à 100 % en haut. Trait pointillé : maintenant. Tableau détaillé disponible après le graphique.</desc>
-          ${[0, 0.5, 1].map((fraction) => `<line x1="0" x2="600" y1="${fraction * 160}" y2="${fraction * 160}" stroke="#ffffff" stroke-opacity="0.18"/>`).join('')}
-          ${hours.map((hour) => `<rect x="${x(hour.time) * 6 - 6}" y="${160 - hour.probability * 1.6}" width="12" height="${hour.probability * 1.6}" rx="3" fill="#88cbe4" fill-opacity="0.8"/>`).join('')}
-          <polyline points="${points}" fill="none" stroke="#f5d294" stroke-width="4" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
-          ${hours.map((hour) => `<ellipse cx="${x(hour.time) * 6}" cy="${y(hour.temperature) * 1.6}" rx="4" ry="4" fill="#fff0cd"/>`).join('')}
-          <line x1="${marker * 6}" x2="${marker * 6}" y1="-12" y2="160" stroke="white" stroke-width="2" stroke-dasharray="5 4" vector-effect="non-scaling-stroke"/>
+          <desc id="chart-description">Courbe cuivre : température en degrés Celsius. Barres bleues : maximum des probabilités horaires de chaque tranche de deux heures, de 0 à 100 %, et non probabilité sur toute la tranche. Trait pointillé : maintenant, si dans la période. Tableau horaire détaillé disponible après le graphique.</desc>
+          <line x1="0" x2="600" y1="100" y2="100" stroke="var(--colors-border)" stroke-width="2"/>
+          ${rain.map((bar) => `<rect x="${x(bar.start) + 4}" y="${100 - bar.probability}" width="${Math.max(1, x(bar.end) - x(bar.start) - 8)}" height="${bar.probability}" rx="4" fill="var(--colors-rain)" fill-opacity="0.85"><title>${hourLabel(bar.start)}–${hourLabel(bar.end)} : maximum horaire ${bar.probability} %</title></rect>`).join('')}
+          <path d="${path}" fill="none" stroke="var(--colors-surface)" stroke-width="8" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+          <path d="${path}" fill="none" stroke="var(--colors-temperature)" stroke-width="4" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+          ${marker >= 0 && marker <= 600 ? `<line x1="${marker}" x2="${marker}" y1="0" y2="100" stroke="var(--colors-primary)" stroke-width="2" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>` : ''}
         </svg>
-        <span class="absolute -top-7 text-[length:var(--font-chart-time)] font-semibold" style="left:clamp(0%, ${marker}%, 65%)">Maintenant</span>
-        ${hours
-          .filter((_, index) => index % 2 === 0)
-          .map(
-            (hour) =>
-              `<span class="absolute text-[length:var(--font-chart-label)] font-semibold text-[#fff0cd] bg-[#102a34] rounded px-0.5 leading-none" style="left:${x(hour.time)}%;top:${y(hour.temperature)}%;transform:translate(-50%,-130%)">${rounded(hour.temperature)}</span>`,
-          )
-          .join('')}
+        ${marker >= 0 && marker <= 600 ? `<span class="absolute top-0 text-sm bg-surface px-1 font-semibold" style="left:clamp(0%, ${marker / 6}%, 75%)">Maintenant</span>` : ''}
       </div>
-      <div class="relative h-[calc(var(--icon-weather-hourly)+2rem)]" aria-hidden="true">${hours
-        .filter((_, index) => index % 2 === 0)
+      <div class="relative h-6 mt-1" aria-hidden="true">${hours
+        .filter((hour) => Number(hourLabel(hour.time).slice(0, 2)) % 2 === 0)
         .map(
           (hour) =>
-            `<span class="absolute flex flex-col items-center -translate-x-1/2 text-[length:var(--font-chart-time)] text-mist" style="left:${x(hour.time)}%">${hourLabel(hour.time).replace(':00', 'h')}<span class="${conditionFor(hour.code, hour.isDay).icon} inline-block size-[var(--icon-weather-hourly)] shrink-0"></span></span>`,
+            `<span class="${(Number(hourLabel(hour.time).slice(0, 2)) - 6) % 4 === 0 ? '' : 'hidden sm:block'} absolute -translate-x-1/2 text-[length:var(--font-chart-time)] text-secondary" style="left:${x(hour.time) / 6}%">${hourLabel(hour.time).replace(':00', 'h')}</span>`,
         )
         .join('')}</div>
     </div>
     <div class="sr-only"><table><caption>Prévisions horaires, heure locale</caption><thead><tr><th>Heure</th><th>Température</th><th>Précipitations</th><th>Conditions</th></tr></thead><tbody>${hours.map((hour) => `<tr><th>${hourLabel(hour.time)}</th><td>${rounded(hour.temperature)}C</td><td>${hour.probability} %</td><td>${conditionFor(hour.code, hour.isDay).label}</td></tr>`).join('')}</tbody></table></div>
   </div>`;
+}
+
+function checkpoints(weather: Weather, now: number) {
+  return checkpointForecasts(weather, now)
+    .map((point) => {
+      const hour = point.forecast;
+      const condition = conditionFor(hour?.code, hour?.isDay ?? true);
+      return `<article class="rounded-2xl bg-background px-2 py-1 text-center" aria-label="${point.time} ${point.label}">
+      <h3 class="text-[length:var(--font-checkpoint)] font-bold tabular-nums leading-tight">${point.time.replace(':', 'h')}</h3>
+      <p class="text-[length:var(--font-weather-detail)] leading-tight text-secondary">${point.label}</p>
+      <div class="flex items-center justify-center gap-1"><span class="${condition.icon} inline-block size-12 shrink-0" aria-hidden="true"></span>
+      <p class="text-[length:var(--font-checkpoint)] font-bold leading-tight">${hour ? rounded(hour.temperature) : '—°'}</p></div>
+      <p class="text-[length:var(--font-weather-detail)] leading-tight font-semibold text-rain" aria-label="${hour ? `Pluie : maximum horaire ${hour.probability} % ; source ${point.probabilityPeriod}` : 'Prévision indisponible'}">Pluie ${hour ? `${hour.probability} %` : '—'}</p>
+      <span class="sr-only">${hour ? condition.label : 'Prévision indisponible'}</span>
+    </article>`;
+    })
+    .join('');
 }
 
 export function mountWeather(root: HTMLElement) {
@@ -78,10 +96,12 @@ export function mountWeather(root: HTMLElement) {
   }
 
   function render({weather, failed}: WeatherState) {
+    root.dataset.failed = String(failed);
     if (!weather) {
       if (failed) {
         text('[data-condition]', 'Météo indisponible');
         text('[data-rain]', 'Connexion météo interrompue.');
+        text('[data-advice]', 'Consultez la météo avant de partir.');
         text(
           '[data-summary]',
           'Les prévisions réapparaîtront automatiquement.',
@@ -110,7 +130,7 @@ export function mountWeather(root: HTMLElement) {
     text('[data-condition]', label);
     const iconElement = root.querySelector('[data-current-icon]');
     if (iconElement) {
-      iconElement.className = `weather-icon ${icon} inline-block size-[var(--icon-weather-current)] shrink-0`;
+      iconElement.className = `weather-icon ${icon} inline-block size-[var(--icon-weather-current)] shrink-0 rounded-3xl bg-elevated`;
     }
 
     const daily = weather.daily.find((entry) => entry.date === dateKey(now));
@@ -119,6 +139,22 @@ export function mountWeather(root: HTMLElement) {
       `Ressenti ${rounded(weather.current.feelsLike)} · ${daily ? `Max. ${rounded(daily.high)} / Min. ${rounded(daily.low)}` : 'Max. / Min. du jour indisponibles'}`,
     );
     const summary = summarize(weather, now);
+    const advice = morningAdvice(weather, now);
+    text(
+      '[data-advice]',
+      isStale ? 'Vérifiez la météo avant de partir.' : advice.title,
+    );
+    text(
+      '[data-checkpoint-heading]',
+      isWeekend(now)
+        ? 'Les repères du week-end'
+        : 'Les repères · jour d’école habituel',
+    );
+    const checkpointContainer = root.querySelector('[data-checkpoints]');
+    if (checkpointContainer) {
+      checkpointContainer.innerHTML = checkpoints(weather, now);
+    }
+
     text(
       '[data-rain]',
       isStale
@@ -129,12 +165,17 @@ export function mountWeather(root: HTMLElement) {
       '[data-summary]',
       isStale
         ? 'Données anciennes : vérifiez la météo avant de partir.'
-        : summary.outlook,
+        : advice.detail,
     );
     text(
       '[data-weather-status]',
       `${isStale ? 'Données anciennes' : 'Mise à jour'} · il y a ${age} min${failed ? ' · connexion interrompue, nouvelle tentative automatique' : ''}`,
     );
+    const status = root.querySelector<HTMLElement>('[data-weather-status]');
+    if (status) {
+      status.hidden = !isStale;
+    }
+
     const container = root.querySelector('[data-chart]');
     if (container) {
       container.innerHTML = chart(weather, now);
@@ -186,6 +227,9 @@ export function mountWeather(root: HTMLElement) {
     options,
   );
   return {
+    wake() {
+      service.wake();
+    },
     dispose() {
       lifecycle.abort();
       service.stop();

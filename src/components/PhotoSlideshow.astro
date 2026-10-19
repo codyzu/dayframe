@@ -7,7 +7,7 @@
 >
   <div
     data-photo-stage
-    data-fit="contain"
+    data-fit="cover"
     class="photo-stage fixed inset-0 bg-black"
   ></div>
   <div
@@ -24,14 +24,14 @@
   </div>
   <div
     data-photo-controls
-    class="fixed top-4 right-4 z-2 flex items-center gap-3 rounded-xl bg-black/75 p-2 text-sm"
+    class="fixed top-4 right-4 z-2 flex items-center gap-3 rounded-xl bg-surface text-primary border border-border p-2 text-sm"
   >
     <label class="flex items-center gap-2">
       Cadrage
       <select
         data-photo-fit
         aria-label="Cadrage des photos"
-        class="min-h-11 rounded-lg bg-[#18333c] px-3 text-white"
+        class="min-h-11 rounded-lg bg-elevated px-3 text-primary"
       >
         <option value="contain">Photo entière</option>
         <option value="cover">Remplir l’écran</option>
@@ -40,7 +40,7 @@
     <button
       data-photo-next
       type="button"
-      class="min-h-11 rounded-lg border border-white/30 px-3"
+      class="min-h-11 rounded-lg border border-border px-3"
     >
       Suivante
     </button>
@@ -48,7 +48,7 @@
   <p
     data-photo-status
     role="status"
-    class="fixed bottom-24 left-4 right-4 z-2 mx-auto w-fit max-w-[90vw] rounded-xl bg-black/80 px-4 py-2 text-sm"
+    class="fixed bottom-24 left-4 right-4 z-2 mx-auto w-fit max-w-[90vw] rounded-xl bg-surface text-primary border border-border px-4 py-2 text-sm"
   ></p>
 </section>
 <style>
@@ -59,11 +59,11 @@
   .photo-stage :global(img) {
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    object-fit: cover;
     animation: photo-appear 350ms ease-out;
   }
-  .photo-stage[data-fit='cover'] :global(img) {
-    object-fit: cover;
+  .photo-stage[data-fit='contain'] :global(img) {
+    object-fit: contain;
   }
   @keyframes photo-appear {
     from {

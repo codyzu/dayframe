@@ -37,6 +37,7 @@ function initializeDashboard(root: HTMLElement) {
   let pending: AbortController | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let isPaused = false;
+  let isConfigurationFailed = false;
 
   function render() {
     const mode = state.mode(Date.now(), performance.now());
@@ -52,6 +53,13 @@ function initializeDashboard(root: HTMLElement) {
           String(button.dataset.modeButton === mode),
         );
       });
+    }
+
+    const retry = root.querySelector<HTMLButtonElement>('[data-display-retry]');
+    if (retry) {
+      retry.hidden = !(
+        isConfigurationFailed || weatherRoot.dataset.failed === 'true'
+      );
     }
 
     slideshow.checkPrivacy();
@@ -115,9 +123,11 @@ function initializeDashboard(root: HTMLElement) {
       }
 
       applySettings(next);
+      isConfigurationFailed = false;
 
       refreshAt = Date.now() + 300_000;
     } catch (error) {
+      isConfigurationFailed = true;
       if (error instanceof ApiError && [401, 403].includes(error.status)) {
         slideshow.deny();
         applySettings(defaultSettings);
@@ -199,6 +209,7 @@ function initializeDashboard(root: HTMLElement) {
     tick();
     void refreshConfiguration();
     slideshow.wake();
+    weather.wake();
   }
 
   document.addEventListener('visibilitychange', () => {

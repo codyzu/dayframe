@@ -163,9 +163,9 @@ test('read-only cookie delivers images, slideshow refreshes, outages retain curr
   await page.getByRole('button', {name: 'Photos', exact: true}).click();
   const image = page.locator('[data-photo-stage] img');
   await expect(image).toBeVisible();
-  await expect(image).toHaveCSS('object-fit', 'contain');
-  await page.getByLabel('Cadrage des photos').selectOption('cover');
   await expect(image).toHaveCSS('object-fit', 'cover');
+  await page.getByLabel('Cadrage des photos').selectOption('contain');
+  await expect(image).toHaveCSS('object-fit', 'contain');
   await page.screenshot({
     path: info.outputPath(`slideshow-${info.project.name}.png`),
     animations: 'disabled',
@@ -177,7 +177,7 @@ test('read-only cookie delivers images, slideshow refreshes, outages retain curr
   await context.setOffline(false);
   // Denial during a settings refresh must clear already painted private pixels.
   await context.clearCookies();
-  await page.getByRole('button', {name: 'Réessayer la connexion'}).click();
+  await page.evaluate(() => globalThis.dispatchEvent(new Event('online')));
   await expect(image).toHaveCount(0);
   await expect(page.locator('[data-photo-status]')).toContainText(
     'Accès privé requis',
