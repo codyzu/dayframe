@@ -720,5 +720,10 @@ Final `pnpm verify` passed: Astro/TypeScript checks, lint (five existing complex
 warnings), 108 unit/integration tests, production build and 156 browser tests across
 Chromium, Firefox, WebKit and mobile, with four existing intentional skips. Browser
 checks assert the Photos clock and fixture temperature, larger Night heading, and the
-23:00 Paris transition at 22:59:59/23:00. No production deployment occurred as part of
-validation.
+23:00 Paris transition at 22:59:59/23:00. After validation, owner-requested commit
+`bdd4e0a` was pushed to `main`; GitHub Actions deployment run
+[39494412178](https://github.com/codyzu/dayframe/actions/runs/39494412178) passed its
+verification, Cloudflare upload and live-deployment check on 20 October. The earlier
+read-only frame observations at 22:31 and 22:36 Paris were made before this deployment;
+they do not verify the new screen or the physical 23:00 transition. The live frame may
+need a page reload, and saved household schedule settings may override the public default.
