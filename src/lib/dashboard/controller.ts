@@ -1,6 +1,7 @@
 import {ApiError, photoRequest} from '../photos/client.ts';
 import {mountSlideshow} from '../photos/slideshow.ts';
 import {mountWeather} from '../weather/view.ts';
+import {mountAgenda} from '../calendar/view.ts';
 import {defaultSettings, validateSettings, type Settings} from './settings.ts';
 import {
   runtimeConfig,
@@ -25,6 +26,7 @@ function initializeDashboard(root: HTMLElement) {
   const photoRoot = root.querySelector<HTMLElement>('[data-slideshow]')!;
   const weatherRoot = root.querySelector<HTMLElement>('[data-weather]')!;
   const slideshow = mountSlideshow(photoRoot);
+  const agenda = mountAgenda(root.querySelector<HTMLElement>('[data-agenda]')!);
   let weather = mountWeather(weatherRoot);
   const state = createModeState();
   let settings = defaultSettings;
@@ -69,6 +71,7 @@ function initializeDashboard(root: HTMLElement) {
     }
 
     weather.setActive(mode === 'morning' && !document.hidden && !isPaused);
+    agenda.tick(mode === 'morning' && !document.hidden && !isPaused);
     slideshow.checkPrivacy();
     slideshow.setActive(mode === 'photos' && !document.hidden && !isPaused);
     const isNavigationVisible =
@@ -154,6 +157,7 @@ function initializeDashboard(root: HTMLElement) {
       isConfigurationFailed = true;
       if (error instanceof ApiError && [401, 403].includes(error.status)) {
         slideshow.deny();
+        agenda.deny();
         applySettings(defaultSettings);
       }
       // Network/validation errors retain the last validated settings in memory.
@@ -234,6 +238,7 @@ function initializeDashboard(root: HTMLElement) {
     void refreshConfiguration();
     slideshow.wake();
     weather.wake();
+    agenda.wake();
   }
 
   document.addEventListener('visibilitychange', () => {
@@ -242,6 +247,7 @@ function initializeDashboard(root: HTMLElement) {
       pending?.abort();
       slideshow.setActive(false);
       weather.setActive(false);
+      agenda.pause();
     } else {
       wake();
     }
@@ -252,6 +258,7 @@ function initializeDashboard(root: HTMLElement) {
     pending?.abort();
     slideshow.setActive(false);
     weather.setActive(false);
+    agenda.pause();
   });
   globalThis.addEventListener('pageshow', wake);
   globalThis.addEventListener('online', wake);

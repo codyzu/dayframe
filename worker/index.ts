@@ -56,6 +56,8 @@ const worker = {
       path === '/api/display' ||
       path === '/api/photos' ||
       path === '/api/session' ||
+      path === '/api/calendar' ||
+      path.startsWith('/api/calendar/') ||
       path.startsWith('/api/photos/') ||
       path.startsWith('/api/session/')
     ) {

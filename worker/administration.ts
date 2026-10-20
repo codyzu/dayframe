@@ -45,6 +45,25 @@ export class Administration {
         ? undefined
         : await request.json().catch(() => undefined);
     return this.state.storage.transaction(async (storage) => {
+      // Internal-only compare-and-swap record. Google requests happen outside storage
+      // transactions; revision checks prevent a late refresh/callback undoing disconnect.
+      if (path === '/calendar-state') {
+        const current = (await storage.get<{revision: string}>('calendar')) ?? {
+          revision: 'empty',
+        };
+        if (request.method === 'GET') {
+          return Response.json(current);
+        }
+
+        const update = body as {expected: string; value: {revision: string}};
+        if (update.expected !== current.revision) {
+          return new Response(null, {status: 409});
+        }
+
+        await storage.put('calendar', update.value);
+        return Response.json({ok: true});
+      }
+
       const state = (await storage.get<State>('household')) ?? {
         settings: defaultSettings,
       };

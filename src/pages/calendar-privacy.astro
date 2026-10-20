@@ -1,0 +1,83 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Confidentialité de Google Calendar">
+  <main class="mx-auto max-w-2xl px-5 py-10 text-lg leading-relaxed">
+    <a href="/" class="inline-flex min-h-11 items-center underline">
+      Dayframe
+    </a>
+    <h1 class="mt-5 text-3xl font-bold">Votre agenda dans Dayframe</h1>
+    <p class="mt-4 text-secondary">Dernière mise à jour : 20 octobre 2026.</p>
+    <p class="mt-5">
+      Dayframe est un affichage familial privé. La connexion Google Calendar
+      sert uniquement à afficher les événements de l’agenda choisi sur l’écran
+      du matin.
+    </p>
+    <h2 class="mt-7 text-2xl font-semibold">Accès en lecture seule</h2>
+    <p class="mt-3">
+      Avec votre autorisation, Dayframe consulte la liste des agendas
+      accessibles à votre compte pour vous laisser en choisir un, puis lit les
+      événements de cet agenda. Il ne peut ni créer, ni modifier, ni supprimer
+      vos rendez-vous.
+    </p>
+    <p class="mt-3">
+      L’affichage reçoit seulement les titres et horaires de trois événements au
+      maximum, y compris les événements à la journée. Les descriptions, lieux et
+      listes de participants ne sont pas affichés. Les informations de
+      participation peuvent être consultées pour omettre les événements que vous
+      avez refusés.
+    </p>
+    <h2 class="mt-7 text-2xl font-semibold">Stockage et accès privé</h2>
+    <p class="mt-3">
+      Les autorisations Google sont conservées chiffrées sur le serveur. Votre
+      mot de passe Google n’est jamais transmis à Dayframe. Le nom et
+      l’identifiant de l’agenda choisi, ainsi qu’une copie des prochains
+      événements affichés, sont conservés dans le stockage privé de cette
+      installation chez Cloudflare.
+    </p>
+    <p class="mt-3">
+      Seuls les administrateurs autorisés et le cadre provisionné sur le réseau
+      domestique peuvent lire les événements. Le navigateur ne les conserve pas
+      dans son stockage permanent. Les événements sont effacés de l’affichage
+      lors d’une perte d’accès ou à l’expiration du délai de vérification de
+      cinq minutes.
+    </p>
+    <h2 class="mt-7 text-2xl font-semibold">Utilisation des données</h2>
+    <p class="mt-3">
+      Google fournit les événements et Cloudflare héberge l’application et ses
+      données privées. Dayframe n’utilise pas les données de Google Calendar
+      pour la publicité, ne les vend pas et ne les utilise pas pour entraîner un
+      modèle d’intelligence artificielle. Elles servent uniquement à la fonction
+      d’agenda familial demandée.
+    </p>
+    <p class="mt-3">
+      L’utilisation et le transfert des informations reçues des API Google
+      respectent la{' '}
+      <a
+        class="underline"
+        href="https://developers.google.com/terms/api-services-user-data-policy"
+      >
+        politique relative aux données utilisateur des services API Google
+      </a>
+      , y compris ses exigences d’utilisation limitée.
+    </p>
+    <h2 class="mt-7 text-2xl font-semibold">Déconnexion et suppression</h2>
+    <p class="mt-3">
+      Dans les{' '}
+      <a class="underline" href="/admin/settings">
+        réglages d’administration
+      </a>
+      , « Déconnecter Google Calendar » supprime la connexion enregistrée, la
+      sélection d’agenda et les événements en cache sur le serveur. Dayframe
+      tente aussi de révoquer son autorisation auprès de Google. Vous pouvez
+      retirer cette autorisation directement dans les connexions tierces de
+      votre compte Google, notamment si Google était indisponible lors de la
+      déconnexion.
+    </p>
+    <p class="mt-3">
+      Pour toute question ou demande de suppression, adressez-vous à
+      l’administrateur du foyer qui gère cette installation Dayframe.
+    </p>
+  </main>
+</BaseLayout>

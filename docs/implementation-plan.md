@@ -624,3 +624,69 @@ assertion after entering Morning, preserving the actual animation/reduced-motion
 The corrected full pipeline passed. No dependencies, copied upstream code/assets, device
 changes, deployment or new hardware acceptance. Existing installed native probes support
 the three retained modes; no APK update is needed for this web slice.
+
+## M7 Google Calendar slice — 20 October 2026
+
+Owner requested administrator OAuth connection and Morning events from the shared
+**Family** calendar. Added connect/reconnect, verified calendar selection and disconnect
+in settings; one read-only Google connection and bounded client-rendered agenda. Existing
+admin/display authentication, home-network restrictions and mutation-origin checks cover
+all calendar routes. Tokens use encrypted private storage in the existing Administration
+object; transactional revision checks prevent stale in-flight writes after disconnect.
+No new binding, migration, package, hardware action or paid service. Existing M6 deferrals
+retain their scope; this owner-requested web slice does not close them.
+
+Reviewed upstream `dashboard/js/views/{home,calendar}.js` and MIT license in local checkout
+`3969b453b9375f7cb63cf9931e983e2657f97852`. Adapt the short remaining-event hierarchy as an
+idea; independently implement private live Google reads rather than mock/full-grid event
+editing. No source/assets copied. [Design, security, setup and limits](calendar.md).
+
+Google Cloud project and Web OAuth client created in the owner's browser after explicit
+approval of API terms, enabling Calendar API and client creation. Downloaded client JSON
+validated and copied to ignored owner-only private storage. Subsequent read-only billing
+audit found Google had automatically linked the new project to an existing billing
+account without a billing prompt. Owner explicitly approved disabling billing for this
+new project only after the Google warning. The action succeeded and the linked-project
+list no longer contains Dayframe; other project links were retained. No billable resource
+was provisioned in this new project. Calendar consent is still pending.
+Four runtime secrets are configured on the existing production Worker. Deployed version
+`a9eedb35-5fd7-4aa4-9eaa-cc924345b1ac` (final privacy-link spacing correction;
+initial integration version `e225a0ee-dad6-44f4-a55d-da9e4cb5be7f`) after full verification. The authenticated live admin
+interface shows the enabled Google connection controls. After the owner explicitly
+approved production publishing and read-only consent, Google confirmed **In production**.
+The owner separately approved continuing through Google’s unverified-app warning.
+Google read-only consent succeeded after correcting Workers’ unsupported `redirect: error`
+mode to manual redirect handling (non-success status rejected). **Family** was selected
+and saved in the live administrator interface; the persisted status reads “Agenda affiché : Family”. The dedicated public calendar privacy notice is deployed and
+linked in admin and Google branding.
+
+Full `pnpm verify` passed: types, lint (five complexity warnings, including three in the
+extended auth/administration/calendar routers), 105 unit/integration tests, production
+build and 156 browser tests / four existing intentional skips. Calendar cases cover real
+workerd SQLite CAS persistence, roles/network/origin, PKCE/state replay, partial consent,
+refresh/revocation, disconnected-race protection, DST and event filtering. Browser cases
+cover selection, escaped titles, all-day/ongoing labels, no scrolling at 1280×800, and
+clearing denied/offline data. The added static privacy page and admin link subsequently
+passed focused lint, types and build. Wrangler production dry-run passed; production
+smoke checks verify matching built public HTML, the privacy page, all anonymous calendar
+reads denied (401), and calendar mutations denied (403). No long-lived token/actual-frame
+acceptance is claimed yet.
+
+Calendar live callback correction: deployed Worker version
+`36e66ef7-5431-4647-8092-50c9cb6f7553`. A synthetic workerd probe reproduced the
+unsupported redirect mode; a new complete OAuth/selection/agenda regression executes the
+actual bundled Worker in workerd and confirms provider redirects are never followed.
+All 106 unit/integration tests and type checks passed; changed-file lint passed with the
+existing calendar-router complexity warning. No new permissions, secret values or paid
+resources were introduced by this correction.
+
+Live acceptance: authenticated Morning successfully loaded the selected Family calendar
+and rendered “Aucun autre événement aujourd’hui.” (no remaining events today). No
+household event titles or calendar IDs were copied into this evidence. Google publishing
+status is In production; read-only consent and Family selection are complete. Billing
+remains disabled. Token longevity and physical frame acceptance retain their stated limits.
+
+Final pre-commit acceptance: the owner's new test appointment appeared at its expected
+time on live Morning after refresh. Full `pnpm verify` passed again with 106
+unit/integration tests and 156 browser tests / four intentional skips, zero type errors
+and the five recorded complexity warnings. No household event title was recorded in Git.

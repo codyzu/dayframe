@@ -8,3 +8,8 @@
 # HOME_NETWORKS=192.0.2.10,2001:db8:1234::/48
 # PHOTOS must use a local emulated KV namespace; never remote production data.
 # ADMINISTRATION is a local SQLite Durable Object binding in wrangler.jsonc.
+# Optional Google Calendar: runtime secrets only. See docs/calendar.md.
+# GOOGLE_CLIENT_ID=your-web-client.apps.googleusercontent.com
+# GOOGLE_CLIENT_SECRET=your-private-client-secret
+# GOOGLE_REDIRECT_URI=https://your-dayframe-host/api/calendar/callback
+# CALENDAR_TOKEN_KEY=base64url-encoded-random-32-byte-key

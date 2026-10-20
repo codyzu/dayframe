@@ -4,6 +4,16 @@ import {fixtureNow, weatherFixture} from '../fixtures/weather.ts';
 
 test.beforeEach(async ({page}) => {
   await page.clock.install({time: fixtureNow});
+  await page.route('**/api/calendar/events', async (route) =>
+    route.fulfill({
+      json: {
+        connected: false,
+        events: [],
+        timezone: 'Europe/Paris',
+        fetchedAt: fixtureNow,
+      },
+    }),
+  );
   await page.route('**/api/config/display', async (route) =>
     route.fulfill({json: defaultSettings}),
   );

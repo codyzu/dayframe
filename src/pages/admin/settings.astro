@@ -166,6 +166,65 @@ const fields = [
         </button>
       </div>
     </section>
+    <section
+      data-calendar-admin
+      class="mt-10 rounded-xl border border-border p-5"
+      aria-labelledby="calendar-title"
+    >
+      <h2 id="calendar-title" class="text-2xl font-semibold">
+        Google Calendar
+      </h2>
+      <p class="mt-3">
+        Connectez un compte ayant accès à votre agenda partagé. Dayframe lit les
+        événements sans pouvoir les modifier.
+      </p>
+      <p class="mt-2 text-sm">
+        Les autorisations Google couvrent les agendas accessibles au compte.
+        Seul l’agenda choisi sera affiché.{' '}
+        <a href="/calendar-privacy" class="underline">
+          Confidentialité de l’agenda
+        </a>
+      </p>
+      <p data-calendar-result role="status" class="mt-3"></p>
+      <p data-calendar-status role="status" class="my-4">
+        Vérification de la connexion…
+      </p>
+      <fieldset disabled class="flex flex-wrap gap-3">
+        <button
+          data-calendar-connect
+          type="button"
+          class="min-h-12 rounded-full bg-primary px-5 text-elevated disabled:opacity-50"
+        >
+          Connecter Google Calendar
+        </button>
+        <label class="flex w-full flex-col gap-2">
+          Agenda à afficher
+          <select class="min-h-12 w-full min-w-0 rounded-lg border border-border bg-elevated px-3"></select>
+        </label>
+        <button
+          data-calendar-save
+          type="button"
+          class="min-h-12 px-4 underline disabled:opacity-50"
+        >
+          Afficher cet agenda
+        </button>
+        <button
+          data-calendar-disconnect
+          hidden
+          type="button"
+          class="min-h-12 px-4 underline"
+        >
+          Déconnecter Google Calendar
+        </button>
+      </fieldset>
+      <button
+        data-calendar-refresh
+        type="button"
+        class="min-h-11 mt-3 underline"
+      >
+        Actualiser Google Calendar
+      </button>
+    </section>
     <template data-period-template>
       <div class="flex flex-wrap items-end gap-3 rounded-lg bg-surface p-3">
         <label class="flex flex-col gap-1">
@@ -202,5 +261,6 @@ const fields = [
   </main>
   <script>
     import '../../lib/dashboard/settings-admin.ts';
+    import '../../lib/calendar/admin.ts';
   </script>
 </BaseLayout>

@@ -1,13 +1,6 @@
----
-// Future authorized calendar readers can pass events; never prerender private data.
-interface Props {
-  events?: Array<{time: string; title: string}>;
-}
-const {events = []} = Astro.props;
----
-
 <section
-  class:list={['surface px-4', events.length > 0 ? 'py-3' : 'py-4']}
+  data-agenda
+  class="surface px-4 py-2 min-w-0"
   aria-labelledby="agenda-title"
 >
   <h2
@@ -16,20 +9,17 @@ const {events = []} = Astro.props;
   >
     Aujourd’hui
   </h2>
-  {events.length > 0 ? (
-    <ul class="mt-2 space-y-1">
-      {events.slice(0, 3).map((event) => (
-        <li class="flex items-baseline gap-4 text-[length:var(--font-weather-detail)] leading-tight">
-          <span class="font-bold tabular-nums">{event.time}</span>
-          <span>{event.title}</span>
-        </li>
-      ))}
-    </ul>
-  ) : (
-    <p class="mt-2 text-[length:var(--font-weather-detail)] text-secondary leading-snug">
-      Aucun agenda connecté.
-      <br />
-      Une journée à organiser ensemble.
-    </p>
-  )}
+  <p
+    data-agenda-status
+    class="mt-2 text-[length:var(--font-weather-detail)] text-secondary leading-snug"
+  >
+    Aucun agenda connecté.
+  </p>
+  <ul data-agenda-events hidden class="mt-2 space-y-1"></ul>
+  <template data-agenda-template>
+    <li class="flex items-baseline gap-3 min-w-0 text-[length:var(--font-weather-detail)] leading-tight">
+      <span data-event-time class="shrink-0 font-bold tabular-nums"></span>
+      <span data-event-title class="min-w-0 truncate"></span>
+    </li>
+  </template>
 </section>

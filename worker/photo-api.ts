@@ -5,6 +5,7 @@ import {
   type PhotoMetadata,
 } from '../src/lib/photos/contracts.ts';
 import {adminApi} from './admin-api.ts';
+import {calendarApi, type CalendarEnv} from './calendar.ts';
 import {failure, privateJson} from './private-response.ts';
 import {
   authenticate,
@@ -21,7 +22,8 @@ import {
   type PhotoKV,
 } from './photos.ts';
 
-export type PhotoEnv = AuthEnv & {PHOTOS_ENABLED?: string; PHOTOS?: PhotoKV};
+export type PhotoEnv = AuthEnv &
+  CalendarEnv & {PHOTOS_ENABLED?: string; PHOTOS?: PhotoKV};
 export async function photoApi(
   request: Request,
   env: PhotoEnv,
@@ -90,6 +92,10 @@ export async function photoApi(
         'FORBIDDEN',
         'Un accès administrateur est nécessaire.',
       );
+    }
+
+    if (path === '/api/calendar' || path.startsWith('/api/calendar/')) {
+      return await calendarApi(request, env, identity);
     }
 
     return ['/api/config', '/api/config/display', '/api/display'].includes(path)
