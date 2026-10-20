@@ -132,6 +132,41 @@ test('two admins upload WebP, review duplicates, see protected thumbnails and co
   await expect(page.locator('[data-photo-gallery] article')).toHaveCount(1);
 });
 
+test('photo framing survives navigation, reload and settings refreshes', async ({
+  page,
+}) => {
+  await login(page);
+  let settings = {...defaultSettings, fit: 'contain' as const};
+  await page.route('**/api/config/display', async (route) => {
+    await route.fulfill({json: settings});
+  });
+  await page.goto('/');
+  const fit = page.getByLabel('Cadrage des photos');
+  const stage = page.locator('[data-photo-stage]');
+  await expect(stage).toHaveAttribute('data-fit', 'contain');
+  await page.getByRole('button', {name: 'Photos', exact: true}).click();
+  await fit.selectOption('cover');
+  await page.getByRole('button', {name: 'Matin', exact: true}).click();
+  await page.getByRole('button', {name: 'Photos', exact: true}).click();
+  await expect(fit).toHaveValue('cover');
+  await page.goto('/admin/photos');
+  await page.goto('/');
+  await expect(stage).toHaveAttribute('data-fit', 'cover');
+  await page.reload();
+  await expect(stage).toHaveAttribute('data-fit', 'cover');
+  settings = {...settings, location: 'Réglages actualisés'};
+  await page.evaluate(() => globalThis.dispatchEvent(new Event('online')));
+  await expect(page.locator('[data-location]')).toHaveText(
+    'Météo · Réglages actualisés',
+  );
+  await expect(stage).toHaveAttribute('data-fit', 'cover');
+  await expect(fit).toHaveValue('cover');
+  await page.getByRole('button', {name: 'Photos', exact: true}).click();
+  await fit.selectOption('contain');
+  await page.reload();
+  await expect(stage).toHaveAttribute('data-fit', 'contain');
+});
+
 test('read-only cookie delivers images, slideshow refreshes, outages retain current photo and leaving clears blobs', async ({
   page,
   context,

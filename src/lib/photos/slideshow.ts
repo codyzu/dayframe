@@ -37,6 +37,22 @@ export function mountSlideshow(
   const status = root.querySelector<HTMLElement>('[data-photo-status]')!;
   const empty = root.querySelector<HTMLElement>('[data-photo-empty]')!;
   const fit = root.querySelector<HTMLSelectElement>('[data-photo-fit]')!;
+  const fitKey = 'dayframe.photo-fit.v1';
+  let preferredFit: Settings['fit'] | undefined;
+  try {
+    const saved = localStorage.getItem(fitKey);
+    if (saved === 'contain' || saved === 'cover') {
+      preferredFit = saved;
+    }
+  } catch {
+    // Storage may be disabled; keep explicit choices for this page instead.
+  }
+
+  function applyFit() {
+    stage.dataset.fit = preferredFit ?? settings.fit;
+    fit.value = stage.dataset.fit;
+  }
+
   let catalog: DisplayPhoto[] = [];
   let queue: string[] = [];
   let current: LoadedPhoto | undefined;
@@ -94,10 +110,15 @@ export function mountSlideshow(
   }
 
   fit.addEventListener('change', () => {
-    stage.dataset.fit = fit.value === 'cover' ? 'cover' : 'contain';
+    preferredFit = fit.value === 'cover' ? 'cover' : 'contain';
+    applyFit();
+    try {
+      localStorage.setItem(fitKey, preferredFit);
+    } catch {
+      // The selection still survives settings refreshes without storage.
+    }
   });
-  stage.dataset.fit = settings.fit;
-  fit.value = settings.fit;
+  applyFit();
 
   async function load(id: string, signal: AbortSignal): Promise<LoadedPhoto> {
     const response = await photoRequest(`/api/photos/${id}`, {
@@ -314,8 +335,7 @@ export function mountSlideshow(
     },
     configure(value: Settings) {
       settings = value;
-      stage.dataset.fit = settings.fit;
-      fit.value = settings.fit;
+      applyFit();
     },
     deny() {
       hasFailed = true;

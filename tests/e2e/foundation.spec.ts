@@ -135,7 +135,7 @@ test('keyboard navigation and reduced motion', async ({page}) => {
   expect(decodeURIComponent(css)).not.toMatch(/<animate/v);
 });
 
-test('current weather and checkpoint Meteocons animate and respect motion preference', async ({
+test('only current weather animates and all Meteocons respect motion preference', async ({
   page,
 }) => {
   await page.emulateMedia({reducedMotion: 'no-preference'});
@@ -155,9 +155,13 @@ test('current weather and checkpoint Meteocons animate and respect motion prefer
     );
   const animated = await images();
   expect(animated.length).toBeGreaterThan(1);
-  for (const image of animated) {
+  for (const [index, image] of animated.entries()) {
     expect(image).toContain('<svg');
-    expect(image).toMatch(/<animate/v);
+    if (index === 0) {
+      expect(image).toMatch(/<animate/v);
+    } else {
+      expect(image).not.toMatch(/<animate/v);
+    }
   }
 
   await page.emulateMedia({reducedMotion: 'reduce'});

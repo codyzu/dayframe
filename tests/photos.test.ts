@@ -221,13 +221,26 @@ describe('protected photo API with real local KV', () => {
       {aud: 'other'},
       {exp: undefined},
       {iat: now + 100},
-      {iat: now - 7200},
+      {iat: now - 7 * 86_400 - 60},
     ]) {
       const token = await authority.token('one@example.test', claims);
       expect(
         (await request('/api/photos', 'GET', `CF_Authorization=${token}`))
           .status,
       ).toBe(401);
+    }
+  });
+  it('accepts a valid week-long session after one hour but still enforces its expiry', async () => {
+    const now = Math.floor(Date.now() / 1000);
+    for (const [claims, status] of [
+      [{iat: now - 2 * 86_400, exp: now + 5 * 86_400}, 200],
+      [{iat: now - 3600, exp: now - 1}, 401],
+    ] as const) {
+      const token = await authority.token('one@example.test', claims);
+      expect(
+        (await request('/api/session', 'GET', `CF_Authorization=${token}`))
+          .status,
+      ).toBe(status);
     }
   });
   it('allows two independent verified admins and supports signed header transport', async () => {
