@@ -577,3 +577,12 @@ Follow-up existing-log audit narrowed the 07:31 step to a main-process private-m
 ### H6 maintenance visibility refinement — 20 October 2026
 
 Owner requested hiding DK during normal display use while retaining the native two-finger hold and independent DK return from Android Settings. The 0.1.4/code 5 candidate removes only the Activity's permanent display button; gesture, failure-screen access and supervisor overlay are retained. Offline release/lint/signature checks, 35 Java tests, 6 probe tests and 21 host tests passed. Connected Classic identity and the exact installed 0.1.3 artifact were confirmed read-only. The owner confirmed retaining the verified backup and waived reconnect/reverification. The exact signed 0.1.4 artifact is now installed in place; protected Photos rendered without key entry and the display has no DK. Boot/supervision flags and Home preferences were retained. Settings → independent DK → kiosk passed in the same process/session, and the owner confirmed the physical two-finger menu opens and closes. The requested visibility slice is complete; evidence is recorded in the linked execution record. [Artifact, upstream review, acceptance steps and version-scoped tooling limits](hardware/h6-recovery.md#dk-visibility-update--20-october-2026). This slice changes no firmware/system settings or recurring services.
+
+## Upstream comparison — 20 October 2026
+
+Recorded the [current upstream comparison](upstream-comparison-20261020.md) against
+`f1e0820918c926396e0ccafb4839568825f63edc`, including source paths, the new MIT license,
+matching-firmware Classic10 report and deliberate architecture/privacy differences.
+Prioritize cached formatters and changed-value rendering with module-local state;
+animation measurement, diagnostics, USB investigation and integrations remain separate.
+No source/assets copied, code/device changes or new acceptance claims in this documentation slice.
