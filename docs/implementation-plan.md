@@ -690,3 +690,35 @@ Final pre-commit acceptance: the owner's new test appointment appeared at its ex
 time on live Morning after refresh. Full `pnpm verify` passed again with 106
 unit/integration tests and 156 browser tests / four intentional skips, zero type errors
 and the five recorded complexity warnings. No household event title was recorded in Git.
+
+## Display refinements — 20 October 2026
+
+Owner requested Photos through 23:00, substantially larger Night typography, and a useful
+clock/current outdoor temperature over Photos. Public defaults and the specification now
+use Morning 06:00–10:00, Photos 10:00–23:00, Night 23:00–06:00. Photos reads the clock
+from the dashboard's existing locale/timezone formatter and gets rounded current
+temperature from the existing Open-Meteo service/cache; unavailable weather shows `—°`.
+Night's supporting text, clock and heading now use the available display area. There is
+still one schedule for every day: weekend forecasts have distinct content, but schedules
+do not vary by weekday and vacations/holidays are not detected. No weekend/vacation time
+segments were previously decided. Saved household settings override public defaults and
+must be updated in Administration for the live frame to apply 23:00. The current upstream
+comparison remains the source review: `f1e0820918c926396e0ccafb4839568825f63edc`,
+including `dashboard/js/slideshow.js` and `dashboard/js/views/photos.js`; use the overlay
+as a Dayframe addition. No upstream code/assets copied. No device action or deployment.
+
+Read-only live check of the owner’s Classic 10 on 20 October: the connected device reports
+`Classic10`, Android 6.0.1/API 23, ARMv7, and Dayframe kiosk 0.1.4/code 5. At 22:31 and
+22:36 Paris, the frame showed the earlier small-text Night screen; it did not show the new
+Photos overlay. The second observation followed five minutes without input from this
+session. This confirms the requested web refinement is not yet present on the frame; the
+23:00 transition has not been physically verified. Saved household settings can override
+public defaults, and an outstanding manual mode override cannot be ruled out from the
+screen alone. No frame input, reboot, setting/credential change or deployment occurred.
+
+Final `pnpm verify` passed: Astro/TypeScript checks, lint (five existing complexity
+warnings), 108 unit/integration tests, production build and 156 browser tests across
+Chromium, Firefox, WebKit and mobile, with four existing intentional skips. Browser
+checks assert the Photos clock and fixture temperature, larger Night heading, and the
+23:00 Paris transition at 22:59:59/23:00. No production deployment occurred as part of
+validation.

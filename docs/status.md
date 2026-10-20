@@ -1,16 +1,23 @@
 # Dayframe status and validation register
 
-Updated 19 October 2026 against repository revision `2f18c01` and recorded acceptance evidence; no new device test or production inspection was performed for this update. The historical deployment record below is scoped to web revision `3763694`. H5 manual fullscreen and the H6 automatic-startup slice are accepted; H6 native operational recovery is accepted with explicit verification limits; full hardware acceptance remains open. Historical records retain the state at the time they were written.
+Updated 20 October 2026 against the current working tree and recorded acceptance evidence, including a read-only Classic 10 screen check. No new deployment or performance test was performed. The historical deployment record below is scoped to web revision `3763694`. H5 manual fullscreen and the H6 automatic-startup slice are accepted; H6 native operational recovery is accepted with explicit verification limits; full hardware acceptance remains open. Historical records retain the state at the time they were written.
 
 **20 October maintenance visibility update:** signed native **0.1.4/code 5** is installed. Normal display is visually verified without DK; protected Photos returned without key entry and Android Settings → independent DK → kiosk passed in the same process/session. Boot/supervision flags and Home preferences were retained. The owner confirms retaining the verified backup and waived reconnect/reverification for this APK update. Owner confirmed the physical two-finger menu opens and closes on this version; prior 0.1.3 boot/fault evidence retains its scope. [Execution record](hardware/h6-recovery.md#dk-visibility-update--20-october-2026).
 
 **20 October local web update:** the [upstream comparison](upstream-comparison-20261020.md)
 is recorded at `f1e0820`. Clock/weather rendering now avoids unchanged DOM work with
 module-local state. Home is removed until household automation warrants it: default Photos
-runs 10:00–21:00, and legacy Home periods normalize to Photos. These changes are local;
+runs 10:00–23:00, and legacy Home periods normalize to Photos. These changes are local;
 no deployment or actual-frame performance acceptance is implied. Current forecast icons
 are still; only the current-condition icon animates. Historical five-icon measurements
 and prior hardware/authorization deferrals retain their scope.
+
+**20 October display refinement:** local Photos now includes the locale-aware clock and
+current outdoor temperature, and Night uses much larger type. A read-only check of the
+connected Classic 10 at 22:31 and 22:36 Paris showed the earlier small-text Night screen,
+without the Photos overlay. Thus the new UI and 23:00 transition are not yet live on the
+frame; saved settings may also override public defaults. No frame input, settings change,
+or deployment was performed. See the [implementation and validation record](implementation-plan.md#display-refinements--20-october-2026).
 
 ## Where we stand
 

@@ -11,6 +11,24 @@
     class="photo-stage fixed inset-0 bg-black"
   ></div>
   <div
+    class="photo-at-a-glance fixed top-5 left-5 z-2 flex flex-col items-start text-white"
+    aria-label="Heure et température extérieure"
+  >
+    <time
+      data-clock
+      class="text-5xl md:text-6xl font-semibold tabular-nums leading-none"
+      aria-label="Heure locale"
+    >
+      --:--
+    </time>
+    <p class="mt-2 text-xl md:text-2xl font-medium">
+      <span data-photo-temperature aria-label="Température extérieure">
+        —°
+      </span>
+      <span class="text-base md:text-lg">dehors</span>
+    </p>
+  </div>
+  <div
     data-photo-empty
     class="surface relative z-1 mx-4 max-w-[650px] p-7 md:p-11"
   >
@@ -54,6 +72,12 @@
 <style>
   [data-photo-status]:empty {
     display: none;
+  }
+  .photo-at-a-glance {
+    text-shadow:
+      0 2px 8px rgb(0 0 0 / 95%),
+      0 1px 2px rgb(0 0 0 / 95%);
+    pointer-events: none;
   }
   /* Images are created at runtime; component-owned styling keeps sizing local. */
   .photo-stage :global(img) {

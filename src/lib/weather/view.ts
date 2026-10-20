@@ -104,7 +104,11 @@ function checkpoints(weather: Weather, now: number) {
     .join('');
 }
 
-export function mountWeather(root: HTMLElement) {
+export function mountWeather(
+  root: HTMLElement,
+  onUpdate?: (state: WeatherState) => void,
+) {
+  const notifyWeatherUpdate = onUpdate ?? (() => undefined);
   let isActive = false;
   let latest: WeatherState = {failed: false};
   let renderedWeather: Weather | undefined;
@@ -120,6 +124,7 @@ export function mountWeather(root: HTMLElement) {
   }
 
   function render({weather, failed}: WeatherState) {
+    notifyWeatherUpdate({weather, failed});
     if (!isActive || document.hidden) {
       return;
     }

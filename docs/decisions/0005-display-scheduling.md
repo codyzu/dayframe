@@ -35,7 +35,7 @@ See the M5 implementation record in `docs/implementation-plan.md` for actual com
 
 The owner requested removing the unused household-automation placeholder until useful
 integrations exist. Only Morning, Photos and Night remain in display navigation, mode types
-and schedule editing. Photos now defaults to 10:00–21:00. Validation translates legacy
+and schedule editing. Photos defaulted to 10:00–21:00 until the 20 October 2026 display refinement, which moves Night to 23:00. Validation translates legacy
 `home` periods to `photos` without changing period boundaries or other settings; reads
 remain non-mutating, and the next ordinary settings save persists normalization.
 Unknown modes, extra period keys, overlaps and invalid times remain rejected.

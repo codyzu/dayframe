@@ -33,6 +33,18 @@ test('schedule, inactivity, touch reveal, clock corrections and resume', async (
       path: info.outputPath(`${mode}.png`),
       fullPage: true,
     });
+    if (mode === 'photos') {
+      await expect(page.locator('[data-photo-temperature]')).toHaveText('12°');
+      await expect(page.locator('[data-slideshow] [data-clock]')).toHaveText(
+        /^\d{2}:\d{2}$/v,
+      );
+    } else if (mode === 'night') {
+      const titleHeight = await page
+        .locator('#night-title')
+        .evaluate((element) => element.getBoundingClientRect().height);
+      expect(titleHeight).toBeGreaterThan(50);
+    }
+
     expect(
       await page.evaluate(
         () =>
@@ -74,6 +86,12 @@ test('schedule, inactivity, touch reveal, clock corrections and resume', async (
   // Simulated suspended-page return uses real controller lifecycle events.
   await page.evaluate(() => globalThis.dispatchEvent(new Event('pagehide')));
   await page.clock.setSystemTime(new Date('2026-10-16T19:00:00Z'));
+  await page.evaluate(() => globalThis.dispatchEvent(new Event('pageshow')));
+  await expect(root).toHaveAttribute('data-mode', 'photos');
+  await page.clock.setSystemTime(new Date('2026-10-16T20:59:59Z'));
+  await page.evaluate(() => globalThis.dispatchEvent(new Event('pageshow')));
+  await expect(root).toHaveAttribute('data-mode', 'photos');
+  await page.clock.setSystemTime(new Date('2026-10-16T21:00:00Z'));
   await page.evaluate(() => globalThis.dispatchEvent(new Event('pageshow')));
   await expect(root).toHaveAttribute('data-mode', 'night');
   await page.clock.setSystemTime(new Date('2026-10-16T08:00:00Z'));

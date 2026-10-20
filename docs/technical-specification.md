@@ -76,8 +76,13 @@ The web app must remain usable without unlocking this particular frame.
 | Local time | Mode |
 | --- | --- |
 | 06:00–10:00 | Morning |
-| 10:00–21:00 | Photos |
-| 21:00–06:00 | Night |
+| 10:00–23:00 | Photos |
+| 23:00–06:00 | Night |
+
+This schedule currently applies every day. Morning's forecast content recognizes
+weekends, but schedule periods do not vary by weekday and the display does not
+identify school vacations or public holidays. Vacation-aware periods remain an
+open product decision.
 
 **Scope update, 20 October 2026:** Home is removed until useful household automation exists. The display and schedule editor offer Morning, Photos and Night. Existing saved/exported `home` periods are interpreted as Photos with their original times; unrelated settings remain intact. A future Home screen requires a separate feature slice.
 

@@ -51,7 +51,7 @@ No M4 hardware changes or paid services are authorized by these instructions.
 ## Retired Home mode — 20 October 2026
 
 The schedule editor now offers Matin, Photos and Nuit. New defaults show Photos from
-10:00 to 21:00. Existing saved settings and imported older configuration responses can
+10:00 to 23:00. Existing saved settings and imported older configuration responses can
 still contain `home`: validation maps those periods to `photos`, preserving their times,
 other settings and the display credential. Reading does not rewrite storage; the next
 successful settings save persists the normalized schedule. Exported settings use the

@@ -15,7 +15,9 @@ describe('IANA daily schedule', () => {
     ['14:59:59.999', 'photos'],
     ['15:00:00', 'photos'],
     ['18:59:59.999', 'photos'],
-    ['19:00:00', 'night'],
+    ['19:00:00', 'photos'],
+    ['20:59:59.999', 'photos'],
+    ['21:00:00', 'night'],
     ['22:00:00', 'night'],
     ['00:00:00', 'night'],
   ])('half-open Paris boundary at %s UTC', (time, expected) => {

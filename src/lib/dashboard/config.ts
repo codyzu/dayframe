@@ -12,8 +12,8 @@ export const displayConfig = {
   overrideTimeoutSeconds: 300,
   schedule: [
     {start: '06:00', end: '10:00', mode: 'morning'},
-    {start: '10:00', end: '21:00', mode: 'photos'},
-    {start: '21:00', end: '06:00', mode: 'night'},
+    {start: '10:00', end: '23:00', mode: 'photos'},
+    {start: '23:00', end: '06:00', mode: 'night'},
   ],
 } as const;
 
