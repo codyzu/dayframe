@@ -33,11 +33,14 @@ test('French weather shell, working modes and locally bundled assets', async ({
   await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
   await expect(page.locator('[data-clock]').first()).toHaveText(/\d{2}:\d{2}/v);
   await expect(page.getByText('Météo · Annecy')).toBeVisible();
+  await expect(
+    page.getByRole('button', {name: 'Maison', exact: true}),
+  ).toHaveCount(0);
+  await expect(page.locator('[data-mode-panel="home"]')).toHaveCount(0);
   const icon = page.locator('.weather-icon');
   await expect(icon).toHaveCSS('background-image', /data:image\/svg\+xml/v);
   for (const [button, title] of [
     ['Photos', 'Une place pour vos souvenirs.'],
-    ['Maison', 'Bienvenue à la maison.'],
     ['Nuit', 'Bonne nuit.'],
     ['Matin', 'Bonjour, Annecy.'],
   ]) {

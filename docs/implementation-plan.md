@@ -601,3 +601,26 @@ focused browser tests passed across Chromium, Firefox, WebKit and mobile, with o
 intentional skip. Regressions verify stable nodes, unchanged clock writes, inactive data
 recovery and timezone-cache invalidation. No actual Classic CPU/memory gain or outstanding
 hardware acceptance is claimed.
+
+## Remove unused Home mode — 20 October 2026
+
+Owner requested retiring the household-automation placeholder until useful integrations
+exist. Removed the Home panel, navigation button, active mode type and schedule-editor
+option. Default Photos now spans 10:00–21:00. Shared settings validation normalizes legacy
+`home` periods to `photos`, retaining their times, other settings and credentials; reads
+do not mutate storage, and the next ordinary save persists normalization. Unknown modes,
+extra fields, invalid times and overlaps remain rejected. Updated current requirements,
+status, [administration](administration.md#retired-home-mode--20-october-2026) and
+[ADR 0005](decisions/0005-display-scheduling.md#home-removal--20-october-2026).
+
+Full `pnpm verify` passed: type checks, lint (only the two existing photo-complexity
+warnings), 99 unit/integration tests, build and 148 browser tests / 4 existing intentional
+skips across Chromium, Firefox, WebKit and mobile. Tests cover persisted legacy reads/save,
+credential preservation, old display configuration, retained schedule/DST/override behavior
+and absence of Home in navigation/editor. Reviewed the synthetic 1280 × 800 Morning
+preview with three-mode navigation and no scroll. The first full browser run exposed an
+old animation-test assumption that hidden weather had already rendered; moved its data
+assertion after entering Morning, preserving the actual animation/reduced-motion checks.
+The corrected full pipeline passed. No dependencies, copied upstream code/assets, device
+changes, deployment or new hardware acceptance. Existing installed native probes support
+the three retained modes; no APK update is needed for this web slice.

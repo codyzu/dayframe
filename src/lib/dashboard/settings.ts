@@ -40,6 +40,15 @@ export function validateSettings(value: unknown): Settings {
   }
 
   const result = {...defaultSettings, ...input};
+  // Older saved/exported schedules retain their times; retired Home periods show Photos.
+  // Copy changed entries so reading settings never mutates the persisted/input object.
+  if (Array.isArray(result.schedule)) {
+    result.schedule = result.schedule.map((entry) => {
+      const mode: unknown = entry?.mode;
+      return mode === 'home' ? {...entry, mode: 'photos'} : entry;
+    });
+  }
+
   validateScalarSettings(result);
   validateSchedule(result.schedule);
 

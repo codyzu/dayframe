@@ -12,8 +12,7 @@ export const displayConfig = {
   overrideTimeoutSeconds: 300,
   schedule: [
     {start: '06:00', end: '10:00', mode: 'morning'},
-    {start: '10:00', end: '17:00', mode: 'photos'},
-    {start: '17:00', end: '21:00', mode: 'home'},
+    {start: '10:00', end: '21:00', mode: 'photos'},
     {start: '21:00', end: '06:00', mode: 'night'},
   ],
 } as const;
@@ -26,7 +25,7 @@ export const runtimeConfig: {
   longitude: number;
 } = {...displayConfig};
 
-export const modes = ['morning', 'photos', 'home', 'night'] as const;
+export const modes = ['morning', 'photos', 'night'] as const;
 export type DisplayMode = (typeof modes)[number];
 export function isDisplayMode(value: string): value is DisplayMode {
   return (modes as readonly string[]).includes(value);

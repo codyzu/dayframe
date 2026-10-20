@@ -47,3 +47,12 @@ Use **Exporter les réglages** in `/admin/settings` to download the validated se
 Each photo card in `/admin/photos` offers **Télécharger le WebP**, using authenticated delivery. Save the optimized files privately. These exports are reduced, metadata-stripped images, not full-resolution originals; retain Apple/Google library originals. For a full collection, paginate the authenticated catalog and download each `/api/photos/:id` with the admin session; do not put session tokens in command history or reusable scripts. Exports are not a transactional snapshot during concurrent uploads/deletes: stop mutations, wait for KV propagation and reconcile catalog IDs/counts. Configuration export never includes credentials; after replacing infrastructure restore settings/photos, then issue a new frame key.
 
 No M4 hardware changes or paid services are authorized by these instructions.
+
+## Retired Home mode — 20 October 2026
+
+The schedule editor now offers Matin, Photos and Nuit. New defaults show Photos from
+10:00 to 21:00. Existing saved settings and imported older configuration responses can
+still contain `home`: validation maps those periods to `photos`, preserving their times,
+other settings and the display credential. Reading does not rewrite storage; the next
+successful settings save persists the normalized schedule. Exported settings use the
+normalized modes. There is no Home display panel or mode-navigation button.

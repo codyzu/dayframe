@@ -30,6 +30,59 @@ describe('settings and home address validation', () => {
       expect(() => validateSettings({schedule})).toThrow();
     }
   });
+  it('reads legacy Home schedules as Photos and persists normalization on the next save', async () => {
+    const saved = {
+      settings: {
+        ...defaultSettings,
+        location: 'Legacy fixture',
+        schedule: [
+          {start: '06:00', end: '10:00', mode: 'morning'},
+          {start: '10:00', end: '17:00', mode: 'photos'},
+          {start: '17:00', end: '21:00', mode: 'home'},
+          {start: '21:00', end: '06:00', mode: 'night'},
+        ],
+      },
+      credential: {digest: 'a'.repeat(64), issuedAt: 1, expiresAt: 2},
+    };
+    const storage: AdministrationStorage = {
+      async get<T>() {
+        return structuredClone(saved) as T;
+      },
+      async put(_key, value) {
+        Object.assign(saved, value);
+      },
+      async transaction<T>(
+        callback: (store: AdministrationStorage) => Promise<T>,
+      ): Promise<T> {
+        return callback(storage);
+      },
+    };
+    const object = new Administration({storage});
+    const read = await object.fetch(new Request('https://internal/config'));
+    const normalized = validateSettings(await read.json());
+    expect(normalized.schedule[2]).toEqual({
+      start: '17:00',
+      end: '21:00',
+      mode: 'photos',
+    });
+    expect(normalized.location).toBe('Legacy fixture');
+    expect(saved.settings.schedule[2].mode).toBe('home');
+    const response = await object.fetch(
+      new Request('https://internal/config', {
+        method: 'PATCH',
+        body: JSON.stringify({slideshowIntervalSeconds: 45}),
+      }),
+    );
+    expect(response.status).toBe(200);
+    expect(saved.settings.schedule).toEqual(normalized.schedule);
+    expect(saved.settings.slideshowIntervalSeconds).toBe(45);
+    expect(saved.credential.digest).toBe('a'.repeat(64));
+    expect(() =>
+      validateSettings({
+        schedule: [{start: '17:00', end: '21:00', mode: 'home', secret: true}],
+      }),
+    ).toThrow();
+  });
   it('compares complete IPv4 addresses and IPv6 prefixes, failing closed on invalid configuration', () => {
     const request = (ip: string) =>
       new Request('https://example.test', {headers: {'CF-Connecting-IP': ip}});

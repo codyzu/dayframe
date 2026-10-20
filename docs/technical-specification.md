@@ -69,7 +69,6 @@ The web app must remain usable without unlocking this particular frame.
 | --- | --- |
 | Morning | Current weather and practical forecast for getting ready |
 | Photos | Fullscreen rotating family photos |
-| Home | Household information and eventual smart-home controls |
 | Night | Low-distraction dimmed or minimal screen, potentially screen off |
 
 **Provisional schedule** in the configured IANA timezone (`Europe/Paris` initially):
@@ -77,9 +76,10 @@ The web app must remain usable without unlocking this particular frame.
 | Local time | Mode |
 | --- | --- |
 | 06:00–10:00 | Morning |
-| 10:00–17:00 | Photos |
-| 17:00–21:00 | Home |
+| 10:00–21:00 | Photos |
 | 21:00–06:00 | Night |
+
+**Scope update, 20 October 2026:** Home is removed until useful household automation exists. The display and schedule editor offer Morning, Photos and Night. Existing saved/exported `home` periods are interpreted as Photos with their original times; unrelated settings remain intact. A future Home screen requires a separate feature slice.
 
 The schedule must be configurable without redeployment once settings persistence is implemented. Handle daylight-saving transitions correctly.
 
@@ -353,7 +353,7 @@ Verify exact Cloudflare quotas and terms when implementing. As a planning baseli
 - Visual direction: clean, modern, scenic Annecy-inspired background, restrained translucent panels, strong hierarchy, colorful Meteocons, informative but uncluttered graphs.
 - Morning mode prioritizes current temperature, today's high, current/upcoming rain, and hourly temperature progression.
 - Photo mode prioritizes the image itself, not controls or data density.
-- Home mode can be touch-oriented and more interactive.
+- Future household automation can add a dedicated touch-oriented mode when needed.
 - Prefer accessible semantic HTML and sufficient contrast/touch targets.
 - Initial locale: French, with architecture ready for English. Use `Europe/Paris`, Celsius, metric units, and 24-hour clock; separate labels/descriptions for localization.
 

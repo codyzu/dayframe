@@ -18,6 +18,7 @@ test('both administrators persist settings, export, validate schedules and recov
   await page.request.get('/__test/login');
   await page.goto('/admin/settings');
   await expect(page.locator('[data-status]')).toContainText('one@example.test');
+  await expect(page.locator('[data-mode] option[value="home"]')).toHaveCount(0);
   await page.getByLabel('Lieu', {exact: true}).fill('Maison de test');
   await page.getByLabel('Durée d’une photo').fill('45');
   await page.getByLabel('Cadrage par défaut').selectOption('contain');

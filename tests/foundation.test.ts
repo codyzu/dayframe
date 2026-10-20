@@ -29,6 +29,7 @@ describe('public display foundation', () => {
     expect(formatClock(new Date('2026-01-16T07:05:00Z')).time).toBe('08:05');
     expect(formatClock(new Date('2026-07-16T07:05:00Z')).time).toBe('09:05');
     expect(isDisplayMode('admin')).toBe(false);
+    expect(isDisplayMode('home')).toBe(false);
   });
 });
 

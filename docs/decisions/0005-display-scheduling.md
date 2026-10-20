@@ -30,3 +30,19 @@ Adopted the ideas of small independent mode modules, touch wake-up and explicit 
 ## Verification and limits
 
 See the M5 implementation record in `docs/implementation-plan.md` for actual commands, browser results and retained synthetic screenshots. Desktop engines and mobile emulation are software evidence only. Production M4 remains unchanged and available for H4. Physical schedules/DST, touch, dimmed Night, suspend/clock correction, Wi-Fi loss/return, privacy cleanup and performance need separate acceptance on a fixed future deployment. H4 CPU review, weather baseline, paired-motion measurements, H5/H6 and the continuous 48-hour M6 acceptance remain pending.
+
+## Home removal — 20 October 2026
+
+The owner requested removing the unused household-automation placeholder until useful
+integrations exist. Only Morning, Photos and Night remain in display navigation, mode types
+and schedule editing. Photos now defaults to 10:00–21:00. Validation translates legacy
+`home` periods to `photos` without changing period boundaries or other settings; reads
+remain non-mutating, and the next ordinary settings save persists normalization.
+Unknown modes, extra period keys, overlaps and invalid times remain rejected.
+
+No native package change is required: the installed liveness probe already supports all
+three retained modes. Its historical support for the old mode remains compatible with older
+web builds. No device, startup/profile, authentication, privacy lease or service change.
+The upstream comparison at `f1e0820918c926396e0ccafb4839568825f63edc` informed this review;
+we deliberately omit its Home prototype rather than implementing mock household controls.
+No upstream code/assets copied. Reintroducing Home requires its own useful feature slice.

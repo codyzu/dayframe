@@ -24,7 +24,6 @@ test('schedule, inactivity, touch reveal, clock corrections and resume', async (
   await expect(root).toHaveAttribute('data-mode', 'morning');
   for (const [label, mode] of [
     ['Photos', 'photos'],
-    ['Maison', 'home'],
     ['Nuit', 'night'],
     ['Matin', 'morning'],
   ]) {
@@ -53,21 +52,21 @@ test('schedule, inactivity, touch reveal, clock corrections and resume', async (
   await page.getByRole('button', {name: 'Nuit', exact: true}).click();
   await page.reload();
   await expect(root).toHaveAttribute('data-mode', 'morning');
-  await page.getByRole('button', {name: 'Maison', exact: true}).click();
+  await page.getByRole('button', {name: 'Nuit', exact: true}).click();
   await page.clock.runFor(16_000);
   await expect(root).toHaveAttribute('data-navigation', 'hidden');
   await expect(
     page.getByRole('navigation', {name: 'Modes d’affichage'}),
   ).toBeHidden();
   if (info.project.name === 'mobile') {
-    await page.locator('#home-title').tap();
+    await page.locator('#night-title').tap();
   } else {
-    await page.locator('#home-title').click();
+    await page.locator('#night-title').click();
   }
 
   await expect(root).toHaveAttribute('data-navigation', 'visible');
   await page.clock.runFor(29_000);
-  await expect(root).toHaveAttribute('data-mode', 'home');
+  await expect(root).toHaveAttribute('data-mode', 'night');
   await page.clock.runFor(1000);
   await expect(root).toHaveAttribute('data-mode', 'morning');
   await page.keyboard.press('Tab');
@@ -95,7 +94,7 @@ test('schedule, inactivity, touch reveal, clock corrections and resume', async (
     });
     globalThis.document.dispatchEvent(new Event('visibilitychange'));
   });
-  await expect(root).toHaveAttribute('data-mode', 'home');
+  await expect(root).toHaveAttribute('data-mode', 'photos');
   await expect(page.locator('a[href^="/admin"]')).toHaveCount(0);
   await expect(page.locator('a[href^="/setup"]')).toHaveCount(0);
 });
@@ -105,7 +104,7 @@ test('periodic configuration refresh, invalid response, outage and online recove
 }, info) => {
   let configuration: Settings = {
     ...defaultSettings,
-    schedule: [{start: '00:00', end: '23:59', mode: 'home'}],
+    schedule: [{start: '00:00', end: '23:59', mode: 'photos'}],
   };
   let isOffline = false;
   let isInvalid = false;
@@ -123,7 +122,7 @@ test('periodic configuration refresh, invalid response, outage and online recove
   });
   await page.goto('/?display=frame');
   const root = page.locator('[data-dashboard]');
-  await expect(root).toHaveAttribute('data-mode', 'home');
+  await expect(root).toHaveAttribute('data-mode', 'photos');
   configuration = {
     ...configuration,
     timezone: 'America/New_York',
@@ -141,10 +140,10 @@ test('periodic configuration refresh, invalid response, outage and online recove
   await expect(page.locator('[data-clock]').first()).toHaveText('02:35');
   isInvalid = true;
   await page.clock.fastForward(301_000);
-  await expect(root).toHaveAttribute('data-mode', 'home');
+  await expect(root).toHaveAttribute('data-mode', 'photos');
   isOffline = true;
   await page.clock.fastForward(61_000);
-  await expect(root).toHaveAttribute('data-mode', 'home');
+  await expect(root).toHaveAttribute('data-mode', 'photos');
   isOffline = false;
   isInvalid = false;
   configuration = {
@@ -172,4 +171,40 @@ test('periodic configuration refresh, invalid response, outage and online recove
     path: info.outputPath('recovered-night.png'),
     fullPage: true,
   });
+});
+
+test('saved Home periods display Photos without losing household settings', async ({
+  page,
+}) => {
+  await page.clock.setSystemTime(new Date('2026-10-16T15:00:00Z'));
+  await page.route('**/api/config/display', async (route) =>
+    route.fulfill({
+      json: {
+        ...defaultSettings,
+        location: 'Ancien planning',
+        fit: 'contain',
+        schedule: [
+          {start: '06:00', end: '10:00', mode: 'morning'},
+          {start: '10:00', end: '17:00', mode: 'photos'},
+          {start: '17:00', end: '21:00', mode: 'home'},
+          {start: '21:00', end: '06:00', mode: 'night'},
+        ],
+      },
+    }),
+  );
+  await page.goto('/');
+  await expect(page.locator('[data-dashboard]')).toHaveAttribute(
+    'data-mode',
+    'photos',
+  );
+  await expect(page.locator('[data-location]')).toHaveText(
+    'Météo · Ancien planning',
+  );
+  await expect(page.locator('[data-photo-stage]')).toHaveAttribute(
+    'data-fit',
+    'contain',
+  );
+  await expect(
+    page.getByRole('button', {name: 'Maison', exact: true}),
+  ).toHaveCount(0);
 });

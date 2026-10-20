@@ -13,8 +13,8 @@ describe('IANA daily schedule', () => {
     ['07:59:59.999', 'morning'],
     ['08:00:00', 'photos'],
     ['14:59:59.999', 'photos'],
-    ['15:00:00', 'home'],
-    ['18:59:59.999', 'home'],
+    ['15:00:00', 'photos'],
+    ['18:59:59.999', 'photos'],
     ['19:00:00', 'night'],
     ['22:00:00', 'night'],
     ['00:00:00', 'night'],
@@ -32,12 +32,12 @@ describe('IANA daily schedule', () => {
   it('skips nonexistent spring minutes and repeats autumn minutes identically', () => {
     const dst = createScheduleResolver({
       ...defaultSettings,
-      schedule: [{start: '02:15', end: '03:00', mode: 'home'}],
+      schedule: [{start: '02:15', end: '03:00', mode: 'photos'}],
     });
     expect(dst(Date.parse('2026-03-29T00:59:59Z'))).toBe('morning');
     expect(dst(Date.parse('2026-03-29T01:00:00Z'))).toBe('morning');
     for (const time of ['00:15', '01:15', '00:59', '01:59']) {
-      expect(dst(Date.parse(`2026-10-25T${time}:00Z`))).toBe('home');
+      expect(dst(Date.parse(`2026-10-25T${time}:00Z`))).toBe('photos');
     }
 
     expect(dst(Date.parse('2026-10-25T02:00:00Z'))).toBe('morning');
@@ -49,7 +49,7 @@ describe('IANA daily schedule', () => {
     {
       schedule: [
         {start: '23:00', end: '02:00', mode: 'night'},
-        {start: '01:00', end: '03:00', mode: 'home'},
+        {start: '01:00', end: '03:00', mode: 'photos'},
       ],
     },
   ])('falls back to Morning for invalid configuration %j', (value) => {
@@ -72,10 +72,10 @@ it('expires at inactivity boundary, counts resume, renews on touch and stays per
     overrideTimeoutSeconds: 30,
   });
   const wall = Date.parse('2026-10-16T06:30:00Z');
-  state.interact(wall, 0, 'home');
-  expect(state.mode(wall + 29_999, 29_999)).toBe('home');
+  state.interact(wall, 0, 'photos');
+  expect(state.mode(wall + 29_999, 29_999)).toBe('photos');
   state.interact(wall + 29_999, 29_999);
-  expect(state.mode(wall + 59_998, 59_998)).toBe('home');
+  expect(state.mode(wall + 59_998, 59_998)).toBe('photos');
   expect(state.mode(wall + 59_999, 59_999)).toBe('morning');
   state.interact(wall, 0, 'night');
   expect(createModeState().mode(wall, 0)).toBe('morning');
@@ -87,9 +87,9 @@ it('recomputes on forward/backward clock changes and configuration refresh', () 
     overrideTimeoutSeconds: 30,
   });
   const wall = Date.parse('2026-10-16T06:30:00Z');
-  state.interact(wall, 0, 'home');
+  state.interact(wall, 0, 'photos');
   expect(state.mode(wall - 3_600_000, 30_000)).toBe('morning');
-  expect(state.mode(wall + 12 * 3_600_000, 31_000)).toBe('home');
+  expect(state.mode(wall + 12 * 3_600_000, 31_000)).toBe('photos');
   state.configure({...defaultSettings, timezone: 'America/New_York'});
   expect(state.mode(wall, 32_000)).toBe('night');
   state.interact(wall, 32_000, 'photos');
