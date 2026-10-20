@@ -85,6 +85,8 @@ The schedule must be configurable without redeployment once settings persistence
 
 Touching the kiosk reveals minimal mode navigation. The user can manually switch modes; the override is temporary and returns to the scheduled mode after a configurable inactivity timeout. Overrides can be local to each display initially. Navigation fades or hides after inactivity. Admin tools are not exposed on the kiosk navigation.
 
+For the native kiosk, normal dashboard display has no persistent DK maintenance button. A stationary two-finger hold for approximately 1.5 seconds opens native maintenance. Keep the independent service-owned DK return control visible outside the kiosk, including Android Settings, so the owner can return to the display. Native failure/setup screens retain explicit maintenance access.
+
 ## 4. Morning weather mode
 
 ### 4.1 Information hierarchy

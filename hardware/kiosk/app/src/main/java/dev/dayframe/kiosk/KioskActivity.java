@@ -161,13 +161,8 @@ public final class KioskActivity extends Activity {
     addButton(notice, "Réessayer", () -> { setup = false; recovery.manualRetry(now()); });
     addButton(notice, "Connecter cet affichage", this::provision);
     root.addView(notice, new FrameLayout.LayoutParams(-1, -1));
-    Button menuButton = new Button(this);
-    menuButton.setText("DK");
-    menuButton.setContentDescription("Maintenance native Dayframe kiosk");
-    menuButton.setOnClickListener(view -> showMenu());
-    int side = Math.round(64 * getResources().getDisplayMetrics().density);
-    FrameLayout.LayoutParams place = new FrameLayout.LayoutParams(side, side, Gravity.START | Gravity.CENTER_VERTICAL);
-    root.addView(menuButton, place);
+    // Normal display stays unobstructed. The native two-finger hold opens maintenance;
+    // SupervisorService owns the independent DK return control outside the kiosk.
     setContentView(root);
     address = Configuration.address(this);
     IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
