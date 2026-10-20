@@ -586,3 +586,18 @@ matching-firmware Classic10 report and deliberate architecture/privacy differenc
 Prioritize cached formatters and changed-value rendering with module-local state;
 animation measurement, diagnostics, USB investigation and integrations remain separate.
 No source/assets copied, code/device changes or new acceptance claims in this documentation slice.
+
+## Changed-value rendering — 20 October 2026
+
+Implemented upstream comparison item 1 with module-local state: cached timezone-aware
+clock/date/hour formatters; minute/timezone clock refresh with guarded text writes;
+stable forecast/chart nodes until new data or a new local day; in-place time marker and
+stale/advice updates; deferred weather DOM work outside visible Morning. Fetch/cache/backoff,
+one-second schedule/privacy checks and animation policy remain intact. No new dependency,
+service, native/device change or upstream code/assets copied. [Behavior](weather.md#changed-value-rendering--20-october-2026).
+
+Type checks/build and changed-file XO passed. All 98 unit/integration tests passed; 43
+focused browser tests passed across Chromium, Firefox, WebKit and mobile, with one existing
+intentional skip. Regressions verify stable nodes, unchanged clock writes, inactive data
+recovery and timezone-cache invalidation. No actual Classic CPU/memory gain or outstanding
+hardware acceptance is claimed.

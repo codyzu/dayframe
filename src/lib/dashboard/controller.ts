@@ -29,6 +29,10 @@ function initializeDashboard(root: HTMLElement) {
   const state = createModeState();
   let settings = defaultSettings;
   let activeMode: DisplayMode | undefined;
+  let clockMinute: number | undefined;
+  let clockTimezone: string | undefined;
+  const clocks = root.querySelectorAll<HTMLTimeElement>('[data-clock]');
+  const dates = root.querySelectorAll<HTMLElement>('[data-date]');
   let navigationUntil = performance.now() + 15_000;
   let refreshAt = 0;
   let previousWall = Date.now();
@@ -64,19 +68,37 @@ function initializeDashboard(root: HTMLElement) {
       );
     }
 
+    weather.setActive(mode === 'morning' && !document.hidden && !isPaused);
     slideshow.checkPrivacy();
     slideshow.setActive(mode === 'photos' && !document.hidden && !isPaused);
     const isNavigationVisible =
       performance.now() < navigationUntil && Date.now() < navigationWall;
-    footer.style.visibility = isNavigationVisible ? '' : 'hidden';
-    root.dataset.navigation = isNavigationVisible ? 'visible' : 'hidden';
-    const {time, date} = formatClock(new Date());
-    root.querySelectorAll<HTMLElement>('[data-clock]').forEach((element) => {
-      element.textContent = time;
-      element.setAttribute('datetime', new Date().toISOString());
+    const navigation = isNavigationVisible ? 'visible' : 'hidden';
+    if (root.dataset.navigation !== navigation) {
+      footer.style.visibility = isNavigationVisible ? '' : 'hidden';
+      root.dataset.navigation = navigation;
+    }
+
+    const now = new Date();
+    const minute = Math.floor(now.getTime() / 60_000);
+    if (minute === clockMinute && settings.timezone === clockTimezone) {
+      return;
+    }
+
+    clockMinute = minute;
+    clockTimezone = settings.timezone;
+    const {time, date} = formatClock(now);
+    clocks.forEach((element) => {
+      if (element.textContent !== time) {
+        element.textContent = time;
+      }
+
+      element.dateTime = new Date(minute * 60_000).toISOString();
     });
-    root.querySelectorAll<HTMLElement>('[data-date]').forEach((element) => {
-      element.textContent = date;
+    dates.forEach((element) => {
+      if (element.textContent !== date) {
+        element.textContent = date;
+      }
     });
   }
 
@@ -219,6 +241,7 @@ function initializeDashboard(root: HTMLElement) {
       clearTimeout(timer);
       pending?.abort();
       slideshow.setActive(false);
+      weather.setActive(false);
     } else {
       wake();
     }
@@ -228,6 +251,7 @@ function initializeDashboard(root: HTMLElement) {
     clearTimeout(timer);
     pending?.abort();
     slideshow.setActive(false);
+    weather.setActive(false);
   });
   globalThis.addEventListener('pageshow', wake);
   globalThis.addEventListener('online', wake);

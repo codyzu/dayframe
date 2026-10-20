@@ -193,8 +193,8 @@ test('built current icon visibly animates and becomes still with reduced motion'
     'data-mode',
     'photos',
   );
-  await expect(page.locator('[data-temperature]')).toHaveText('12°');
   await page.getByRole('button', {name: 'Matin', exact: true}).click();
+  await expect(page.locator('[data-temperature]')).toHaveText('12°');
   const icon = page.locator('[data-current-icon]');
   await expect(icon).toHaveClass(/partly-cloudy-day-fill/v);
   await new Promise<void>((resolve) => {

@@ -87,22 +87,38 @@ function day(value: unknown) {
   return value === 1;
 }
 
-export function dateKey(time: number) {
-  return new Intl.DateTimeFormat('en-CA', {
+let formatterTimezone: string | undefined;
+let dateFormatter: Intl.DateTimeFormat;
+let hourFormatter: Intl.DateTimeFormat;
+
+function timeFormatters() {
+  if (formatterTimezone === runtimeConfig.timezone) {
+    return;
+  }
+
+  dateFormatter = new Intl.DateTimeFormat('en-CA', {
     timeZone: runtimeConfig.timezone,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  }).format(time);
-}
-
-export function hourLabel(time: number) {
-  return new Intl.DateTimeFormat('fr-FR', {
+  });
+  hourFormatter = new Intl.DateTimeFormat('fr-FR', {
     timeZone: runtimeConfig.timezone,
     hour: '2-digit',
     minute: '2-digit',
     hourCycle: 'h23',
-  }).format(time);
+  });
+  formatterTimezone = runtimeConfig.timezone;
+}
+
+export function dateKey(time: number) {
+  timeFormatters();
+  return dateFormatter.format(time);
+}
+
+export function hourLabel(time: number) {
+  timeFormatters();
+  return hourFormatter.format(time);
 }
 
 // Unix timestamps avoid parsing offset-free provider strings in the browser's timezone.

@@ -1,8 +1,30 @@
 import {describe, expect, it, vi} from 'vitest';
 import worker from '../worker/index.ts';
-import {formatClock, isDisplayMode} from '../src/lib/dashboard/config.ts';
+import {
+  formatClock,
+  isDisplayMode,
+  runtimeConfig,
+} from '../src/lib/dashboard/config.ts';
+import {dateKey, hourLabel} from '../src/lib/weather/adapter.ts';
 
 describe('public display foundation', () => {
+  it('refreshes cached clock and forecast formats after a timezone change', () => {
+    const now = new Date('2026-10-16T22:30:00Z');
+    const {timezone} = runtimeConfig;
+    try {
+      runtimeConfig.timezone = 'Europe/Paris';
+      expect(formatClock(now).time).toBe('00:30');
+      expect(dateKey(now.getTime())).toBe('2026-10-17');
+      expect(hourLabel(now.getTime())).toBe('00:30');
+      runtimeConfig.timezone = 'America/New_York';
+      expect(formatClock(now).time).toBe('18:30');
+      expect(formatClock(now).date).toContain('vendredi');
+      expect(dateKey(now.getTime())).toBe('2026-10-16');
+      expect(hourLabel(now.getTime())).toBe('18:30');
+    } finally {
+      runtimeConfig.timezone = timezone;
+    }
+  });
   it('formats real time in Paris independently of the host timezone', () => {
     expect(formatClock(new Date('2026-01-16T07:05:00Z')).time).toBe('08:05');
     expect(formatClock(new Date('2026-07-16T07:05:00Z')).time).toBe('09:05');

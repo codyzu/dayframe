@@ -54,3 +54,21 @@ The specification references approved mockups that are absent from this checkout
 ## Display readability
 
 See [display density](display-density.md) for Standard/Large presets, frame provisioning, preference persistence, chart presentation and accessibility verification.
+
+## Changed-value rendering — 20 October 2026
+
+Clock/date and forecast date/hour formatters are cached for the current timezone and
+recreated when it changes. The controller still checks schedules, navigation and private
+photo deadlines every second, but formats the clock once per minute or timezone change,
+writes clock text only when changed, and writes date text only when changed.
+
+Weather fetching, validated cache and retry/backoff continue independently of the active
+mode. Morning DOM rendering is deferred while another mode or a hidden document is active;
+returning renders the latest retained state. Forecast cards, rain bars and temperature
+curve retain their nodes until a new weather object or local day arrives. Minute updates
+move the existing current-time marker and refresh stale age/advice with guarded text writes.
+No state-management dependency, shared store, private cache, native change or animation
+policy change is introduced. This implements item 1 of the
+[upstream comparison](upstream-comparison-20261020.md) independently; no upstream code/assets
+copied. Browser regressions check stable nodes/clock writes and inactive-mode data recovery;
+actual Classic 10 CPU/memory benefit remains unmeasured.

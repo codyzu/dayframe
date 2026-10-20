@@ -32,19 +32,26 @@ export function isDisplayMode(value: string): value is DisplayMode {
   return (modes as readonly string[]).includes(value);
 }
 
+let clockTimezone: string | undefined;
+let clockTime: Intl.DateTimeFormat;
+let clockDate: Intl.DateTimeFormat;
+
 export function formatClock(now: Date) {
-  return {
-    time: new Intl.DateTimeFormat(displayConfig.locale, {
+  if (clockTimezone !== runtimeConfig.timezone) {
+    clockTime = new Intl.DateTimeFormat(displayConfig.locale, {
       timeZone: runtimeConfig.timezone,
       hour: '2-digit',
       minute: '2-digit',
       hourCycle: 'h23',
-    }).format(now),
-    date: new Intl.DateTimeFormat(displayConfig.locale, {
+    });
+    clockDate = new Intl.DateTimeFormat(displayConfig.locale, {
       timeZone: runtimeConfig.timezone,
       weekday: 'long',
       day: 'numeric',
       month: 'long',
-    }).format(now),
-  };
+    });
+    clockTimezone = runtimeConfig.timezone;
+  }
+
+  return {time: clockTime.format(now), date: clockDate.format(now)};
 }
