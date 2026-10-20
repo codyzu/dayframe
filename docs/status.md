@@ -63,3 +63,20 @@ The owner requested useful unattended work while sleeping. Started a new, read-o
 This is newly authorized overnight observation, not a repeated boot test or authorization for outages/hardening/the full 48-hour run. It leaves the running schedule alone; Night and the subsequent morning period are different workloads. No device input, restart, browser/network/credential/settings change, screenshot/photo capture or fault injection. A temporary host idle-sleep assertion lasts only for the collector; a half-hourly thread follow-up reviews meaningful failure/completion and stops afterward. Host must remain powered/awake on the maintenance network.
 
 Extended the existing process measurement reader with an explicit native package selector and added the bounded native observer. Four focused observer tests and nine affected measurement tests passed; no web/native build suite repeated. Native `health.json` is a state-change record, not a fresh heartbeat; reported healthy state does not prove continuous painted pixels, physical touch or thermal acceptance. Review actual sample span/gaps, per-process PSS, CPU core equivalents and churn after completion. Full M6 stays open; all other deferrals remain.
+
+## Overnight native result — 20 October 2026
+
+The authorized ten-hour observation completed normally: **19 October 22:07:43 → 20 October 08:07:44 Paris**, **601 complete samples**, 36,000.915 seconds between first/last samples, maximum sample gap **62.586 seconds**. Finalization completed at 08:07:58; the collector and its temporary idle-sleep assertion have ended. Exact installed APK and retained Home/startup/supervision checks passed at finalization. Raw samples, per-command logs and manifest remain ignored under `private/m6-overnight-20261019*`.
+
+Every sample reported native **HEALTHY**, foreground display and an independent supervisor. No sampled process-set change, main-process restart or session-generation change was observed (generation 2 throughout). This is sampled process/state evidence: `health.json` changes only with state and does not prove continuously painted pixels, live touch responsiveness or physical temperature.
+
+| Paris-time window                    | Samples | Total native PSS                             | Median CPU core equivalents |
+| ------------------------------------ | ------- | -------------------------------------------- | --------------------------- |
+| Before 06:00, scheduled Night window | 473     | 269.74 → 280.34 MiB; range 266.84–281.48 MiB | 0.08885                     |
+| From 06:00, scheduled Morning window | 128     | 282.00 → 369.20 MiB; range 282.00–369.20 MiB | 1.52225                     |
+
+These are time bins using the documented schedule, **not independently observed page-mode transitions**: the collector did not inspect DOM/mode, fetch saved schedule settings, capture screenshots or reload the running document. The actual loaded web revision was not independently pinned by this native observer, so this is an existing-profile operational observation, not a fixed-web-build controlled benchmark. Native package/firmware and observer source were recorded.
+
+The morning window has materially higher CPU and continuing memory growth: PSS rose 282.00 → 300.52 MiB during 06:00–06:59, then 300.96 → 364.85 MiB during 07:00–07:59 and reached 369.20 MiB at 08:07. No plateau was established. Available swap fell from 252,676 to 234,256 KiB across the whole run. This does **not** establish a memory leak or animation causality, but it prevents claiming the no-sustained-growth performance gate passed. A future focused investigation should distinguish native process allocations, weather/animation workload and normal warm-up using the retained per-process samples before scheduling any new experiment.
+
+The unattended observation is complete; the follow-up is being stopped. No extra collection, reconnect, input, fault, restart, outage, credential/settings/hardening change or test-suite repeat occurred. Full M6 performance/stability acceptance remains open, including the excluded 48-hour run, physical observations and previously deferred checks.
