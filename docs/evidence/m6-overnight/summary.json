@@ -1,0 +1,604 @@
+{
+  "source_sha256": "991ec68b9ee653d9e43b093119a8b0bbefabe2afec3f487944c35f2c6dbe61f1",
+  "samples": 601,
+  "clock_ticks_per_second": 100,
+  "windows": {
+    "night": {
+      "first": "2026-10-19T22:07:43.070260+02:00",
+      "last": "2026-10-20T05:59:42.150445+02:00",
+      "samples": 473,
+      "total_pss_mib": {
+        "first": 269.740234375,
+        "last": 280.3359375,
+        "median": 275.04296875,
+        "min": 266.8427734375,
+        "max": 281.4765625
+      },
+      "cpu_cores": {
+        "first": 1.4486,
+        "last": 0.0856,
+        "median": 0.08885000000000001,
+        "min": 0.0729,
+        "max": 1.4562
+      },
+      "mem_free_mib": {
+        "first": 118.92578125,
+        "last": 104.484375,
+        "median": 129.7890625,
+        "min": 104.484375,
+        "max": 199.24609375
+      },
+      "swap_free_mib": {
+        "first": 246.75390625,
+        "last": 239.59375,
+        "median": 239.609375,
+        "min": 239.578125,
+        "max": 246.77734375
+      },
+      "main_pss_mib": {
+        "first": 105.1328125,
+        "last": 114.5537109375,
+        "median": 109.1435546875,
+        "min": 104.20703125,
+        "max": 114.5732421875
+      },
+      "main_unknown_private_dirty_mib": {
+        "first": 57.95703125,
+        "last": 71.2109375,
+        "median": 65.80078125,
+        "min": 57.87890625,
+        "max": 71.2109375
+      },
+      "main_private_dirty_mib": {
+        "first": 71.76953125,
+        "last": 84.4921875,
+        "median": 79.08203125,
+        "min": 71.23046875,
+        "max": 84.51171875
+      },
+      "main_dalvik_alloc_mib": {
+        "first": 5.1806640625,
+        "last": 4.8349609375,
+        "median": 4.8349609375,
+        "min": 4.8046875,
+        "max": 5.1806640625
+      },
+      "main_native_alloc_mib": {
+        "first": 5.2783203125,
+        "last": 4.802734375,
+        "median": 4.810546875,
+        "min": 4.80078125,
+        "max": 5.63671875
+      },
+      "main_cpu_cores": {
+        "first": 0.09466992626860204,
+        "last": 0.02053393956482202,
+        "median": 0.021982634086341497,
+        "min": 0.01957164273966161,
+        "max": 0.1686831623259824
+      },
+      "supervisor_pss_mib": {
+        "first": 8.3984375,
+        "last": 8.2119140625,
+        "median": 8.2119140625,
+        "min": 8.173828125,
+        "max": 8.3984375
+      },
+      "supervisor_unknown_private_dirty_mib": {
+        "first": 0.11328125,
+        "last": 0.11328125,
+        "median": 0.11328125,
+        "min": 0.11328125,
+        "max": 0.11328125
+      },
+      "supervisor_private_dirty_mib": {
+        "first": 5.58984375,
+        "last": 5.3359375,
+        "median": 5.33203125,
+        "min": 5.3046875,
+        "max": 5.58984375
+      },
+      "supervisor_dalvik_alloc_mib": {
+        "first": 4.3984375,
+        "last": 3.91796875,
+        "median": 3.91796875,
+        "min": 3.9072265625,
+        "max": 4.3984375
+      },
+      "supervisor_native_alloc_mib": {
+        "first": 3.888671875,
+        "last": 3.9130859375,
+        "median": 3.9130859375,
+        "min": 3.888671875,
+        "max": 4.0966796875
+      },
+      "supervisor_cpu_cores": {
+        "first": 0.0048292482253373325,
+        "last": 0.004675219708389381,
+        "median": 0.004686719412507756,
+        "min": 0.003985045488620141,
+        "max": 0.005491660577780303
+      },
+      "crashhelper_pss_mib": {
+        "first": 5.421875,
+        "last": 5.6787109375,
+        "median": 5.677734375,
+        "min": 5.421875,
+        "max": 5.7177734375
+      },
+      "crashhelper_unknown_private_dirty_mib": {
+        "first": 0.16015625,
+        "last": 0.16015625,
+        "median": 0.16015625,
+        "min": 0.16015625,
+        "max": 0.16015625
+      },
+      "crashhelper_private_dirty_mib": {
+        "first": 3.78125,
+        "last": 3.95703125,
+        "median": 3.953125,
+        "min": 3.78125,
+        "max": 3.95703125
+      },
+      "crashhelper_dalvik_alloc_mib": {
+        "first": 3.6689453125,
+        "last": 3.7587890625,
+        "median": 3.7587890625,
+        "min": 3.6689453125,
+        "max": 3.759765625
+      },
+      "crashhelper_native_alloc_mib": {
+        "first": 2.6396484375,
+        "last": 2.6728515625,
+        "median": 2.669921875,
+        "min": 2.6396484375,
+        "max": 2.9658203125
+      },
+      "crashhelper_cpu_cores": {
+        "first": 0.003489272957224904,
+        "last": 0.0028402284790897373,
+        "median": 0.0027924074013251686,
+        "min": 0.00256551070841458,
+        "max": 0.003489272957224904
+      },
+      "gpu_pss_mib": {
+        "first": 60.154296875,
+        "last": 60.6259765625,
+        "median": 60.623046875,
+        "min": 59.5908203125,
+        "max": 60.6474609375
+      },
+      "gpu_unknown_private_dirty_mib": {
+        "first": 44.515625,
+        "last": 44.80859375,
+        "median": 44.80859375,
+        "min": 43.71875,
+        "max": 44.80859375
+      },
+      "gpu_private_dirty_mib": {
+        "first": 52.796875,
+        "last": 53.2109375,
+        "median": 53.20703125,
+        "min": 52.109375,
+        "max": 53.23046875
+      },
+      "gpu_dalvik_alloc_mib": {
+        "first": 3.8095703125,
+        "last": 3.8994140625,
+        "median": 3.8994140625,
+        "min": 3.8095703125,
+        "max": 3.900390625
+      },
+      "gpu_native_alloc_mib": {
+        "first": 3.16796875,
+        "last": 3.091796875,
+        "median": 3.0927734375,
+        "min": 3.0595703125,
+        "max": 3.5634765625
+      },
+      "gpu_cpu_cores": {
+        "first": 1.065951716265664,
+        "last": 0.011543618572832674,
+        "median": 0.011654169141966157,
+        "min": 0.010846482079207562,
+        "max": 1.0757802162351027
+      },
+      "content_pss_mib": {
+        "first": 90.6328125,
+        "last": 91.265625,
+        "median": 91.142578125,
+        "min": 88.58984375,
+        "max": 93.583984375
+      },
+      "content_unknown_private_dirty_mib": {
+        "first": 58.12890625,
+        "last": 58.5078125,
+        "median": 58.38671875,
+        "min": 55.78125,
+        "max": 60.828125
+      },
+      "content_private_dirty_mib": {
+        "first": 65.6875,
+        "last": 66.26953125,
+        "median": 66.14453125,
+        "min": 63.546875,
+        "max": 68.5859375
+      },
+      "content_dalvik_alloc_mib": {
+        "first": 3.7041015625,
+        "last": 3.7958984375,
+        "median": 3.7958984375,
+        "min": 3.7041015625,
+        "max": 3.7958984375
+      },
+      "content_native_alloc_mib": {
+        "first": 2.82421875,
+        "last": 2.7802734375,
+        "median": 2.7783203125,
+        "min": 2.7734375,
+        "max": 3.1171875
+      },
+      "content_cpu_cores": {
+        "first": 0.27966831537219194,
+        "last": 0.04600728826356525,
+        "median": 0.047826425188972656,
+        "min": 0.030814882780569305,
+        "max": 0.27966831537219194
+      }
+    },
+    "morning": {
+      "first": "2026-10-20T06:00:43.838197+02:00",
+      "last": "2026-10-20T08:07:44.124575+02:00",
+      "samples": 128,
+      "total_pss_mib": {
+        "first": 282.0029296875,
+        "last": 369.203125,
+        "median": 302.83203125,
+        "min": 281.9951171875,
+        "max": 369.203125
+      },
+      "cpu_cores": {
+        "first": 1.0631,
+        "last": 1.5381,
+        "median": 1.52225,
+        "min": 1.0631,
+        "max": 2.3
+      },
+      "mem_free_mib": {
+        "first": 101.421875,
+        "last": 48.4375,
+        "median": 113.30859375,
+        "min": 46.4921875,
+        "max": 122.08203125
+      },
+      "swap_free_mib": {
+        "first": 239.59375,
+        "last": 228.765625,
+        "median": 239.0,
+        "min": 228.7578125,
+        "max": 239.59375
+      },
+      "main_pss_mib": {
+        "first": 114.583984375,
+        "last": 196.8701171875,
+        "median": 127.66796875,
+        "min": 114.583984375,
+        "max": 196.8701171875
+      },
+      "main_unknown_private_dirty_mib": {
+        "first": 71.23046875,
+        "last": 159.93359375,
+        "median": 84.466796875,
+        "min": 71.23046875,
+        "max": 159.93359375
+      },
+      "main_private_dirty_mib": {
+        "first": 84.5234375,
+        "last": 173.2265625,
+        "median": 97.720703125,
+        "min": 84.5234375,
+        "max": 173.2265625
+      },
+      "main_dalvik_alloc_mib": {
+        "first": 4.849609375,
+        "last": 4.8447265625,
+        "median": 4.8359375,
+        "min": 4.8056640625,
+        "max": 4.8642578125
+      },
+      "main_native_alloc_mib": {
+        "first": 4.802734375,
+        "last": 4.7470703125,
+        "median": 4.796875,
+        "min": 4.7451171875,
+        "max": 4.8486328125
+      },
+      "main_cpu_cores": {
+        "first": 0.06969263251258569,
+        "last": 0.0984916537274901,
+        "median": 0.09627823580873568,
+        "min": 0.06969263251258569,
+        "max": 0.8657513642248381
+      },
+      "supervisor_pss_mib": {
+        "first": 8.2119140625,
+        "last": 7.544921875,
+        "median": 8.15625,
+        "min": 7.544921875,
+        "max": 8.2119140625
+      },
+      "supervisor_unknown_private_dirty_mib": {
+        "first": 0.11328125,
+        "last": 0.11328125,
+        "median": 0.11328125,
+        "min": 0.11328125,
+        "max": 0.11328125
+      },
+      "supervisor_private_dirty_mib": {
+        "first": 5.3359375,
+        "last": 5.33984375,
+        "median": 5.33984375,
+        "min": 5.3359375,
+        "max": 5.33984375
+      },
+      "supervisor_dalvik_alloc_mib": {
+        "first": 3.91796875,
+        "last": 3.91796875,
+        "median": 3.91796875,
+        "min": 3.90625,
+        "max": 3.91796875
+      },
+      "supervisor_native_alloc_mib": {
+        "first": 3.912109375,
+        "last": 3.916015625,
+        "median": 3.9150390625,
+        "min": 3.912109375,
+        "max": 3.91796875
+      },
+      "supervisor_cpu_cores": {
+        "first": 0.004094345124017926,
+        "last": 0.004808992490964102,
+        "median": 0.004772063883965749,
+        "min": 0.004094345124017926,
+        "max": 0.005377742597250115
+      },
+      "crashhelper_pss_mib": {
+        "first": 5.6787109375,
+        "last": 4.90625,
+        "median": 5.640625,
+        "min": 4.90234375,
+        "max": 5.6787109375
+      },
+      "crashhelper_unknown_private_dirty_mib": {
+        "first": 0.16015625,
+        "last": 0.16015625,
+        "median": 0.16015625,
+        "min": 0.16015625,
+        "max": 0.16015625
+      },
+      "crashhelper_private_dirty_mib": {
+        "first": 3.95703125,
+        "last": 3.96484375,
+        "median": 3.9609375,
+        "min": 3.95703125,
+        "max": 3.96875
+      },
+      "crashhelper_dalvik_alloc_mib": {
+        "first": 3.7587890625,
+        "last": 3.759765625,
+        "median": 3.7587890625,
+        "min": 3.7587890625,
+        "max": 3.759765625
+      },
+      "crashhelper_native_alloc_mib": {
+        "first": 2.673828125,
+        "last": 2.67578125,
+        "median": 2.6728515625,
+        "min": 2.669921875,
+        "max": 2.67578125
+      },
+      "crashhelper_cpu_cores": {
+        "first": 0.0026121634820116995,
+        "last": 0.003151725631176949,
+        "median": 0.00319479446640453,
+        "min": 0.0026121634820116995,
+        "max": 0.00356890232877236
+      },
+      "gpu_pss_mib": {
+        "first": 62.0078125,
+        "last": 74.9892578125,
+        "median": 69.5361328125,
+        "min": 62.0,
+        "max": 74.9892578125
+      },
+      "gpu_unknown_private_dirty_mib": {
+        "first": 46.1171875,
+        "last": 60.8046875,
+        "median": 53.70703125,
+        "min": 46.1171875,
+        "max": 60.8046875
+      },
+      "gpu_private_dirty_mib": {
+        "first": 54.5078125,
+        "last": 69.22265625,
+        "median": 62.119140625,
+        "min": 54.5,
+        "max": 69.22265625
+      },
+      "gpu_dalvik_alloc_mib": {
+        "first": 3.8994140625,
+        "last": 3.8994140625,
+        "median": 3.8994140625,
+        "min": 3.876953125,
+        "max": 3.900390625
+      },
+      "gpu_native_alloc_mib": {
+        "first": 3.0791015625,
+        "last": 3.0712890625,
+        "median": 3.09326171875,
+        "min": 3.0703125,
+        "max": 3.1240234375
+      },
+      "gpu_cpu_cores": {
+        "first": 0.7553752654978986,
+        "last": 1.1035584619322656,
+        "median": 1.0948643061430443,
+        "min": 0.7553752654978986,
+        "max": 1.1348502052029352
+      },
+      "content_pss_mib": {
+        "first": 91.5205078125,
+        "last": 84.892578125,
+        "median": 91.5185546875,
+        "min": 81.9296875,
+        "max": 93.79296875
+      },
+      "content_unknown_private_dirty_mib": {
+        "first": 58.71484375,
+        "last": 61.09375,
+        "median": 59.037109375,
+        "min": 58.1328125,
+        "max": 61.09375
+      },
+      "content_private_dirty_mib": {
+        "first": 66.47265625,
+        "last": 68.86328125,
+        "median": 66.802734375,
+        "min": 65.8984375,
+        "max": 68.86328125
+      },
+      "content_dalvik_alloc_mib": {
+        "first": 3.7958984375,
+        "last": 3.794921875,
+        "median": 3.7958984375,
+        "min": 3.794921875,
+        "max": 3.7958984375
+      },
+      "content_native_alloc_mib": {
+        "first": 2.78125,
+        "last": 2.783203125,
+        "median": 2.78125,
+        "min": 2.779296875,
+        "max": 2.7841796875
+      },
+      "content_cpu_cores": {
+        "first": 0.23134035516122473,
+        "last": 0.32812443231675975,
+        "median": 0.32069308682745085,
+        "min": 0.23134035516122473,
+        "max": 0.359300366345766
+      }
+    }
+  },
+  "largest_main_jump": {
+    "before": {
+      "index": 563,
+      "paris_time": "2026-10-20T07:30:43.113248+02:00",
+      "elapsed_seconds": 33786.511,
+      "scheduled_window": "morning",
+      "total_pss_mib": 311.9130859375,
+      "cpu_cores": 1.5104,
+      "mem_free_mib": 112.7578125,
+      "swap_free_mib": 238.4296875,
+      "collection_seconds": 6.506,
+      "main_pss_mib": 133.212890625,
+      "main_unknown_private_dirty_mib": 90.08984375,
+      "main_private_dirty_mib": 103.3359375,
+      "main_dalvik_alloc_mib": 4.8251953125,
+      "main_native_alloc_mib": 4.759765625,
+      "main_threads": 58,
+      "main_cpu_cores": 0.09515329887474333,
+      "supervisor_pss_mib": 8.1103515625,
+      "supervisor_unknown_private_dirty_mib": 0.11328125,
+      "supervisor_private_dirty_mib": 5.33984375,
+      "supervisor_dalvik_alloc_mib": 3.91796875,
+      "supervisor_native_alloc_mib": 3.9150390625,
+      "supervisor_threads": 17,
+      "supervisor_cpu_cores": 0.004694813485237965,
+      "crashhelper_pss_mib": 5.6142578125,
+      "crashhelper_unknown_private_dirty_mib": 0.16015625,
+      "crashhelper_private_dirty_mib": 3.9609375,
+      "crashhelper_dalvik_alloc_mib": 3.7587890625,
+      "crashhelper_native_alloc_mib": 2.6728515625,
+      "crashhelper_threads": 11,
+      "crashhelper_cpu_cores": 0.0031992400603607714,
+      "gpu_pss_mib": 72.3623046875,
+      "gpu_unknown_private_dirty_mib": 56.6171875,
+      "gpu_private_dirty_mib": 65.0234375,
+      "gpu_dalvik_alloc_mib": 3.876953125,
+      "gpu_native_alloc_mib": 3.095703125,
+      "gpu_threads": 33,
+      "gpu_cpu_cores": 1.088054383501668,
+      "content_pss_mib": 92.61328125,
+      "content_unknown_private_dirty_mib": 59.8671875,
+      "content_private_dirty_mib": 67.6328125,
+      "content_dalvik_alloc_mib": 3.7958984375,
+      "content_native_alloc_mib": 2.78125,
+      "content_threads": 29,
+      "content_cpu_cores": 0.31933744890224963
+    },
+    "after": {
+      "index": 564,
+      "paris_time": "2026-10-20T07:31:44.195248+02:00",
+      "elapsed_seconds": 33847.593,
+      "scheduled_window": "morning",
+      "total_pss_mib": 356.478515625,
+      "cpu_cores": 2.3,
+      "mem_free_mib": 56.73828125,
+      "swap_free_mib": 230.625,
+      "collection_seconds": 7.588,
+      "main_pss_mib": 190.9365234375,
+      "main_unknown_private_dirty_mib": 154.15234375,
+      "main_private_dirty_mib": 167.609375,
+      "main_dalvik_alloc_mib": 4.8369140625,
+      "main_native_alloc_mib": 4.8349609375,
+      "main_threads": 65,
+      "main_cpu_cores": 0.8657513642248381,
+      "supervisor_pss_mib": 7.6123046875,
+      "supervisor_unknown_private_dirty_mib": 0.11328125,
+      "supervisor_private_dirty_mib": 5.33984375,
+      "supervisor_dalvik_alloc_mib": 3.91796875,
+      "supervisor_native_alloc_mib": 3.9150390625,
+      "supervisor_threads": 17,
+      "supervisor_cpu_cores": 0.005115008540112464,
+      "crashhelper_pss_mib": 4.9052734375,
+      "crashhelper_unknown_private_dirty_mib": 0.16015625,
+      "crashhelper_private_dirty_mib": 3.9609375,
+      "crashhelper_dalvik_alloc_mib": 3.7587890625,
+      "crashhelper_native_alloc_mib": 2.6728515625,
+      "crashhelper_threads": 11,
+      "crashhelper_cpu_cores": 0.0031270701023989158,
+      "gpu_pss_mib": 70.8291015625,
+      "gpu_unknown_private_dirty_mib": 56.6171875,
+      "gpu_private_dirty_mib": 65.01171875,
+      "gpu_dalvik_alloc_mib": 3.900390625,
+      "gpu_native_alloc_mib": 3.0830078125,
+      "gpu_threads": 33,
+      "gpu_cpu_cores": 1.0667114871772982,
+      "content_pss_mib": 82.1953125,
+      "content_unknown_private_dirty_mib": 58.38671875,
+      "content_private_dirty_mib": 66.15625,
+      "content_dalvik_alloc_mib": 3.7958984375,
+      "content_native_alloc_mib": 2.78125,
+      "content_threads": 29,
+      "content_cpu_cores": 0.359300366345766
+    }
+  },
+  "linear_pss_mib_per_hour": {
+    "night": {
+      "main": 1.018631495230283,
+      "gpu": 0.044739131639590424,
+      "content": 0.22577346207317084
+    },
+    "morning_before_jump": {
+      "main": 12.379381728741015,
+      "gpu": 7.157328903174573,
+      "content": -0.3078063220189784
+    },
+    "morning_after_jump": {
+      "main": 9.12876082914498,
+      "gpu": 6.451517810955545,
+      "content": 2.7381813630555123
+    }
+  }
+}

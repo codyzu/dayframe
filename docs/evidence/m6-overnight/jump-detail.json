@@ -1,0 +1,68 @@
+{
+  "sample_indices": [563, 564],
+  "device_clock_ticks_per_second": 100,
+  "main_process": {
+    "before": {
+      "minor_faults": 2020695,
+      "major_faults": 877,
+      "user_ticks": 86735,
+      "system_ticks": 41994,
+      "threads": 58,
+      "vsize_bytes": 1296150528,
+      "paris_time": "2026-10-20T07:30:43.113248+02:00",
+      "pss_mib": 133.212890625,
+      "unknown_private_dirty_mib": 90.08984375,
+      "dalvik_alloc_mib": 4.8251953125,
+      "native_heap_alloc_mib": 4.759765625
+    },
+    "after": {
+      "minor_faults": 2074913,
+      "major_faults": 971,
+      "user_ticks": 90327,
+      "system_ticks": 43629,
+      "threads": 65,
+      "vsize_bytes": 1325379584,
+      "paris_time": "2026-10-20T07:31:44.195248+02:00",
+      "pss_mib": 190.9365234375,
+      "unknown_private_dirty_mib": 154.15234375,
+      "dalvik_alloc_mib": 4.8369140625,
+      "native_heap_alloc_mib": 4.8349609375
+    },
+    "delta": {
+      "minor_faults": 54218,
+      "major_faults": 94,
+      "user_ticks": 3592,
+      "system_ticks": 1635,
+      "threads": 7,
+      "vsize_bytes": 29229056,
+      "pss_mib": 57.7236328125,
+      "unknown_private_dirty_mib": 64.0625,
+      "dalvik_alloc_mib": 0.01171875,
+      "native_heap_alloc_mib": 0.0751953125
+    },
+    "user_cpu_seconds": 35.92,
+    "system_cpu_seconds": 16.35
+  },
+  "system_memory_delta_mib": {
+    "MemFree": -56.01953125,
+    "AnonPages": 54.34375,
+    "Mapped": -34.63671875,
+    "Cached": -14.29296875,
+    "Buffers": 9.1484375,
+    "SwapFree": -7.8046875,
+    "Dirty": 4.21484375,
+    "Committed_AS": 61.421875,
+    "Shmem": 0.0
+  },
+  "sampled_non_root_process_set_unchanged": true,
+  "sampled_health_record_unchanged": true,
+  "window_dump_byte_identical": true,
+  "pre_meminfo_snapshot": {
+    "main_threads": 65,
+    "minor_faults_since_previous_sample": 54109,
+    "major_faults_since_previous_sample": 94,
+    "cpu_ticks_since_previous_sample": 5002,
+    "capture_file_modified_paris": "2026-10-20T07:31:38.541279+02:00",
+    "timing_limit": "Host file mtime is corroborating metadata, not an independently timestamped device event."
+  }
+}
