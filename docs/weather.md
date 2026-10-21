@@ -72,3 +72,58 @@ policy change is introduced. This implements item 1 of the
 [upstream comparison](upstream-comparison-20261020.md) independently; no upstream code/assets
 copied. Browser regressions check stable nodes/clock writes and inactive-mode data recovery;
 actual Classic 10 CPU/memory benefit remains unmeasured.
+
+## Official vigilance — 21 October 2026
+
+Morning adds a conditional departmental banner above the weather cards. It uses
+Météo-France warnings distributed by [EUMETNET Meteoalarm's public France Atom
+feed](https://feeds.meteoalarm.org/feeds/meteoalarm-legacy-atom-france), independently
+of the Open-Meteo forecast. CAP Moderate/Severe/Extreme map to written yellow,
+orange and red levels. The strongest unexpired warning leads, including future
+onsets; details expose all matching warnings and their issue/validity times.
+Tests and unrelated departments are excluded. No warning is inferred from a WMO
+condition or precipitation threshold.
+
+Coverage is deliberately limited to Haute-Savoie for the checked-in Annecy
+coordinates. Changing coordinates displays an unsupported-location notice rather
+than applying this department to another location. Department selection/geographic
+lookup is a future extension. No household coordinates, account or secret are sent
+to Meteoalarm: the Worker requests the same public national feed for all displays.
+
+`GET /api/weather-alerts` is public national data, with a fixed upstream URL,
+manual redirects, an 8-second timeout, a 2 MB limit, one in-flight request per
+Worker isolate, and a two-minute in-memory cache. It adds no service, binding,
+subscription or dependency. The raw feed is redistributed unchanged and linked
+alongside the adapted departmental presentation. The browser parses namespace-aware
+XML as data, inserts only text, and never follows provider-supplied links or injects
+provider markup. Malformed relevant warnings fail closed to unavailable.
+
+Morning checks every two minutes using the existing dashboard tick; other modes do
+not poll. Failures retry after one minute. Visibility/page lifecycle abort pending
+requests; returning to Morning rechecks deadlines. No warning data is persisted.
+A failed refresh explicitly labels still-recent warnings; expired warnings disappear,
+and a feed timestamp ten minutes old (or more than five minutes in the future)
+becomes unavailable. A failed or outdated feed never implies an all-clear. A fresh
+feed with no matching warnings hides the banner. DOM updates are guarded per minute,
+feed revision, failure and configured coordinates.
+
+A continuous four-hour Morning session makes about 120 requests per display/day;
+three displays make about 360, plus initial loads and bounded retries. An always-open
+manual Morning override makes 720/day/display. The shared isolate cache reduces
+national-feed downloads. With normal traffic, isolate, HTTP and browser caches add
+at most roughly six minutes before a newly published bulletin is seen (average
+below five); outages are explicitly unavailable rather than operational warnings.
+This remains within the household Workers Free request budget; no paid resource is
+enabled. Reassess caching and quotas before broader/public use.
+
+The [Meteoalarm terms](https://meteoalarm.org/en/live/page/terms-and-conditions)
+were inspected via the website's public content service on 21 October 2026
+(last-updated text: 15 March 2024). They permit warning-information reuse under
+terms equivalent to CC BY 4.0 with added attribution, original-information, issue-time,
+link, timeliness and disclaimer requirements. The banner names Météo-France, details
+link Meteoalarm and the unchanged original feed, and forecast methodology links the
+licence, identifies the adaptation and includes the required delay disclaimer.
+No Meteoalarm artwork or website code is copied. A live national-feed download
+confirmed the namespace/field structure and current feed timestamp; synthetic browser
+fixtures establish departmental warning behavior, not a real current Haute-Savoie
+warning or actual-frame acceptance.

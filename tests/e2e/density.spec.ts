@@ -1,4 +1,4 @@
-import {expect, test} from '@playwright/test';
+import {expect, test} from '../fixtures/browser.ts';
 import {fixtureNow, weatherFixture} from '../fixtures/weather.ts';
 
 test.beforeEach(async ({page}) => {

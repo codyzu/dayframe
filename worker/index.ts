@@ -1,3 +1,4 @@
+import {weatherAlertsApi} from './weather-alerts.ts';
 import {photoApi, type PhotoEnv} from './photo-api.ts';
 
 export {Administration} from './administration.ts';
@@ -26,6 +27,10 @@ function json(
 const worker = {
   async fetch(request: Request, env: Env): Promise<Response> {
     const path = new URL(request.url).pathname;
+    if (path === '/api/weather-alerts') {
+      return weatherAlertsApi(request);
+    }
+
     if (path === '/api/health') {
       if (request.method !== 'GET' && request.method !== 'HEAD') {
         return json(

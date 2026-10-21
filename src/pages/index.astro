@@ -55,7 +55,7 @@ import {displayConfig} from '../lib/dashboard/config';
       </span>
     </header>
     <section
-      class="morning-panel flex flex-1 flex-col justify-center py-4"
+      class="morning-panel flex flex-1 flex-col py-4"
       data-mode-panel="morning"
       aria-labelledby="morning-title"
     >
@@ -98,9 +98,6 @@ import {displayConfig} from '../lib/dashboard/config';
         >
           Bonne nuit.
         </h1>
-        <p class="mt-10 text-xl md:text-3xl">
-          Luminosité de l’appareil inchangée
-        </p>
       </div>
     </section>
     <footer
@@ -226,12 +223,31 @@ import {displayConfig} from '../lib/dashboard/config';
   /* Controls float on demand instead of reserving an empty navigation row.
      Keep mobile controls in flow, where the page can scroll naturally. */
   @media (min-width: 1000px) {
+    /* Keep the weather and agenda readable when a vigilance banner is present:
+       reclaim the decorative brand row before compressing any useful content. */
+    .dashboard[data-mode='morning'][data-alerts='true']
+      [data-dashboard-header] {
+      display: none;
+    }
+    .dashboard[data-mode='morning'][data-alerts='true'] .morning-intro {
+      margin-bottom: 0.5rem;
+    }
+    .dashboard[data-mode='morning'][data-alerts='true'] .clock {
+      font-size: 4rem;
+    }
+    .dashboard[data-mode='morning'][data-alerts='true'] .morning-panel {
+      padding: 0.25rem 0;
+    }
     .dashboard[data-mode='morning'] [data-dashboard-footer] {
       position: fixed;
       bottom: 0.75rem;
       left: 2rem;
       right: 2rem;
       z-index: 6;
+      pointer-events: none;
+    }
+    .dashboard[data-mode='morning'] [data-dashboard-footer] > :global(*) {
+      pointer-events: auto;
     }
     .dashboard[data-mode='morning'] [data-dashboard-footer] > label {
       background: var(--colors-surface);

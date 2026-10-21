@@ -1,4 +1,5 @@
-import {expect, test} from '@playwright/test';
+import {alertsFixture} from '../fixtures/alerts.ts';
+import {expect, test} from '../fixtures/browser.ts';
 import {defaultSettings} from '../../src/lib/dashboard/settings.ts';
 import {
   dayOffSchedule,
@@ -87,6 +88,15 @@ test('vacation and holiday appear beside six upcoming appointments, suppress rou
   page,
 }, info) => {
   const now = Date.parse('2026-11-01T07:00:00Z');
+  await page.route('**/api/weather-alerts', async (route) =>
+    route.fulfill({
+      contentType: 'application/atom+xml',
+      body: alertsFixture(
+        [{start: now + 3_600_000, end: now + 8 * 3_600_000}],
+        now,
+      ),
+    }),
+  );
   await page.clock.install({time: now});
   await page.route('**/api/config/display', async (route) =>
     route.fulfill({json: {...defaultSettings, planning}}),

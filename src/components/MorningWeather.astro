@@ -3,7 +3,57 @@ import Agenda from './Agenda.astro';
 ---
 
 <div data-weather class="group/weather grid gap-2 data-[observance=true]:gap-1">
-  <div class="grid gap-4 min-[1000px]:grid-cols-[0.85fr_1.8fr]">
+  <aside
+    data-weather-alerts
+    data-level="unknown"
+    class="relative z-1 rounded-2xl border border-border bg-surface px-4 py-1 text-primary data-[level=yellow]:bg-[#fff0b3] data-[level=orange]:bg-[#ffdab3] data-[level=orange]:border-[#9a4200] data-[level=red]:bg-[#8c1823] data-[level=red]:border-[#8c1823] data-[level=red]:text-white"
+    aria-label="Vigilance météorologique"
+    aria-live="polite"
+  >
+    <details class="alert-details relative">
+      <summary class="cursor-pointer flex items-baseline justify-between gap-3">
+        <span
+          data-alert-title
+          class="font-bold text-[length:var(--font-weather-detail)] leading-tight"
+        >
+          Vérification de la vigilance…
+        </span>
+        <span class="text-xs shrink-0 underline">Détails</span>
+      </summary>
+      <div class="surface absolute top-full left-0 right-0 z-8 p-4 shadow-lg">
+        <p
+          data-alert-full
+          class="text-base leading-relaxed whitespace-pre-line"
+        ></p>
+        <p class="mt-2 flex gap-4 text-sm">
+          <a class="underline" href="https://meteoalarm.org/en/live/">
+            Meteoalarm
+          </a>
+          <a
+            class="underline"
+            href="/api/weather-alerts"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Flux original
+          </a>
+        </p>
+      </div>
+    </details>
+    <p data-alert-detail class="text-base leading-tight"></p>
+    <a
+      class="text-xs underline underline-offset-2"
+      href="https://vigilance.meteofrance.fr/fr/haute-savoie"
+      target="_blank"
+      rel="noreferrer"
+    >
+      Météo-France via Meteoalarm · consignes
+    </a>
+  </aside>
+  <div
+    data-weather-cards
+    class="grid gap-4 min-[1000px]:grid-cols-[0.85fr_1.8fr]"
+  >
     <section
       class="surface min-w-0 flex flex-col justify-between px-4 py-3 group-data-[observance=true]/weather:py-1.5"
       aria-labelledby="weather-title"
@@ -70,7 +120,10 @@ import Agenda from './Agenda.astro';
       </div>
     </section>
   </div>
-  <div class="grid gap-4 min-[1000px]:grid-cols-[0.85fr_1.8fr]">
+  <div
+    data-weather-lower
+    class="grid gap-4 min-[1000px]:grid-cols-[0.85fr_1.8fr]"
+  >
     <section
       class="rounded-3xl border border-accent bg-advice text-advice-ink px-4 py-2"
       aria-labelledby="advice-title"
@@ -96,12 +149,15 @@ import Agenda from './Agenda.astro';
     </section>
     <Agenda />
   </div>
-  <div class="flex flex-wrap justify-between gap-2 text-[0.625rem] leading-tight text-secondary">
+  <div
+    data-weather-footer
+    class="flex flex-wrap justify-between gap-2 text-[0.625rem] leading-tight text-secondary"
+  >
     <p class="sr-only" data-weather-status role="status">
       Connexion à Open-Meteo…
     </p>
     <a
-      class="inline-flex items-center min-h-6 underline underline-offset-3"
+      class="inline-flex items-center min-h-4 underline underline-offset-3"
       href="https://open-meteo.com/"
       target="_blank"
       rel="noreferrer"
@@ -109,7 +165,7 @@ import Agenda from './Agenda.astro';
       Météo : Open-Meteo · CC BY 4.0
     </a>
     <details class="weather-notes">
-      <summary class="cursor-pointer min-h-6 flex items-center underline underline-offset-3">
+      <summary class="cursor-pointer min-h-4 flex items-center underline underline-offset-3">
         À propos des prévisions
       </summary>
       <div class="surface p-4 text-base leading-relaxed">
@@ -131,6 +187,42 @@ import Agenda from './Agenda.astro';
             DINUM
           </a>{' '}
           · Licence Ouverte.
+        </p>
+        <p>
+          Vigilance :{' '}
+          <a class="underline" href="https://vigilance.meteofrance.fr/">
+            Météo-France
+          </a>
+          via{' '}
+          <a class="underline" href="https://meteoalarm.org/en/live/">
+            Meteoalarm
+          </a>
+          ·{' '}
+          <a
+            class="underline"
+            href="https://creativecommons.org/licenses/by/4.0/"
+          >
+            CC BY 4.0
+          </a>
+          · sélection Haute-Savoie et libellés adaptés. Les horaires de
+          vigilance restent indépendants des prévisions Open-Meteo.
+          <a class="underline" href="/api/weather-alerts">
+            Informations originales
+          </a>
+          .
+        </p>
+        <p lang="en" class="text-sm">
+          Time delays between this website and the{' '}
+          <a class="underline" href="https://meteoalarm.org/en/live/">
+            www.meteoalarm.org
+          </a>
+          website are possible. For the most up-to-date awareness information as
+          published by the participating National Meteorological and
+          Hydrological Services, please refer to{' '}
+          <a class="underline" href="https://meteoalarm.org/en/live/">
+            www.meteoalarm.org
+          </a>
+          .
         </p>
         <p>
           Entre deux heures : température interpolée ; icône de l’heure
@@ -168,6 +260,59 @@ import Agenda from './Agenda.astro';
   </div>
 </div>
 <style>
+  [data-weather-alerts][data-level='unknown'] {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+  }
+  [data-weather-alerts][data-level='unknown'] [data-alert-title] {
+    font-size: 0.875rem;
+  }
+  [data-weather-alerts][data-level='unknown'] [data-alert-detail],
+  [data-weather-alerts][data-level='unknown'] summary > span:last-child {
+    display: none;
+  }
+  /* Fill the frame's available height; the lower cards can grow beneath their
+     content while the navigation floats above them without changing layout. */
+  @media (min-width: 1000px) {
+    [data-weather] {
+      flex: 1;
+      grid-template-rows: auto auto minmax(min-content, 1fr) auto;
+    }
+    [data-weather][data-alert='true'] {
+      gap: 0.25rem;
+    }
+    [data-weather][data-alert='true'] [data-weather-cards] > section {
+      padding-block: 0.375rem;
+    }
+    [data-weather][data-alert='true'][data-observance='true']
+      [data-weather-cards]
+      > section {
+      padding-block: 0.25rem;
+    }
+    [data-weather][data-alert='true'] [data-chart] {
+      margin-top: 0.25rem;
+    }
+    [data-weather][data-alert='true']
+      :global([data-checkpoints] [class*='i-meteocons-']) {
+      width: 2rem;
+      height: 2rem;
+    }
+    [data-weather-alerts] {
+      grid-row: 1;
+    }
+    [data-weather-cards] {
+      grid-row: 2;
+    }
+    [data-weather-lower] {
+      grid-row: 3;
+    }
+    [data-weather-footer] {
+      grid-row: 4;
+    }
+  }
+
   /* A disclosure overlays secondary methodology without moving the frame's primary content. */
   .weather-notes {
     position: relative;

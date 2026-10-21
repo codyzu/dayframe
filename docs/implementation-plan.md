@@ -937,3 +937,54 @@ Firefox, WebKit and mobile, including the new populated 320px editor check. The
 120 unit/integration tests had passed in the hosted run; this correction changes only
 markup/copy and browser coverage. Hosted Linux acceptance and automatic deployment
 remain gated by the corrected commit's ordinary Actions run.
+
+## Night copy, Morning vigilance and Photos readability — 21 October 2026
+
+Owner requested removing the Night brightness implementation note, official weather
+alerts on Morning, use of the empty bottom navigation strip, and larger Photos
+clock/weather/icon. Removed the Night sentence. Added independently fetched
+Météo-France vigilance via Meteoalarm's public France feed, a severity-coloured
+Haute-Savoie banner with validity/issue times and expandable details, original-source
+links, and distinct clear/unavailable/stale/unsupported-location behavior. The strongest
+warning leads; all matching warnings remain available. [Source, attribution, caching,
+coverage and cost limits](weather.md#official-vigilance--21-october-2026).
+
+The Morning weather grid now assigns its four rows explicitly and lets the advice/
+appointments row grow to the bottom metadata. Navigation remains overlaid and does
+not move the cards when it disappears. When warnings are present, decorative branding
+and spacing give way to the banner; forecast icon spacing tightens before primary
+weather/calendar text. Unknown vigilance is a small neutral notice. The expanded
+source details overlay rather than pushing appointments off the frame. Only visible
+navigation controls receive pointer input, keeping bottom source links usable when
+the floating menu appears. Photos now uses a 96px desktop clock (72px mobile), 80px icon (64px mobile), 36px temperature
+(30px mobile) and 24px condition (20px mobile), preserving bundled still icons and
+wrapping long descriptions. These are default rem-derived sizes, not fixed device
+brightness or native changes.
+
+Re-inspected the local Wes Bos source at
+`f1e0820918c926396e0ccafb4839568825f63edc`, root MIT `LICENSE`,
+`dashboard/js/views/home.js`, `dashboard/css/views/home.css`,
+`dashboard/js/views/photos.js` and `dashboard/css/views/photos.css`. Retain its
+glanceable weather/event hierarchy and photo priority as ideas. Official French warning fetching, namespace-aware parsing, protected-data
+separation, Astro layout and larger photo overlay are independently authored;
+no upstream source/assets copied. No dependency, new binding, paid service, household
+settings/credentials, deployment or device change.
+
+Final `pnpm verify` passed: Astro/Worker types, lint with the five existing
+complexity warnings, all 126 unit/integration tests, production build and 188 browser
+checks across Chromium, Firefox, WebKit and mobile, with four existing intentional
+skips. Coverage includes fixed-host/redirect/body-limit/cache behavior, warning
+severity/department/expiry/staleness, offline recovery, frame fit with six appointments
+plus holiday/vacation, stable card geometry as navigation hides, source-link access,
+Night copy and long-condition Photos sizing. Ordinary browser checks now stub the
+national feed through a shared fixture instead of depending on live warnings.
+
+Reviewed synthetic [expanded Morning](evidence/vigilance/morning-expanded-1280x800.png),
+[warning banner](evidence/vigilance/morning-alert-1280x800.png),
+[six-event Firefox frame](evidence/vigilance/morning-six-events-firefox.png),
+[holiday/vacation with alerts](evidence/vigilance/morning-holiday-alert-firefox.png),
+[larger Photos overlay](evidence/vigilance/photos-large-1280x800.png) (empty photo state),
+and [Night](evidence/vigilance/night-1280x800.png). Captures are 1280×800 without
+scrolling and contain no household events or photos. Deployment and physical-frame
+readability remain unverified for this slice. Existing security and household-
+administrator acceptance limits remain open.

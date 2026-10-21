@@ -21,7 +21,7 @@ export function mountPhotoWeather(root: HTMLElement) {
       weather?.current.isDay ?? true,
     );
     const label = weather ? current.label : 'Météo indisponible';
-    const classes = `${current.icon} inline-block size-12 shrink-0 drop-shadow-[0_1px_2px_#000000]`;
+    const classes = `${current.icon} inline-block size-16 md:size-20 shrink-0 drop-shadow-[0_1px_2px_#000000]`;
     if (temperature.textContent !== value) {
       temperature.textContent = value;
     }

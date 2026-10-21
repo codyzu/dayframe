@@ -1,3 +1,4 @@
+import {mountAlerts} from '../weather/alerts.ts';
 import {ApiError, photoRequest} from '../photos/client.ts';
 import {mountSlideshow} from '../photos/slideshow.ts';
 import {mountWeather} from '../weather/view.ts';
@@ -33,6 +34,9 @@ function initializeDashboard(root: HTMLElement) {
   const photoRoot = root.querySelector<HTMLElement>('[data-slideshow]')!;
   const weatherRoot = root.querySelector<HTMLElement>('[data-weather]')!;
   const updatePhotoWeather = mountPhotoWeather(photoRoot);
+  const alerts = mountAlerts(
+    root.querySelector<HTMLElement>('[data-weather-alerts]')!,
+  );
 
   const slideshow = mountSlideshow(photoRoot);
   const agenda = mountAgenda(root.querySelector<HTMLElement>('[data-agenda]')!);
@@ -141,8 +145,10 @@ function initializeDashboard(root: HTMLElement) {
       );
     }
 
-    weather.setActive(mode === 'morning' && !document.hidden && !isPaused);
-    agenda.tick(mode === 'morning' && !document.hidden && !isPaused);
+    const isMorningActive = mode === 'morning' && !document.hidden && !isPaused;
+    weather.setActive(isMorningActive);
+    agenda.tick(isMorningActive);
+    alerts.tick(isMorningActive);
     slideshow.checkPrivacy();
     slideshow.setActive(mode === 'photos' && !document.hidden && !isPaused);
     const isNavigationVisible =
@@ -334,6 +340,7 @@ function initializeDashboard(root: HTMLElement) {
       slideshow.setActive(false);
       weather.setActive(false);
       agenda.pause();
+      alerts.pause();
     } else {
       wake();
     }
@@ -346,6 +353,7 @@ function initializeDashboard(root: HTMLElement) {
     slideshow.setActive(false);
     weather.setActive(false);
     agenda.pause();
+    alerts.pause();
   });
   globalThis.addEventListener('pageshow', wake);
   globalThis.addEventListener('online', wake);

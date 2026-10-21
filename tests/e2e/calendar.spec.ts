@@ -1,4 +1,4 @@
-import {expect, test} from '@playwright/test';
+import {expect, test} from '../fixtures/browser.ts';
 import {defaultSettings} from '../../src/lib/dashboard/settings.ts';
 import {fixtureNow, weatherFixture} from '../fixtures/weather.ts';
 

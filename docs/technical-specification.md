@@ -114,7 +114,15 @@ Required:
 - A visible marker for the current time.
 - Brief, actionable, deterministic summary, such as “Dry until 15:00; showers this afternoon.”
 
-Conditional or later additions: strong winds, freezing conditions, sunrise/sunset, Météo-France vigilance, short multi-day forecast, and calendar events. Avoid cluttering the primary 10-inch display with humidity, pressure, UV, or long forecasts by default.
+**Scope update, 21 October 2026:** Morning must show official Haute-Savoie vigilance
+for the initial Annecy location, independently of Open-Meteo conditions. A conditional
+banner names the written severity, phenomenon, department, validity period and issue
+time, with all warnings and official-source links available in details. No-warning,
+unavailable, stale and unsupported-location states must remain distinct. See
+[weather vigilance](weather.md#official-vigilance--21-october-2026).
+
+Conditional or later additions: strong winds, freezing conditions, sunrise/sunset,
+short multi-day forecast, and calendar events. Avoid cluttering the primary 10-inch display with humidity, pressure, UV, or long forecasts by default.
 
 The visual direction follows the approved mockups: scenic Annecy-style background, tasteful translucent surfaces, legible typography, color weather icons, and a combined hourly chart. The background must never compromise contrast.
 
