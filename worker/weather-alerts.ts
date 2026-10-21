@@ -9,7 +9,9 @@ async function loadFeed() {
   const response = await fetch(alertsFeedUrl, {
     redirect: 'manual',
     signal: AbortSignal.timeout(8000),
-    headers: {Accept: 'application/atom+xml'},
+    // The publisher returns Atom but rejects explicit Atom/XML Accept headers
+    // with HTTP 406. Negotiate generically, then validate the actual response.
+    headers: {Accept: '*/*'},
   });
   if (!response.ok || !response.headers.get('Content-Type')?.includes('xml')) {
     throw new Error('Warning feed unavailable');

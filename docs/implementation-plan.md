@@ -988,3 +988,21 @@ and [Night](evidence/vigilance/night-1280x800.png). Captures are 1280×800 witho
 scrolling and contain no household events or photos. Deployment and physical-frame
 readability remain unverified for this slice. Existing security and household-
 administrator acceptance limits remain open.
+
+### Production vigilance negotiation correction
+
+Owner authorized commit, push and deployment. Feature commit `5b603ca` passed
+[Actions run 39677427770](https://github.com/codyzu/dayframe/actions/runs/39677427770)
+and deployed, including the Free-plan gate and public privacy/build smoke checks.
+The served HTML matches the exact GitHub production-assets artifact (local macOS
+and hosted Linux bundle hashes differ). Independent live validation caught a 503
+from the new warning endpoint; the UI correctly presented unavailable vigilance.
+
+A temporary Cloudflare remote preview without private bindings isolated the cause:
+the feed publisher returns HTTP 406 for explicit Atom **and** XML Accept headers,
+while `Accept: */*` returns HTTP 200 Atom XML from the same Workers runtime. The
+adapter now negotiates generically and retains strict content-type, body-size,
+redirect and namespace/schema validation. The regression check asserts this
+external-request contract. No provider switch, secret, dependency, service binding,
+paid resource, settings or device change. Corrected deployment/live acceptance is
+recorded after the ordinary workflow succeeds; no check bypass.

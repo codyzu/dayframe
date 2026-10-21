@@ -31,7 +31,7 @@ describe('public official warning feed boundary', () => {
     expect(first.headers.get('Cache-Control')).toBe('public, max-age=120');
     expect(fetch).toHaveBeenCalledExactlyOnceWith(
       alertsFeedUrl,
-      expect.objectContaining({redirect: 'manual'}),
+      expect.objectContaining({redirect: 'manual', headers: {Accept: '*/*'}}),
     );
     await weatherAlertsApi(request());
     expect(fetch).toHaveBeenCalledTimes(1);
