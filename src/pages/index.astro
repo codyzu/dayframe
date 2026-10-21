@@ -223,7 +223,21 @@ import {displayConfig} from '../lib/dashboard/config';
   .dashboard[data-mode='night'] .alpine-header {
     visibility: hidden;
   }
+  /* Controls float on demand instead of reserving an empty navigation row.
+     Keep mobile controls in flow, where the page can scroll naturally. */
   @media (min-width: 1000px) {
+    .dashboard[data-mode='morning'] [data-dashboard-footer] {
+      position: fixed;
+      bottom: 0.75rem;
+      left: 2rem;
+      right: 2rem;
+      z-index: 6;
+    }
+    .dashboard[data-mode='morning'] [data-dashboard-footer] > label {
+      background: var(--colors-surface);
+      border-radius: 1rem;
+      padding: 0 0.5rem;
+    }
     .dashboard {
       padding: 0.75rem 2rem;
     }

@@ -2,7 +2,7 @@
 import Agenda from './Agenda.astro';
 ---
 
-<div data-weather class="grid gap-3">
+<div data-weather class="grid gap-2">
   <div class="grid gap-4 min-[1000px]:grid-cols-[0.85fr_1.8fr]">
     <section
       class="surface min-w-0 flex flex-col justify-between px-4 py-3"
@@ -67,9 +67,9 @@ import Agenda from './Agenda.astro';
       </div>
     </section>
   </div>
-  <div class="grid gap-4 min-[1000px]:grid-cols-[1.8fr_0.85fr]">
+  <div class="grid gap-4 min-[1000px]:grid-cols-[0.85fr_1.8fr]">
     <section
-      class="rounded-3xl border border-accent bg-advice text-advice-ink p-4"
+      class="rounded-3xl border border-accent bg-advice text-advice-ink px-4 py-2"
       aria-labelledby="advice-title"
     >
       <h2
@@ -85,7 +85,7 @@ import Agenda from './Agenda.astro';
         Préparons la journée.
       </p>
       <p
-        class="mt-2 text-[length:var(--font-weather-detail)] leading-snug"
+        class="mt-1 text-[length:var(--font-weather-detail)] leading-snug"
         data-summary
       >
         La météo se met à jour automatiquement.
@@ -93,12 +93,12 @@ import Agenda from './Agenda.astro';
     </section>
     <Agenda />
   </div>
-  <div class="flex flex-wrap justify-between gap-2 text-sm text-secondary">
+  <div class="flex flex-wrap justify-between gap-2 text-[0.625rem] leading-tight text-secondary">
     <p class="sr-only" data-weather-status role="status">
       Connexion à Open-Meteo…
     </p>
     <a
-      class="inline-flex items-center min-h-11 underline underline-offset-3"
+      class="inline-flex items-center min-h-6 underline underline-offset-3"
       href="https://open-meteo.com/"
       target="_blank"
       rel="noreferrer"
@@ -106,7 +106,7 @@ import Agenda from './Agenda.astro';
       Météo : Open-Meteo · CC BY 4.0
     </a>
     <details class="weather-notes">
-      <summary class="cursor-pointer min-h-11 flex items-center underline underline-offset-3">
+      <summary class="cursor-pointer min-h-6 flex items-center underline underline-offset-3">
         À propos des prévisions
       </summary>
       <div class="surface p-4 text-base leading-relaxed">

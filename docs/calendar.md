@@ -1,7 +1,7 @@
 # Google Calendar on Morning
 
-20 October 2026. A single household Google connection supplies one selected calendar,
-initially the owner's shared **Family** calendar. Continue editing events in Google
+20 October 2026. A single household Google connection supplies up to two selected calendars:
+**Family** and **Massages**, both readable by the connected account. Continue editing events in Google
 Calendar. Dayframe requests read-only event and calendar-list scopes; it has no write
 scope or event-creation endpoint.
 
@@ -9,12 +9,15 @@ scope or event-creation endpoint.
 
 In `/admin/settings`, choose **Connecter Google Calendar**, authorize an account that
 can read Family, then choose **Family** under **Agenda à afficher** and press
-**Afficher cet agenda**. Calendar names need not be unique: the saved selection uses
+**Afficher ces agendas**. Choose the shared massage calendar under **Massages · violet** before saving. Leave
+that second selection empty to remove it. The two selections must be distinct. No
+additional OAuth consent is needed when both are already shared with the connected
+account. Calendar names need not be unique: the saved selection uses
 Google's verified calendar ID. Both existing administrators can manage the connection;
 neither administrator needs to sign in on the frame. A normal Dayframe/Cloudflare
 Access sign-in is separate from Google Calendar consent.
 
-Morning shows up to three remaining events today in the household's configured timezone:
+Morning shows up to three remaining events **per calendar** today in the household's configured timezone:
 all-day entries first, then timed entries in start order, including ongoing/multi-day
 events. All-day end dates are exclusive. Google expands recurring appointments and
 exceptions (`singleEvents=true`); cancelled and self-declined entries are omitted.
@@ -40,8 +43,8 @@ The two requested scopes are:
 - `https://www.googleapis.com/auth/calendar.events.readonly`
 - `https://www.googleapis.com/auth/calendar.calendarlist.readonly`
 
-Google's permission applies to accessible calendars; Dayframe limits fetching to the one
-selected ID. Do not request the owned-only events scope: a shared Family calendar may be
+Google's permission applies to accessible calendars; Dayframe limits fetching to the
+two selected IDs. Do not request the owned-only events scope: a shared Family calendar may be
 owned by the other spouse.
 
 Configure four **Worker runtime secrets**, never public/build environment variables:
@@ -127,3 +130,24 @@ storage with synthetic Google responses. Browser tests use synthetic appointment
 Google navigation across Chromium, Firefox, WebKit and mobile. Local success does not
 prove live consent, Family calendar access, token longevity, or physical frame acceptance.
 Record current verification/deployment status in the implementation plan.
+
+## Two-calendar display — 21 October 2026
+
+Family uses a muted rose-red accent and Massages a violet accent, with persistent text
+labels so colour is not the only distinction. One chronological list fills the wider
+lower-right panel beside weather advice.
+All-day events come first, then both calendars mix by start time; up to three events
+from each calendar remain available. Pastel rose-red/violet row backgrounds and visible per-row labels identify
+the source. Times, titles and the visible per-row Family/Massages labels use dark text,
+so source identification does not depend on distinguishing colours. Mobile retains the same list.
+Current and forecast weather remain the first visual tier. Desktop navigation
+floats over the bottom on touch and disappears after the existing timeout, reclaiming
+its reserved row. Weather attribution and methodology remain accessible in a discreet
+10px footer with 24px targets. Event text retains the existing adjustable rem sizes.
+
+The existing single-calendar selection/cache remains readable as Family. Saving either
+selection validates both against Google's accessible calendars and clears the complete
+cache atomically. Both calendars share the existing encrypted connection, revision
+checks and five-minute browser privacy lease. Failure reading either calendar clears
+the full agenda; no stale or misleading partial success is shown. Fetch pagination is
+bounded to ten pages per selected calendar. No new permissions, package or service.

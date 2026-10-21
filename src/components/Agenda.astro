@@ -7,7 +7,7 @@
     id="agenda-title"
     class="text-[length:var(--font-weather-heading)] font-bold leading-tight"
   >
-    Aujourd’hui
+    La suite de la journée
   </h2>
   <p
     data-agenda-status
@@ -15,11 +15,15 @@
   >
     Aucun agenda connecté.
   </p>
-  <ul data-agenda-events hidden class="mt-2 space-y-1"></ul>
+  <ul data-agenda-events hidden class="mt-2 grid gap-0.75"></ul>
   <template data-agenda-template>
-    <li class="flex items-baseline gap-3 min-w-0 text-[length:var(--font-weather-detail)] leading-tight">
-      <span data-event-time class="shrink-0 font-bold tabular-nums"></span>
-      <span data-event-title class="min-w-0 truncate"></span>
+    <li class="flex items-baseline gap-3 min-w-0 rounded-md px-2 text-primary text-[length:var(--font-weather-detail)] leading-tight data-[event-calendar=family]:bg-[#f5dadd] data-[event-calendar=massages]:bg-[#e8def5]">
+      <span
+        data-event-time
+        class="shrink-0 font-bold tabular-nums min-w-22"
+      ></span>
+      <span data-event-title class="min-w-0 flex-1 truncate"></span>
+      <span data-event-source class="shrink-0 text-sm font-semibold"></span>
     </li>
   </template>
 </section>

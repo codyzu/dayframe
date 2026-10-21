@@ -1,5 +1,5 @@
 import {photoRequest} from '../photos/client.ts';
-import {localDate, remainingEvents, type Agenda} from './contracts.ts';
+import {localDate, remainingAgendaEvents, type Agenda} from './contracts.ts';
 
 // No persistent event cache: privacy expires after five minutes, including offline.
 export function mountAgenda(root: HTMLElement) {
@@ -31,7 +31,7 @@ export function mountAgenda(root: HTMLElement) {
     }
 
     const now = Date.now();
-    const events = remainingEvents(data.events, now, data.timezone);
+    const events = remainingAgendaEvents(data.events, now, data.timezone);
     const signature = JSON.stringify(
       events.map((event) => ({
         ...event,
@@ -53,13 +53,18 @@ export function mountAgenda(root: HTMLElement) {
         const row = template.content.firstElementChild!.cloneNode(
           true,
         ) as HTMLElement;
-        row.querySelector('[data-event-time]')!.textContent = event.allDay
+        const source = event.calendar ?? 'family';
+        const label = source === 'massages' ? 'Massages' : 'Famille';
+        const time = row.querySelector<HTMLElement>('[data-event-time]')!;
+        time.textContent = event.allDay
           ? 'Journée'
           : Date.parse(event.start) <= now
             ? 'En cours'
             : formatter.format(Date.parse(event.start));
+        row.dataset.eventCalendar = source;
         row.querySelector('[data-event-title]')!.textContent = event.title;
-        row.title = event.title;
+        row.querySelector('[data-event-source]')!.textContent = label;
+        row.title = `${label} · ${event.title}`;
         return row;
       }),
     );
@@ -90,7 +95,7 @@ export function mountAgenda(root: HTMLElement) {
 
       if (
         !Array.isArray(body.events) ||
-        body.events.length > 3 ||
+        body.events.length > 6 ||
         typeof body.connected !== 'boolean' ||
         typeof body.fetchedAt !== 'number' ||
         body.fetchedAt > Date.now() + 5000 ||
@@ -98,6 +103,8 @@ export function mountAgenda(root: HTMLElement) {
         typeof body.timezone !== 'string' ||
         body.events.some(
           (event) =>
+            (event.calendar !== undefined &&
+              !['family', 'massages'].includes(event.calendar)) ||
             typeof event.title !== 'string' ||
             typeof event.allDay !== 'boolean' ||
             !Number.isFinite(Date.parse(event.start)) ||

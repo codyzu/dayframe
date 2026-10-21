@@ -4,6 +4,7 @@ type CalendarStatus = {
   configured: boolean;
   connected: boolean;
   selected: {id: string; name: string} | undefined;
+  massageSelected?: {id: string; name: string};
 };
 const adminRoot = document.querySelector<HTMLElement>('[data-calendar-admin]');
 if (adminRoot) {
@@ -20,6 +21,9 @@ function mount(root: HTMLElement) {
     '[data-calendar-disconnect]',
   )!;
   const select = root.querySelector<HTMLSelectElement>('select')!;
+  const massageSelect = root.querySelector<HTMLSelectElement>(
+    '[data-massage-select]',
+  )!;
   const save = root.querySelector<HTMLButtonElement>('[data-calendar-save]')!;
   let isBusy = false;
   let state: CalendarStatus | undefined;
@@ -27,6 +31,7 @@ function mount(root: HTMLElement) {
     controls.disabled = isBusy || !state?.configured;
     disconnect.hidden = !state?.connected;
     select.disabled = !state?.connected;
+    massageSelect.disabled = !state?.connected;
     save.disabled = !state?.connected;
     connect.textContent = state?.connected
       ? 'Reconnecter Google Calendar'
@@ -48,6 +53,7 @@ function mount(root: HTMLElement) {
       if (error instanceof ApiError && [401, 403].includes(error.status)) {
         state = undefined;
         select.replaceChildren();
+        massageSelect.replaceChildren();
       }
     } finally {
       isBusy = false;
@@ -59,10 +65,11 @@ function mount(root: HTMLElement) {
     const response = await photoRequest('/api/calendar');
     state = (await response.json()) as CalendarStatus;
     select.replaceChildren(new Option('Choisir votre agenda partagé', ''));
+    massageSelect.replaceChildren(new Option('Aucun agenda de massages', ''));
     status.textContent = state.configured
       ? state.connected
         ? state.selected
-          ? `Agenda affiché : ${state.selected.name}`
+          ? `Agenda affiché : ${state.selected.name}${state.massageSelected ? ` · Massages : ${state.massageSelected.name}` : ''}`
           : 'Google connecté. Choisissez l’agenda à afficher.'
         : 'Aucun agenda connecté.'
       : 'La configuration Google Calendar reste à terminer sur le serveur.';
@@ -77,9 +84,11 @@ function mount(root: HTMLElement) {
       };
       for (const calendar of body.calendars) {
         select.add(new Option(calendar.name, calendar.id));
+        massageSelect.add(new Option(calendar.name, calendar.id));
       }
 
       select.value = state.selected?.id ?? '';
+      massageSelect.value = state.massageSelected?.id ?? '';
     }
   }
 
@@ -105,7 +114,10 @@ function mount(root: HTMLElement) {
       await photoRequest('/api/calendar', {
         method: 'PATCH',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({id: select.value}),
+        body: JSON.stringify({
+          id: select.value,
+          ...(massageSelect.value !== '' && {massageId: massageSelect.value}),
+        }),
       });
       await load();
     });

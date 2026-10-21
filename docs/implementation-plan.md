@@ -749,3 +749,73 @@ checks (Chromium, Firefox, WebKit and mobile) passed. Visually reviewed a synthe
 with reduced motion. Computed styles confirm a transparent background and silhouette
 shadow. Desktop evidence does not establish physical Classic 10 readability. No
 deployment or device changes.
+
+## Two-calendar Morning and unified CI — 21 October 2026
+
+Owner requested a second shared massage calendar, red Family/violet Massages styling,
+more useful bottom space and discreet weather notes. Existing Google authorization can
+read both calendars (owner confirmed sharing). Admin settings now select Family and an
+optional distinct massage calendar from Google's verified list, using the same encrypted
+connection and existing authentication, cache invalidation and revision checks. Existing
+single-calendar state remains Family without a migration. Each calendar independently
+supplies up to three events; descriptions, locations and attendees remain excluded.
+
+The wider lower-right panel has one chronological list beside weather advice on the
+left. At the owner’s request, separate calendar columns were replaced with mixed events,
+red/violet times and a small source legend. All-day entries come first, then events
+from both sources sort by start time. Text retains adjustable rem sizes on mobile too.
+Desktop navigation overlays on demand instead of reserving a blank row; attribution and
+methodology links remain accessible in a quiet 10px footer. A first full-width stacked
+arrangement overflowed Large mode and was replaced before acceptance. The final synthetic
+[six-event 1280×800 preview](evidence/m7/two-calendars-1280x800.png) has no scrolling.
+
+Re-inspected local upstream `f1e0820918c926396e0ccafb4839568825f63edc`, root `LICENSE`
+(MIT, Copyright 2026 Wes Bos), `dashboard/js/views/home.js` (three-event person lanes)
+and `dashboard/js/views/calendar.js` (coloured lanes). Adapted the idea of separate,
+colour-labelled event groups; independently implemented two private Google selections
+and the Astro/UnoCSS layout. No upstream code/assets copied, new dependency, service,
+Google scope, hardware/native change, paid resource or billing change.
+
+Consolidated `.github/workflows/ci.yml` and the removed `deploy.yml` into one `Checks`
+workflow retaining the `checks` job name. A separate `deploy` job needs successful checks
+and runs only for pushes to `refs/heads/main`. It restores the same run's verified static
+assets, checks out the same commit and bundles the tested Worker source; it does not
+repeat verification/browser installation. Production environment, Free-plan gate,
+step-scoped credentials, public smoke check and non-cancelling production concurrency
+remain. Check cancellation is job-scoped to avoid interrupting active deployments.
+Manual dispatch now checks only; retry deployment by re-running the original push run.
+[GitHub workflow semantics](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax)
+reviewed; YAML parsing and the checks→deploy dependency passed locally. Hosted Actions
+and live deployment remain unverified for this change.
+
+Validation: all 109 unit/integration tests, types and production build passed. Eleven
+focused Chromium calendar/density/Morning cases passed, including six-event frame fit,
+long freezing-weather labels, all-day/ongoing events, escaped titles, both-calendar admin
+selection and privacy clearing. The initial full `pnpm verify` passed 156 browser cases
+with four existing skips. After the owner’s combined-list refinement, all 109 unit tests
+passed again, as did 40 affected calendar/density/Morning browser cases across Chromium,
+Firefox, WebKit and mobile, with four existing skips. Updated types/build and changed-file
+XO passed. Final synthetic six-event capture measures exactly 1280×800 without overflow.
+Existing five complexity warnings remain
+(the extended calendar router's count increased); no lint errors. No deployment or live
+massage selection has been performed; physical readability remains owner acceptance.
+
+### Pastel calendar rows — 21 October 2026
+
+Owner requested larger colour cues and normal text colour for household readability.
+The merged chronological list now uses full-row pastel rose (`#f5dadd`) for Family and
+lavender (`#e8def5`) for Massages, with dark `#182c35` times/titles and a visible calendar
+name on every row. The owner requested dropping the now-redundant header legend. Per-row labels remain
+available even when the colours are indistinguishable. Row height and event limits are
+unchanged; titles retain truncation and full source/title tooltips.
+
+Revisited upstream `dashboard/js/views/home.js` event lanes and MIT license at local
+`f1e0820918c926396e0ccafb4839568825f63edc`. This is independently authored row styling;
+no source/assets copied. No calendar connection, data, permission, service or device
+change. Production build and changed-file XO passed. All eight calendar browser cases passed
+across Chromium, Firefox, WebKit and mobile, including privacy clearing and six-event
+frame fit after a 1px Firefox overflow was corrected with a slightly smaller row gap.
+Dark text contrast calculates to 11.00:1 on rose and 11.17:1 on lavender. The synthetic
+preview is 1280×800 with no scrolling; physical household readability is not established
+by those checks. The subsequent legend removal reduces content height; build and the
+preview were refreshed. No deployment or live selection change.

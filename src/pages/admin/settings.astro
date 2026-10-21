@@ -180,7 +180,7 @@ const fields = [
       </p>
       <p class="mt-2 text-sm">
         Les autorisations Google couvrent les agendas accessibles au compte.
-        Seul l’agenda choisi sera affiché.{' '}
+        Seuls les deux agendas choisis seront affichés.{' '}
         <a href="/calendar-privacy" class="underline">
           Confidentialité de l’agenda
         </a>
@@ -198,15 +198,22 @@ const fields = [
           Connecter Google Calendar
         </button>
         <label class="flex w-full flex-col gap-2">
-          Agenda à afficher
+          Agenda à afficher · Famille · rouge
           <select class="min-h-12 w-full min-w-0 rounded-lg border border-border bg-elevated px-3"></select>
+        </label>
+        <label class="flex w-full flex-col gap-2 text-[#7044a0]">
+          Massages · violet
+          <select
+            data-massage-select
+            class="min-h-12 w-full min-w-0 rounded-lg border border-border bg-elevated px-3 text-primary"
+          ></select>
         </label>
         <button
           data-calendar-save
           type="button"
           class="min-h-12 px-4 underline disabled:opacity-50"
         >
-          Afficher cet agenda
+          Afficher ces agendas
         </button>
         <button
           data-calendar-disconnect

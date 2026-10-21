@@ -1,9 +1,9 @@
-/* eslint-disable unicorn/no-await-expression-member -- Keep bounded response decoding beside requests. */
 /* eslint-disable no-await-in-loop -- Provider pagination is sequential and bounded to ten pages. */
 import {CompactEncrypt, compactDecrypt, base64url} from 'jose';
 import {
   dayEnd,
   remainingEvents,
+  remainingAgendaEvents,
   type AgendaEvent,
 } from '../src/lib/calendar/contracts.ts';
 import {validateSettings} from '../src/lib/dashboard/settings.ts';
@@ -26,7 +26,12 @@ type Pending = {
   verifier: string;
   expires: number;
 };
-type Connection = {token: string; calendar?: {id: string; name: string}};
+type SelectedCalendar = {id: string; name: string};
+type Connection = {
+  token: string;
+  calendar?: SelectedCalendar;
+  massageCalendar?: SelectedCalendar;
+};
 type RecordState = {
   revision: string;
   pending?: Pending;
@@ -293,6 +298,54 @@ export function normalizeEvents(
   );
 }
 
+async function calendarEvents(
+  access: string,
+  id: string,
+  now: number,
+  timezone: string,
+) {
+  const url = new URL(
+    `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(id)}/events`,
+  );
+  url.search = new URLSearchParams({
+    timeMin: new Date(now).toISOString(),
+    timeMax: new Date(dayEnd(now, timezone)).toISOString(),
+    timeZone: timezone,
+    singleEvents: 'true',
+    orderBy: 'startTime',
+    showDeleted: 'false',
+    maxResults: '250',
+    fields:
+      'items(status,summary,start,end,attendees(self,responseStatus)),nextPageToken',
+  }).toString();
+  const items: GoogleEvent[] = [];
+  for (let i = 0; i < 10; i++) {
+    const body = await googleJson(url.href, {
+      headers: {Authorization: `Bearer ${access}`},
+    });
+    if (!Array.isArray(body.items)) {
+      throw unavailable();
+    }
+
+    items.push(...(body.items as GoogleEvent[]));
+    if (body.nextPageToken === undefined) {
+      break;
+    }
+
+    if (i === 9) {
+      throw unavailable();
+    }
+
+    if (typeof body.nextPageToken !== 'string') {
+      throw unavailable();
+    }
+
+    url.searchParams.set('pageToken', body.nextPageToken);
+  }
+
+  return items;
+}
+
 async function agenda(env: CalendarEnv, state: RecordState) {
   const settingsResponse = await administration(
     env.ADMINISTRATION!,
@@ -319,47 +372,27 @@ async function agenda(env: CalendarEnv, state: RecordState) {
     dayEnd(cache.fetchedAt, timezone) <= now
   ) {
     const access = await accessToken(env, state);
-    const url = new URL(
-      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(state.connection.calendar.id)}/events`,
-    );
-    url.search = new URLSearchParams({
-      timeMin: new Date(now).toISOString(),
-      timeMax: new Date(dayEnd(now, timezone)).toISOString(),
-      timeZone: timezone,
-      singleEvents: 'true',
-      orderBy: 'startTime',
-      showDeleted: 'false',
-      maxResults: '250',
-      fields:
-        'items(status,summary,start,end,attendees(self,responseStatus)),nextPageToken',
-    }).toString();
-    const items: GoogleEvent[] = [];
-    for (let i = 0; i < 10; i++) {
-      const body = await googleJson(url.href, {
-        headers: {Authorization: `Bearer ${access}`},
-      });
-      if (!Array.isArray(body.items)) {
-        throw unavailable();
+    const events: AgendaEvent[] = [];
+    for (const [calendar, selected] of [
+      ['family', state.connection.calendar],
+      ['massages', state.connection.massageCalendar],
+    ] as const) {
+      if (!selected) {
+        continue;
       }
 
-      items.push(...(body.items as GoogleEvent[]));
-      if (body.nextPageToken === undefined) {
-        break;
-      }
+      const items = await calendarEvents(access, selected.id, now, timezone);
 
-      if (i === 9) {
-        throw unavailable();
-      }
-
-      if (typeof body.nextPageToken !== 'string') {
-        throw unavailable();
-      }
-
-      url.searchParams.set('pageToken', body.nextPageToken);
+      events.push(
+        ...normalizeEvents(items, now, timezone).map((event) => ({
+          ...event,
+          calendar,
+        })),
+      );
     }
 
     cache = {
-      events: normalizeEvents(items, now, timezone),
+      events,
       fetchedAt: now,
       timezone,
     };
@@ -370,7 +403,8 @@ async function agenda(env: CalendarEnv, state: RecordState) {
   return privateJson({
     connected: true,
     ...cache,
-    events: remainingEvents(cache.events, now, timezone),
+    massageConnected: Boolean(state.connection.massageCalendar),
+    events: remainingAgendaEvents(cache.events, now, timezone),
   });
 }
 
@@ -422,6 +456,7 @@ export async function calendarApi(
         configured: isReady,
         connected: Boolean(state?.connection),
         selected: state?.connection?.calendar ?? null,
+        massageSelected: state?.connection?.massageCalendar ?? null,
       });
     }
 
@@ -453,22 +488,38 @@ export async function calendarApi(
 
       const body = JSON.parse(
         new TextDecoder().decode(await readBounded(request, 2048)),
-      ) as {id?: unknown};
-      if (typeof body.id !== 'string') {
+      ) as {id?: unknown; massageId?: unknown};
+      if (
+        typeof body.id !== 'string' ||
+        (body.massageId !== undefined && typeof body.massageId !== 'string')
+      ) {
         return failure(400, 'INVALID_CALENDAR', 'Choisissez un agenda.');
       }
 
-      const selected = (await calendars(env, state)).find(
-        (entry) => entry.id === body.id,
+      const accessible = await calendars(env, state);
+      const selected = accessible.find((entry) => entry.id === body.id);
+      const massageSelected = accessible.find(
+        (entry) => entry.id === body.massageId,
       );
-      if (!selected) {
-        return failure(400, 'INVALID_CALENDAR', 'Agenda inaccessible.');
+      if (
+        !selected ||
+        selected?.id === massageSelected?.id ||
+        (!massageSelected &&
+          body.massageId !== undefined &&
+          body.massageId !== '')
+      ) {
+        return failure(
+          400,
+          'INVALID_CALENDAR',
+          'Choisissez deux agendas accessibles et différents.',
+        );
       }
 
       state.connection!.calendar = selected;
+      state.connection!.massageCalendar = massageSelected;
       delete state.cache;
       await saveState(env, state);
-      return privateJson({selected});
+      return privateJson({selected, massageSelected: massageSelected ?? null});
     }
 
     if (path === '/api/calendar' && request.method === 'DELETE') {

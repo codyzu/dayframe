@@ -23,9 +23,19 @@ test('Morning shows escaped, bounded events, stays within the frame and clears d
         : {
             json: {
               connected: true,
+              massageConnected: true,
               timezone: 'Europe/Paris',
               fetchedAt: now,
               events: [
+                ...[0, 1, 2].map((index) => ({
+                  calendar: 'massages',
+                  title: `Massage ${index + 1}`,
+                  start: new Date(
+                    now + (index === 0 ? 90_000 : (index + 1) * 3_600_000),
+                  ).toISOString(),
+                  end: new Date(now + (index + 2) * 3_600_000).toISOString(),
+                  allDay: false,
+                })),
                 {
                   title: 'Journée familiale',
                   start: '2026-10-16',
@@ -52,7 +62,13 @@ test('Morning shows escaped, bounded events, stays within the frame and clears d
   );
   await page.goto('/?display=frame');
   await page.getByRole('button', {name: 'Matin', exact: true}).click();
-  await expect(page.locator('[data-agenda-events] li')).toHaveCount(3);
+  await expect(page.locator('[data-agenda-events] li')).toHaveCount(6);
+  await expect(page.locator('[data-event-calendar=massages]')).toHaveCount(3);
+  expect(
+    await page
+      .locator('[data-event-calendar]')
+      .evaluateAll((rows) => rows.map((row) => row.dataset.eventCalendar)),
+  ).toEqual(['family', 'family', 'massages', 'family', 'massages', 'massages']);
   await expect(page.locator('[data-temperature]')).toHaveText('12°');
   await page.evaluate(async () =>
     globalThis.document.fonts.ready.then(() => undefined),
@@ -110,11 +126,16 @@ test('admin selects the shared calendar, disconnects and starts Google authoriza
   );
   let isConnected = true;
   let selected: {id: string; name: string} | undefined;
+  let massageSelected: {id: string; name: string} | undefined;
   await page.route('**/api/calendar', async (route) => {
     if (route.request().method() === 'PATCH') {
       expect(route.request().headers()['x-dayframe-request']).toBe('1');
-      expect(route.request().postDataJSON()).toEqual({id: 'family'});
+      expect(route.request().postDataJSON()).toEqual({
+        id: 'family',
+        massageId: 'massage',
+      });
       selected = {id: 'family', name: 'Notre famille'};
+      massageSelected = {id: 'massage', name: 'Cabinet'};
     }
 
     if (route.request().method() === 'DELETE') {
@@ -122,7 +143,12 @@ test('admin selects the shared calendar, disconnects and starts Google authoriza
     }
 
     await route.fulfill({
-      json: {configured: true, connected: isConnected, selected},
+      json: {
+        configured: true,
+        connected: isConnected,
+        selected,
+        massageSelected,
+      },
     });
   });
   await page.route('**/api/calendar/calendars', async (route) =>
@@ -130,7 +156,7 @@ test('admin selects the shared calendar, disconnects and starts Google authoriza
       json: {
         calendars: [
           {id: 'family', name: 'Notre famille'},
-          {id: 'personal', name: 'Personnel'},
+          {id: 'massage', name: 'Cabinet'},
         ],
       },
     }),
@@ -150,10 +176,13 @@ test('admin selects the shared calendar, disconnects and starts Google authoriza
     }),
   );
   await page.goto('/admin/settings');
-  await page.getByLabel('Agenda à afficher').selectOption('family');
-  await page.getByRole('button', {name: 'Afficher cet agenda'}).click();
+  await page
+    .getByLabel('Agenda à afficher', {exact: false})
+    .selectOption('family');
+  await page.getByLabel('Massages · violet').selectOption('massage');
+  await page.getByRole('button', {name: 'Afficher ces agendas'}).click();
   await expect(page.locator('[data-calendar-status]')).toHaveText(
-    'Agenda affiché : Notre famille',
+    'Agenda affiché : Notre famille · Massages : Cabinet',
   );
   await page.getByRole('button', {name: 'Déconnecter Google Calendar'}).click();
   await expect(page.locator('[data-calendar-status]')).toHaveText(

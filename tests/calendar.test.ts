@@ -26,6 +26,7 @@ let tokenExpiry = 3600;
 let isTokenError = false;
 let isOmitScope = false;
 let eventPages = 0;
+let eventsPerCalendar = 1;
 // eslint-disable-next-line max-params -- Named synthetic request inputs keep the authorization matrix compact.
 async function request(
   path: string,
@@ -100,6 +101,7 @@ beforeEach(async () => {
   isTokenError = false;
   isOmitScope = false;
   eventPages = 0;
+  eventsPerCalendar = 1;
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -141,21 +143,19 @@ beforeEach(async () => {
 
       if (url.pathname.endsWith('/events')) {
         eventPages++;
-        expect(url.pathname).toContain('shared%40example.test');
+        expect(url.pathname).toMatch(/shared%40example.test|other/v);
         expect(url.searchParams.get('singleEvents')).toBe('true');
         expect(url.searchParams.get('timeZone')).toBe('Europe/Paris');
         const start = new Date(Date.now() + 60_000).toISOString();
         const end = new Date(Date.now() + 120_000).toISOString();
         return Response.json({
-          items: [
-            {
-              summary: '<script>Private title</script>',
-              start: {dateTime: start},
-              end: {dateTime: end},
-              description: 'not returned',
-              location: 'not returned',
-            },
-          ],
+          items: Array.from({length: eventsPerCalendar}, () => ({
+            summary: '<script>Private title</script>',
+            start: {dateTime: start},
+            end: {dateTime: end},
+            description: 'not returned',
+            location: 'not returned',
+          })),
         });
       }
 
@@ -378,4 +378,49 @@ it('uses Paris dates, exclusive all-day ends, ongoing events and DST boundaries'
   expect(
     normalizeEvents(items, now, 'Europe/Paris').map((event) => event.title),
   ).toEqual(['All day', 'Ongoing']);
+});
+
+it('verifies both calendars, bounds each independently and invalidates both caches on selection changes', async () => {
+  eventsPerCalendar = 4;
+  await finish();
+  for (const massageId of ['unshared', 'shared@example.test', 42]) {
+    expect(
+      (
+        await request('/api/calendar', 'PATCH', admin, {
+          id: 'shared@example.test',
+          massageId,
+        })
+      ).status,
+    ).toBe(400);
+  }
+
+  expect(
+    (
+      await request('/api/calendar', 'PATCH', admin, {
+        id: 'shared@example.test',
+        massageId: 'other',
+      })
+    ).status,
+  ).toBe(200);
+  const first = await request('/api/calendar/events', 'GET', display);
+  const body = (await first.json()) as {
+    events: Array<{calendar: string}>;
+    massageConnected: boolean;
+  };
+  expect(body.massageConnected).toBe(true);
+  expect(body.events.map((event) => event.calendar)).toEqual([
+    'family',
+    'family',
+    'family',
+    'massages',
+    'massages',
+    'massages',
+  ]);
+  expect(eventPages).toBe(2);
+  await request('/api/calendar/events', 'GET', display);
+  expect(eventPages).toBe(2);
+  await request('/api/calendar', 'PATCH', admin, {id: 'shared@example.test'});
+  const next = await request('/api/calendar/events', 'GET', display);
+  expect(((await next.json()) as {events: unknown[]}).events).toHaveLength(3);
+  expect(eventPages).toBe(3);
 });

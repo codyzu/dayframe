@@ -1,4 +1,5 @@
 export type AgendaEvent = {
+  calendar?: 'family' | 'massages';
   title: string;
   start: string;
   end: string;
@@ -6,6 +7,7 @@ export type AgendaEvent = {
 };
 export type Agenda = {
   connected: boolean;
+  massageConnected?: boolean;
   events: AgendaEvent[];
   timezone: string;
   fetchedAt: number;
@@ -58,4 +60,25 @@ export function remainingEvents(
           localDate(Date.parse(event.start), timezone) <= today,
     )
     .slice(0, 3);
+}
+
+// Bound each calendar independently so a busy workday cannot crowd out family.
+export function remainingAgendaEvents(
+  events: AgendaEvent[],
+  now: number,
+  timezone: string,
+) {
+  return (['family', 'massages'] as const)
+    .flatMap((calendar) =>
+      remainingEvents(
+        events.filter((event) => (event.calendar ?? 'family') === calendar),
+        now,
+        timezone,
+      ),
+    )
+    .toSorted((a, b) =>
+      a.allDay === b.allDay
+        ? Date.parse(a.start) - Date.parse(b.start)
+        : Number(b.allDay) - Number(a.allDay),
+    );
 }

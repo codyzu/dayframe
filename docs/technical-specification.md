@@ -517,3 +517,14 @@ Record significant design changes as architecture decision records. Keep an impl
 ---
 
 **Companion document:** [Implementation plan](implementation-plan.md), covering upstream provenance, security decision gates, tasks, and milestones. Begin with M1 rather than attempting all milestones in one pass; pin and record concrete dependency versions at the M1 tooling gate.
+
+## Calendar display refinement — 21 October 2026
+
+The owner requests the shared Family and spouse's massage calendars through the existing
+Google connection. Display up to three remaining events per calendar in a single chronological
+list beside weather advice: Family on a pastel red background and Massages on a pastel violet background, with
+dark text and visible source labels on every event.
+Use available bottom space by floating desktop navigation on demand. Keep attribution
+and forecast-methodology links in smaller secondary text. Preserve private access,
+short-lived in-memory display data, and read-only Google scopes. This refines the
+existing owner-requested M7 calendar slice; it does not change hardware acceptance.
