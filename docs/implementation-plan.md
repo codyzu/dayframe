@@ -837,3 +837,32 @@ appointments were displayed at acceptance time. No actual appointment title, cal
 ID, token or private screenshot is included in this public record. The live confirmation
 screenshot remains temporary and private. No new OAuth consent, permission expansion,
 service/billing change, device interaction or physical-frame acceptance is claimed.
+
+## Photos current conditions — 21 October 2026
+
+Owner requested current conditions alongside the Photos clock/temperature. Combined a
+small Meteocons icon, rounded outdoor temperature and French condition in one row under
+the clock. Icons follow the shared WMO/day-night mapping, using bundled still artwork
+to keep the photo overlay calm. Existing weather service/cache supplies updates even
+when Morning is hidden; failed/stale cached data gets a discreet “Dernier relevé” label,
+and absent data shows “—° · Météo indisponible”. Changed-value guards avoid repeated
+text/icon writes. Long descriptions wrap within the viewport.
+
+Re-inspected local upstream `f1e0820918c926396e0ccafb4839568825f63edc`, root MIT
+`LICENSE`, `dashboard/js/views/photos.js`, `dashboard/css/views/photos.css` and
+`dashboard/js/views/home.js`. Retained fullscreen-photo priority and compact weather
+hierarchy as ideas; the live weather overlay is an independently authored Dayframe
+addition. No upstream source/assets copied, dependencies, services or device changes.
+
+Type checks, production build and changed-file XO passed. Browser validation covers
+existing clock/scheduling behavior plus Photos-only refresh, night icon selection,
+long freezing-condition labels without horizontal overflow, cached data after network
+failure and unavailable-data fallback. Reviewed the synthetic [1280×800 overlay
+preview](evidence/m5/photos-weather-1280x800.png), using the empty photo state and fixture
+weather; it contains no household photos. Deployment and physical-frame readability
+remain unverified for this slice.
+
+All eight focused browser cases passed across Chromium, Firefox, WebKit and mobile.
+The first refresh test simulated every second of an hour and exceeded WebKit's test
+budget; advancing directly to each refresh deadline preserves the refresh/outage checks
+and passes across all four browsers.

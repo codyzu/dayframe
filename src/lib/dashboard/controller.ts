@@ -1,7 +1,7 @@
 import {ApiError, photoRequest} from '../photos/client.ts';
 import {mountSlideshow} from '../photos/slideshow.ts';
 import {mountWeather} from '../weather/view.ts';
-import {type WeatherState} from '../weather/service.ts';
+import {mountPhotoWeather} from '../photos/weather.ts';
 import {mountAgenda} from '../calendar/view.ts';
 import {defaultSettings, validateSettings, type Settings} from './settings.ts';
 import {
@@ -26,29 +26,11 @@ function initializeDashboard(root: HTMLElement) {
   const footer = root.querySelector<HTMLElement>('[data-dashboard-footer]')!;
   const photoRoot = root.querySelector<HTMLElement>('[data-slideshow]')!;
   const weatherRoot = root.querySelector<HTMLElement>('[data-weather]')!;
-  const photoTemperature = photoRoot.querySelector<HTMLElement>(
-    '[data-photo-temperature]',
-  );
-  const updatePhotoTemperature = ({weather: current}: WeatherState) => {
-    if (!photoTemperature) {
-      return;
-    }
-
-    const temperature = current
-      ? `${Math.round(current.current.temperature)}°`
-      : '—°';
-    photoTemperature.textContent = temperature;
-    photoTemperature.setAttribute(
-      'aria-label',
-      current
-        ? `Température extérieure : ${temperature}`
-        : 'Température extérieure indisponible',
-    );
-  };
+  const updatePhotoWeather = mountPhotoWeather(photoRoot);
 
   const slideshow = mountSlideshow(photoRoot);
   const agenda = mountAgenda(root.querySelector<HTMLElement>('[data-agenda]')!);
-  let weather = mountWeather(weatherRoot, updatePhotoTemperature);
+  let weather = mountWeather(weatherRoot, updatePhotoWeather);
   const state = createModeState();
   let settings = defaultSettings;
   let activeMode: DisplayMode | undefined;
@@ -150,7 +132,7 @@ function initializeDashboard(root: HTMLElement) {
     }
 
     weather.dispose();
-    weather = mountWeather(weatherRoot, updatePhotoTemperature);
+    weather = mountWeather(weatherRoot, updatePhotoWeather);
   }
 
   async function refreshConfiguration() {

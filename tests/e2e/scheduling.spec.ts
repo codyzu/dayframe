@@ -35,6 +35,12 @@ test('schedule, inactivity, touch reveal, clock corrections and resume', async (
     });
     if (mode === 'photos') {
       await expect(page.locator('[data-photo-temperature]')).toHaveText('12°');
+      await expect(page.locator('[data-photo-condition]')).toHaveText(
+        'Quelques éclaircies',
+      );
+      await expect(page.locator('[data-photo-weather-icon]')).toHaveClass(
+        /i-meteocons-partly-cloudy-day-fill/v,
+      );
       await expect(page.locator('[data-slideshow] [data-clock]')).toHaveText(
         /^\d{2}:\d{2}$/v,
       );
@@ -115,6 +121,54 @@ test('schedule, inactivity, touch reveal, clock corrections and resume', async (
   await expect(root).toHaveAttribute('data-mode', 'photos');
   await expect(page.locator('a[href^="/admin"]')).toHaveCount(0);
   await expect(page.locator('a[href^="/setup"]')).toHaveCount(0);
+});
+
+test('Photos weather refreshes without opening Morning and labels cached data', async ({
+  page,
+}) => {
+  const fixture = weatherFixture();
+  let isOffline = false;
+  await page.route('https://api.open-meteo.com/**', async (route) =>
+    isOffline ? route.abort() : route.fulfill({json: fixture}),
+  );
+  await page.route('**/api/config/display', async (route) =>
+    route.fulfill({
+      json: {
+        ...defaultSettings,
+        schedule: [{start: '00:00', end: '23:59', mode: 'photos'}],
+      },
+    }),
+  );
+  await page.goto('/?display=frame');
+  const condition = page.locator('[data-photo-condition]');
+  const icon = page.locator('[data-photo-weather-icon]');
+  const status = page.locator('[data-photo-weather-status]');
+  await expect(condition).toHaveText('Quelques éclaircies');
+  await expect(status).toBeHidden();
+  fixture.current.weather_code = 66;
+  fixture.current.is_day = 0;
+  fixture.current.time += 30 * 60;
+  await page.clock.fastForward(30 * 60_000);
+  await expect(condition).toHaveText('Précipitations verglaçantes');
+  await expect(icon).toHaveClass(/i-meteocons-partly-cloudy-night-sleet-fill/v);
+  expect(
+    await icon.evaluate((element) => getComputedStyle(element).backgroundImage),
+  ).toContain('%3Csvg');
+  expect(
+    await page.evaluate(() => globalThis.document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(page.viewportSize()!.width);
+  isOffline = true;
+  await page.clock.fastForward(30 * 60_000);
+  await expect(status).toBeVisible();
+  await expect(condition).toHaveText('Précipitations verglaçantes');
+  await page.evaluate(() => {
+    localStorage.clear();
+  });
+  await page.reload();
+  await expect(condition).toHaveText('Météo indisponible');
+  await expect(page.locator('[data-photo-temperature]')).toHaveText('—°');
+  await expect(icon).toHaveClass(/i-meteocons-not-available-fill/v);
+  await expect(status).toBeHidden();
 });
 
 test('periodic configuration refresh, invalid response, outage and online recovery', async ({

@@ -11,8 +11,8 @@
     class="photo-stage fixed inset-0 bg-black"
   ></div>
   <div
-    class="photo-at-a-glance fixed top-5 left-5 z-2 flex flex-col items-start text-white"
-    aria-label="Heure et température extérieure"
+    class="photo-at-a-glance fixed top-5 left-5 z-2 flex max-w-[calc(100vw-2.5rem)] flex-col items-start text-white"
+    aria-label="Heure et météo extérieure"
   >
     <time
       data-clock
@@ -21,11 +21,22 @@
     >
       --:--
     </time>
-    <p class="mt-2 text-xl md:text-2xl font-medium">
+    <p class="mt-2 flex items-center gap-2 text-xl md:text-2xl font-medium text-left leading-tight">
+      <span
+        data-photo-weather-icon
+        class="i-meteocons-not-available-fill inline-block size-12 shrink-0 drop-shadow-[0_1px_2px_#000000]"
+        aria-hidden="true"
+      ></span>
       <span data-photo-temperature aria-label="Température extérieure">
         —°
       </span>
-      <span class="text-base md:text-lg">dehors</span>
+      <span aria-hidden="true">·</span>
+      <span data-photo-condition class="text-base md:text-lg">
+        Météo indisponible
+      </span>
+    </p>
+    <p data-photo-weather-status class="mt-1 text-sm" hidden>
+      Dernier relevé
     </p>
   </div>
   <div
@@ -70,6 +81,10 @@
   ></p>
 </section>
 <style>
+  /* Keep Photos calm; use the bundled Meteocons stills, as in the forecast. */
+  [data-photo-weather-icon] {
+    background-image: var(--dayframe-static-icon);
+  }
   [data-photo-status]:empty {
     display: none;
   }
