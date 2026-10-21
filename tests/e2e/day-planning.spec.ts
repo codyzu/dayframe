@@ -194,4 +194,18 @@ test('admin edits and persists separate day profiles without replacing base sett
   await expect(
     page.locator('[data-schedule] [data-start]').first(),
   ).toHaveValue('06:00');
+  // Native selects have different intrinsic widths on Linux WebKit and macOS.
+  // Check the populated editor on a narrow phone and report overflowing nodes.
+  await page.setViewportSize({width: 320, height: 800});
+  const overflow = await page.locator('main').evaluate((main) =>
+    [...main.querySelectorAll('*')].flatMap((element) => {
+      const box = element.getBoundingClientRect();
+      return box.width > 0 &&
+        box.height > 0 &&
+        box.right > globalThis.innerWidth + 0.5
+        ? [{tag: element.tagName, right: box.right}]
+        : [];
+    }),
+  );
+  expect(overflow).toEqual([]);
 });

@@ -912,3 +912,28 @@ application integration of the same official source. The private settings patch 
 Markdown links and `git diff --check` pass. No deployment, household settings update,
 Google change or device interaction. Existing hardware, second-administrator and
 long-term calendar-token acceptance limits remain.
+
+### Hosted mobile administration correction — 21 October 2026
+
+Owner authorized commit/push and production verification. Feature commit `9365177`
+was pushed to `main`. [Actions run 39657467166](https://github.com/codyzu/dayframe/actions/runs/39657467166)
+passed types, lint, all 120 unit/integration tests, build and 171 browser cases, but
+Linux WebKit's mobile administration check detected horizontal overflow. Deployment
+was correctly skipped, preserving the previous production version. Downloaded the
+synthetic failure screenshot; no household evidence was involved.
+
+Constrained the new day-profile selector and its fieldset to the available width,
+shortened the option to « Jours de repos » (the adjacent description explains which
+days it covers), and clarified that only forecast times change while activities stay
+in Family calendar. Added a populated-editor overflow check at 320px with diagnostics
+for any offending node. This is a narrow responsive correction; schedule/privacy/API
+behavior, dependencies, hardware and household settings are unchanged. The existing
+upstream source/license review above retains its scope. The corrected commit must
+pass the same hosted checks and deployment smoke gates; no deployment bypass.
+
+Correction validation: changed-file XO, Astro/Worker types and production build passed;
+all 20 affected administration/day-planning browser cases passed across Chromium,
+Firefox, WebKit and mobile, including the new populated 320px editor check. The
+120 unit/integration tests had passed in the hosted run; this correction changes only
+markup/copy and browser coverage. Hosted Linux acceptance and automatic deployment
+remain gated by the corrected commit's ordinary Actions run.

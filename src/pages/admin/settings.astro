@@ -69,7 +69,7 @@ const fields = [
       Actualiser l’accès
     </button>
     <form data-settings-form class="mt-6 space-y-6">
-      <fieldset disabled data-controls class="space-y-6">
+      <fieldset disabled data-controls class="min-w-0 space-y-6">
         <div class="grid gap-5 sm:grid-cols-2">
           {fields.map((field) => (
             <label class="flex flex-col gap-2">
@@ -121,18 +121,17 @@ const fields = [
           <p class="text-sm text-secondary">
             Les jours fériés, vacances et week-ends utilisent « Jours de repos
             ». Les autres jours suivent leur programme spécifique, ou le
-            programme quotidien. Les vacances suspendent les repères des
-            activités habituelles. Les événements Google restent affichés.
+            programme quotidien. Les vacances remplacent les repères météo du
+            mercredi par ceux des jours de repos. Les événements Google restent
+            affichés.
           </p>
-          <label class="flex flex-col gap-2">
+          <label class="min-w-0 flex flex-col gap-2">
             Programme à personnaliser
             <select
               data-day-profile
-              class="min-h-12 rounded-lg border border-border bg-elevated px-3"
+              class="min-h-12 min-w-0 w-full max-w-full rounded-lg border border-border bg-elevated px-3"
             >
-              <option value="dayOff">
-                Jours de repos · week-ends, vacances, fériés
-              </option>
+              <option value="dayOff">Jours de repos</option>
               <option value="monday">Lundi</option>
               <option value="tuesday">Mardi</option>
               <option value="wednesday">Mercredi</option>
@@ -157,9 +156,9 @@ const fields = [
           <h3 class="text-xl font-semibold">Repères météo de ce jour</h3>
           <p class="text-sm text-secondary">
             Jusqu’à quatre horaires : nom et horaire. Ce sont des habitudes
-            privées, pas de nouveaux événements Google. Les repères de repos
-            remplacent les activités pendant les vacances et jours fériés. Sans
-            personnalisation, les repères restent génériques.
+            privées, pas de nouveaux événements Google. Les horaires météo des
+            jours de repos remplacent ceux du mercredi pendant les vacances et
+            jours fériés. Sans personnalisation, les repères restent génériques.
           </p>
           <div data-day-checkpoints class="space-y-3"></div>
           <button data-add-checkpoint type="button" class="min-h-11 underline">
