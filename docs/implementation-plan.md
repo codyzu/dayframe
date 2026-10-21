@@ -1006,3 +1006,17 @@ redirect and namespace/schema validation. The regression check asserts this
 external-request contract. No provider switch, secret, dependency, service binding,
 paid resource, settings or device change. Corrected deployment/live acceptance is
 recorded after the ordinary workflow succeeds; no check bypass.
+
+
+The negotiation correction `76e9c6a` passed [Actions run
+39678963131](https://github.com/codyzu/dayframe/actions/runs/39678963131), deployed
+and returned HTTP 200 Atom XML with the expected two-minute cache headers. Live
+inspection also exposed a freshness assumption: the canonical feed retained its
+21:05 publication timestamp at 21:36 despite a successful current fetch. Treating
+publication age as retrieval age made a valid unchanged snapshot unavailable for
+most of the hour. The browser now tracks both: ten minutes without successful
+retrieval expires cached vigilance, while a publication older than two hours or
+more than five minutes ahead is rejected independently. CAP expiry and original
+issue-time display remain unchanged. A browser regression covers a thirty-minute-
+old, freshly retrieved snapshot and subsequent ten-minute outage expiry. This
+correction changes no provider, permissions, service, settings or device behavior.

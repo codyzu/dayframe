@@ -102,7 +102,7 @@ test('clear feed hides the banner; failures, stale feeds and expiry never imply 
   await page.clock.fastForward(241_000);
   await expect(banner).toContainText('Vigilance indisponible');
   isFailed = false;
-  body = alertsFixture([{}], fixtureNow - 600_000);
+  body = alertsFixture([{}], fixtureNow - 2 * 3_600_000);
   await page.clock.fastForward(61_000);
   await expect(banner).toContainText('Vigilance indisponible');
   body = '<feed>broken';
@@ -164,4 +164,28 @@ test('Morning cards use the bottom space and navigation visibility does not move
   expect(
     await page.evaluate(() => globalThis.document.documentElement.scrollHeight),
   ).toBeLessThanOrEqual(800);
+});
+
+test('a recently retrieved unchanged bulletin remains usable; interrupted fetches expire after ten minutes', async ({
+  page,
+}) => {
+  let isFailed = false;
+  await page.route('**/api/weather-alerts', async (route) =>
+    isFailed
+      ? route.abort()
+      : route.fulfill({
+          contentType: 'application/atom+xml',
+          body: alertsFixture([{}], fixtureNow - 30 * 60_000),
+        }),
+  );
+  await page.goto('/?display=frame');
+  const banner = page.locator('[data-weather-alerts]');
+  await expect(banner).toHaveAttribute('data-level', 'orange');
+  await expect(banner).toContainText('Bulletin 08:00');
+  isFailed = true;
+  await page.clock.fastForward(121_000);
+  await expect(banner).toContainText('actualisation interrompue');
+  await page.clock.fastForward(481_000);
+  await expect(banner).toHaveAttribute('data-level', 'unknown');
+  await expect(banner).toContainText('Vigilance indisponible');
 });

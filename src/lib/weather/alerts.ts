@@ -4,6 +4,9 @@ import {hourLabel, dateKey} from './adapter.ts';
 const atom = 'http://www.w3.org/2005/Atom';
 const cap = 'urn:oasis:names:tc:emergency:cap:1.2';
 const maximumAge = 10 * 60_000;
+// An unchanged public snapshot can retain its publication time between hourly
+// generations. Successful retrieval age and publication age are separate limits.
+const maximumPublicationAge = 2 * 3_600_000;
 const levels: Partial<Record<string, 'yellow' | 'orange' | 'red'>> = {
   Moderate: 'yellow',
   Severe: 'orange',
@@ -108,7 +111,7 @@ export function mountAlerts(root: HTMLElement) {
   const title = root.querySelector<HTMLElement>('[data-alert-title]')!;
   const detail = root.querySelector<HTMLElement>('[data-alert-detail]')!;
   const full = root.querySelector<HTMLElement>('[data-alert-full]')!;
-  let bulletin: Bulletin | undefined;
+  let bulletin: (Bulletin & {fetchedAt: number}) | undefined;
   let isFailed = false;
   let due = 0;
   let pending: AbortController | undefined;
@@ -139,7 +142,9 @@ export function mountAlerts(root: HTMLElement) {
     const isStale =
       bulletin !== undefined &&
       (bulletin.updated > now + 300_000 ||
-        now - bulletin.updated >= maximumAge);
+        now - bulletin.updated >= maximumPublicationAge ||
+        bulletin.fetchedAt > now + 300_000 ||
+        now - bulletin.fetchedAt >= maximumAge);
     if (!bulletin || isStale) {
       title.textContent = 'Vigilance indisponible · Haute-Savoie';
       detail.textContent = 'Consultez les informations officielles.';
@@ -214,7 +219,7 @@ export function mountAlerts(root: HTMLElement) {
 
       controller.signal.throwIfAborted();
 
-      bulletin = parseAlerts(xml);
+      bulletin = {...parseAlerts(xml), fetchedAt: Date.now()};
       rendered = '';
       isFailed = false;
     } catch {

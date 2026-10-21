@@ -102,8 +102,11 @@ Morning checks every two minutes using the existing dashboard tick; other modes 
 not poll. Failures retry after one minute. Visibility/page lifecycle abort pending
 requests; returning to Morning rechecks deadlines. No warning data is persisted.
 A failed refresh explicitly labels still-recent warnings; expired warnings disappear,
-and a feed timestamp ten minutes old (or more than five minutes in the future)
-becomes unavailable. A failed or outdated feed never implies an all-clear. A fresh
+and ten minutes without a successful retrieval becomes unavailable. Publication
+time is separate: the live provider can retain a snapshot for over thirty minutes
+without changing warnings, so a snapshot over two hours old (or more than five
+minutes in the future) is rejected. Repeated successful fetches cannot make such
+an old publication current. A failed or outdated feed never implies an all-clear. A fresh
 feed with no matching warnings hides the banner. DOM updates are guarded per minute,
 feed revision, failure and configured coordinates.
 
