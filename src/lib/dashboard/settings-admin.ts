@@ -1,6 +1,13 @@
 /* eslint-disable unicorn/no-await-expression-member -- Keep response parsing beside each small administration request. */
 /* eslint-disable no-alert -- Confirm credential rotation/revocation before disconnecting the household frame. */
 import {ApiError, photoRequest} from '../photos/client.ts';
+import {
+  emptyPlanning,
+  dayOffSchedule,
+  type DayPlanning,
+  type DayProfile,
+  type RoutinePoint,
+} from './day-planning.ts';
 import {validateSettings, type Settings} from './settings.ts';
 
 const adminRoot = document.querySelector<HTMLElement>('[data-settings-admin]');
@@ -20,6 +27,105 @@ function mount(root: HTMLElement) {
   )!;
   const issue = root.querySelector<HTMLButtonElement>('[data-issue]')!;
   const revoke = root.querySelector<HTMLButtonElement>('[data-revoke]')!;
+  const profile = root.querySelector<HTMLSelectElement>('[data-day-profile]')!;
+  const dayPeriods = root.querySelector<HTMLElement>('[data-day-schedule]')!;
+  const pointRows = root.querySelector<HTMLElement>('[data-day-checkpoints]')!;
+  const schoolCalendar = root.querySelector<HTMLInputElement>(
+    '[data-school-calendar]',
+  )!;
+  let planning: DayPlanning = structuredClone(emptyPlanning);
+  let activeProfile: DayProfile = 'dayOff';
+  const readPeriods = (container: HTMLElement) =>
+    [...container.children].map((row) => ({
+      start: row.querySelector<HTMLInputElement>('[data-start]')!.value,
+      end: row.querySelector<HTMLInputElement>('[data-end]')!.value,
+      mode: row.querySelector<HTMLSelectElement>('[data-mode]')!
+        .value as Settings['schedule'][number]['mode'],
+    }));
+  function retainProfile() {
+    const entries = readPeriods(dayPeriods);
+    if (entries.length > 0) {
+      planning.schedules[activeProfile] = entries;
+    } else {
+      Reflect.deleteProperty(planning.schedules, activeProfile);
+    }
+
+    const points = [...pointRows.children].map((row) => ({
+      time: row.querySelector<HTMLInputElement>('[data-point-time]')!.value,
+      label: row.querySelector<HTMLInputElement>('[data-point-label]')!.value,
+    }));
+    if (points.length > 0) {
+      planning.checkpoints[activeProfile] = points;
+    } else {
+      Reflect.deleteProperty(planning.checkpoints, activeProfile);
+    }
+  }
+
+  function addPoint(point: RoutinePoint) {
+    const template = root.querySelector<HTMLTemplateElement>(
+      '[data-checkpoint-template]',
+    )!;
+    const row = template.content.firstElementChild!.cloneNode(
+      true,
+    ) as HTMLElement;
+    row.querySelector<HTMLInputElement>('[data-point-time]')!.value =
+      point.time;
+    row.querySelector<HTMLInputElement>('[data-point-label]')!.value =
+      point.label;
+    row.querySelector('[data-remove]')!.addEventListener('click', () => {
+      row.remove();
+    });
+    pointRows.append(row);
+  }
+
+  function showProfile() {
+    dayPeriods.replaceChildren();
+    pointRows.replaceChildren();
+    for (const entry of planning.schedules[activeProfile] ?? []) {
+      addPeriod(entry, dayPeriods);
+    }
+
+    for (const point of planning.checkpoints[activeProfile] ?? []) {
+      addPoint(point);
+    }
+
+    root.querySelector('[data-day-fallback]')!.textContent =
+      activeProfile === 'saturday' || activeProfile === 'sunday'
+        ? 'Les horaires de ce jour priment le week-end. Pendant les vacances et jours fériés, Jours de repos reste prioritaire.'
+        : 'Sans horaires spécifiques, le programme quotidien est conservé.';
+  }
+
+  profile.addEventListener('change', () => {
+    retainProfile();
+    activeProfile = profile.value as DayProfile;
+    showProfile();
+  });
+  root.querySelector('[data-add-day-period]')!.addEventListener('click', () => {
+    if (dayPeriods.children.length === 0) {
+      for (const entry of activeProfile === 'dayOff'
+        ? dayOffSchedule
+        : readPeriods(periods)) {
+        addPeriod(entry, dayPeriods);
+      }
+    } else if (dayPeriods.children.length < 24) {
+      addPeriod({start: '00:00', end: '01:00', mode: 'photos'}, dayPeriods);
+    }
+  });
+  root
+    .querySelector('[data-reset-day-periods]')!
+    .addEventListener('click', () => {
+      dayPeriods.replaceChildren();
+    });
+  root.querySelector('[data-add-checkpoint]')!.addEventListener('click', () => {
+    if (pointRows.children.length < 4) {
+      addPoint({time: '', label: ''});
+    }
+  });
+  root
+    .querySelector('[data-reset-checkpoints]')!
+    .addEventListener('click', () => {
+      pointRows.replaceChildren();
+    });
   let isBusy = false;
   let isAuthorized = false;
   const hideToken = () => {
@@ -51,6 +157,9 @@ function mount(root: HTMLElement) {
         credential.textContent = '';
         form.reset();
         periods.replaceChildren();
+        planning = structuredClone(emptyPlanning);
+        dayPeriods.replaceChildren();
+        pointRows.replaceChildren();
       }
     } finally {
       isBusy = false;
@@ -58,7 +167,7 @@ function mount(root: HTMLElement) {
     }
   }
 
-  function addPeriod(entry: Settings['schedule'][number]) {
+  function addPeriod(entry: Settings['schedule'][number], container = periods) {
     const template = root.querySelector<HTMLTemplateElement>(
       '[data-period-template]',
     )!;
@@ -71,10 +180,12 @@ function mount(root: HTMLElement) {
     row.querySelector('[data-remove]')!.addEventListener('click', () => {
       row.remove();
     });
-    periods.append(row);
+    container.append(row);
   }
 
   function readForm() {
+    retainProfile();
+    planning.schoolCalendar = schoolCalendar.checked;
     const values = Object.fromEntries(new FormData(form));
     for (const key of [
       'latitude',
@@ -87,11 +198,8 @@ function mount(root: HTMLElement) {
 
     return validateSettings({
       ...values,
-      schedule: [...periods.children].map((row) => ({
-        start: row.querySelector<HTMLInputElement>('[data-start]')!.value,
-        end: row.querySelector<HTMLInputElement>('[data-end]')!.value,
-        mode: row.querySelector<HTMLSelectElement>('[data-mode]')!.value,
-      })),
+      schedule: readPeriods(periods),
+      planning,
     });
   }
 
@@ -119,6 +227,10 @@ function mount(root: HTMLElement) {
       }
     }
 
+    planning = structuredClone(settings.planning);
+    schoolCalendar.checked = planning.schoolCalendar;
+    activeProfile = profile.value as DayProfile;
+    showProfile();
     periods.replaceChildren();
     for (const entry of settings.schedule) {
       addPeriod(entry);

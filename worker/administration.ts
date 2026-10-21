@@ -64,6 +64,15 @@ export class Administration {
         return Response.json({ok: true});
       }
 
+      if (/^\/school-calendar\/\d{4}$/v.test(path)) {
+        if (request.method === 'GET') {
+          return Response.json((await storage.get(path)) ?? null);
+        }
+
+        await storage.put(path, body);
+        return Response.json({ok: true});
+      }
+
       const state = (await storage.get<State>('household')) ?? {
         settings: defaultSettings,
       };

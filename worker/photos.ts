@@ -39,7 +39,7 @@ export class PhotoError extends Error {
 }
 
 export async function readBounded(
-  request: Request,
+  request: Pick<Request, 'headers' | 'body'>,
   maximumBytes = maxPhotoBytes,
 ): Promise<ArrayBuffer> {
   const tooLarge = () =>

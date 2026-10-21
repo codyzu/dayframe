@@ -38,7 +38,7 @@ export async function adminApi(
       return failure(415, 'INVALID_TYPE', 'JSON requis.');
     }
 
-    const bytes = await readBounded(request, 8192);
+    const bytes = await readBounded(request, 32_768);
     try {
       body = JSON.parse(new TextDecoder().decode(bytes));
     } catch {

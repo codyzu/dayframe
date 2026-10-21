@@ -79,10 +79,14 @@ The web app must remain usable without unlocking this particular frame.
 | 10:00–23:00 | Photos |
 | 23:00–06:00 | Night |
 
-This schedule currently applies every day. Morning's forecast content recognizes
-weekends, but schedule periods do not vary by weekday and the display does not
-identify school vacations or public holidays. Vacation-aware periods remain an
-open product decision.
+The daily schedule remains the fallback. Optional private day profiles provide different
+mode periods and weather checkpoints by weekday and for days off. Weekends and known
+Grenoble/Zone A school vacations or metropolitan public holidays can use a day-off
+profile: Morning 08:00–11:00, Photos 11:00–23:00, Night 23:00–08:00. School vacations
+and public holidays suspend habitual activity checkpoints and appear in the upcoming
+appointments panel; Google events remain visible. Existing saved settings require
+explicit configuration. See [day planning](day-planning.md) for precedence, official
+sources, unknown/stale coverage and current implementation/deployment limits.
 
 **Scope update, 20 October 2026:** Home is removed until useful household automation exists. The display and schedule editor offer Morning, Photos and Night. Existing saved/exported `home` periods are interpreted as Photos with their original times; unrelated settings remain intact. A future Home screen requires a separate feature slice.
 

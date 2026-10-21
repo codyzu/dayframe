@@ -110,6 +110,69 @@ const fields = [
             Ajouter une plage
           </button>
         </section>
+        <section class="space-y-4" aria-labelledby="day-planning-title">
+          <h2 id="day-planning-title" class="text-2xl font-semibold">
+            Selon le jour
+          </h2>
+          <label class="flex items-start gap-3">
+            <input data-school-calendar type="checkbox" class="mt-1 size-5" />
+            Vacances et jours fériés officiels · Grenoble, zone A
+          </label>
+          <p class="text-sm text-secondary">
+            Les jours fériés, vacances et week-ends utilisent « Jours de repos
+            ». Les autres jours suivent leur programme spécifique, ou le
+            programme quotidien. Les vacances suspendent les repères des
+            activités habituelles. Les événements Google restent affichés.
+          </p>
+          <label class="flex flex-col gap-2">
+            Programme à personnaliser
+            <select
+              data-day-profile
+              class="min-h-12 rounded-lg border border-border bg-elevated px-3"
+            >
+              <option value="dayOff">
+                Jours de repos · week-ends, vacances, fériés
+              </option>
+              <option value="monday">Lundi</option>
+              <option value="tuesday">Mardi</option>
+              <option value="wednesday">Mercredi</option>
+              <option value="thursday">Jeudi</option>
+              <option value="friday">Vendredi</option>
+              <option value="saturday">Samedi</option>
+              <option value="sunday">Dimanche</option>
+            </select>
+          </label>
+          <p data-day-fallback class="text-sm text-secondary"></p>
+          <div data-day-schedule class="space-y-3"></div>
+          <button data-add-day-period type="button" class="min-h-11 underline">
+            Personnaliser les horaires / ajouter une plage
+          </button>
+          <button
+            data-reset-day-periods
+            type="button"
+            class="min-h-11 px-3 underline"
+          >
+            Utiliser le programme quotidien
+          </button>
+          <h3 class="text-xl font-semibold">Repères météo de ce jour</h3>
+          <p class="text-sm text-secondary">
+            Jusqu’à quatre horaires : nom et horaire. Ce sont des habitudes
+            privées, pas de nouveaux événements Google. Les repères de repos
+            remplacent les activités pendant les vacances et jours fériés. Sans
+            personnalisation, les repères restent génériques.
+          </p>
+          <div data-day-checkpoints class="space-y-3"></div>
+          <button data-add-checkpoint type="button" class="min-h-11 underline">
+            Ajouter un repère météo
+          </button>
+          <button
+            data-reset-checkpoints
+            type="button"
+            class="min-h-11 px-3 underline"
+          >
+            Utiliser les repères habituels
+          </button>
+        </section>
         <button
           type="submit"
           class="min-h-12 rounded-full bg-primary px-6 text-elevated"
@@ -232,6 +295,32 @@ const fields = [
         Actualiser Google Calendar
       </button>
     </section>
+    <template data-checkpoint-template>
+      <div class="grid gap-3 rounded-lg bg-surface p-3 sm:grid-cols-[1fr_2fr_auto]">
+        <label class="flex flex-col gap-1">
+          Horaire
+          <input
+            data-point-time
+            type="time"
+            required
+            class="min-h-11 min-w-0 rounded bg-elevated px-2"
+          />
+        </label>
+        <label class="flex flex-col gap-1">
+          Nom
+          <input
+            data-point-label
+            type="text"
+            maxlength="40"
+            required
+            class="min-h-11 min-w-0 rounded bg-elevated px-2"
+          />
+        </label>
+        <button data-remove type="button" class="min-h-11 underline">
+          Retirer
+        </button>
+      </div>
+    </template>
     <template data-period-template>
       <div class="flex flex-wrap items-end gap-3 rounded-lg bg-surface p-3">
         <label class="flex flex-col gap-1">

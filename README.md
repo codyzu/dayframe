@@ -23,6 +23,7 @@ Styling uses UnoCSS's Wind4 preset and reset. Prefer utilities and small reusabl
 - [Weather behavior, provider terms and request budget](docs/weather.md)
 - [Protected photos, quotas and activation](docs/photos.md)
 - [Settings, frame provisioning and recovery](docs/administration.md)
+- [Day-specific weather times, display schedules and official days off](docs/day-planning.md)
 - [M4 security and persistence decisions](docs/decisions/0003-administration.md)
 - [Authentication and storage decisions](docs/decisions/0002-protected-photos.md)
 - [Implementation plan and acceptance evidence](docs/implementation-plan.md)

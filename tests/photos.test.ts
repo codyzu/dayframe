@@ -506,7 +506,7 @@ describe('M4 administration with real SQLite Durable Object storage', () => {
     expect(
       (await patch({location: 'x'}, {'Content-Type': 'text/plain'})).status,
     ).toBe(415);
-    expect((await patch({location: 'x'.repeat(9000)})).status).toBe(413);
+    expect((await patch({location: 'x'.repeat(33_000)})).status).toBe(413);
     expect(await (await request('/api/config')).json()).toMatchObject({
       location: 'Test household',
     });

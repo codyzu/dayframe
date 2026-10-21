@@ -9,6 +9,7 @@ export async function administrationRuntime(persistence?: string) {
   const files = [
     'worker/administration.ts',
     'src/lib/dashboard/settings.ts',
+    'src/lib/dashboard/day-planning.ts',
     'src/lib/dashboard/config.ts',
     'src/lib/photos/contracts.ts',
   ];

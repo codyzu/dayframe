@@ -51,6 +51,7 @@ const worker = {
     }
 
     if (
+      path === '/api/day-context' ||
       path === '/api/config' ||
       path === '/api/config/display' ||
       path === '/api/display' ||

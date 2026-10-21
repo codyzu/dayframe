@@ -42,7 +42,7 @@ An admin can sign in off-network and update `HOME_NETWORKS` through Worker secre
 
 ## Export and restore
 
-Use **Exporter les réglages** in `/admin/settings` to download the validated settings JSON. It contains the configured household location, so store it privately. To restore, sign in and enter the settings in the form, or PATCH that JSON to `/api/config` with `Content-Type: application/json`, same-origin credentials, `Origin` and `X-Dayframe-Request: 1`. Validation applies equally to restores; inspect the response and reload the display.
+Use **Exporter les réglages** in `/admin/settings` to download the validated settings JSON. It contains the configured household location and any private day-specific weather checkpoints, so store it privately. To restore, sign in and enter the settings in the form, or PATCH that JSON to `/api/config` with `Content-Type: application/json`, same-origin credentials, `Origin` and `X-Dayframe-Request: 1`. Validation applies equally to restores; inspect the response and reload the display.
 
 Each photo card in `/admin/photos` offers **Télécharger le WebP**, using authenticated delivery. Save the optimized files privately. These exports are reduced, metadata-stripped images, not full-resolution originals; retain Apple/Google library originals. For a full collection, paginate the authenticated catalog and download each `/api/photos/:id` with the admin session; do not put session tokens in command history or reusable scripts. Exports are not a transactional snapshot during concurrent uploads/deletes: stop mutations, wait for KV propagation and reconcile catalog IDs/counts. Configuration export never includes credentials; after replacing infrastructure restore settings/photos, then issue a new frame key.
 
@@ -56,3 +56,18 @@ still contain `home`: validation maps those periods to `photos`, preserving thei
 other settings and the display credential. Reading does not rewrite storage; the next
 successful settings save persists the normalized schedule. Exported settings use the
 normalized modes. There is no Home display panel or mode-navigation button.
+
+## Day profiles and official days off — local implementation, 21 October 2026
+
+In **Selon le jour**, enable the official Grenoble/Zone A calendar, then select the
+weekday or **Jours de repos** to edit. **Personnaliser les horaires** starts from the
+daily schedule, or the 08:00–11:00 Morning preset for days off. Remove specific periods
+to inherit the daily schedule. Separately edit up to four ordered weather summary
+times with neutral labels. Activities and their actual times/durations stay in the
+Family Google calendar; these weather checkpoints do not create appointments.
+
+School vacations/public holidays use Jours de repos before any weekday customization.
+Weekends use it unless Saturday/Sunday is customized. Both holiday and vacation labels
+can appear in the upcoming-appointments panel without hiding Google events. Existing
+settings keep their old schedule until saved with a profile. See [day planning](day-planning.md)
+for source/date semantics, stale/unknown coverage, privacy and deployment status.

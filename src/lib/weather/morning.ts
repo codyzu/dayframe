@@ -1,7 +1,14 @@
+import {
+  dayContext,
+  emptyPlanning,
+  type DayPlanning,
+  type OfficialCalendar,
+  type RoutinePoint,
+} from '../dashboard/day-planning.ts';
 import {runtimeConfig} from '../dashboard/config.ts';
 import {dateKey, hourLabel, type Hour, type Weather} from './adapter.ts';
 
-export type Checkpoint = {time: string; label: string; weekendLabel: string};
+export type Checkpoint = RoutinePoint & {weekendLabel?: string};
 export const schoolCheckpoints: readonly Checkpoint[] = [
   {time: '08:00', label: 'École', weekendLabel: 'Matin'},
   {time: '11:30', label: 'Midi', weekendLabel: 'Midi'},
@@ -62,7 +69,9 @@ export function checkpointForecasts(
         : undefined;
     return {
       ...checkpoint,
-      label: isWeekendDay ? checkpoint.weekendLabel : checkpoint.label,
+      label: isWeekendDay
+        ? (checkpoint.weekendLabel ?? checkpoint.label)
+        : checkpoint.label,
       forecast,
       at: before ? before.time + fraction * 3_600_000 : undefined,
       probabilityPeriod:
@@ -96,7 +105,11 @@ export function twoHourRain(hours: Hour[]) {
   return result;
 }
 
-export function morningAdvice(weather: Weather, now: number) {
+export function morningAdvice(
+  weather: Weather,
+  now: number,
+  checkpoints?: readonly Checkpoint[],
+) {
   const hours = dayHours(weather, now);
   const future = hours.filter((hour) => hour.time + 3_600_000 > now);
   if (future.length === 0) {
@@ -109,7 +122,7 @@ export function morningAdvice(weather: Weather, now: number) {
   const wet = future.find(
     (hour) => hour.probability >= 50 || hour.precipitation >= 0.2,
   );
-  const pickup = checkpointForecasts(weather, now).find(
+  const pickup = checkpointForecasts(weather, now, checkpoints).find(
     (point) =>
       point.time >= '16:00' &&
       point.forecast &&
@@ -164,4 +177,36 @@ export function morningAdvice(weather: Weather, now: number) {
   }
 
   return {title, detail: details.slice(0, 2).join(' ')};
+}
+
+export function routineForDay(
+  now: number,
+  planning: DayPlanning = emptyPlanning,
+  calendar?: OfficialCalendar,
+) {
+  const context = dayContext(now, runtimeConfig.timezone, planning, calendar);
+  const isUncertain = planning.schoolCalendar && !context.isKnown;
+  const defaults =
+    isUncertain || context.isDayOff || context.weekday === 'wednesday'
+      ? schoolCheckpoints.map((point) => ({
+          ...point,
+          label: point.weekendLabel ?? point.label,
+        }))
+      : schoolCheckpoints;
+  return {
+    points: isUncertain
+      ? defaults
+      : (planning.checkpoints[context.profile] ??
+        (context.isDayOff ? planning.checkpoints.dayOff : undefined) ??
+        defaults),
+    heading:
+      Object.keys(planning.checkpoints).length > 0 || planning.schoolCalendar
+        ? isUncertain
+          ? 'Les repères · calendrier à confirmer'
+          : `Les repères · ${context.label}`
+        : isWeekend(now)
+          ? 'Les repères du week-end'
+          : 'Les repères · jour d’école habituel',
+    note: context.note,
+  };
 }

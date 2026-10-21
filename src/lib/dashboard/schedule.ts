@@ -1,3 +1,4 @@
+import {dayContext, type OfficialCalendar} from './day-planning.ts';
 import {type DisplayMode} from './config.ts';
 import {defaultSettings, validateSettings, type Settings} from './settings.ts';
 
@@ -6,7 +7,10 @@ const minute = (value: string) =>
 
 // Resolve instants through IANA wall time: skipped minutes never occur; repeated
 // minutes resolve identically on both passes. Intervals include start, exclude end.
-export function createScheduleResolver(configuration: unknown) {
+export function createScheduleResolver(
+  configuration: unknown,
+  calendar?: OfficialCalendar,
+) {
   let settings: Settings;
   try {
     settings = validateSettings(configuration);
@@ -20,11 +24,19 @@ export function createScheduleResolver(configuration: unknown) {
     minute: '2-digit',
     hourCycle: 'h23',
   });
-  const periods = settings.schedule.map((entry) => ({
-    ...entry,
-    start: minute(entry.start),
-    end: minute(entry.end),
-  }));
+  const periodMap = Object.fromEntries(
+    Object.entries({
+      default: settings.schedule,
+      ...settings.planning.schedules,
+    }).map(([key, entries]) => [
+      key,
+      entries.map((entry) => ({
+        ...entry,
+        start: minute(entry.start),
+        end: minute(entry.end),
+      })),
+    ]),
+  );
   return (now: number): DisplayMode => {
     if (!Number.isFinite(new Date(now).getTime())) {
       return 'morning';
@@ -34,6 +46,16 @@ export function createScheduleResolver(configuration: unknown) {
     const local =
       Number(parts.find(({type}) => type === 'hour')!.value) * 60 +
       Number(parts.find(({type}) => type === 'minute')!.value);
+    const {profile, isDayOff} = dayContext(
+      now,
+      settings.timezone,
+      settings.planning,
+      calendar,
+    );
+    const periods =
+      periodMap[profile] ??
+      (isDayOff ? periodMap.dayOff : undefined) ??
+      periodMap.default;
     return (
       periods.find(({start, end}) =>
         start < end
@@ -48,6 +70,7 @@ export function createScheduleResolver(configuration: unknown) {
 // corrections cannot extend a lease; elapsed sleep counts on platforms where the
 // monotonic clock pauses during suspend.
 export function createModeState(settings = defaultSettings) {
+  let calendar: OfficialCalendar | undefined;
   let resolve = createScheduleResolver(settings);
   let override: DisplayMode | undefined;
   let elapsed = 0;
@@ -80,9 +103,13 @@ export function createModeState(settings = defaultSettings) {
 
       elapsed = 0;
     },
+    calendar(value: OfficialCalendar | undefined) {
+      calendar = value;
+      resolve = createScheduleResolver(settings, calendar);
+    },
     configure(value: Settings) {
       settings = value;
-      resolve = createScheduleResolver(value);
+      resolve = createScheduleResolver(value, calendar);
     },
   };
 }

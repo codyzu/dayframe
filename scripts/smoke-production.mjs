@@ -16,6 +16,8 @@ const routes = [
   {path: '/api/photos', method: 'GET', status: 401},
   {path: '/api/session', method: 'GET', status: 401},
   {path: '/calendar-privacy/', method: 'GET', status: 200},
+  {path: '/api/day-context', method: 'GET', status: 401},
+  {path: '/api/day-context', method: 'POST', status: 403},
   {path: '/api/calendar', method: 'GET', status: 401},
   {path: '/api/calendar/events', method: 'GET', status: 401},
   {path: '/api/calendar/calendars', method: 'GET', status: 401},

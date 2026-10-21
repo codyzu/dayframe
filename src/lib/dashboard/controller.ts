@@ -3,6 +3,12 @@ import {mountSlideshow} from '../photos/slideshow.ts';
 import {mountWeather} from '../weather/view.ts';
 import {mountPhotoWeather} from '../photos/weather.ts';
 import {mountAgenda} from '../calendar/view.ts';
+import {
+  dayContext,
+  observanceText,
+  validateOfficialCalendar,
+  type OfficialCalendar,
+} from './day-planning.ts';
 import {defaultSettings, validateSettings, type Settings} from './settings.ts';
 import {
   runtimeConfig,
@@ -33,6 +39,54 @@ function initializeDashboard(root: HTMLElement) {
   let weather = mountWeather(weatherRoot, updatePhotoWeather);
   const state = createModeState();
   let settings = defaultSettings;
+  let official: OfficialCalendar | undefined;
+  let calendarRefreshAt = 0;
+  let calendarPending: AbortController | undefined;
+  const observance = root.querySelector<HTMLElement>('[data-day-observance]')!;
+
+  async function refreshCalendar() {
+    if (
+      isPaused ||
+      calendarPending !== undefined ||
+      !settings.planning.schoolCalendar ||
+      document.hidden
+    ) {
+      return;
+    }
+
+    const controller = new AbortController();
+    calendarPending = controller;
+    calendarRefreshAt = Date.now() + 60_000;
+    try {
+      const response = await photoRequest('/api/day-context', {
+        signal: AbortSignal.any([
+          controller.signal,
+          AbortSignal.timeout(12_000),
+        ]),
+      });
+      const body = (await response.json()) as {calendar: unknown};
+      if (controller.signal.aborted || !settings.planning.schoolCalendar) {
+        return;
+      }
+
+      official = validateOfficialCalendar(body.calendar);
+      state.calendar(official);
+      weather.configure(settings.planning, official);
+      calendarRefreshAt =
+        Date.now() +
+        (Date.now() - official.fetchedAt >= 86_400_000 ? 300_000 : 3_600_000);
+      render();
+    } catch (error) {
+      if (error instanceof ApiError && [401, 403].includes(error.status)) {
+        slideshow.deny();
+        agenda.deny();
+        applySettings(defaultSettings);
+      }
+    } finally {
+      calendarPending = undefined;
+    }
+  }
+
   let activeMode: DisplayMode | undefined;
   let clockMinute: number | undefined;
   let clockTimezone: string | undefined;
@@ -49,6 +103,20 @@ function initializeDashboard(root: HTMLElement) {
   let isConfigurationFailed = false;
 
   function render() {
+    const context = dayContext(
+      Date.now(),
+      settings.timezone,
+      settings.planning,
+      official,
+    );
+    const dayNote = observanceText(context);
+    if (observance.textContent !== dayNote) {
+      observance.textContent = dayNote;
+      observance.hidden = dayNote === '';
+      observance.title = dayNote;
+      weatherRoot.dataset.observance = String(dayNote !== '');
+    }
+
     const mode = state.mode(Date.now(), performance.now());
     if (mode !== activeMode) {
       activeMode = mode;
@@ -126,6 +194,14 @@ function initializeDashboard(root: HTMLElement) {
     settings = next;
     Object.assign(runtimeConfig, settings);
     state.configure(settings);
+    if (!settings.planning.schoolCalendar) {
+      calendarPending?.abort();
+      official = undefined;
+      state.calendar(undefined);
+    }
+
+    calendarRefreshAt = 0;
+    weather.configure(settings.planning, official);
     slideshow.configure(settings);
     if (!isWeatherChanged) {
       return;
@@ -133,6 +209,7 @@ function initializeDashboard(root: HTMLElement) {
 
     weather.dispose();
     weather = mountWeather(weatherRoot, updatePhotoWeather);
+    weather.configure(settings.planning, official);
   }
 
   async function refreshConfiguration() {
@@ -206,6 +283,10 @@ function initializeDashboard(root: HTMLElement) {
       return;
     }
 
+    if (Date.now() >= calendarRefreshAt) {
+      void refreshCalendar();
+    }
+
     if (Date.now() >= refreshAt) {
       void refreshConfiguration();
     }
@@ -237,6 +318,7 @@ function initializeDashboard(root: HTMLElement) {
   });
   function wake() {
     isPaused = false;
+    calendarRefreshAt = 0;
     tick();
     void refreshConfiguration();
     slideshow.wake();
@@ -248,6 +330,7 @@ function initializeDashboard(root: HTMLElement) {
     if (document.hidden) {
       clearTimeout(timer);
       pending?.abort();
+      calendarPending?.abort();
       slideshow.setActive(false);
       weather.setActive(false);
       agenda.pause();
@@ -259,6 +342,7 @@ function initializeDashboard(root: HTMLElement) {
     isPaused = true;
     clearTimeout(timer);
     pending?.abort();
+    calendarPending?.abort();
     slideshow.setActive(false);
     weather.setActive(false);
     agenda.pause();

@@ -866,3 +866,49 @@ All eight focused browser cases passed across Chromium, Firefox, WebKit and mobi
 The first refresh test simulated every second of an hour and exceeded WebKit's test
 budget; advancing directly to each refresh deadline preserves the refresh/outage checks
 and passes across all four browsers.
+
+## Day-specific planning and official days off — 21 October 2026
+
+Owner requested different Wednesday routines, weekends starting at 08:00 and automatic
+school-vacation/public-holiday awareness for Annecy. Confirmed skipping habitual
+activities during vacations/holidays and Morning 08:00–11:00 on days off. The later
+request places holidays/vacations in the upcoming-appointments panel alongside Google
+events. Household names/routines remain private; the proposed household settings patch
+is in ignored owner-only storage and has not been applied to production.
+
+Added optional validated private day schedules and four weather checkpoints per profile,
+admin editing, the existing schedule/DST/override behavior with day-off precedence,
+minute interpolation, an authenticated official-calendar endpoint, bounded fixed-host
+Ministry/DINUM reads, and daily dated caching in the existing Administration object.
+The appointment panel can show both a holiday and a vacation without reducing the six
+Google-event allowance. Existing settings retain their daily schedule until configured.
+[Behavior, source research, security, cost and limits](day-planning.md).
+
+Reviewed upstream root MIT license and `dashboard/js/views/{home,calendar}.js`,
+`dashboard/js/system.js` at `f1e0820918c926396e0ccafb4839568825f63edc`; retain its
+glanceable daily hierarchy while independently implementing private routines and real
+French calendars. No source/assets copied, dependency/binding added, paid resource,
+Google permission/event write, deployment or device change.
+
+Owner clarified that activities remain in Family calendar: only the four weather
+summary times vary on Wednesdays. Neutral private labels accompany the requested
+times. No duplicate activity list or checkpoint durations.
+
+Final `pnpm verify` passed: Astro/Worker types, lint with the five existing complexity
+warning locations (no new warning locations), 120 unit/integration tests, production
+build and 172 browser tests across Chromium, Firefox, WebKit and mobile, with four
+existing intentional skips. New cases cover private profile editing/persistence,
+quarter-hour weather, escaped labels, day-off/DST/override precedence, both official
+observances beside six appointments, outage continuity, exclusive vacation end dates,
+year rollover, authentication/network/mutation denial, bounded daily caching and
+redirect/malformed-provider rejection. The first busy-layout test found 22px overflow;
+conditional spacing fixed it, followed by a further Firefox 1px correction. Reviewed
+the final [synthetic Firefox frame](evidence/m5/day-off-1280x800.png), with no scrolling.
+The downloaded live Ministry JSON query returned 14 rows for the current/previous
+academic years and normalized to 12 pupil periods; the public holiday JSON also loaded.
+The Ministry's documented Zone A iCal download was subsequently confirmed outside the
+network sandbox, correcting the initial in-sandbox DNS failure; JSON remains the simpler
+application integration of the same official source. The private settings patch passes shared validation and is ignored by Git. Changed
+Markdown links and `git diff --check` pass. No deployment, household settings update,
+Google change or device interaction. Existing hardware, second-administrator and
+long-term calendar-token acceptance limits remain.

@@ -1,3 +1,9 @@
+import {
+  emptyPlanning,
+  weekdays,
+  type DayPlanning,
+  type RoutinePoint,
+} from './day-planning.ts';
 import {displayConfig, isDisplayMode, type DisplayMode} from './config.ts';
 
 export type Settings = {
@@ -8,6 +14,7 @@ export type Settings = {
   slideshowIntervalSeconds: number;
   overrideTimeoutSeconds: number;
   fit: 'contain' | 'cover';
+  planning: DayPlanning;
   schedule: Array<{start: string; end: string; mode: DisplayMode}>;
 };
 export const defaultSettings: Settings = {
@@ -18,6 +25,7 @@ export const defaultSettings: Settings = {
   slideshowIntervalSeconds: displayConfig.slideshowIntervalSeconds,
   overrideTimeoutSeconds: displayConfig.overrideTimeoutSeconds,
   fit: 'cover',
+  planning: emptyPlanning,
   schedule: displayConfig.schedule.map((entry) => ({...entry})),
 };
 const keys = Object.keys(defaultSettings);
@@ -51,6 +59,7 @@ export function validateSettings(value: unknown): Settings {
 
   validateScalarSettings(result);
   validateSchedule(result.schedule);
+  validatePlanning(result.planning);
 
   // Reconstruct the response so unknown/private fields never reach display clients.
   return Object.fromEntries(
@@ -119,5 +128,71 @@ function validateSchedule(schedule: Settings['schedule']) {
 
       occupied.add(slot);
     }
+  }
+}
+
+function validatePlanning(planning: DayPlanning) {
+  const invalid = () => new Error('Programme des jours invalide.');
+  if (
+    planning === null ||
+    typeof planning !== 'object' ||
+    Array.isArray(planning) ||
+    Object.keys(planning).toSorted().join(',') !==
+      'checkpoints,schedules,schoolCalendar' ||
+    typeof planning.schoolCalendar !== 'boolean'
+  ) {
+    throw invalid();
+  }
+
+  for (const map of [planning.schedules, planning.checkpoints]) {
+    if (
+      map === null ||
+      typeof map !== 'object' ||
+      Array.isArray(map) ||
+      Object.keys(map).some((key) => ![...weekdays, 'dayOff'].includes(key))
+    ) {
+      throw invalid();
+    }
+  }
+
+  for (const schedule of Object.values(planning.schedules)) {
+    if (
+      !Array.isArray(schedule) ||
+      schedule.length === 0 ||
+      schedule.length > 24
+    ) {
+      throw invalid();
+    }
+
+    validateSchedule(schedule);
+  }
+
+  for (const points of Object.values(planning.checkpoints)) {
+    if (!Array.isArray(points) || points.length === 0 || points.length > 4) {
+      throw invalid();
+    }
+
+    validateCheckpoints(points);
+  }
+}
+
+function validateCheckpoints(points: RoutinePoint[]) {
+  let previous = '';
+  for (const point of points) {
+    if (
+      point === null ||
+      typeof point !== 'object' ||
+      Object.keys(point).some((key) => !['time', 'label'].includes(key)) ||
+      typeof point.time !== 'string' ||
+      !timePattern.test(point.time) ||
+      point.time <= previous ||
+      typeof point.label !== 'string' ||
+      point.label.trim() === '' ||
+      point.label.length > 40
+    ) {
+      throw new Error('Repères météo invalides ou horaires non ordonnés.');
+    }
+
+    previous = point.time;
   }
 }

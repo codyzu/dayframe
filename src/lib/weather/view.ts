@@ -1,3 +1,8 @@
+import {
+  emptyPlanning,
+  type DayPlanning,
+  type OfficialCalendar,
+} from '../dashboard/day-planning.ts';
 // @unocss-include
 import {
   dateKey,
@@ -11,7 +16,8 @@ import {summarize} from './summary.ts';
 import {
   checkpointForecasts,
   dayHours,
-  isWeekend,
+  routineForDay,
+  type Checkpoint,
   morningAdvice,
   twoHourRain,
 } from './morning.ts';
@@ -21,6 +27,13 @@ import {
   type WeatherState,
 } from './service.ts';
 
+const escapeHtml = (value: string) =>
+  value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
 const rounded = (value: number) => `${Math.round(value)}°`;
 
 function chart(hours: Hour[]) {
@@ -87,14 +100,18 @@ function chart(hours: Hour[]) {
   </div>`;
 }
 
-function checkpoints(weather: Weather, now: number) {
-  return checkpointForecasts(weather, now)
+function checkpoints(
+  weather: Weather,
+  now: number,
+  points: readonly Checkpoint[],
+) {
+  return checkpointForecasts(weather, now, points)
     .map((point) => {
       const hour = point.forecast;
       const condition = conditionFor(hour?.code, hour?.isDay ?? true);
-      return `<article class="rounded-2xl bg-background px-2 py-1 text-center" aria-label="${point.time} ${point.label}">
+      return `<article class="rounded-2xl bg-background px-2 py-1 text-center" aria-label="${point.time} ${escapeHtml(point.label)}">
       <h3 class="text-[length:var(--font-checkpoint)] font-bold tabular-nums leading-tight">${point.time.replace(':', 'h')}</h3>
-      <p class="text-[length:var(--font-weather-detail)] leading-tight text-secondary">${point.label}</p>
+      <p title="${escapeHtml(point.label)}" class="truncate text-[length:var(--font-weather-detail)] leading-tight text-secondary">${escapeHtml(point.label)}</p>
       <div class="flex items-center justify-center gap-1"><span class="${condition.icon} inline-block size-12 shrink-0" aria-hidden="true"></span>
       <p class="text-[length:var(--font-checkpoint)] font-bold leading-tight">${hour ? rounded(hour.temperature) : '—°'}</p></div>
       <p class="text-[length:var(--font-weather-detail)] leading-tight font-semibold text-rain" aria-label="${hour ? `Pluie : maximum horaire ${hour.probability} % ; source ${point.probabilityPeriod}` : 'Prévision indisponible'}">Pluie ${hour ? `${hour.probability} %` : '—'}</p>
@@ -109,10 +126,13 @@ export function mountWeather(
   onUpdate?: (state: WeatherState) => void,
 ) {
   const notifyWeatherUpdate = onUpdate ?? (() => undefined);
+  let planning: DayPlanning = emptyPlanning;
+  let calendar: OfficialCalendar | undefined;
   let isActive = false;
   let latest: WeatherState = {failed: false};
   let renderedWeather: Weather | undefined;
   let renderedDay: string | undefined;
+  let renderedRoutine = '';
   let chartHours: Hour[] = [];
   let renderedMinute: number | undefined;
   let renderedFailure: boolean | undefined;
@@ -185,18 +205,15 @@ export function mountWeather(
       `Ressenti ${rounded(weather.current.feelsLike)} · ${daily ? `Max. ${rounded(daily.high)} / Min. ${rounded(daily.low)}` : 'Max. / Min. du jour indisponibles'}`,
     );
     const summary = summarize(weather, now);
-    const advice = morningAdvice(weather, now);
+    const routine = routineForDay(now, planning, calendar);
+    const advice = morningAdvice(weather, now, routine.points);
     text(
       '[data-advice]',
       isStale ? 'Vérifiez la météo avant de partir.' : advice.title,
     );
-    text(
-      '[data-checkpoint-heading]',
-      isWeekend(now)
-        ? 'Les repères du week-end'
-        : 'Les repères · jour d’école habituel',
-    );
+    text('[data-checkpoint-heading]', routine.heading);
 
+    text('[data-day-context]', routine.note);
     text(
       '[data-rain]',
       isStale
@@ -223,14 +240,28 @@ export function mountWeather(
 
   function renderForecast(weather: Weather, now: number) {
     const today = dateKey(now);
+    const routine = routineForDay(now, planning, calendar);
+    const signature = JSON.stringify(routine.points);
+    if (
+      signature !== renderedRoutine ||
+      weather !== renderedWeather ||
+      today !== renderedDay
+    ) {
+      renderedRoutine = signature;
+      const checkpointContainer = root.querySelector('[data-checkpoints]');
+      if (checkpointContainer) {
+        checkpointContainer.innerHTML = checkpoints(
+          weather,
+          now,
+          routine.points,
+        );
+      }
+    }
+
     if (weather !== renderedWeather || today !== renderedDay) {
       renderedWeather = weather;
       renderedDay = today;
       chartHours = dayHours(weather, now);
-      const checkpointContainer = root.querySelector('[data-checkpoints]');
-      if (checkpointContainer) {
-        checkpointContainer.innerHTML = checkpoints(weather, now);
-      }
 
       const container = root.querySelector('[data-chart]');
       if (container) {
@@ -314,6 +345,18 @@ export function mountWeather(
     options,
   );
   return {
+    configure(next: DayPlanning, official?: OfficialCalendar) {
+      planning = next;
+      calendar = official;
+      renderedMinute = undefined;
+      renderedRoutine = '';
+      const container = root.querySelector('[data-checkpoints]');
+      if (container) {
+        container.replaceChildren();
+      }
+
+      render(latest);
+    },
     setActive(isActiveValue: boolean) {
       if (isActive === isActiveValue) {
         return;

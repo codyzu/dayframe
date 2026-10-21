@@ -4,6 +4,7 @@ import {
   shaPattern,
   type PhotoMetadata,
 } from '../src/lib/photos/contracts.ts';
+import {schoolCalendarApi} from './school-calendar.ts';
 import {adminApi} from './admin-api.ts';
 import {calendarApi, type CalendarEnv} from './calendar.ts';
 import {failure, privateJson} from './private-response.ts';
@@ -94,13 +95,21 @@ export async function photoApi(
       );
     }
 
+    if (path === '/api/day-context') {
+      return await schoolCalendarApi(request, env.ADMINISTRATION);
+    }
+
     if (path === '/api/calendar' || path.startsWith('/api/calendar/')) {
       return await calendarApi(request, env, identity);
     }
 
-    return ['/api/config', '/api/config/display', '/api/display'].includes(path)
-      ? await adminApi(request, env, identity)
-      : await routePhotos(request, env.PHOTOS, identity, url);
+    return await ([
+      '/api/config',
+      '/api/config/display',
+      '/api/display',
+    ].includes(path)
+      ? adminApi(request, env, identity)
+      : routePhotos(request, env.PHOTOS, identity, url));
   } catch (error) {
     return error instanceof PhotoError
       ? failure(error.status, error.code, error.message)
