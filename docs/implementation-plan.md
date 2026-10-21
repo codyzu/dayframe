@@ -727,3 +727,25 @@ verification, Cloudflare upload and live-deployment check on 20 October. The ear
 read-only frame observations at 22:31 and 22:36 Paris were made before this deployment;
 they do not verify the new screen or the physical 23:00 transition. The live frame may
 need a page reload, and saved household schedule settings may override the public default.
+
+## Current weather icon contrast — 21 October 2026
+
+Owner reported pale weather details blending into the white icon tile. A dark circular
+preview improved clouds but obscured blue raindrops; the owner requested a transparent
+alternative. The initial Astro markup and live weather renderer now remove the tile
+and apply a subtle 1px slate drop shadow following the icon silhouette through literal
+UnoCSS utilities. Icon size, original Meteocons colours, animation and reduced-motion
+stills remain; forecast icons are unchanged.
+
+Reviewed local upstream `f1e0820918c926396e0ccafb4839568825f63edc`,
+`dashboard/js/views/home.js`, `dashboard/css/views/home.css` and its MIT license.
+Retained the current/forecast hierarchy as a reference; the coloured Meteocons and shadow
+are an independent Dayframe treatment rather than upstream's ink-coloured SVGs.
+No upstream code/assets copied or new dependencies introduced.
+
+Production build, changed-file XO checks and four existing day/night refresh browser
+checks (Chromium, Firefox, WebKit and mobile) passed. Visually reviewed a synthetic rainy
+1280×800 Large dashboard and six-condition preview (sun, cloud, rain, night, snow and fog)
+with reduced motion. Computed styles confirm a transparent background and silhouette
+shadow. Desktop evidence does not establish physical Classic 10 readability. No
+deployment or device changes.

@@ -173,7 +173,7 @@ export function mountWeather(
     text('[data-condition]', label);
     const iconElement = root.querySelector('[data-current-icon]');
     if (iconElement) {
-      const classes = `weather-icon ${icon} inline-block size-[var(--icon-weather-current)] shrink-0 rounded-3xl bg-elevated`;
+      const classes = `weather-icon ${icon} inline-block size-[var(--icon-weather-current)] shrink-0 drop-shadow-[0_1px_1px_#182c3580]`;
       if (iconElement.className !== classes) {
         iconElement.className = classes;
       }
