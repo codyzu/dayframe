@@ -819,3 +819,21 @@ Dark text contrast calculates to 11.00:1 on rose and 11.17:1 on lavender. The sy
 preview is 1280×800 with no scrolling; physical household readability is not established
 by those checks. The subsequent legend removal reduces content height; build and the
 preview were refreshed. No deployment or live selection change.
+
+### Production acceptance — 21 October 2026
+
+Owner approved commit/push and subsequent live massage-calendar selection. Pushed
+`dbfc7199586cef7a6b243949c0700729e1514b64` to `main`. Unified Actions run
+[39570330885](https://github.com/codyzu/dayframe/actions/runs/39570330885) passed both
+`checks` and `deploy`, including the verified-assets handoff, Workers Free assertion,
+Cloudflare upload and matching-build public smoke check. Hosted verification passed
+109 unit/integration tests and the complete browser pipeline.
+
+After deployment, used the authenticated production calendar settings to retain Family
+and select the existing shared massage agenda through the existing Google grant. Save
+confirmation and a subsequent full page reload verified both persisted selections.
+Authenticated Morning loaded the merged agenda successfully; no remaining massage
+appointments were displayed at acceptance time. No actual appointment title, calendar
+ID, token or private screenshot is included in this public record. The live confirmation
+screenshot remains temporary and private. No new OAuth consent, permission expansion,
+service/billing change, device interaction or physical-frame acceptance is claimed.
