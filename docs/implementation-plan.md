@@ -160,6 +160,30 @@ work, not retroactively completed by earlier offline tests.
 | M5.O4 — Navigation fallback    | Stable small worker; allowlisted dashboard navigation only; bounded network-first attempt with saved fallback. All other requests retain ordinary handling. Cover partial dashboard startup failure without a new forbidden kiosk URL. Version only the public fallback, with compatible storage and explicit activation/retirement behavior. | Browser tests for offline reload, fresh online deployment, first visit without a saved fallback, timeouts, HTTP/auth/security failures, partial loads, reconnection without loops, admin/setup/API exclusions, old/new pages, interrupted update and worker removal. Desktop software evidence only; no device-wide activation before phase 5 integration is ready.   |
 | M5.O5 — Classic 10 integration | Refresh upstream device research and actual device identity/browser; teach the kiosk heartbeat/recovery policy to distinguish healthy offline playback and empty/expired retry states from faults. Preserve address/TLS restrictions, clock gate and maintenance paths.                                                                       | Host policy tests first; specifically authorized installation/restart/offline cold-start tests on the actual GeckoView profile, Wi-Fi return, local retention/eviction behavior, continuous overnight playback, supervisor stability and sustained operation. Record measured evidence and remaining limits; do not close unrelated H4/M4/M6/security/soak deferrals. |
 
+**O4 deployment update detection (added 22 October 2026; implementation pending):**
+Publish a small public `/version.json` with an opaque build ID, shipped with the
+matching application assets; embed that same ID in the running app. Check every
+30 minutes and when connectivity returns, using `cache: 'no-store'` and one
+in-flight check. The navigation worker must leave this request to the network.
+Failed, malformed or unchanged checks leave the current display running and retry
+on the normal interval. A changed ID schedules one controlled dashboard reload:
+at the next slide transition in Photos, or after the current render in other
+display modes. Preserve display preferences and any unexpired manual mode override;
+retain valid photo access and the bounded offline photo store. Admin/setup pages
+must not auto-reload. Weather and settings keep their independent refresh cycles.
+
+O4 acceptance must cover new-version detection, unchanged/failed checks, offline
+playback during checks, reconnection, and coordinated application/fallback updates.
+Confirm the loaded build ID after reload. Persist the attempted target ID before
+reloading; if an older cached page returns, suppress further automatic reloads for
+that target rather than looping. Interrupted updates must preserve a usable
+fallback and compatible photo storage. This adds deployment metadata, not full
+dashboard precaching, private data in public assets, or a new service/billing plan.
+O5 must verify the update/reload path on the actual Classic 10 GeckoView profile,
+including watchdog behavior, valid authorization, preferences, offline continuity
+and recovery without repeated reloads, under its existing hardware authorization
+and readiness gates.
+
 Each phase is one reviewable slice. O2 can deliver disconnect resilience before O3/O4
 add offline navigation. O4 may be prepared and browser-tested before native integration,
 but exposing it to the active frame requires O5 readiness so a valid fallback does not
