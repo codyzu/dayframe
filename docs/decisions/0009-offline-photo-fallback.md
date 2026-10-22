@@ -37,9 +37,12 @@ for explicitly enabled profiles; other profiles retain the five-minute baseline.
 - Store optimized WebP blobs and minimal display metadata in IndexedDB, shared by
   the live slideshow and offline document. Cache Storage contains only the public
   fallback document. Photos never enter shared/CDN caches or the public build.
-- Initially target explicitly enabled dedicated displays. A `display=frame` URL
-  alone is neither authorization nor permission to retain photos. Admin and ordinary
-  browser sessions do not automatically acquire persistent offline collections.
+- Automatically retain photos in every authorized browser using the live Photos
+  slideshow, including signed-in administrators and ordinary dashboard URLs. No
+  opt-in, frame profile or role gate is required. The private API remains the access
+  boundary: only successful authenticated reads can fill or renew the collection.
+  This owner-approved revision on 22 October 2026 supersedes the original explicit
+  dedicated-display opt-in policy.
 - Preserve the current/next limit for decoded images and revoke object URLs when
   replaced. Disk capacity is independent of RAM usage.
 - Use existing Workers/KV and local browser storage. No new billed service, native
@@ -52,7 +55,10 @@ offline collection.
 
 ## Playback, synchronization and privacy contract
 
-Persist only after a successful authorized read and explicit offline enablement.
+Start persistence after a complete successful authorized catalog read; save only
+photo bytes received through successful authorized reads. Reuse an existing valid
+collection during outages. Browsers with no authorized collection show the ordinary
+empty/retry state. There is no separate consent control or device-role classification.
 Store photo IDs, blobs, dimensions/size and the smallest required playback/retention
 metadata; exclude source fingerprints, uploader identities, credentials, calendar
 entries and full household settings. Persist fit/interval separately. Offline playback
@@ -72,8 +78,8 @@ weather or appointments. Offline playback shows photos at all hours, including h
 that would select Night online. The online schedule remains unchanged. Empty/unavailable storage
 shows a useful retry state. A corrupt image is skipped without losing the collection.
 
-An observed private-API 401/403, explicit logout, reprovisioning or disabling offline
-storage invalidates playback immediately and clears the local private collection.
+An observed private-API 401/403, explicit logout, reprovisioning or lease expiry
+invalidates playback immediately and clears the local private collection.
 Cleanup failures must leave playback denied and be retried; another open tab must not
 keep displaying already-loaded photos after local invalidation. A cached photo must
 never mask a denial by pretending the request succeeded.
@@ -134,6 +140,7 @@ standalone fallback/navigation and actual-device acceptance remain later phases.
 
 | Decision                | Accepted policy                                                                                                                                                                             |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Automatic retention     | Every authorized browser using Photos, including signed-in admins and ordinary dashboard URLs; no opt-in or frame/role gate.                                                                |
 | Offline retention       | Seven days since the last successful authenticated photo/catalog response. Being online means reaching Dayframe and verifying photo access; connectivity alone does not renew retention.    |
 | Local collection budget | At most 100 photos and 100 MB (100,000,000 bytes) of encoded photo bytes, whichever is reached first; reduce if device capacity requires it. This is separate from the server KV allowance. |
 | Night behavior          | Show photos at all times while offline, including cold starts. No offline Night screen or saved Night schedule. Online scheduling remains unchanged.                                        |
@@ -187,3 +194,22 @@ design authenticated local photo storage and a minimal browser navigation fallba
 The root license at this revision is MIT, Copyright 2026 Wes Bos; copied substantial
 source would require its notice. No upstream source/assets are copied in this
 documentation slice. Earlier no-license findings apply to their older revisions.
+
+## Automatic retention revision — 22 October 2026
+
+The owner explicitly approved caching in all authorized browsers, including their
+signed-in admin browser. This replaces both the original opt-in policy and the
+subsequent proposed frame-only alternative. Authorization already controls delivery
+of private bytes; there is no additional browser eligibility check. The existing
+seven-day/100-photo/100 MB lease, bounded gradual writes, complete-catalog deletion,
+logout/denial clearing and cold-start/device limits remain.
+
+The live slideshow initializes the existing schema only after an authorized full
+catalog succeeds. Prior valid opt-in collections remain usable under their existing
+lease. After local invalidation, a later authenticated full refresh automatically
+starts a fresh collection. A revision check fences authorization attempts that
+started before logout/denial, and pending writes retain their token fence. Starting
+a valid collection in another tab is no longer treated as an access denial. No
+server API, role header, permission scope, binding or dependency is added. Admin
+management previews keep their short memory lifetime; the Photos slideshow is the
+component filling the shared durable collection.

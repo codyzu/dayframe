@@ -12,3 +12,15 @@ credentials are present. Captured by the final `offline-photos.spec.ts` run;
 48 cases passed across Chromium, Firefox, WebKit and mobile emulation. Reviewed
 both captures. These are software evidence, not actual GeckoView/Classic 10
 storage, memory, readability, offline cold-start or supervision acceptance.
+
+## Automatic retention revision
+
+The owner subsequently approved automatic caching in every authorized Photos
+browser. [Firefox at 1280 × 800](automatic-firefox.png) and
+[mobile WebKit](automatic-mobile.png) show the revised UI without an opt-in panel.
+Only a read-only storage status remains in the transient photo controls. The retry
+button has its own vertical space; browser assertions cover non-overlap and
+horizontal fit. The mobile controls overlay the clock while revealed, consistent
+with the existing transient overlay behavior. The final focused suite passed 68
+cases across all four targets. The tiny synthetic WebP, fixture weather and physical
+acceptance limits above also apply to these captures.

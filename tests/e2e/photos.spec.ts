@@ -551,7 +551,7 @@ test('expired upload sessions retain the whole selected batch for recovery in th
   await expect(page.locator('[data-storage]')).toContainText('2 photos');
 });
 
-test('private slideshow pixels expire after five offline minutes', async ({
+test('backward clocks clear private slideshow pixels and online verification restores them', async ({
   page,
   context,
 }) => {
@@ -585,11 +585,11 @@ test('private slideshow pixels expire after five offline minutes', async ({
   await expect(page.locator('[data-photo-stage] img')).toBeVisible();
   expect(
     await page.evaluate(() =>
-      Object.keys(localStorage).some((key) =>
+      Object.keys(localStorage).filter((key) =>
         /photo|catalog|override/v.test(key),
       ),
     ),
-  ).toBe(false);
+  ).toEqual(['dayframe.offline-photos.v1']);
   expect(await page.evaluate(async () => globalThis.caches.keys())).toEqual([]);
   expect(
     await page.evaluate(async () => {
@@ -597,4 +597,32 @@ test('private slideshow pixels expire after five offline minutes', async ({
       return registrations.length;
     }),
   ).toBe(0);
+});
+
+test('a signed-in admin automatically caches ordinary Photos visits for offline mode return', async ({
+  page,
+  context,
+}) => {
+  await page.route('**/api/config/display', async (route) =>
+    route.fulfill({json: {...defaultSettings, overrideTimeoutSeconds: 3600}}),
+  );
+  await login(page);
+  await page
+    .locator('[data-photo-files]')
+    .setInputFiles(await syntheticPhoto(page));
+  await expect(page.locator('[data-storage]')).toContainText('1 photo');
+  await page.goto('/');
+  await page.getByRole('button', {name: 'Photos', exact: true}).click();
+  await expect(page.locator('[data-photo-stage] img')).toBeVisible();
+  await expect(page.locator('[data-photo-offline]')).toHaveCount(0);
+  await context.setOffline(true);
+  await page.clock.fastForward(301_000);
+  await page.keyboard.press('Tab');
+  await page.getByRole('button', {name: 'Matin', exact: true}).click();
+  await expect(page.locator('[data-photo-stage] img')).toHaveCount(0);
+  await page.getByRole('button', {name: 'Photos', exact: true}).click();
+  await expect(page.locator('[data-photo-stage] img')).toBeVisible();
+  await expect(page.locator('[data-photo-status]')).toContainText(
+    'Hors connexion',
+  );
 });

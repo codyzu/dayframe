@@ -35,7 +35,7 @@ A successful upload/delete may take 60 seconds or more to appear elsewhere. The 
 
 The upload boundary allows 2 MiB WebP, 1,600px maximum edge. Originals are limited to 40 MiB in-browser and processed sequentially. EXIF orientation is honored, no upscaling occurs, and output has no EXIF, GPS, XMP or ICC profile after sRGB conversion. A bundled WASM encoder handles Safari's absent native WebP encoder, using a temporary worker with timeout and termination. HEIC decoding is browser-dependent; JPEG export is the documented recovery. Actual physical iPhone memory/HEIC testing and representative household duplicate-threshold calibration remain follow-ups; synthetic tests do not establish that coverage.
 
-Slideshow fit defaults to cover. The admin's default fit and interval are supplied by M4 settings at dashboard startup. An explicit dashboard framing choice is saved in this browser under `dayframe.photo-fit.v1` and overrides that household default across navigation, reload and configuration refreshes. Only `contain`/`cover` is stored; with storage disabled the choice survives configuration refreshes for the current page. Clear that local key/site storage to follow the household default again. It rotates around 20 seconds, refreshes metadata every five minutes and keeps at most two decoded images/object URLs. Without explicit offline enablement, it retains the current image for up to five minutes during an ordinary outage. Hiding, page exit or mode exit releases decoded images in every profile. M5.O2 adds opt-in IndexedDB retention and live offline rotation as described below; images never enter localStorage, Cache Storage or a service worker. Loading the dashboard after a browser restart still requires the live shell and assets; there is no offline cold-start guarantee. The cookie transport works in tested desktop engines/iPhone emulation; actual Classic 10 acceptance is recorded separately in the hardware documentation.
+Slideshow fit defaults to cover. The admin's default fit and interval are supplied by M4 settings at dashboard startup. An explicit dashboard framing choice is saved in this browser under `dayframe.photo-fit.v1` and overrides that household default across navigation, reload and configuration refreshes. Only `contain`/`cover` is stored; with storage disabled the choice survives configuration refreshes for the current page. Clear that local key/site storage to follow the household default again. It rotates around 20 seconds, refreshes metadata every five minutes and keeps at most two decoded images/object URLs. All authorized Photos visits now retain a bounded collection automatically. If persistent storage is unavailable, decoded-image continuity remains bounded to five minutes. Hiding, page exit or mode exit releases decoded images in every profile. M5.O2 adds automatic IndexedDB retention and live offline rotation as described below; images never enter localStorage, Cache Storage or a service worker. Loading the dashboard after a browser restart still requires the live shell and assets; there is no offline cold-start guarantee. The cookie transport works in tested desktop engines/iPhone emulation; actual Classic 10 acceptance is recorded separately in the hardware documentation.
 
 ## Activation record — 16 October 2026
 
@@ -49,13 +49,20 @@ Local verification of the deployment wiring passed `pnpm verify`: 50 unit/integr
 
 ## Persistent photos — M5.O2, 22 October 2026
 
-On a dedicated browser profile at `/?display=frame`, select Photos, reveal the
-controls, open **Photos hors connexion** and explicitly check **Conserver des
-photos hors connexion sur ce cadre**. The URL alone does not enable retention.
-Ordinary visits and administration do not save a collection automatically. The
-browser requests persistent storage where supported and reports the grant or
-browser-managed eviction status. Permission prompts do not block synchronization.
-Reopen the controls after reload to see the current persistence status.
+Photos are saved automatically when the live slideshow successfully reads the
+complete authenticated catalog and individual images. This works at `/` and
+`/?display=frame`, for both provisioned displays and signed-in administrators.
+There is no opt-in checkbox, frame gate or role classification. An unauthenticated
+visitor cannot fill a collection because the private API rejects its reads.
+An existing valid collection can remain readable offline until its lease expires;
+logout and observed denial clear it immediately when execution is available.
+
+The browser requests persistent storage where supported, and the existing photo
+controls show a read-only grant/eviction status. Permission prompts do not block
+synchronization. Visiting administration preserves the shared collection; admin
+previews keep their existing shorter memory lifetime. The slideshow, rather than
+the management gallery, fills the durable store. Reload the dashboard to load this
+policy revision after deployment; no device restart or reprovisioning is required.
 
 The live slideshow gradually saves photos as its current/next images are fetched,
 with one sequential fetch/decode path rather than a full-album download. A shuffled
@@ -76,7 +83,7 @@ WebKit's observed Blob-preparation failure without decoding an entire collection
 `state` holds one lease plus fit/interval, with no full settings, credentials,
 uploader identities, source fingerprints, appointments or schedules. Fit/interval
 updates and local reads do not renew authorization. A localStorage control record
-holds only explicit enablement and a random invalidation token, never image data
+holds only collection availability and an invalidation token, never image data
 or credentials. It fences pending writes; storage events and BroadcastChannel release
 loaded photos across open tabs. Admin previews also clear on local invalidation,
 with generation checks preventing in-flight results from restoring them.
@@ -87,9 +94,10 @@ failed/partial refreshes do not. Stored wall-clock evidence and running monotoni
 checks reject expired/backward/untrustworthy clocks. Startup/periodic checks run outside Photos too; an independent expiry timer
 also survives pagehide while browser execution continues. Suspended/off devices
 cannot execute cleanup. Observed private API 401/403, explicit frame or Access logout, attempted
-reprovisioning, disabling copies and lease expiry block playback and clear the
+reprovisioning and lease expiry block playback and clear the
 collection. Logout/reprovisioning clear locally before attempting the network.
-Re-enable explicitly after invalidation, then verify access online to save again.
+A later complete successful authenticated catalog refresh restarts caching
+automatically after invalidation; no switch needs resetting.
 A disconnected frame cannot observe remote revocation, home-IP changes or server
 deletions until it reconnects: the accepted seven-day readability tradeoff applies.
 

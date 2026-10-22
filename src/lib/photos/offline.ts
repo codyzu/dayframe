@@ -15,6 +15,7 @@ type Lease = Playback & {verifiedAt: number; checkedAt: number; token: string};
 let lastWall = 0;
 let lastMonotonic = 0;
 let isDenied = false;
+let invalidationRevision = 0;
 let retentionTimer: ReturnType<typeof setTimeout> | undefined;
 
 let channel: BroadcastChannel | undefined;
@@ -138,6 +139,7 @@ export async function clearOfflinePhotos() {
 // The synchronous tombstone fences pending writes before asynchronous deletion.
 // If deletion fails, every subsequent access retries it and remains denied.
 export function invalidateOfflinePhotos() {
+  invalidationRevision++;
   channel?.postMessage('deny');
   clearTimeout(retentionTimer);
   isDenied = true;
@@ -176,6 +178,7 @@ if (typeof globalThis.addEventListener === 'function') {
       ? new BroadcastChannel(controlKey)
       : undefined;
   channel?.addEventListener('message', () => {
+    invalidationRevision++;
     isDenied = true;
     for (const listener of listeners) {
       listener();
@@ -190,6 +193,12 @@ if (typeof globalThis.addEventListener === 'function') {
     }
 
     isDenied = false;
+    // Another tab starting an authorized collection is not an access denial.
+    if (offlineControl()) {
+      return;
+    }
+
+    invalidationRevision++;
     for (const listener of listeners) {
       listener();
     }
@@ -200,14 +209,49 @@ if (typeof globalThis.addEventListener === 'function') {
   });
 }
 
-export async function enableOfflinePhotos() {
-  // Never let a previous collection become readable under a new opt-in.
+// A revision fences authorization started before logout, denial or reprovisioning.
+export function offlineRevision() {
+  try {
+    const value = JSON.parse(localStorage.getItem(controlKey) ?? 'null') as
+      | {
+          token?: unknown;
+        }
+      | undefined;
+    const token = typeof value?.token === 'string' ? value.token : 'initial';
+    return `${invalidationRevision}:${token}`;
+  } catch {
+    return `${invalidationRevision}:unavailable`;
+  }
+}
+
+// Call only after a complete authenticated catalog succeeds.
+export async function enableOfflinePhotos(
+  expectedRevision = offlineRevision(),
+) {
+  if (expectedRevision !== offlineRevision()) {
+    return undefined;
+  }
+
+  const existing = offlineControl();
+  if (existing) {
+    return existing.token;
+  }
+
+  // A denied or missing control starts a fresh collection after authorization.
   await clearOfflinePhotos();
-  const control = {token: crypto.randomUUID(), enabled: true};
+  if (expectedRevision !== offlineRevision()) {
+    return undefined;
+  }
+
+  const control: Control = {
+    token: expectedRevision.slice(expectedRevision.indexOf(':') + 1),
+    enabled: true,
+  };
   localStorage.setItem(controlKey, JSON.stringify(control));
   isDenied = false;
   lastWall = 0;
   lastMonotonic = 0;
+  return control.token;
 }
 
 export function isOfflineLeaseValid(

@@ -202,7 +202,7 @@ import {displayConfig} from '../lib/dashboard/config';
   }
   .dashboard[data-mode='photos'] [data-display-retry] {
     position: fixed;
-    top: 5.5rem;
+    top: 9rem;
     right: 1rem;
   }
   .dashboard[data-mode='photos']
@@ -214,8 +214,7 @@ import {displayConfig} from '../lib/dashboard/config';
     background: var(--colors-night);
     color: var(--colors-night-ink);
   }
-  .dashboard[data-navigation='hidden'] :global([data-photo-controls]),
-  .dashboard[data-navigation='hidden'] :global([data-photo-offline-controls]) {
+  .dashboard[data-navigation='hidden'] :global([data-photo-controls]) {
     visibility: hidden;
   }
   .dashboard[data-mode='night'] [data-dashboard-footer] > label {

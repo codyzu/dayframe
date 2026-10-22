@@ -60,3 +60,12 @@ memory continuity. Every profile releases decoded images on hide/mode/page exit.
 Admin previews keep their existing short lease and additionally clear on local
 invalidation. No service worker or offline cold-start support is implemented in O2;
 no deployment or actual-device acceptance is claimed.
+
+### Automatic retention policy revision — 22 October 2026
+
+The owner subsequently removed the opt-in and frame restriction: every authorized
+browser using the Photos slideshow, including signed-in admins and ordinary URLs,
+automatically retains the bounded collection. This supersedes the explicitly
+enabled-profile/five-minute-baseline distinction in the historical O2 note above.
+Storage-unavailable memory fallback and admin previews retain their short lifetime.
+See [ADR 0009](0009-offline-photo-fallback.md#automatic-retention-revision--22-october-2026).

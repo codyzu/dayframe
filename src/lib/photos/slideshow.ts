@@ -3,6 +3,7 @@ import {
   offlinePersistence,
   updateOfflinePlayback,
   enableOfflinePhotos,
+  offlineRevision,
   invalidateOfflinePhotos,
   offlineControl,
   onOfflineInvalidation,
@@ -71,18 +72,9 @@ export function mountSlideshow(
     fit.value = stage.dataset.fit;
   }
 
-  const offlineToggle = root.querySelector<HTMLInputElement>(
-    '[data-photo-offline]',
-  )!;
   const offlineStatus = root.querySelector<HTMLElement>(
     '[data-photo-offline-status]',
   )!;
-  const offlineControls = root.querySelector<HTMLElement>(
-    '[data-photo-offline-controls]',
-  )!;
-  offlineControls.hidden =
-    new URL(location.href).searchParams.get('display') !== 'frame';
-  offlineToggle.checked = Boolean(offlineControl());
   let isStoredPlayback = false;
   let savedSubset = new Set<string>();
   let storageMessage = '';
@@ -97,10 +89,6 @@ export function mountSlideshow(
       ? 'Stockage persistant accordé · synchronisation progressive.'
       : 'Stockage soumis à éviction · synchronisation progressive.';
     offlineStatus.textContent = storageMessage;
-  }
-
-  if (offlineControl()) {
-    void reportPersistence();
   }
 
   let lastPrivacyWall = Date.now();
@@ -190,8 +178,8 @@ export function mountSlideshow(
     clear();
     isStoredPlayback = false;
     refreshAt = 0;
-    offlineToggle.checked = Boolean(offlineControl());
-    offlineStatus.textContent = 'Copies locales effacées ou accès à vérifier.';
+    offlineStatus.hidden = true;
+    storageMessage = '';
     status.textContent = 'Accès privé requis. Reconnectez cet affichage.';
     if (isActive) {
       timer = setTimeout(wake, 60_000);
@@ -199,36 +187,16 @@ export function mountSlideshow(
   }
 
   onOfflineInvalidation(deny);
-  offlineToggle.addEventListener('change', () => {
-    if (!offlineToggle.checked) {
-      invalidateOfflinePhotos();
-      return;
-    }
-
-    offlineToggle.disabled = true;
-    void enableOfflinePhotos()
-      .then(() => {
-        offlineStatus.textContent =
-          'Synchronisation progressive · autorisation de stockage en cours.';
-        wake();
-        void reportPersistence(true);
-      })
-      .catch(() => {
-        invalidateOfflinePhotos();
-        offlineStatus.textContent = 'Stockage local indisponible.';
-      })
-      .finally(() => {
-        offlineToggle.disabled = false;
-      });
-  });
-
   fit.addEventListener('change', () => {
     preferredFit = fit.value === 'cover' ? 'cover' : 'contain';
     applyFit();
-    void updateOfflinePlayback({
-      fit: preferredFit,
-      interval: settings.slideshowIntervalSeconds,
-    }).catch(() => undefined);
+    if (offlineControl()) {
+      void updateOfflinePlayback({
+        fit: preferredFit,
+        interval: settings.slideshowIntervalSeconds,
+      }).catch(() => undefined);
+    }
+
     try {
       localStorage.setItem(fitKey, preferredFit);
     } catch {
@@ -317,13 +285,36 @@ export function mountSlideshow(
     return {id, url, image};
   }
 
+  async function prepareOfflineCatalog(revision: string) {
+    try {
+      const wasEnabled = Boolean(offlineControl());
+      const token = await enableOfflinePhotos(revision);
+      if (token !== undefined) {
+        offlineStatus.hidden = false;
+        void reportPersistence(!wasEnabled);
+      }
+
+      return token;
+    } catch {
+      offlineStatus.hidden = false;
+      offlineStatus.textContent =
+        'Stockage local indisponible · lecture en ligne.';
+      return undefined;
+    }
+  }
+
   // eslint-disable-next-line unicorn/consistent-boolean-name -- The refresh is the action; its result indicates whether a usable catalog remains.
   async function refreshCatalog(run: number, signal: AbortSignal) {
-    const token = offlineControl()?.token;
+    const revision = offlineRevision();
     const result = await fetchCatalog(
       false,
       AbortSignal.any([signal, AbortSignal.timeout(15_000)]),
     );
+    if (run !== generation) {
+      return false;
+    }
+
+    const token = await prepareOfflineCatalog(revision);
     if (run !== generation) {
       return false;
     }
@@ -414,7 +405,9 @@ export function mountSlideshow(
         throw error;
       }
 
-      const stored = await savedPhotos().catch(() => []);
+      const stored = offlineControl()
+        ? await savedPhotos().catch(() => [])
+        : [];
       const lease =
         stored.length > 0
           ? await savedLease().catch(() => undefined)
@@ -596,10 +589,12 @@ export function mountSlideshow(
     configure(value: Settings) {
       settings = value;
       applyFit();
-      void updateOfflinePlayback({
-        fit: preferredFit ?? settings.fit,
-        interval: settings.slideshowIntervalSeconds,
-      }).catch(() => undefined);
+      if (offlineControl()) {
+        void updateOfflinePlayback({
+          fit: preferredFit ?? settings.fit,
+          interval: settings.slideshowIntervalSeconds,
+        }).catch(() => undefined);
+      }
     },
     deny,
   };

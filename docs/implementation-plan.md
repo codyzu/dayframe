@@ -143,7 +143,7 @@ Complete this before publishing any private photo route:
 
 The owner selected a small web fallback rather than a cached full dashboard. Online
 navigation loads the live application normally; offline startup serves a minimal
-slideshow using explicitly retained private photos. Weather, vigilance, appointments
+slideshow using automatically retained private photos from authorized reads. Weather, vigilance, appointments
 and the full dashboard are not precached. [ADR 0009](decisions/0009-offline-photo-fallback.md)
 controls the architecture, privacy boundaries, upstream provenance and accepted policies.
 The owner accepted seven-day retention since the last authenticated photo/catalog
@@ -154,8 +154,8 @@ work, not retroactively completed by earlier offline tests.
 
 | Phase                          | Reviewable slice                                                                                                                                                                                                                                                                                                                              | Acceptance gate / status                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| M5.O1 — Contract               | Write ADR 0009, record selected architecture, retention/clearing boundaries, failure states and this sequence.                                                                                                                                                                                                                                | **Complete, including owner policy acceptance on 22 October 2026.** No policy decisions remain before phase 2. Original five-minute baseline is now superseded for O2 opted-in profiles; O3–O5 remain planned.                                                                                                                                                        |
-| M5.O2 — Persistent photos      | Shared IndexedDB module; explicit dedicated-display enablement; bounded gradual downloads; live slideshow reads saved photos during outages and mode changes. Preserve two decoded images, catalog pagination, authorization denial and local invalidation.                                                                                   | **Complete locally, 22 October 2026.** Shared store, explicit frame opt-in, incremental bounded persistence and live outage/mode-return playback. Browser acceptance and limits are recorded in the O2 execution record below. No service worker, cold-start, deployment or device claim.                                                                             |
+| M5.O1 — Contract               | Write ADR 0009, record selected architecture, retention/clearing boundaries, failure states and this sequence.                                                                                                                                                                                                                                | **Complete, including owner policy acceptance on 22 October 2026.** No policy decisions remain before phase 2. Original five-minute baseline is now superseded for authorized Photos browsers; O3–O5 remain planned.                                                                                                                                                  |
+| M5.O2 — Persistent photos      | Shared IndexedDB module; automatic authorized-browser persistence; bounded gradual downloads; live slideshow reads saved photos during outages and mode changes. Preserve two decoded images, catalog pagination, authorization denial and local invalidation.                                                                                | **Complete locally, 22 October 2026.** Shared store, automatic persistence in authorized browsers, incremental bounded persistence and live outage/mode-return playback. Browser acceptance and limits are recorded in the O2 execution record below. No service worker, cold-start, deployment or device claim.                                                      |
 | M5.O3 — Standalone fallback    | One self-contained offline HTML document using the same photo store, lease and playback preferences; empty/expired state, photos at all hours offline, manual/automatic reconnection. No external runtime assets or private data embedded in the public artifact.                                                                             | Direct fixture/browser testing with all networking blocked; storage corruption/absence, fit/interval, retention, continuous overnight playback, limited decoding and recovery backoff. Public fallback/CSP inspection. This establishes the document independently of navigation interception.                                                                        |
 | M5.O4 — Navigation fallback    | Stable small worker; allowlisted dashboard navigation only; bounded network-first attempt with saved fallback. All other requests retain ordinary handling. Cover partial dashboard startup failure without a new forbidden kiosk URL. Version only the public fallback, with compatible storage and explicit activation/retirement behavior. | Browser tests for offline reload, fresh online deployment, first visit without a saved fallback, timeouts, HTTP/auth/security failures, partial loads, reconnection without loops, admin/setup/API exclusions, old/new pages, interrupted update and worker removal. Desktop software evidence only; no device-wide activation before phase 5 integration is ready.   |
 | M5.O5 — Classic 10 integration | Refresh upstream device research and actual device identity/browser; teach the kiosk heartbeat/recovery policy to distinguish healthy offline playback and empty/expired retry states from faults. Preserve address/TLS restrictions, clock gate and maintenance paths.                                                                       | Host policy tests first; specifically authorized installation/restart/offline cold-start tests on the actual GeckoView profile, Wi-Fi return, local retention/eviction behavior, continuous overnight playback, supervisor stability and sustained operation. Record measured evidence and remaining limits; do not close unrelated H4/M4/M6/security/soak deferrals. |
@@ -1230,3 +1230,61 @@ Reviewed [synthetic Firefox frame](evidence/m5-o2/frame-firefox.png) and
 these captures. `git diff --check` and changed documentation link checks passed.
 No deployment, service worker, device action or cold-start claim. M5.O2 is complete
 as a local software slice; O3–O5 and the existing physical/security/soak gates remain.
+
+## Automatic authorized-browser photo retention — 22 October 2026
+
+Owner approved removing the opt-in and retaining photos in all authorized browsers,
+including signed-in administrators. This supersedes the original explicit-enable
+policy and the subsequent frame-only proposal. The private API already governs
+access; the deployed API and its authorization rules remain unchanged. The live
+Photos slideshow automatically initializes/reuses the store after a complete valid
+catalog read, then saves its bounded shuffled subset as individual authorized
+images arrive. No frame URL check, role field, role lookup or eligibility UI remains.
+Ordinary `/` visits and administrator dashboards use the same behavior as frames.
+Existing valid opt-in collections are compatible without a schema migration.
+
+Removed the checkbox, expandable opt-in panel and its explanatory copy. A small
+read-only storage status remains in the existing transient photo controls. Preserved
+seven-day leases, 100-photo/100,000,000-byte limits, two decoded images, photo API
+protection, logout/denial/reprovisioning clearing and deletion/quota/clock handling.
+New automatic initialization is fenced against authorization that began before
+local invalidation. The invalidation token remains stable when a valid collection
+starts and rotates only on denial/clearing; another tab's successful initialization
+does not clear current photos or admin previews. Administration does not purge an
+otherwise valid collection; its own preview memory limits remain unchanged.
+
+Re-read the local specification, M5 plan and ADR 0009. Re-inspected the pinned Wes
+Bos checkout at `f1e0820918c926396e0ccafb4839568825f63edc`, root MIT `LICENSE`,
+`dashboard/js/slideshow.js` and `dashboard/js/views/photos.js`. Retain fullscreen,
+shuffle and explicit lifecycle ideas; authenticated browser persistence is authored
+independently. No upstream source/assets copied. No new API request, dependency,
+service, binding, paid resource, service worker or hardware action.
+
+The preceding M5.O2 commit `bd92a72` deployed through [Checks run 39782350377](https://github.com/codyzu/dayframe/actions/runs/39782350377),
+passing 128 unit/integration tests, 244 browser checks (four intentional skips),
+the Workers Free gate, verified-build/privacy smoke checks and an independent live
+anonymous-browser check. The revision in this section follows the same ordinary
+main-push workflow; deployment and its final validation are reported after completion.
+O3/O4 offline cold navigation and O5 device integration remain separate.
+
+Validation passed: Astro/Worker types, production build, XO (the same four existing
+complexity warnings), all 128 unit/integration tests, and the full browser suite:
+268 passed with four existing intentional skips across Chromium, Firefox, WebKit
+and mobile. Added actual authenticated-admin/API coverage at `/`, ordinary/frame
+URL parity, anonymous denial, preservation of existing copies through admin visits,
+automatic restoration after invalidation, pending-grant fencing and initialization
+across open tabs. Existing seven-day/size/quota/clock/deletion/privacy checks remain.
+Two initial test assumptions needed updating: a five-minute manual mode override
+hid Photos during an age check, and an old assertion forbade the now-required local
+control record. The corrected checks isolate retention from scheduling and permit
+only the existing non-image control metadata.
+
+Visual review caught new storage-status text crowding the retry button. Constrained
+the existing control width and moved the Photos-only retry position below it.
+All 68 focused offline browser cases passed after that presentation correction,
+including explicit overlap/viewport assertions. Reviewed synthetic
+[Firefox](evidence/m5-o2/automatic-firefox.png) and
+[mobile](evidence/m5-o2/automatic-mobile.png) captures; no household data is present.
+Changed documentation links and `git diff --check` passed. The owner authorized
+commit/push and the ordinary production workflow; no device action or cold-start
+acceptance is included in this slice.

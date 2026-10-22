@@ -83,7 +83,7 @@ test.beforeEach(async ({page}) => {
   );
 });
 
-test('explicit frame opt-in, gradual saving, offline rotation and mode return retain only two URLs', async ({
+test('authorized browsers automatically save gradually, rotate offline and return with only two URLs', async ({
   page,
 }, info) => {
   await page.goto('/calendar-privacy');
@@ -134,15 +134,11 @@ test('explicit frame opt-in, gradual saving, offline rotation and mode return re
   });
   await page.goto('/');
   await page.getByRole('button', {name: 'Photos', exact: true}).click();
-  await expect(page.locator('[data-photo-offline-controls]')).toBeHidden();
-  expect(await storedCount(page)).toBe(0);
+  await expect(page.locator('[data-photo-offline]')).toHaveCount(0);
+  await expect.poll(async () => storedCount(page)).toBeGreaterThan(0);
   await page.goto('/?display=frame');
   await page.getByRole('button', {name: 'Photos', exact: true}).click();
-  await page.getByText('Photos hors connexion', {exact: true}).click();
-  await page.locator('[data-photo-offline]').check();
-  await expect(page.locator('[data-photo-offline-status]')).toContainText(
-    /Stockage|Copies locales|Synchronisation/v,
-  );
+  await expect(page.locator('[data-photo-offline]')).toHaveCount(0);
   for (let index = 0; index < 5; index++) {
     await page.clock.runFor(20_000);
     await expect(page.locator('[data-photo-stage] img')).toHaveCount(1);
@@ -169,11 +165,23 @@ test('explicit frame opt-in, gradual saving, offline rotation and mode return re
   await page.getByRole('button', {name: 'Photos', exact: true}).click();
   await expect(page.locator('[data-photo-stage] img')).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('data-urls', '2');
+  const geometry = await page.evaluate(() => {
+    const controls = globalThis.document
+      .querySelector('[data-photo-controls]')!
+      .getBoundingClientRect();
+    const retry = globalThis.document
+      .querySelector('[data-display-retry]')!
+      .getBoundingClientRect();
+    return {
+      controlsBottom: controls.bottom,
+      retryTop: retry.top,
+      width: globalThis.document.documentElement.scrollWidth,
+      viewport: globalThis.innerWidth,
+    };
+  });
+  expect(geometry.controlsBottom).toBeLessThanOrEqual(geometry.retryTop);
+  expect(geometry.width).toBeLessThanOrEqual(geometry.viewport);
   await page.screenshot({path: info.outputPath('offline-photos.png')});
-  await page.keyboard.press('Tab');
-  await page.locator('[data-photo-offline]').uncheck();
-  await expect(page.locator('[data-photo-stage] img')).toHaveCount(0);
-  expect(await storedCount(page)).toBe(0);
 });
 
 test('shared store bounds encoded count/bytes, projects metadata and fences stale writes', async ({
@@ -187,7 +195,9 @@ test('shared store bounds encoded count/bytes, projects metadata and fences stal
       const store = (await import(path)) as Store;
       const [photo] = await store.savedPhotos();
       const blob = (await store.savedPhoto(photo.id))!;
+      const revision = store.offlineRevision();
       store.invalidateOfflinePhotos();
+      await store.enableOfflinePhotos(revision);
       await store.savePhoto(photo, blob, previousToken);
       return {
         keys: Object.keys(photo).toSorted(),
@@ -321,20 +331,28 @@ async function routeSeededCatalog(page: Page) {
   await page.route('**/api/config/display', async (route) =>
     route.fulfill({json: defaultSettings}),
   );
-  await page.route('**/api/photos**', async (route) =>
-    route.fulfill({
+  await page.route('**/api/photos**', async (route) => {
+    if (new URL(route.request().url()).pathname !== '/api/photos') {
+      await route.fulfill({
+        contentType: 'image/webp',
+        body: Buffer.from(webpBytes),
+      });
+      return;
+    }
+
+    await route.fulfill({
       json: {
         photos: Array.from({length: 3}, (_, index) => ({
           id: index.toString(16).padStart(64, '0'),
           width: 20,
           height: 20,
-          size: 42,
+          size: webpBytes.length,
           contentType: 'image/webp',
         })),
         cursor: null,
       },
-    }),
-  );
+    });
+  });
 }
 
 for (const action of ['401', '403', 'logout', 'reprovision'] as const) {
@@ -379,7 +397,7 @@ for (const action of ['401', '403', 'logout', 'reprovision'] as const) {
     }
 
     await expect(page.locator('[data-photo-stage] img')).toHaveCount(0);
-    await expect(page.locator('[data-photo-offline]')).not.toBeChecked();
+    await expect(page.locator('[data-photo-offline]')).toHaveCount(0);
     await expect.poll(async () => storedCount(page)).toBe(0);
     await other.close();
   });
@@ -474,7 +492,6 @@ test('human Access logout clears another display before navigation', async ({
   await page.goto('/?display=frame');
   await page.getByRole('button', {name: 'Photos', exact: true}).click();
   await expect(page.locator('[data-photo-stage] img')).toBeVisible();
-  await page.route('**/api/photos**', async (route) => route.abort());
   const admin = await context.newPage();
   await admin.route('**/api/**', async (route) => {
     const path = new URL(route.request().url()).pathname;
@@ -490,6 +507,7 @@ test('human Access logout clears another display before navigation', async ({
   await admin.goto('/admin/settings');
   await expect(admin.locator('[data-status]')).toContainText('Synthetic admin');
   await expect(page.locator('[data-photo-stage] img')).toBeVisible();
+  await page.route('**/api/photos**', async (route) => route.abort());
   await admin.route('**/cdn-cgi/access/logout', async (route) =>
     route.fulfill({body: 'Signed out'}),
   );
@@ -563,4 +581,102 @@ test('failed cleanup stays denied, retries, and expiry still clears copies after
   await page.evaluate(() => globalThis.dispatchEvent(new Event('pagehide')));
   await page.clock.fastForward(7 * 86_400_000 + 60_000);
   await expect.poll(rawCount).toBe(0);
+});
+
+for (const path of ['/', '/?display=frame']) {
+  test(`authorized Photos at ${path} automatically retains copies without a frame or role gate`, async ({
+    page,
+  }) => {
+    await routeSeededCatalog(page);
+    await page.route('**/api/config/display', async (route) =>
+      route.fulfill({json: {...defaultSettings, overrideTimeoutSeconds: 3600}}),
+    );
+    await page.goto(path);
+    await page.getByRole('button', {name: 'Photos', exact: true}).click();
+    await expect(page.locator('[data-photo-stage] img')).toBeVisible();
+    await expect.poll(async () => storedCount(page)).toBeGreaterThan(0);
+    await expect(page.locator('[data-photo-offline]')).toHaveCount(0);
+    await page.route('**/api/photos**', async (route) => route.abort());
+    await page.clock.fastForward(301_000);
+    await expect(page.locator('[data-photo-stage] img')).toBeVisible();
+    await expect.poll(async () => storedCount(page)).toBeGreaterThan(0);
+  });
+}
+
+test('anonymous browsers never enable storage from the frame URL alone', async ({
+  page,
+}) => {
+  await page.route('**/api/photos**', async (route) =>
+    route.fulfill({status: 401, json: {error: {message: 'Unauthorized'}}}),
+  );
+  await page.goto('/?display=frame');
+  await page.getByRole('button', {name: 'Photos', exact: true}).click();
+  await expect(page.locator('[data-photo-status]')).toContainText(
+    'Accès privé',
+  );
+  expect(await storedCount(page)).toBe(0);
+  await expect(page.locator('[data-photo-stage] img')).toHaveCount(0);
+});
+
+test('existing retained copies survive ordinary visits and administration until logout', async ({
+  page,
+}) => {
+  await page.goto('/calendar-privacy');
+  await seed(page);
+  await routeSeededCatalog(page);
+  await page.goto('/');
+  await page.getByRole('button', {name: 'Photos', exact: true}).click();
+  await expect(page.locator('[data-photo-stage] img')).toBeVisible();
+  expect(await storedCount(page)).toBe(3);
+  await page.route('**/api/**', async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    await route.fulfill({
+      json:
+        path === '/api/session'
+          ? {role: 'admin', subject: 'Synthetic admin'}
+          : path === '/api/config'
+            ? defaultSettings
+            : null,
+    });
+  });
+  await page.goto('/admin/settings');
+  await expect(page.locator('[data-status]')).toContainText('Synthetic admin');
+  expect(await storedCount(page)).toBe(3);
+  await page.route('**/cdn-cgi/access/logout', async (route) =>
+    route.fulfill({body: 'Signed out'}),
+  );
+  await page.getByRole('link', {name: 'Se déconnecter', exact: true}).click();
+  expect(await storedCount(page)).toBe(0);
+});
+
+test('automatic initialization in another tab preserves pending authorized work', async ({
+  page,
+  context,
+}) => {
+  await page.goto('/calendar-privacy');
+  const revision = await page.evaluate(async (path) => {
+    const store = (await import(path)) as Store;
+    store.onOfflineInvalidation(() => {
+      globalThis.document.documentElement.dataset.invalidated = 'true';
+    });
+    return store.offlineRevision();
+  }, storePath);
+  const other = await context.newPage();
+  await routeStore(other);
+  await other.goto('/calendar-privacy');
+  await seed(other, 1);
+  await expect.poll(async () => storedCount(page)).toBe(1);
+  const token = await page.evaluate(
+    async ({path, revision: expectedRevision}) => {
+      const store = (await import(path)) as Store;
+      return store.enableOfflinePhotos(expectedRevision);
+    },
+    {path: storePath, revision},
+  );
+  expect(token).toBeDefined();
+  await expect(page.locator('html')).not.toHaveAttribute(
+    'data-invalidated',
+    'true',
+  );
+  await other.close();
 });

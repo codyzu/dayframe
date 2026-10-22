@@ -53,7 +53,7 @@
   </div>
   <div
     data-photo-controls
-    class="fixed top-4 right-4 z-2 flex max-w-[calc(100vw-2rem)] flex-wrap items-center gap-3 rounded-xl bg-surface text-primary border border-border p-2 text-sm"
+    class="fixed top-4 right-4 z-2 flex max-w-[min(25rem,calc(100vw-2rem))] flex-wrap items-center gap-3 rounded-xl bg-surface text-primary border border-border p-2 text-sm"
   >
     <label class="flex items-center gap-2">
       Cadrage
@@ -73,25 +73,13 @@
     >
       Suivante
     </button>
+    <p
+      data-photo-offline-status
+      hidden
+      role="status"
+      class="basis-full text-left text-xs text-mist"
+    ></p>
   </div>
-  <details
-    data-photo-offline-controls
-    hidden
-    class="fixed right-4 bottom-40 z-2 max-w-[min(28rem,calc(100vw-2rem))] rounded-xl bg-surface border border-border p-3 text-left text-sm"
-  >
-    <summary class="min-h-11 cursor-pointer content-center">
-      Photos hors connexion
-    </summary>
-    <label class="flex min-h-11 items-center gap-3">
-      <input type="checkbox" data-photo-offline class="size-5 shrink-0" />
-      Conserver des photos hors connexion sur ce cadre
-    </label>
-    <p class="mt-1 text-mist">
-      Jusqu’à 100 photos / 100 Mo, pendant 7 jours après vérification de
-      l’accès. Copies lisibles hors ligne, même après révocation à distance.
-    </p>
-    <p data-photo-offline-status role="status" class="mt-1 text-mist"></p>
-  </details>
   <p
     data-photo-status
     role="status"
