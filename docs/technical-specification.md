@@ -140,6 +140,10 @@ A direct browser fetch is acceptable because Open-Meteo does not require an API 
 
 Refresh about every 30 minutes; cache the last successful response locally and label stale information. The interface should remain usable if weather fetching fails.
 
+**Proposed follow-up, 22 October 2026:** [Weather freshness and recovery](weather-freshness.md)
+specifies bounded retries for successful responses containing old conditions and
+dated stale-weather copy in Photos and Conseil du jour. Implementation is pending.
+
 ### 4.3 Weather icons
 
 Use **Meteocons** via Iconify/UnoCSS, preferably colorful Fill icons. Define a layered mapping:

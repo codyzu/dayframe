@@ -75,6 +75,12 @@ Use the source layout proposed in specification §15. Keep ADRs in `docs/decisio
 
 ## 4. M2 — Morning weather
 
+**Pending follow-up, 22 October 2026:** Implement [weather freshness and recovery](weather-freshness.md)
+as one M2/M5 slice: timestamp-based retry deadlines, bounded recovery for stale
+HTTP 200 responses, and dated stale-weather copy in Photos and Conseil du jour.
+The spec is written; implementation, request-budget update and acceptance checks
+remain pending. No product code or deployment change is included in this entry.
+
 1. **M2.1 — Data adapter:** Define a normalized weather model with timestamped hourly data, location, timezone, units, and fetch time. Fetch only required Open-Meteo fields; validate responses. Use deterministic fixtures for development and tests.
 2. **M2.2 — Icons and descriptions:** Implement exhaustive WMO-to-condition mapping, explicit day/night Meteocons identifiers, French labels, and an unknown fallback. Verify names against the installed collection and keep UnoCSS references literal/extractable.
 3. **M2.3 — UI:** Build clock/date, current and feels-like temperatures, high/low, rain information, and an hourly chart. Start with lightweight SVG, distinct temperature/precipitation encodings, an accessible text equivalent, and a current-time marker. Obtain the approved mockups mentioned in the specification before claiming visual conformity; they are not present in this repository.
