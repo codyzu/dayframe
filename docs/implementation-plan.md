@@ -1122,3 +1122,42 @@ into the same shell, warning banners and mode switching. Reviewed synthetic
 1280×800 standard and Firefox warning/six-event captures: layout and frame fit are
 preserved. `git diff --check` passed. Physical Firefox/GeckoView 143 acceptance
 remains a separate device check; this change is not deployed.
+
+## Photo upload result template — 22 October 2026
+
+Owner requested committing the completed weather-template slice first, then applying
+the same conventions to upload result rows and committing/pushing/deploying the
+result. Weather refactor committed as `33af469` before this slice.
+
+The photo administration page now owns a native result-row template containing the
+message and an initially hidden retry button, styled with literal UnoCSS utilities.
+Each selected file clones one row with `document.importNode` and receives one retry
+handler. Preparation, success, failure and waiting-for-reconnection update its text
+and button visibility in place. This removes the two duplicated retry-button
+construction paths and preserves the selected file, sequential processing,
+reauthorization, duplicate review and upload identity across retries. No custom CSS,
+dependency, API/authentication, photo retention or billing change.
+
+Re-read the photo specification/M3 acceptance gates and inspected upstream
+`dashboard/js/views/photos.js` and root MIT `LICENSE` at
+`f1e0820918c926396e0ccafb4839568825f63edc`. Its slideshow controls do not implement
+Dayframe's private upload-result workflow; this template is independently authored,
+with no upstream source/assets copied.
+
+Full browser verification also caught a scope regression from the weather
+component extraction: checkpoint icons had lost their still-SVG override. Moved
+that existing SVG-specific rule into `WeatherCheckpoints.astro`, where cloned nodes
+retain its Astro scope. Warning-specific icon sizing and chart spacing now use
+literal group-data/responsive UnoCSS utilities in their owning components instead
+of parent-scoped selectors that cannot reach extracted markup.
+
+Validation: types, lint (five existing complexity warnings only), all 126
+unit/integration tests and production build passed. The full browser run passed
+192 cases with four intentional skips and identified the four engine variants of
+the checkpoint-animation regression above. After the correction, all 84 affected
+foundation/Morning/warning/density cases passed, with four intentional skips.
+Coverage includes repeated failed retries into the same row/button, literal
+markup-like filenames and expired-session batch recovery. Reviewed synthetic
+photo-administration and weather captures; `git diff --check` passed. Production
+deployment uses the normal main-branch Checks workflow, verified-assets handoff,
+Workers Free gate and live build/privacy smoke checks. No device action performed.

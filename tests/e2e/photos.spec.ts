@@ -278,7 +278,7 @@ test('unsupported formats report per-file errors and preserve a safe retry', asy
 }) => {
   await login(page);
   await page.locator('[data-photo-files]').setInputFiles({
-    name: 'non-lisible.heic',
+    name: '<img src=x onerror=alert(1)>.heic',
     mimeType: 'image/heic',
     buffer: Buffer.from('synthetic unsupported input'),
   });
@@ -288,6 +288,10 @@ test('unsupported formats report per-file errors and preserve a safe retry', asy
   await expect(
     page.getByRole('button', {name: 'Réessayer', exact: true}),
   ).toBeVisible();
+  await expect(page.locator('[data-upload-message]')).toContainText(
+    '<img src=x onerror=alert(1)>.heic',
+  );
+  await expect(page.locator('[data-upload-results] img')).toHaveCount(0);
   await expect(page.locator('[data-storage]')).toContainText('0 photos');
 });
 
@@ -372,7 +376,7 @@ test('failed uploads retry with the same identity and expired sessions clear pri
 
     identities.push(route.request().headers()['x-photo-sha256']);
     attempts++;
-    if (attempts === 1) {
+    if (attempts <= 2) {
       await route.fulfill({
         status: 503,
         json: {error: {message: 'Quota temporairement atteint.'}},
@@ -387,10 +391,21 @@ test('failed uploads retry with the same identity and expired sessions clear pri
   await expect(page.locator('[data-upload-results]')).toContainText(
     'Quota temporairement atteint',
   );
-  await page.getByRole('button', {name: 'Réessayer', exact: true}).click();
+  const retry = page.getByRole('button', {name: 'Réessayer', exact: true});
+  const row = await page.locator('[data-upload-results] li').elementHandle();
+  const button = await retry.elementHandle();
+  await retry.click();
+  await expect.poll(() => attempts).toBe(2);
+  await expect(retry).toBeVisible();
+  await expect(page.locator('[data-upload-results] li')).toHaveCount(1);
+  await expect(page.locator('[data-upload-retry]')).toHaveCount(1);
+  await retry.click();
   await expect(page.locator('[data-storage]')).toContainText('1 photo');
-  expect(identities).toHaveLength(2);
-  expect(identities[0]).toBe(identities[1]);
+  await expect(page.locator('[data-upload-retry]')).toBeHidden();
+  expect(await row.evaluate((element) => element.isConnected)).toBe(true);
+  expect(await button.evaluate((element) => element.isConnected)).toBe(true);
+  expect(identities).toHaveLength(3);
+  expect(new Set(identities).size).toBe(1);
   await page.context().clearCookies();
   await page.getByRole('button', {name: 'Actualiser', exact: true}).click();
   await expect(page.locator('[data-photo-gallery] img')).toHaveCount(0);

@@ -16,7 +16,7 @@
     <div class="flex items-center justify-center gap-1">
       <span
         data-point-icon
-        class="inline-block size-12 shrink-0"
+        class="inline-block size-12 shrink-0 min-[1000px]:group-data-[alert=true]/weather:size-8"
         aria-hidden="true"
       ></span>
       <p
@@ -31,3 +31,11 @@
     <span data-point-condition class="sr-only"></span>
   </article>
 </template>
+
+<style>
+  /* SVG timelines ignore page animation utilities; keep checkpoint icons still.
+     This rule belongs here so cloned template nodes retain Astro's scope. */
+  [data-point-icon] {
+    background-image: var(--dayframe-static-icon);
+  }
+</style>

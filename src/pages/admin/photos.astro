@@ -98,6 +98,19 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         aria-live="polite"
         class="mt-4 space-y-3 text-sm"
       ></ul>
+      <template data-upload-result-template>
+        <li>
+          <span data-upload-message></span>{' '}
+          <button
+            data-upload-retry
+            type="button"
+            class="min-h-11 underline px-3"
+            hidden
+          >
+            Réessayer
+          </button>
+        </li>
+      </template>
     </section>
     <div class="mt-7 flex flex-wrap items-center justify-between gap-4">
       <div>

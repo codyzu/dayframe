@@ -287,14 +287,6 @@ import WeatherChart from './WeatherChart.astro';
       > section {
       padding-block: 0.25rem;
     }
-    [data-weather][data-alert='true'] [data-chart] {
-      margin-top: 0.25rem;
-    }
-    [data-weather][data-alert='true']
-      :global([data-checkpoints] [class*='i-meteocons-']) {
-      width: 2rem;
-      height: 2rem;
-    }
     [data-weather-alerts] {
       grid-row: 1;
     }
@@ -319,10 +311,6 @@ import WeatherChart from './WeatherChart.astro';
     right: 0;
     width: min(36rem, 85vw);
     z-index: 8;
-  }
-  /* SVG timelines ignore page animation utilities; use the bundled still SVG. */
-  [data-checkpoints] :global([class*='i-meteocons-']) {
-    background-image: var(--dayframe-static-icon);
   }
   @media (prefers-reduced-motion: reduce) {
     [data-current-icon] {

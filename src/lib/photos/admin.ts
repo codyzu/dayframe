@@ -25,6 +25,9 @@ function mountAdmin(root: HTMLElement) {
   const template =
     root.querySelector<HTMLTemplateElement>('[data-photo-card]')!;
   const results = root.querySelector<HTMLElement>('[data-upload-results]')!;
+  const resultTemplate = root.querySelector<HTMLTemplateElement>(
+    '[data-upload-result-template]',
+  )!;
   const dialog = root.querySelector<HTMLDialogElement>(
     '[data-similar-dialog]',
   )!;
@@ -170,10 +173,10 @@ function mountAdmin(root: HTMLElement) {
 
   async function upload(file: File, row: HTMLLIElement) {
     setBusy(true);
-    row.replaceChildren();
-    const text = document.createElement('span');
+    const text = row.querySelector<HTMLElement>('[data-upload-message]')!;
+    const retry = row.querySelector<HTMLButtonElement>('[data-upload-retry]')!;
+    retry.hidden = true;
     text.textContent = `${file.name} · préparation…`;
-    row.append(text);
     try {
       const photo = await processPhoto(file);
       if (catalog.some(({id}) => id === photo.sha256)) {
@@ -224,23 +227,9 @@ function mountAdmin(root: HTMLElement) {
       render();
       text.textContent = `${file.name} · ${body.duplicate ? 'déjà présent' : 'ajouté'} (${body.photo.width} × ${body.photo.height}).`;
     } catch (error) {
-      text.textContent = `${file.name} · ${error instanceof Error ? error.message : 'Envoi échoué.'} `;
+      text.textContent = `${file.name} · ${error instanceof Error ? error.message : 'Envoi échoué.'}`;
       showError(error);
-      const retry = document.createElement('button');
-      retry.type = 'button';
-      retry.textContent = 'Réessayer';
-      retry.className = 'min-h-11 underline px-3';
-      listen(retry, 'click', async () => {
-        if (isBusy) {
-          return;
-        }
-
-        await initialize();
-        if (isAuthorized) {
-          await upload(file, row);
-        }
-      });
-      row.append(retry);
+      retry.hidden = false;
     } finally {
       setBusy(false);
     }
@@ -282,27 +271,30 @@ function mountAdmin(root: HTMLElement) {
     const files = [...(input.files ?? [])];
     input.value = '';
     for (const file of files) {
-      const row = document.createElement('li');
+      const row = document.importNode(
+        resultTemplate.content.firstElementChild!,
+        true,
+      ) as HTMLLIElement;
+      const retry = row.querySelector<HTMLButtonElement>(
+        '[data-upload-retry]',
+      )!;
+      listen(retry, 'click', async () => {
+        if (isBusy) {
+          return;
+        }
+
+        await initialize();
+        if (isAuthorized) {
+          await upload(file, row);
+        }
+      });
       results.append(row);
       if (isAuthorized) {
         await upload(file, row);
       } else {
-        row.textContent = `${file.name} · en attente de reconnexion. `;
-        const retry = document.createElement('button');
-        retry.type = 'button';
-        retry.className = 'min-h-11 underline px-3';
-        retry.textContent = 'Réessayer';
-        listen(retry, 'click', async () => {
-          if (isBusy) {
-            return;
-          }
-
-          await initialize();
-          if (isAuthorized) {
-            await upload(file, row);
-          }
-        });
-        row.append(retry);
+        row.querySelector('[data-upload-message]')!.textContent =
+          `${file.name} · en attente de reconnexion.`;
+        retry.hidden = false;
       }
     }
 
