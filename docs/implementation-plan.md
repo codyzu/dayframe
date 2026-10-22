@@ -128,10 +128,46 @@ Complete this before publishing any private photo route:
 1. Implement a pure mode resolver using the configured IANA timezone and local wall-clock schedule. Define half-open intervals, overnight ranges, DST gaps/repeated hours, and invalid-config fallback. Use injected time in tests.
 2. Add per-display manual overrides and inactivity expiry, hidden touch navigation, Morning/Photos/Home/Night views, and visible recovery controls that do not expose admin tools. Keep Home a placeholder initially.
 3. Recompute scheduled mode on startup, resume, configuration refresh, and time changes. Avoid duplicate timers/listeners across mode transitions.
-4. Implement bounded offline photo caching only after deciding what can remain readable on a compromised/revoked offline frame. Start with in-memory/current-image continuity; persist private images only under an explicit retention and clearing policy. Service worker support is optional and hardware-dependent.
+4. Implement bounded offline photo caching only after deciding what can remain readable on a compromised/revoked offline frame. The current in-memory/current-image continuity remains the baseline. The owner selected a navigation-only service worker and standalone offline slideshow on 22 October 2026; persistent photos follow the accepted retention and clearing policy in [ADR 0009](decisions/0009-offline-photo-fallback.md). Follow the phased extension below; actual GeckoView support remains a device gate.
 5. Add dimmed Night rendering; record hardware brightness/screen-off as a separate M6 capability rather than assuming CSS controls the backlight.
 
 **Exit:** Tests cover every schedule boundary, DST transitions, overnight intervals, manual override expiry, resume, invalid configuration, and routine outages. Browser flows cover touch, reduced motion, all four modes, mobile admin, and no kiosk scrolling.
+
+### M5 offline extension — 22 October 2026
+
+The owner selected a small web fallback rather than a cached full dashboard. Online
+navigation loads the live application normally; offline startup serves a minimal
+slideshow using explicitly retained private photos. Weather, vigilance, appointments
+and the full dashboard are not precached. [ADR 0009](decisions/0009-offline-photo-fallback.md)
+controls the architecture, privacy boundaries, upstream provenance and accepted policies.
+The owner accepted seven-day retention since the last authenticated photo/catalog
+response, a 100-photo/100 MB limit (whichever comes first), and photos at all hours
+while offline. No offline Night screen or saved Night schedule is needed.
+Existing M5 behavior/acceptance remains historical evidence; these phases are additional
+work, not retroactively completed by earlier offline tests.
+
+| Phase                          | Reviewable slice                                                                                                                                                                                                                                                                                                                              | Acceptance gate / status                                                                                                                                                                                                                                                                                                                                              |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M5.O1 — Contract               | Write ADR 0009, record selected architecture, retention/clearing boundaries, failure states and this sequence.                                                                                                                                                                                                                                | **Complete, including owner policy acceptance on 22 October 2026.** No policy decisions remain before phase 2. Current five-minute application behavior remains unchanged until implementation.                                                                                                                                                                       |
+| M5.O2 — Persistent photos      | Shared IndexedDB module; explicit dedicated-display enablement; bounded gradual downloads; live slideshow reads saved photos during outages and mode changes. Preserve two decoded images, catalog pagination, authorization denial and local invalidation.                                                                                   | Synthetic browser coverage for offline rotation, mode return, expired/backward-clock lease, logout/denial across open tabs, complete-vs-partial catalog deletion, interrupted writes, unavailable storage and quota/eviction. No service worker or cold-start claim yet. Update photo operations and prior ADR behavior notes when implemented.                       |
+| M5.O3 — Standalone fallback    | One self-contained offline HTML document using the same photo store, lease and playback preferences; empty/expired state, photos at all hours offline, manual/automatic reconnection. No external runtime assets or private data embedded in the public artifact.                                                                             | Direct fixture/browser testing with all networking blocked; storage corruption/absence, fit/interval, retention, continuous overnight playback, limited decoding and recovery backoff. Public fallback/CSP inspection. This establishes the document independently of navigation interception.                                                                        |
+| M5.O4 — Navigation fallback    | Stable small worker; allowlisted dashboard navigation only; bounded network-first attempt with saved fallback. All other requests retain ordinary handling. Cover partial dashboard startup failure without a new forbidden kiosk URL. Version only the public fallback, with compatible storage and explicit activation/retirement behavior. | Browser tests for offline reload, fresh online deployment, first visit without a saved fallback, timeouts, HTTP/auth/security failures, partial loads, reconnection without loops, admin/setup/API exclusions, old/new pages, interrupted update and worker removal. Desktop software evidence only; no device-wide activation before phase 5 integration is ready.   |
+| M5.O5 — Classic 10 integration | Refresh upstream device research and actual device identity/browser; teach the kiosk heartbeat/recovery policy to distinguish healthy offline playback and empty/expired retry states from faults. Preserve address/TLS restrictions, clock gate and maintenance paths.                                                                       | Host policy tests first; specifically authorized installation/restart/offline cold-start tests on the actual GeckoView profile, Wi-Fi return, local retention/eviction behavior, continuous overnight playback, supervisor stability and sustained operation. Record measured evidence and remaining limits; do not close unrelated H4/M4/M6/security/soak deferrals. |
+
+Each phase is one reviewable slice. O2 can deliver disconnect resilience before O3/O4
+add offline navigation. O4 may be prepared and browser-tested before native integration,
+but exposing it to the active frame requires O5 readiness so a valid fallback does not
+trigger the existing dashboard-only watchdog. Hardware tests/changes need their own
+specific authorization. No new billing, native photo bridge, deployment or device
+change is included in O1.
+
+**O1 evidence:** reviewed current photo/privacy implementation, Worker health routing,
+native address policy and heartbeat, earlier ADRs and the specification. Re-inspected
+upstream slideshow/Photos/kiosk docs and MIT license in the saved checkout at
+`f1e0820918c926396e0ccafb4839568825f63edc`; ADR 0009 records adopted ideas and
+deliberate differences. Documentation only; implementation and physical acceptance
+remain pending. Owner policy decisions were explicitly accepted on 22 October 2026
+and are recorded in ADR 0009; O1 is complete. No phase 2 implementation is included.
 
 ## 8. M6 — Dragon Touch Classic 10
 
