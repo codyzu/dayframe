@@ -1,5 +1,23 @@
 import {defaultSettings, type Settings} from '../dashboard/settings.ts';
 import {
+  offlinePersistence,
+  updateOfflinePlayback,
+  enableOfflinePhotos,
+  invalidateOfflinePhotos,
+  offlineControl,
+  onOfflineInvalidation,
+  savedPhotos,
+  savedPhoto,
+  savedLease,
+  renewOfflineLease,
+  reconcileSavedPhotos,
+  savePhoto,
+  forgetSavedPhoto,
+  offlineLeaseMs,
+  offlinePhotoLimit,
+  offlineByteLimit,
+} from './offline.ts';
+import {
   ApiError,
   fetchCatalog,
   photoRequest,
@@ -53,6 +71,40 @@ export function mountSlideshow(
     fit.value = stage.dataset.fit;
   }
 
+  const offlineToggle = root.querySelector<HTMLInputElement>(
+    '[data-photo-offline]',
+  )!;
+  const offlineStatus = root.querySelector<HTMLElement>(
+    '[data-photo-offline-status]',
+  )!;
+  const offlineControls = root.querySelector<HTMLElement>(
+    '[data-photo-offline-controls]',
+  )!;
+  offlineControls.hidden =
+    new URL(location.href).searchParams.get('display') !== 'frame';
+  offlineToggle.checked = Boolean(offlineControl());
+  let isStoredPlayback = false;
+  let savedSubset = new Set<string>();
+  let storageMessage = '';
+  async function reportPersistence(shouldRequest = false) {
+    const token = offlineControl()?.token;
+    const {isPersistent} = await offlinePersistence(shouldRequest);
+    if (token === undefined || offlineControl()?.token !== token) {
+      return;
+    }
+
+    storageMessage = isPersistent
+      ? 'Stockage persistant accordé · synchronisation progressive.'
+      : 'Stockage soumis à éviction · synchronisation progressive.';
+    offlineStatus.textContent = storageMessage;
+  }
+
+  if (offlineControl()) {
+    void reportPersistence();
+  }
+
+  let lastPrivacyWall = Date.now();
+  let storageCheckAt = 0;
   let catalog: DisplayPhoto[] = [];
   let queue: string[] = [];
   let current: LoadedPhoto | undefined;
@@ -87,6 +139,10 @@ export function mountSlideshow(
   };
 
   function expirePrivacy() {
+    if (offlineControl()) {
+      invalidateOfflinePhotos();
+    }
+
     hasFailed = true;
     generation++;
     controller.abort();
@@ -102,16 +158,77 @@ export function mountSlideshow(
     }
   }
 
-  function renewPrivacyLease() {
-    leaseWall = Date.now() + 300_000;
-    leaseMonotonic = performance.now() + 300_000;
+  function armPrivacyLease(verifiedAt: number, duration: number) {
+    const remaining = Math.max(0, verifiedAt + duration - Date.now());
+    leaseWall = verifiedAt + duration;
+    leaseMonotonic = performance.now() + remaining;
+    lastPrivacyWall = Date.now();
     clearTimeout(privacyTimer);
-    privacyTimer = setTimeout(expirePrivacy, 300_000);
+    privacyTimer = setTimeout(expirePrivacy, remaining);
   }
+
+  async function renewPrivacyLease(token?: string) {
+    armPrivacyLease(Date.now(), token === undefined ? 300_000 : offlineLeaseMs);
+    if (token !== undefined) {
+      await renewOfflineLease(token, {
+        fit: preferredFit ?? settings.fit,
+        interval: settings.slideshowIntervalSeconds,
+      }).catch(() => {
+        offlineStatus.textContent =
+          'Stockage local indisponible · lecture en ligne.';
+      });
+    }
+  }
+
+  function deny() {
+    hasFailed = true;
+    generation++;
+    controller.abort();
+    controller = new AbortController();
+    clearTimeout(timer);
+    clearTimeout(privacyTimer);
+    clear();
+    isStoredPlayback = false;
+    refreshAt = 0;
+    offlineToggle.checked = Boolean(offlineControl());
+    offlineStatus.textContent = 'Copies locales effacées ou accès à vérifier.';
+    status.textContent = 'Accès privé requis. Reconnectez cet affichage.';
+    if (isActive) {
+      timer = setTimeout(wake, 60_000);
+    }
+  }
+
+  onOfflineInvalidation(deny);
+  offlineToggle.addEventListener('change', () => {
+    if (!offlineToggle.checked) {
+      invalidateOfflinePhotos();
+      return;
+    }
+
+    offlineToggle.disabled = true;
+    void enableOfflinePhotos()
+      .then(() => {
+        offlineStatus.textContent =
+          'Synchronisation progressive · autorisation de stockage en cours.';
+        wake();
+        void reportPersistence(true);
+      })
+      .catch(() => {
+        invalidateOfflinePhotos();
+        offlineStatus.textContent = 'Stockage local indisponible.';
+      })
+      .finally(() => {
+        offlineToggle.disabled = false;
+      });
+  });
 
   fit.addEventListener('change', () => {
     preferredFit = fit.value === 'cover' ? 'cover' : 'contain';
     applyFit();
+    void updateOfflinePlayback({
+      fit: preferredFit,
+      interval: settings.slideshowIntervalSeconds,
+    }).catch(() => undefined);
     try {
       localStorage.setItem(fitKey, preferredFit);
     } catch {
@@ -120,7 +237,11 @@ export function mountSlideshow(
   });
   applyFit();
 
-  async function load(id: string, signal: AbortSignal): Promise<LoadedPhoto> {
+  async function download(id: string, signal: AbortSignal, token?: string) {
+    if (isStoredPlayback) {
+      throw new Error('Copie locale indisponible.');
+    }
+
     const response = await photoRequest(`/api/photos/${id}`, {
       signal: AbortSignal.any([signal, AbortSignal.timeout(15_000)]),
     });
@@ -128,13 +249,48 @@ export function mountSlideshow(
       throw new Error('Image invalide.');
     }
 
-    if (!signal.aborted) {
-      renewPrivacyLease();
+    const blob = await response.blob();
+    if (signal.aborted) {
+      throw new Error('Interrompu.');
     }
 
-    const blob = await response.blob();
     if (blob.size > 2 * 1024 * 1024) {
       throw new Error('Image trop volumineuse.');
+    }
+
+    await renewPrivacyLease(token);
+    const photo = catalog.find((photo) => photo.id === id);
+    if (token !== undefined && photo && savedSubset.has(id)) {
+      try {
+        await savePhoto(photo, blob, token);
+      } catch {
+        offlineStatus.textContent =
+          'Stockage saturé ou indisponible · copies existantes conservées.';
+      }
+    }
+
+    return blob;
+  }
+
+  async function load(id: string, signal: AbortSignal): Promise<LoadedPhoto> {
+    const token = offlineControl()?.token;
+    let blob: Blob | undefined;
+    if (token !== undefined) {
+      try {
+        blob = await savedPhoto(id);
+      } catch {
+        /*
+        Network playback still works.
+        */
+      }
+    }
+
+    blob ??= await download(id, signal, token);
+    if (
+      signal.aborted ||
+      (token !== undefined && offlineControl()?.token !== token)
+    ) {
+      throw new Error('Interrompu.');
     }
 
     const url = URL.createObjectURL(blob);
@@ -149,6 +305,12 @@ export function mountSlideshow(
     } catch (error) {
       image.removeAttribute('src');
       URL.revokeObjectURL(url);
+      if (token !== undefined && !signal.aborted) {
+        await forgetSavedPhoto(id).catch(() => undefined);
+        queue = queue.filter((candidate) => candidate !== id);
+        catalog = catalog.filter((photo) => photo.id !== id);
+      }
+
       throw error;
     }
 
@@ -157,6 +319,7 @@ export function mountSlideshow(
 
   // eslint-disable-next-line unicorn/consistent-boolean-name -- The refresh is the action; its result indicates whether a usable catalog remains.
   async function refreshCatalog(run: number, signal: AbortSignal) {
+    const token = offlineControl()?.token;
     const result = await fetchCatalog(
       false,
       AbortSignal.any([signal, AbortSignal.timeout(15_000)]),
@@ -165,8 +328,52 @@ export function mountSlideshow(
       return false;
     }
 
-    renewPrivacyLease();
+    await renewPrivacyLease(token);
+    if (run !== generation) {
+      return false;
+    }
+
+    isStoredPlayback = false;
     catalog = result.display;
+    if (token !== undefined) {
+      try {
+        await reconcileSavedPhotos(catalog, token);
+        const existing = await savedPhotos();
+        const candidates = [
+          ...existing.map(({id}) => id),
+          ...shufflePhotos(catalog.map(({id}) => id)),
+        ];
+        savedSubset = new Set();
+        let bytes = 0;
+        for (const id of candidates) {
+          const photo = catalog.find((photo) => photo.id === id);
+          if (!(
+            photo &&
+            !savedSubset.has(id) &&
+            savedSubset.size < offlinePhotoLimit &&
+            bytes + photo.size <= offlineByteLimit
+          )) {
+            continue;
+          }
+
+          savedSubset.add(id);
+          bytes += photo.size;
+        }
+
+        offlineStatus.textContent =
+          storageMessage === ''
+            ? 'Copies locales activées · conservation maximale de 7 jours.'
+            : storageMessage;
+      } catch {
+        offlineStatus.textContent =
+          'Stockage local indisponible · lecture en ligne.';
+      }
+    }
+
+    if (run !== generation) {
+      return false;
+    }
+
     queue = queue.filter((id) => catalog.some((photo) => photo.id === id));
     if (next && catalog.every((photo) => photo.id !== next?.id)) {
       release(next);
@@ -191,11 +398,60 @@ export function mountSlideshow(
     return true;
   }
 
+  // eslint-disable-next-line unicorn/consistent-boolean-name -- Resolves the catalog and reports whether this run can continue.
+  async function ensureCatalog(run: number, signal: AbortSignal) {
+    if (Date.now() < refreshAt) {
+      return true;
+    }
+
+    try {
+      return await refreshCatalog(run, signal);
+    } catch (error) {
+      if (
+        signal.aborted ||
+        (error instanceof ApiError && [401, 403].includes(error.status))
+      ) {
+        throw error;
+      }
+
+      const stored = await savedPhotos().catch(() => []);
+      const lease =
+        stored.length > 0
+          ? await savedLease().catch(() => undefined)
+          : undefined;
+      if (run !== generation) {
+        return false;
+      }
+
+      if (!lease) {
+        throw error;
+      }
+
+      armPrivacyLease(lease.verifiedAt, offlineLeaseMs);
+      isStoredPlayback = true;
+      catalog = stored;
+      queue = queue.filter((id) => stored.some((photo) => photo.id === id));
+      refreshAt = Date.now() + 60_000;
+      return true;
+    }
+  }
+
+  function takeNext() {
+    if (queue.length === 0) {
+      queue = shufflePhotos(
+        catalog.map(({id}) => id),
+        current?.id,
+      );
+    }
+
+    return queue.shift();
+  }
+
   async function tick() {
     const run = generation;
     const {signal} = controller;
     try {
-      if (Date.now() >= refreshAt && !(await refreshCatalog(run, signal))) {
+      if (!(await ensureCatalog(run, signal))) {
         return;
       }
 
@@ -208,11 +464,7 @@ export function mountSlideshow(
       }
 
       if (!current) {
-        if (queue.length === 0) {
-          queue = shufflePhotos(catalog.map(({id}) => id));
-        }
-
-        const id = queue.shift();
+        const id = takeNext();
         if (id !== undefined) {
           const loaded = await load(id, signal);
           if (run !== generation) {
@@ -226,16 +478,11 @@ export function mountSlideshow(
       }
 
       empty.hidden = Boolean(current);
-      status.textContent = '';
-      // Only one upcoming image is held. Each new cycle excludes the current first.
-      if (queue.length === 0) {
-        queue = shufflePhotos(
-          catalog.map(({id}) => id),
-          current?.id,
-        );
-      }
-
-      const candidate = queue.shift();
+      status.textContent = isStoredPlayback
+        ? 'Hors connexion · photos enregistrées'
+        : '';
+      // Only one upcoming image is held.
+      const candidate = takeNext();
       if (candidate !== undefined && candidate !== current?.id) {
         const loaded = await load(candidate, signal);
         if (run !== generation) {
@@ -246,7 +493,7 @@ export function mountSlideshow(
         next = loaded;
       }
 
-      hasFailed = false;
+      hasFailed = isStoredPlayback;
     } catch (error) {
       if (run !== generation) {
         return;
@@ -285,7 +532,7 @@ export function mountSlideshow(
     clearTimeout(timer);
     controller.abort();
     controller = new AbortController();
-    // Exiting a mode releases all decoded private images; offline continuity is in-mode only.
+    // Exiting a mode releases decoded images; opted-in disk copies remain lease-bound.
     if (isActive) {
       void tick();
     } else {
@@ -326,30 +573,34 @@ export function mountSlideshow(
       return hasFailed;
     },
     checkPrivacy() {
+      if (Date.now() < lastPrivacyWall) {
+        storageCheckAt = 0;
+      }
+
+      if (offlineControl() && Date.now() >= storageCheckAt) {
+        storageCheckAt = Date.now() + 60_000;
+        void savedLease().catch(() => undefined);
+      }
+
       if (
         current &&
-        (Date.now() >= leaseWall || performance.now() >= leaseMonotonic)
+        (Date.now() >= leaseWall ||
+          performance.now() >= leaseMonotonic ||
+          Date.now() < lastPrivacyWall)
       ) {
         expirePrivacy();
       }
+
+      lastPrivacyWall = Date.now();
     },
     configure(value: Settings) {
       settings = value;
       applyFit();
+      void updateOfflinePlayback({
+        fit: preferredFit ?? settings.fit,
+        interval: settings.slideshowIntervalSeconds,
+      }).catch(() => undefined);
     },
-    deny() {
-      hasFailed = true;
-      generation++;
-      controller.abort();
-      controller = new AbortController();
-      clearTimeout(timer);
-      clearTimeout(privacyTimer);
-      clear();
-      refreshAt = 0;
-      status.textContent = 'Accès privé requis. Reconnectez cet affichage.';
-      if (isActive) {
-        timer = setTimeout(wake, 60_000);
-      }
-    },
+    deny,
   };
 }

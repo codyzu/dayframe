@@ -39,12 +39,12 @@ does not explain when those conditions applied.
 Use the configured location's timezone and French formatting, independently of
 the browser timezone. Display the **conditions timestamp**, not the download time.
 
-| State | Photos, below the weather | Morning, Conseil du jour |
-| --- | --- | --- |
-| Fresh, latest request successful | No extra label | Normal advice |
-| Stale, dated today | `Météo de 13:00 · non actualisée` | `Météo de 13:00 · non actualisée. Actualisation automatique en cours. Vérifiez la météo avant de partir.` |
-| Stale, earlier local date | `Météo du 21 oct. à 23:45 · non actualisée` | Same dated wording, followed by the recovery and departure guidance above |
-| No usable data | Existing unavailable placeholder | `Météo indisponible. Nouvelle tentative automatique. Vérifiez la météo avant de partir.` |
+| State                            | Photos, below the weather                   | Morning, Conseil du jour                                                                                  |
+| -------------------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Fresh, latest request successful | No extra label                              | Normal advice                                                                                             |
+| Stale, dated today               | `Météo de 13:00 · non actualisée`           | `Météo de 13:00 · non actualisée. Actualisation automatique en cours. Vérifiez la météo avant de partir.` |
+| Stale, earlier local date        | `Météo du 21 oct. à 23:45 · non actualisée` | Same dated wording, followed by the recovery and departure guidance above                                 |
+| No usable data                   | Existing unavailable placeholder            | `Météo indisponible. Nouvelle tentative automatique. Vérifiez la météo avant de partir.`                  |
 
 Include the year when it differs from the current local year. A failed refresh
 also shows the timestamp and warning, even if the retained conditions are under

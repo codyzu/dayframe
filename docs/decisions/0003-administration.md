@@ -37,3 +37,17 @@ Wrangler includes the SQLite migration and binding in local and production confi
 ## Upstream provenance
 
 Reviewed checkout `e97c50ba459c49ea8237259f69b95cd28054b628` of [wesbos/photo-frame-dashboard](https://github.com/wesbos/photo-frame-dashboard): README, `dashboard/js/data.js`, `dashboard/js/app.js` (modes, idle behavior, boot), and `dashboard/js/slideshow.js`. Retained the ideas of independent display modes and configurable timing. Upstream is a mock-data dashboard and supplies no applicable private household identity/provisioning service. Dayframe's Worker authorization, object storage, network parser, settings contract and admin/setup pages are independently authored. No upstream license file was found at this revision; no source or assets copied. No hardware procedure was proposed or executed. Classic 10 browser acceptance remains M6.
+
+## M5.O2 retention update — 22 October 2026
+
+The no-persistence/five-minute slideshow descriptions above record the earlier
+implementation. [ADR 0009](0009-offline-photo-fallback.md) and the
+[photo operations](../photos.md#persistent-photos--m5o2-22-october-2026) now supersede
+those bounds only for explicitly enabled dedicated browser profiles: seven days
+since authenticated photo/catalog verification, at most 100 photos/100 MB in
+IndexedDB, live offline rotation across mode changes, and immediate local denial/
+logout/reprovisioning invalidation across tabs. Other profiles retain five-minute
+memory continuity. Every profile releases decoded images on hide/mode/page exit.
+Admin previews keep their existing short lease and additionally clear on local
+invalidation. No service worker or offline cold-start support is implemented in O2;
+no deployment or actual-device acceptance is claimed.

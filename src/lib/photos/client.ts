@@ -1,3 +1,4 @@
+import {invalidateOfflinePhotos} from './offline.ts';
 import {
   hasPhotoSize,
   isPhotoMetadata,
@@ -14,6 +15,13 @@ export class ApiError extends Error {
   }
 }
 export async function photoRequest(path: string, options: RequestInit = {}) {
+  if (
+    (path === '/api/session' && options.method === 'DELETE') ||
+    (path === '/api/session/display' && options.method === 'POST')
+  ) {
+    invalidateOfflinePhotos();
+  }
+
   const response = await fetch(path, {
     ...options,
     credentials: 'same-origin',
@@ -26,6 +34,10 @@ export async function photoRequest(path: string, options: RequestInit = {}) {
         options.method !== 'GET' && {'X-Dayframe-Request': '1'}),
     },
   });
+  if ([401, 403].includes(response.status)) {
+    invalidateOfflinePhotos();
+  }
+
   if (!response.ok) {
     let message =
       response.status === 401

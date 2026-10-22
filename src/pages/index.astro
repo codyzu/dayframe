@@ -214,7 +214,8 @@ import {displayConfig} from '../lib/dashboard/config';
     background: var(--colors-night);
     color: var(--colors-night-ink);
   }
-  .dashboard[data-navigation='hidden'] :global([data-photo-controls]) {
+  .dashboard[data-navigation='hidden'] :global([data-photo-controls]),
+  .dashboard[data-navigation='hidden'] :global([data-photo-offline-controls]) {
     visibility: hidden;
   }
   .dashboard[data-mode='night'] [data-dashboard-footer] > label {

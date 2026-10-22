@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-loop-func -- Each card captures its own immutable photo; shared catalog updates are serialized by isBusy. */
 /* eslint-disable no-alert -- Native confirmation is required before permanent deletion. */
+import {onOfflineInvalidation} from './offline.ts';
 import {ApiError, fetchCatalog, photoRequest} from './client.ts';
 import {
   hammingDistance,
@@ -36,6 +37,11 @@ function mountAdmin(root: HTMLElement) {
   let catalog: PhotoMetadata[] = [];
   let isBusy = false;
   let isAuthorized = false;
+  let accessGeneration = 0;
+  onOfflineInvalidation(() => {
+    accessGeneration++;
+    showError(new ApiError('Accès privé à vérifier. Reconnectez-vous.', 401));
+  });
   let privacyDeadline = Date.now() + 300_000;
   const setBusy = (isBusyValue: boolean) => {
     isBusy = isBusyValue;
@@ -123,8 +129,19 @@ function mountAdmin(root: HTMLElement) {
     }
   }
 
+  function verifyGeneration(run: number) {
+    if (run !== accessGeneration) {
+      throw new ApiError('Accès privé à vérifier. Reconnectez-vous.', 401);
+    }
+  }
+
   async function refresh() {
+    const run = accessGeneration;
     const {photos} = await fetchCatalog(true);
+    if (run !== accessGeneration) {
+      throw new ApiError('Accès privé à vérifier. Reconnectez-vous.', 401);
+    }
+
     for (const photo of photos) {
       if (pending.has(photo.id)) {
         pending.delete(photo.id);
@@ -172,6 +189,7 @@ function mountAdmin(root: HTMLElement) {
   }
 
   async function upload(file: File, row: HTMLLIElement) {
+    const run = accessGeneration;
     setBusy(true);
     const text = row.querySelector<HTMLElement>('[data-upload-message]')!;
     const retry = row.querySelector<HTMLButtonElement>('[data-upload-retry]')!;
@@ -179,6 +197,7 @@ function mountAdmin(root: HTMLElement) {
     text.textContent = `${file.name} · préparation…`;
     try {
       const photo = await processPhoto(file);
+      verifyGeneration(run);
       if (catalog.some(({id}) => id === photo.sha256)) {
         text.textContent = `${file.name} · doublon exact, déjà présent.`;
         return;
@@ -201,6 +220,7 @@ function mountAdmin(root: HTMLElement) {
         return;
       }
 
+      verifyGeneration(run);
       text.textContent = `${file.name} · envoi…`;
       const response = await photoRequest('/api/photos', {
         method: 'POST',
@@ -215,6 +235,7 @@ function mountAdmin(root: HTMLElement) {
         photo: PhotoMetadata;
         duplicate: boolean;
       };
+      verifyGeneration(run);
       if (!isPhotoMetadata(body.photo)) {
         throw new Error(
           'Réponse d’envoi invalide. Réessayez pour vérifier le résultat.',
@@ -236,6 +257,7 @@ function mountAdmin(root: HTMLElement) {
   }
 
   async function initialize() {
+    const run = accessGeneration;
     setBusy(true);
     try {
       const response = await photoRequest('/api/session');
@@ -247,6 +269,7 @@ function mountAdmin(root: HTMLElement) {
         );
       }
 
+      verifyGeneration(run);
       await refresh();
       privacyDeadline = Date.now() + 300_000;
       isAuthorized = true;

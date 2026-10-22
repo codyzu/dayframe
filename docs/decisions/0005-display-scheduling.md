@@ -46,3 +46,17 @@ web builds. No device, startup/profile, authentication, privacy lease or service
 The upstream comparison at `f1e0820918c926396e0ccafb4839568825f63edc` informed this review;
 we deliberately omit its Home prototype rather than implementing mock household controls.
 No upstream code/assets copied. Reintroducing Home requires its own useful feature slice.
+
+## M5.O2 retention update — 22 October 2026
+
+The no-persistence/five-minute slideshow descriptions above record the earlier
+implementation. [ADR 0009](0009-offline-photo-fallback.md) and the
+[photo operations](../photos.md#persistent-photos--m5o2-22-october-2026) now supersede
+those bounds only for explicitly enabled dedicated browser profiles: seven days
+since authenticated photo/catalog verification, at most 100 photos/100 MB in
+IndexedDB, live offline rotation across mode changes, and immediate local denial/
+logout/reprovisioning invalidation across tabs. Other profiles retain five-minute
+memory continuity. Every profile releases decoded images on hide/mode/page exit.
+Admin previews keep their existing short lease and additionally clear on local
+invalidation. No service worker or offline cold-start support is implemented in O2;
+no deployment or actual-device acceptance is claimed.

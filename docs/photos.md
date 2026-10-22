@@ -35,7 +35,7 @@ A successful upload/delete may take 60 seconds or more to appear elsewhere. The 
 
 The upload boundary allows 2 MiB WebP, 1,600px maximum edge. Originals are limited to 40 MiB in-browser and processed sequentially. EXIF orientation is honored, no upscaling occurs, and output has no EXIF, GPS, XMP or ICC profile after sRGB conversion. A bundled WASM encoder handles Safari's absent native WebP encoder, using a temporary worker with timeout and termination. HEIC decoding is browser-dependent; JPEG export is the documented recovery. Actual physical iPhone memory/HEIC testing and representative household duplicate-threshold calibration remain follow-ups; synthetic tests do not establish that coverage.
 
-Slideshow fit defaults to cover. The admin's default fit and interval are supplied by M4 settings at dashboard startup. An explicit dashboard framing choice is saved in this browser under `dayframe.photo-fit.v1` and overrides that household default across navigation, reload and configuration refreshes. Only `contain`/`cover` is stored; with storage disabled the choice survives configuration refreshes for the current page. Clear that local key/site storage to follow the household default again. It rotates around 20 seconds, refreshes metadata every five minutes and keeps at most two decoded images/object URLs. Retains the current image for up to five minutes during an ordinary outage; clears private images on observed 401/403, hiding, page exit, or mode exit. No private images enter localStorage, Cache Storage or a service worker. Browser restarts require network and a valid session. The cookie transport works in tested desktop engines/iPhone emulation; actual Classic 10 acceptance is recorded separately in the hardware documentation.
+Slideshow fit defaults to cover. The admin's default fit and interval are supplied by M4 settings at dashboard startup. An explicit dashboard framing choice is saved in this browser under `dayframe.photo-fit.v1` and overrides that household default across navigation, reload and configuration refreshes. Only `contain`/`cover` is stored; with storage disabled the choice survives configuration refreshes for the current page. Clear that local key/site storage to follow the household default again. It rotates around 20 seconds, refreshes metadata every five minutes and keeps at most two decoded images/object URLs. Without explicit offline enablement, it retains the current image for up to five minutes during an ordinary outage. Hiding, page exit or mode exit releases decoded images in every profile. M5.O2 adds opt-in IndexedDB retention and live offline rotation as described below; images never enter localStorage, Cache Storage or a service worker. Loading the dashboard after a browser restart still requires the live shell and assets; there is no offline cold-start guarantee. The cookie transport works in tested desktop engines/iPhone emulation; actual Classic 10 acceptance is recorded separately in the hardware documentation.
 
 ## Activation record — 16 October 2026
 
@@ -46,3 +46,65 @@ Created a self-hosted Access application for exactly the production `/admin/*` p
 Deployed the KV binding first with photos disabled and confirmed public health 200, photo catalog 404 and admin Access redirect 302. Installed `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD`, `ADMIN_EMAILS` and `PHOTOS_ENABLED` as Worker secrets. Anonymous production checks then passed: catalog, image and session 401; headerless upload 403; admin redirect 302; public dashboard/health 200. Signing in with the approved Cloudflare identity reached the enabled admin UI, with verified administrator status and an empty KV-backed catalog. No reusable browser credentials were copied into scripts or GitHub. No household photo upload or deletion was performed during setup. The owner can now test those from `/admin/photos`.
 
 Local verification of the deployment wiring passed `pnpm verify`: 50 unit/integration tests, 85 browser checks, 3 existing duplicate viewport skips, types, lint and build. The two existing complexity warnings remain. The private config generator has tests for invalid/missing namespace rejection and retained routing/public configuration. Authentication and the KV binding were also verified on the deployed hostname. Physical-device and sustained CPU acceptance remain separate follow-ups; a successful signed-in catalog request alone is not a CPU benchmark.
+
+## Persistent photos — M5.O2, 22 October 2026
+
+On a dedicated browser profile at `/?display=frame`, select Photos, reveal the
+controls, open **Photos hors connexion** and explicitly check **Conserver des
+photos hors connexion sur ce cadre**. The URL alone does not enable retention.
+Ordinary visits and administration do not save a collection automatically. The
+browser requests persistent storage where supported and reports the grant or
+browser-managed eviction status. Permission prompts do not block synchronization.
+Reopen the controls after reload to see the current persistence status.
+
+The live slideshow gradually saves photos as its current/next images are fetched,
+with one sequential fetch/decode path rather than a full-album download. A shuffled
+subset is selected from the fully paginated catalog, retaining existing valid
+copies first. The local limit is **100 photos or 100,000,000 encoded bytes**,
+whichever comes first. Limits concern disk bytes, independently of the two decoded
+images. The remaining remote collection still participates in the online slideshow.
+Small collections fill as they rotate; this is not an immediate full synchronization.
+The view reads saved photos before downloading them again. During an outage it can
+rotate the saved subset and resume it after leaving/returning to Photos. The live
+schedule continues selecting Morning/Photos/Night; all-hours offline playback and
+cold navigation belong to O3/O4, not this phase.
+
+`src/lib/photos/offline.ts` owns IndexedDB `dayframe.offline-photos.v1` (schema 1).
+`photos` contains only ID, dimensions, encoded size and content type; `blobs` contains
+WebP encoded ArrayBuffers, reconstructed as individual Blobs for playback. This avoids
+WebKit's observed Blob-preparation failure without decoding an entire collection.
+`state` holds one lease plus fit/interval, with no full settings, credentials,
+uploader identities, source fingerprints, appointments or schedules. Fit/interval
+updates and local reads do not renew authorization. A localStorage control record
+holds only explicit enablement and a random invalidation token, never image data
+or credentials. It fences pending writes; storage events and BroadcastChannel release
+loaded photos across open tabs. Admin previews also clear on local invalidation,
+with generation checks preventing in-flight results from restoring them.
+
+A successful authenticated photo response or complete validated catalog refresh
+renews retention for **seven days**. Public health/network events, local reads and
+failed/partial refreshes do not. Stored wall-clock evidence and running monotonic
+checks reject expired/backward/untrustworthy clocks. Startup/periodic checks run outside Photos too; an independent expiry timer
+also survives pagehide while browser execution continues. Suspended/off devices
+cannot execute cleanup. Observed private API 401/403, explicit frame or Access logout, attempted
+reprovisioning, disabling copies and lease expiry block playback and clear the
+collection. Logout/reprovisioning clear locally before attempting the network.
+Re-enable explicitly after invalidation, then verify access online to save again.
+A disconnected frame cannot observe remote revocation, home-IP changes or server
+deletions until it reconnects: the accepted seven-day readability tradeoff applies.
+
+Deletion reconciliation runs only after the complete paginated catalog succeeds.
+Partial refreshes leave copies intact. Metadata/encoded bytes are committed in one
+transaction; aborted writes or quota errors preserve previous entries. Local budget
+eviction never deletes server photos. Quota/unavailable-storage messages leave
+online playback usable; browser eviction may leave no offline photos. Corrupt saved
+images are skipped and their local copies removed, preserving the other entries.
+A synchronous denial tombstone survives a failed asynchronous clear; deletion retries
+after one minute and on later access, while playback stays blocked. Clear this site's
+browser data on retirement if storage cannot be accessed. Copies are disposable and
+are not an export or backup.
+
+This phase adds no service worker or precached shell. Reloading offline may still
+fail before this code can run. O3/O4 provide the standalone navigation fallback;
+GeckoView storage/retention and native supervision remain O5 device gates. No
+production deployment or device action is included in this implementation.

@@ -1,5 +1,6 @@
 /* eslint-disable unicorn/no-await-expression-member -- Keep response parsing beside each small administration request. */
 /* eslint-disable no-alert -- Confirm credential rotation/revocation before disconnecting the household frame. */
+import {invalidateOfflinePhotos} from '../photos/offline.ts';
 import {ApiError, photoRequest} from '../photos/client.ts';
 import {
   emptyPlanning,
@@ -16,6 +17,9 @@ if (adminRoot) {
 }
 
 function mount(root: HTMLElement) {
+  root
+    .querySelector('a[href="/cdn-cgi/access/logout"]')
+    ?.addEventListener('click', invalidateOfflinePhotos);
   const status = root.querySelector<HTMLElement>('[data-status]')!;
   const form = root.querySelector<HTMLFormElement>('form')!;
   const controls = root.querySelector<HTMLFieldSetElement>('[data-controls]')!;

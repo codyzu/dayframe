@@ -43,3 +43,17 @@ The slideshow defaults to contain and 20 seconds, offers cover and next, shuffle
 Refreshed upstream at `e97c50ba459c49ea8237259f69b95cd28054b628`. Reviewed README, `dashboard/js/slideshow.js`, `dashboard/js/views/photos.js`, `dashboard/css/views/photos.css`, the photo fixtures in `dashboard/js/data.js`, and `dashboard/js/app.js` image sourcing. Retain the ideas of fullscreen photos, fit modes and a shuffled queue. Independently implement authenticated KV delivery, privacy, pagination, bounded preloading and browser processing. Defer upstream's collage/polaroid/favorites/captions and 15-second timing. No upstream license file exists at that revision; no upstream code, images or CSS copied.
 
 The optional encoder uses jSquash/Squoosh (Apache-2.0), libwebp (BSD), and wasm-feature-detect (Apache-2.0). `jose` is MIT. Copies of notices ship under `public/licenses`; [third-party notices](../../THIRD_PARTY_NOTICES.md) identify versions and original authors. The encoder is bundled only for browser use, not Worker-side transformation.
+
+## M5.O2 retention update — 22 October 2026
+
+The no-persistence/five-minute slideshow descriptions above record the earlier
+implementation. [ADR 0009](0009-offline-photo-fallback.md) and the
+[photo operations](../photos.md#persistent-photos--m5o2-22-october-2026) now supersede
+those bounds only for explicitly enabled dedicated browser profiles: seven days
+since authenticated photo/catalog verification, at most 100 photos/100 MB in
+IndexedDB, live offline rotation across mode changes, and immediate local denial/
+logout/reprovisioning invalidation across tabs. Other profiles retain five-minute
+memory continuity. Every profile releases decoded images on hide/mode/page exit.
+Admin previews keep their existing short lease and additionally clear on local
+invalidation. No service worker or offline cold-start support is implemented in O2;
+no deployment or actual-device acceptance is claimed.
