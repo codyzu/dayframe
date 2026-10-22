@@ -1,0 +1,33 @@
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-2" data-checkpoints>
+  <p class="text-secondary col-span-2 sm:col-span-4">
+    Prévisions en cours de chargement…
+  </p>
+</div>
+<template data-checkpoint-template>
+  <article class="rounded-2xl bg-background px-2 py-1 text-center">
+    <h3
+      data-point-time
+      class="text-[length:var(--font-checkpoint)] font-bold tabular-nums leading-tight"
+    ></h3>
+    <p
+      data-point-label
+      class="truncate text-[length:var(--font-weather-detail)] leading-tight text-secondary"
+    ></p>
+    <div class="flex items-center justify-center gap-1">
+      <span
+        data-point-icon
+        class="inline-block size-12 shrink-0"
+        aria-hidden="true"
+      ></span>
+      <p
+        data-point-temperature
+        class="text-[length:var(--font-checkpoint)] font-bold leading-tight"
+      ></p>
+    </div>
+    <p
+      data-point-rain
+      class="text-[length:var(--font-weather-detail)] leading-tight font-bold text-rain"
+    ></p>
+    <span data-point-condition class="sr-only"></span>
+  </article>
+</template>

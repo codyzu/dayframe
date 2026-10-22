@@ -25,7 +25,7 @@ export default defineConfig({
   // Astro scans templates by default; weather classes also live in browser-only TS.
   content: {
     filesystem: [
-      'src/lib/weather/{conditions,view}.ts',
+      'src/lib/weather/conditions.ts',
       'src/lib/photos/admin.ts',
       'src/lib/photos/weather.ts',
     ],

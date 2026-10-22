@@ -1087,3 +1087,38 @@ mobile. Coverage includes both frame densities, mobile reflow, long conditions,
 0/65/100% rain labels, six appointments with warnings, and unavailable/stale states.
 `git diff --check` passed. Full unrelated suites were not repeated for this
 presentation-only change; no deployment or device action was performed.
+
+## Native weather templates — 22 October 2026
+
+Owner selected Astro components, native HTML templates and browser TypeScript rather
+than introducing React. `WeatherCheckpoints.astro` owns the repeated card template;
+`WeatherChart.astro` owns the permanent SVG/chart shell and templates for rain bars,
+time labels and accessible hourly rows. UnoCSS utilities remain literal in Astro,
+including responsive time labels and peak/now-label placement. No custom CSS added;
+data-dependent SVG coordinates and label offsets are set by the renderer.
+
+`forecast-view.ts` clones templates with `document.importNode`, fills text with
+`textContent` and sets attributes directly. An SVG wrapper in the rain-bar template
+preserves the SVG namespace. Pure chart geometry lives in `chart.ts`. The weather
+controller retains service/cache/retry behavior, private routine clearing, inactive
+mode suspension and minute-level rendering guards. Chart paths now update in place
+across successful refreshes. No weather HTML strings, manual HTML escaping or
+`innerHTML` assignments remain in these renderers. Removed the weather controller
+from UnoCSS's explicit TypeScript extraction list; condition/icon mappings remain.
+
+Re-inspected the upstream checkout at `f1e0820918c926396e0ccafb4839568825f63edc`,
+root MIT `LICENSE` and `dashboard/js/views/home.js`. Retain the glanceable weather
+hierarchy and selective updates as ideas; deliberately replace string-based markup
+with independently authored Astro templates. No upstream code/assets copied,
+dependency/service/billing change, deployment or device action.
+
+Validation passed: Astro/Worker type checks, production build, XO (the five
+existing complexity warnings only), all 126 unit/integration tests and 116 distinct
+affected browser checks across Chromium, Firefox, WebKit and mobile, with four
+existing intentional skips. Browser coverage includes SVG namespace correctness,
+repeated refreshes without duplicate cards/bars/table rows, updates to persistent
+chart paths, escaped private labels, exhausted cached forecasts hiding/recovering
+into the same shell, warning banners and mode switching. Reviewed synthetic
+1280×800 standard and Firefox warning/six-event captures: layout and frame fit are
+preserved. `git diff --check` passed. Physical Firefox/GeckoView 143 acceptance
+remains a separate device check; this change is not deployed.

@@ -31,6 +31,13 @@ test('live day/night data, accessible graph and 30-minute refresh', async ({
   ).toBeVisible();
   await expect(page.getByText('Maintenant', {exact: true})).toBeVisible();
   await expect(page.locator('table tbody tr')).toHaveCount(17);
+  const rainBars = page.locator('[data-chart-rain] rect');
+  await expect(rainBars).toHaveCount(8);
+  expect(
+    await rainBars.evaluateAll((bars) =>
+      bars.every((bar) => bar.namespaceURI === 'http://www.w3.org/2000/svg'),
+    ),
+  ).toBe(true);
   await expect(page.locator('[data-summary]')).toContainText('16h30');
   await expect(
     page.getByRole('link', {name: 'Météo : Open-Meteo · CC BY 4.0'}),
@@ -65,6 +72,9 @@ test('live day/night data, accessible graph and 30-minute refresh', async ({
   await page.clock.fastForward(1_800_000);
   await expect(page.locator('[data-current-icon]')).toHaveClass(/clear-night/v);
   expect(calls).toBe(2);
+  await expect(rainBars).toHaveCount(8);
+  await expect(page.locator('table tbody tr')).toHaveCount(17);
+  await expect(page.locator('[data-checkpoints] article')).toHaveCount(4);
   await expect(page.locator('[data-current-icon]')).toHaveCSS(
     'background-image',
     /data:image\/svg\+xml/v,
@@ -242,12 +252,16 @@ test('inactive weather keeps fetching and renders the latest data on return', as
   );
   await page.route('https://api.open-meteo.com/**', async (route) => {
     const raw = weatherFixture(fixtureNow + calls * 1_800_000);
+    raw.hourly.temperature_2m = raw.hourly.temperature_2m.map(
+      (temperature, index) => temperature + calls * (index % 3),
+    );
     raw.current.temperature_2m = calls++ === 0 ? 12 : 20;
     await route.fulfill({json: raw});
   });
   await page.goto('/');
   await expect(page.locator('[data-temperature]')).toHaveText('12°');
   const curve = await page.locator('[data-chart] path').first().elementHandle();
+  const initialCurve = await curve.getAttribute('d');
   await page.getByRole('button', {name: 'Nuit', exact: true}).click();
   await page.clock.fastForward(1_800_000);
   await expect.poll(() => calls).toBe(2);
@@ -256,7 +270,8 @@ test('inactive weather keeps fetching and renders the latest data on return', as
   await page.locator('[data-dashboard]').dispatchEvent('pointerdown');
   await page.getByRole('button', {name: 'Matin', exact: true}).click();
   await expect(page.locator('[data-temperature]')).toHaveText('20°');
-  expect(await curve.evaluate((element) => element.isConnected)).toBe(false);
+  expect(await curve.evaluate((element) => element.isConnected)).toBe(true);
+  expect(await curve.getAttribute('d')).not.toBe(initialCurve);
 
   await page.evaluate(() => {
     Object.defineProperty(globalThis.document, 'hidden', {
@@ -285,4 +300,47 @@ test('inactive weather keeps fetching and renders the latest data on return', as
     'x1',
     position!,
   );
+});
+
+test('exhausted cached forecasts hide the chart and recover into the same shell', async ({
+  page,
+}) => {
+  let isOffline = false;
+  await page.route('https://api.open-meteo.com/**', async (route) => {
+    if (isOffline) {
+      await route.abort();
+      return;
+    }
+
+    const now = await page.evaluate(() => Date.now());
+    await route.fulfill({json: weatherFixture(now)});
+  });
+  await page.goto('/');
+  const graph = page.getByRole('img', {
+    name: 'Température et probabilité de précipitations',
+  });
+  await expect(graph).toBeVisible();
+  const shell = await graph.elementHandle();
+  isOffline = true;
+  await page.clock.setSystemTime(new Date(fixtureNow + 2 * 86_400_000));
+  await page.evaluate(() => globalThis.dispatchEvent(new Event('online')));
+  await expect(page.locator('[data-chart-empty]')).toHaveText(
+    'Prévisions de la journée indisponibles.',
+  );
+  await expect(page.locator('[data-chart-empty]')).toBeVisible();
+  await expect(graph).toHaveCount(0);
+  await expect(page.locator('[data-point-temperature]')).toHaveText([
+    '—°',
+    '—°',
+    '—°',
+    '—°',
+  ]);
+
+  isOffline = false;
+  await page.clock.fastForward(60_000);
+  await expect(graph).toBeVisible();
+  await expect(page.locator('[data-chart-empty]')).toBeHidden();
+  await expect(page.locator('[data-chart-hours] tr')).toHaveCount(17);
+  await expect(page.locator('[data-chart-rain] rect')).toHaveCount(8);
+  expect(await shell.evaluate((element) => element.isConnected)).toBe(true);
 });

@@ -1,0 +1,137 @@
+<div class="mt-3 group-data-[observance=true]/weather:mt-1" data-chart>
+  <p data-chart-empty class="py-5 text-secondary">
+    En attente des prévisions…
+  </p>
+  <div data-chart-content class="w-full" hidden>
+    <div class="flex justify-between gap-2 text-sm text-secondary mb-1">
+      <span data-chart-range class="font-bold text-temperature"></span>
+      <span class="text-rain">Pluie · max. horaire / 2 h</span>
+    </div>
+    <div class="mx-3 grid grid-cols-[minmax(0,1fr)_3.5rem] gap-x-2">
+      <div class="relative h-[100px]" data-chart-plot>
+        <svg
+          class="absolute inset-0 size-full overflow-visible"
+          viewBox="0 0 600 100"
+          preserveAspectRatio="none"
+          role="img"
+          aria-labelledby="chart-title chart-description"
+        >
+          <title id="chart-title">Température et probabilité de précipitations</title>
+          <desc id="chart-description">
+            Courbe cuivre : température en degrés Celsius. Barres bleues :
+            maximum des probabilités horaires de chaque tranche de deux heures,
+            de 0 à 100 %, et non probabilité sur toute la tranche. Trait
+            pointillé : maintenant, si dans la période. Tableau horaire détaillé
+            disponible après le graphique.
+          </desc>
+          <line
+            x1="0"
+            x2="600"
+            y1="100"
+            y2="100"
+            stroke="var(--colors-border)"
+            stroke-width="2"
+          />
+          <line
+            x1="0"
+            x2="600"
+            y1="60"
+            y2="60"
+            stroke="var(--colors-border)"
+            stroke-dasharray="4 6"
+            vector-effect="non-scaling-stroke"
+          />
+          <g data-chart-rain></g>
+          <path
+            data-chart-curve
+            fill="none"
+            stroke="var(--colors-surface)"
+            stroke-width="8"
+            stroke-linejoin="round"
+            vector-effect="non-scaling-stroke"
+          />
+          <path
+            data-chart-curve
+            fill="none"
+            stroke="var(--colors-temperature)"
+            stroke-width="4"
+            stroke-linejoin="round"
+            vector-effect="non-scaling-stroke"
+          />
+          <line
+            data-weather-now-line
+            x1="0"
+            x2="0"
+            y1="20"
+            y2="100"
+            stroke="var(--colors-primary)"
+            stroke-width="2"
+            stroke-dasharray="4 4"
+            vector-effect="non-scaling-stroke"
+            style="display:none"
+          />
+        </svg>
+        <div
+          data-rain-peak
+          class="whitespace-nowrap absolute -translate-x-1/2 rounded bg-surface px-1 text-[length:var(--font-chart-time)] leading-none font-bold tabular-nums text-rain"
+          hidden
+        ></div>
+        <span
+          data-weather-now-label
+          class="absolute top-0 data-[rain-peak-high=true]:top-auto data-[rain-peak-high=true]:bottom-0 text-sm bg-surface px-1 font-bold"
+          hidden
+        >
+          Maintenant
+        </span>
+      </div>
+      <div
+        class="relative text-[length:var(--font-chart-time)] leading-tight font-bold tabular-nums text-rain"
+        data-rain-scale
+        aria-hidden="true"
+      >
+        {[100, 50, 0].map((probability) => (
+          <span
+            class="absolute right-0 -translate-y-1/2"
+            style={{top: `${100 - probability * 0.8}px`}}
+          >
+            {probability} %
+          </span>
+        ))}
+      </div>
+      <div data-chart-times class="relative h-6 mt-1" aria-hidden="true"></div>
+    </div>
+    <div class="sr-only">
+      <table>
+        <caption>Prévisions horaires, heure locale</caption>
+        <thead>
+          <tr>
+            <th>Heure</th>
+            <th>Température</th>
+            <th>Précipitations</th>
+            <th>Conditions</th>
+          </tr>
+        </thead>
+        <tbody data-chart-hours></tbody>
+      </table>
+    </div>
+  </div>
+  <!-- An SVG wrapper keeps cloned rain bars in the SVG namespace. -->
+  <template data-rain-bar-template>
+    <svg>
+      <rect rx="4" fill="var(--colors-rain)" fill-opacity="0.85">
+        <title></title>
+      </rect>
+    </svg>
+  </template>
+  <template data-chart-time-template>
+    <span class="absolute -translate-x-1/2 text-[length:var(--font-chart-time)] text-secondary max-sm:data-[minor=true]:hidden"></span>
+  </template>
+  <template data-chart-hour-template>
+    <tr>
+      <th data-hour-time scope="row"></th>
+      <td data-hour-temperature></td>
+      <td data-hour-rain></td>
+      <td data-hour-condition></td>
+    </tr>
+  </template>
+</div>
