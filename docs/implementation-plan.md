@@ -1312,3 +1312,42 @@ including explicit overlap/viewport assertions. Reviewed synthetic
 Changed documentation links and `git diff --check` passed. The owner authorized
 commit/push and the ordinary production workflow; no device action or cold-start
 acceptance is included in this slice.
+
+## M5.O3 — Standalone offline document, 22 October 2026
+
+Implemented a build-generated `offline.html`, with the existing schema-1 photo
+store bundled into its inline script. No external runtime asset, full-dashboard
+cache, private build content or offline weather/calendar/schedule is included.
+Exact script/style hashes form its CSP; contain/cover uses a data attribute rather
+than inline style permissions. Its small independent stylesheet intentionally
+avoids the live application's reset, fonts and component styles. The esbuild
+version already used by the toolchain is now an explicit pinned build dependency.
+
+The document plays saved photos at all hours under the same seven-day lease,
+checks clock/retention before display, skips corrupt images with a bounded decode,
+retains at most current/next decoded images, and releases them on hide/page exit or
+cross-tab invalidation. It restores fit/interval without saving household schedules.
+Empty, expired and unavailable storage provide a useful retry state. Same-origin
+health checks validate JSON, reject redirects/portals, time out after five seconds
+and back off from 15 seconds to five minutes. Successful reachability can return to
+the original URL, with a session deadline bounding repeated partial-startup returns;
+health never renews private access. O4 supplies actual navigation interception.
+
+Re-read the specification/ADR and inspected the pinned Wes Bos checkout at
+`f1e0820918c926396e0ccafb4839568825f63edc`, root MIT `LICENSE`,
+`dashboard/js/slideshow.js` and `dashboard/js/views/photos.js`. Preserve fullscreen
+priority and explicit slideshow lifecycle as ideas; independently author the
+self-contained authenticated-store fallback. No upstream code/assets copied.
+
+Validation: standalone browser fixtures block all networking after delivering the
+public document (local blob URLs remain usable). All 20 checks passed across
+Chromium, Firefox, WebKit and mobile WebKit: ten simulated overnight hours,
+rotation/fit/interval, two-URL bounds, expiry, missing/unavailable storage, corrupt
+images, cross-tab denial, validated recovery/backoff and bounded return attempts.
+A generated-document test verifies exact CSP hashes, absence of external runtime
+references/private metadata, and the shared schema. Reviewed synthetic
+[Firefox](evidence/m5-o3/standalone-firefox.png) and
+[mobile](evidence/m5-o3/standalone-mobile.png) captures. Fast-forwarded time waits
+for native decoding between advances; executing virtual hours during a native
+image decode otherwise creates artificial decode timeouts. No physical overnight,
+deployment, navigation interception or device acceptance is claimed in O3.
