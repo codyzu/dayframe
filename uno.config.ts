@@ -59,7 +59,7 @@ export default defineConfig({
     'display-title':
       'text-[30px] md:text-[clamp(30px,3.6vw,48px)] font-semibold leading-tight tracking-[-1.8px]',
     clock:
-      'text-[78px] md:text-[clamp(62px,8.2vw,112px)] font-normal tracking-[-4px] md:tracking-[-6px] tabular-nums leading-none',
+      'text-[78px] md:text-[clamp(62px,8.2vw,112px)] font-semibold tracking-[-4px] md:tracking-[-6px] tabular-nums leading-none',
   },
   presets: [
     presetWind4({preflights: {reset: false}}),

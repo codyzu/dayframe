@@ -67,7 +67,7 @@ function chart(hours: Hour[]) {
 
   return `<div class="weather-chart w-full">
     <div class="flex justify-between gap-2 text-sm text-secondary mb-1">
-      <span class="font-semibold text-temperature">Température · ${rounded(low + 3)} à ${rounded(high - 3)}C</span>
+      <span class="font-bold text-temperature">Température · ${rounded(low + 3)} à ${rounded(high - 3)}C</span>
       <span class="text-rain">Pluie · max. horaire / 2 h</span>
     </div>
     <div class="mx-3 grid grid-cols-[minmax(0,1fr)_3.5rem] gap-x-2">
@@ -83,9 +83,9 @@ function chart(hours: Hour[]) {
           <line data-weather-now-line x1="0" x2="0" y1="20" y2="100" stroke="var(--colors-primary)" stroke-width="2" stroke-dasharray="4 4" vector-effect="non-scaling-stroke" style="display:none"/>
         </svg>
         ${peak ? `<div data-rain-peak class="whitespace-nowrap absolute -translate-x-1/2 rounded bg-surface px-1 text-[length:var(--font-chart-time)] leading-none font-bold tabular-nums text-rain" style="left:clamp(2rem, ${x((peak.start + peak.end) / 2) / 6}%, calc(100% - 2rem));top:${80 - peak.probability * 0.8}px" aria-label="${hourLabel(peak.start)}–${hourLabel(peak.end)} : maximum horaire ${peak.probability} %">${peak.probability} %</div>` : ''}
-        <span data-weather-now-label class="absolute ${peak && peak.probability >= 75 ? 'bottom-0' : 'top-0'} text-sm bg-surface px-1 font-semibold" hidden>Maintenant</span>
+        <span data-weather-now-label class="absolute ${peak && peak.probability >= 75 ? 'bottom-0' : 'top-0'} text-sm bg-surface px-1 font-bold" hidden>Maintenant</span>
       </div>
-      <div class="relative text-[length:var(--font-chart-time)] leading-tight font-semibold tabular-nums text-rain" data-rain-scale aria-hidden="true">
+      <div class="relative text-[length:var(--font-chart-time)] leading-tight font-bold tabular-nums text-rain" data-rain-scale aria-hidden="true">
         ${[100, 50, 0].map((probability) => `<span class="absolute right-0 -translate-y-1/2" style="top:${100 - probability * 0.8}px">${probability} %</span>`).join('')}
       </div>
       <div class="relative h-6 mt-1" aria-hidden="true">${hours
@@ -114,7 +114,7 @@ function checkpoints(
       <p title="${escapeHtml(point.label)}" class="truncate text-[length:var(--font-weather-detail)] leading-tight text-secondary">${escapeHtml(point.label)}</p>
       <div class="flex items-center justify-center gap-1"><span class="${condition.icon} inline-block size-12 shrink-0" aria-hidden="true"></span>
       <p class="text-[length:var(--font-checkpoint)] font-bold leading-tight">${hour ? rounded(hour.temperature) : '—°'}</p></div>
-      <p class="text-[length:var(--font-weather-detail)] leading-tight font-semibold text-rain" aria-label="${hour ? `Pluie : maximum horaire ${hour.probability} % ; source ${point.probabilityPeriod}` : 'Prévision indisponible'}">Pluie ${hour ? `${hour.probability} %` : '—'}</p>
+      <p class="text-[length:var(--font-weather-detail)] leading-tight font-bold text-rain" aria-label="${hour ? `Pluie : maximum horaire ${hour.probability} % ; source ${point.probabilityPeriod}` : 'Prévision indisponible'}">Pluie ${hour ? `${hour.probability} %` : '—'}</p>
       <span class="sr-only">${hour ? condition.label : 'Prévision indisponible'}</span>
     </article>`;
     })

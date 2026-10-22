@@ -1019,3 +1019,35 @@ more than five minutes ahead is rejected independently. CAP expiry and original
 issue-time display remain unchanged. A browser regression covers a thirty-minute-
 old, freshly retrieved snapshot and subsequent ten-minute outage expiry. This
 correction changes no provider, permissions, service, settings or device behavior.
+
+## Approved heavier Morning typography — 22 October 2026
+
+Implemented the owner's approved heavier-font preview as a small extension of the
+existing Morning UI. Morning inherits Manrope Bold (700), including weather details,
+checkpoint labels, chart times, advice and agenda text. Its clock uses Semibold (600);
+explicit previously semibold headings, temperature, rain labels and calendar source
+labels use Bold. Existing bundled font faces, text sizes, density preference and
+layout remain. Literal UnoCSS utilities and the existing clock shortcut implement
+the change without additional CSS, dependencies or services.
+
+Re-read the local specification and upstream foundation requirements; inspected
+`dashboard/css/tokens.css`, `dashboard/css/views/home.css` and `LICENSE` in the
+reviewed upstream checkout at `f1e0820918c926396e0ccafb4839568825f63edc`.
+Retain its glanceable clock/weather hierarchy as an idea; deliberately retain
+Dayframe's Manrope and responsive density system instead of upstream's Archivo/
+Instrument Serif and fixed-size typography. The upstream MIT notice was checked;
+no upstream code or assets copied.
+
+[Reviewed synthetic implementation preview](evidence/typography/morning-heavier-1280x800.png)
+matches the approved appearance and fits 1280 × 800 without scrolling. No private
+calendar entries or photos are in this evidence. Validation results follow below.
+Physical readability at the family's viewing distance remains an owner check;
+this source change does not claim device acceptance or production deployment.
+
+Validation passed: `pnpm check`, `pnpm lint` (five existing complexity warnings),
+`pnpm build`, and focused Playwright Morning/density/vigilance/calendar suites:
+60 passed, four existing intentional skips across Chromium, Firefox, WebKit and
+mobile. Coverage includes both frame densities, mobile reflow, long conditions,
+0/65/100% rain labels, six appointments with warnings, and unavailable/stale states.
+`git diff --check` passed. Full unrelated suites were not repeated for this
+presentation-only change; no deployment or device action was performed.
