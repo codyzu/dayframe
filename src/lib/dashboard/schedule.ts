@@ -66,7 +66,7 @@ export function createScheduleResolver(
   };
 }
 
-// Display-local, memory-only override. Both clocks count inactivity so wall-clock
+// Display-local override; an update can transfer only its remaining lifetime. Both clocks count inactivity so wall-clock
 // corrections cannot extend a lease; elapsed sleep counts on platforms where the
 // monotonic clock pauses during suspend.
 export function createModeState(settings = defaultSettings) {
@@ -74,6 +74,7 @@ export function createModeState(settings = defaultSettings) {
   let resolve = createScheduleResolver(settings);
   let override: DisplayMode | undefined;
   let elapsed = 0;
+  let restoredLimit: number | undefined;
   let previous: {wall: number; monotonic: number} | undefined;
   function advance(wall: number, monotonic: number) {
     if (previous) {
@@ -85,7 +86,7 @@ export function createModeState(settings = defaultSettings) {
     }
 
     previous = {wall, monotonic};
-    if (elapsed >= settings.overrideTimeoutSeconds * 1000) {
+    if (elapsed >= (restoredLimit ?? settings.overrideTimeoutSeconds * 1000)) {
       override = undefined;
     }
   }
@@ -102,6 +103,47 @@ export function createModeState(settings = defaultSettings) {
       }
 
       elapsed = 0;
+      restoredLimit = undefined;
+    },
+    snapshot(wall: number, monotonic: number) {
+      advance(wall, monotonic);
+      return override === undefined
+        ? undefined
+        : {
+            mode: override,
+            savedAt: wall,
+            remaining:
+              (restoredLimit ?? settings.overrideTimeoutSeconds * 1000) -
+              elapsed,
+          };
+    },
+    restore(value: unknown, wall: number, monotonic: number) {
+      const saved = value as
+        {mode?: unknown; savedAt?: unknown; remaining?: unknown} | undefined;
+      if (
+        !saved ||
+        !['morning', 'photos', 'night'].includes(saved.mode as string) ||
+        typeof saved.savedAt !== 'number' ||
+        typeof saved.remaining !== 'number' ||
+        !Number.isFinite(saved.savedAt) ||
+        !Number.isFinite(wall) ||
+        wall < saved.savedAt ||
+        !Number.isFinite(saved.remaining) ||
+        saved.remaining <= 0 ||
+        saved.remaining > 86_400_000
+      ) {
+        return;
+      }
+
+      const remaining = saved.remaining - (wall - saved.savedAt);
+      if (remaining <= 0) {
+        return;
+      }
+
+      override = saved.mode as DisplayMode;
+      elapsed = 0;
+      restoredLimit = remaining;
+      previous = {wall, monotonic};
     },
     calendar(value: OfficialCalendar | undefined) {
       calendar = value;

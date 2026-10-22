@@ -11,15 +11,16 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "wrangler dev --local --ip 127.0.0.1",
-    "check": "astro check && tsc --project tsconfig.worker.json",
+    "check": "astro check && tsc --project tsconfig.worker.json && tsc --project tsconfig.navigation.json",
     "lint": "astro sync && xo",
     "format": "prettier --write .",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "verify": "pnpm check && pnpm lint && pnpm test && pnpm build && pnpm test:e2e",
+    "verify": "pnpm check && pnpm lint && pnpm test && pnpm build && pnpm test:e2e && pnpm test:offline-navigation",
     "deploy": "node scripts/deploy.mjs",
     "lint:fix": "astro sync && xo --fix",
-    "smoke:production": "node scripts/smoke-production.mjs"
+    "smoke:production": "node scripts/smoke-production.mjs",
+    "test:offline-navigation": "node scripts/verify-navigation.mjs"
   },
   "dependencies": {
     "@fontsource/manrope": "5.3.0",

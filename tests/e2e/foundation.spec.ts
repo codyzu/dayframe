@@ -382,3 +382,26 @@ test('precipitation and lightning keep repeating in the bundled current icon', a
     }
   }
 });
+
+test('ordinary build publishes its matching public build ID and leaves worker activation gated', async ({
+  page,
+  request,
+}) => {
+  const response = await request.get('/version.json');
+  const value = (await response.json()) as {build: string};
+  await page.goto('/');
+  await expect(page.locator('[data-dashboard]')).toHaveAttribute(
+    'data-build',
+    value.build,
+  );
+  await expect(page.locator('[data-dashboard]')).toHaveAttribute(
+    'data-ready',
+    'true',
+  );
+  expect(
+    await page.evaluate(async () => {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      return registrations.length;
+    }),
+  ).toBe(0);
+});

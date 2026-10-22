@@ -1,4 +1,5 @@
 ---
+import {startupGuard} from '../../scripts/offline-build.mjs';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import MorningWeather from '../components/MorningWeather.astro';
 import PhotoSlideshow from '../components/PhotoSlideshow.astro';
@@ -11,10 +12,14 @@ import {displayConfig} from '../lib/dashboard/config';
   bodyClass="display-page bg-background text-primary"
   displayManifest
 >
+  {import.meta.env.PUBLIC_OFFLINE_NAVIGATION && (
+    <script is:inline set:html={startupGuard()} />
+  )}
   <main
     class="dashboard min-h-screen flex flex-col px-4 py-4 md:p-6"
     data-density="standard"
     data-dashboard
+    data-build={import.meta.env.PUBLIC_BUILD_ID}
     data-mode="morning"
   >
     <svg

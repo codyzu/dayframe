@@ -1,9 +1,9 @@
 # ADR 0009 — A small web fallback for offline photos
 
 Date: 22 October 2026. Status: architecture and offline policies accepted by the
-owner; phases 1 and 2 implemented locally. Phase 2 implements the persistent store
+owner; phases 1–4 implemented locally. Phase 2 implements the persistent store
 and live slideshow integration described in [photo operations](../photos.md#persistent-photos--m5o2-22-october-2026). No deployment or device change is included.
-Phases 3–5 remain planned.
+O3/O4 browser evidence and activation/retirement controls are recorded in [photo operations](../photos.md#standalone-fallback-and-navigation--m5o3o4-22-october-2026). Ordinary builds keep navigation/update activation disabled pending O5. Phase 5 remains planned.
 
 ## Context and scope
 
@@ -17,7 +17,7 @@ An authorized catalog/image response renews a five-minute privacy lease. Authori
 denial, lease expiry, hiding or leaving Photos releases private images. There was no
 persistent photo store or service worker. [ADR 0005](0005-display-scheduling.md) and
 [photo operations](../photos.md) record that historical behavior. O2 now supersedes its persistence/lease bounds
-for explicitly enabled profiles; other profiles retain the five-minute baseline.
+for automatically retaining authorized Photos browsers; browsers without usable persistent storage retain the five-minute baseline.
 
 ## Selected architecture
 
@@ -136,7 +136,7 @@ already installed worker. [Service-worker lifecycle](https://web.dev/articles/se
 
 The owner accepted the following policies. These replace the initial proposals and
 close the phase 1 policy gate. O2 implements the persistent-photo portion locally;
-standalone fallback/navigation and actual-device acceptance remain later phases.
+standalone fallback/navigation now have local browser evidence; actual-device acceptance remains phase 5.
 
 | Decision                | Accepted policy                                                                                                                                                                             |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -159,7 +159,8 @@ The [M5 offline extension](../implementation-plan.md#m5-offline-extension--22-oc
 defines five independently reviewable phases: contract; persistent photo store;
 standalone fallback; navigation-only worker; actual-device integration. Phase 1 is
 complete, including the accepted retention, budget and continuous offline playback
-policies. Phase 2 is implemented locally; its browser evidence is in the plan.
+policies. Phases 2–4 are implemented locally; their browser evidence is in the plan.
+Activation on the actual frame still requires phase 5.
 Do not claim cold-start support after phase 2 alone.
 
 The existing native `AddressPolicy` permits only root display/setup URLs, while

@@ -67,6 +67,15 @@ const config = [
       'package-json/prefer-engines-range': 'off',
     },
   },
+  {
+    files: ['src/lib/offline/navigation-worker.ts'],
+    languageOptions: {
+      parserOptions: {
+        projectService: false,
+        project: './tsconfig.navigation.json',
+      },
+    },
+  },
   ...eslintPluginAstro.configs['flat/recommended'],
 ];
 export default config;

@@ -116,3 +116,84 @@ This phase adds no service worker or precached shell. Reloading offline may stil
 fail before this code can run. O3/O4 provide the standalone navigation fallback;
 GeckoView storage/retention and native supervision remain O5 device gates. No
 production deployment or device action is included in this implementation.
+
+## Standalone fallback and navigation — M5.O3/O4, 22 October 2026
+
+The build produces `offline.html`, a public self-contained document with system
+fonts and hash-authorized inline script/style. It contains no private photos,
+weather, appointments, credentials or household settings. It reads the same
+schema-1 IndexedDB store as the live slideshow and displays saved photos at all
+hours, including Night, for the remaining seven-day authenticated lease. Fit and
+interval survive; weather, appointments and schedules do not run offline. Empty,
+expired, corrupt or unavailable storage leaves a useful retry state. Current/next
+object URLs remain bounded and are released on hiding, page exit or invalidation.
+
+Navigation activation is **disabled in ordinary builds**, pending M5.O5 native
+heartbeat/recovery readiness. O3/O4 are desktop software slices; do not enable the
+feature on the active Classic 10 by deploying a trial build. No device action is
+included. For isolated local browser validation, `pnpm test:offline-navigation`
+saves the current `dist`, builds with `DAYFRAME_OFFLINE_NAVIGATION=1`, runs the
+worker acceptance suite and restores the exact original assets even on failure.
+`pnpm verify` includes this separate trial after the ordinary browser suite. Its
+restored assets remain the existing verified deployment handoff.
+
+When explicitly enabled, an inline startup guard registers stable `/sw.js` with
+cache bypass for updates. Its scope is `/`, but it intercepts only same-origin GET
+**navigations to `/`**, optionally with one `display=frame` and/or one
+`density=standard|large`. Duplicate, unknown or invalid parameters exclude a URL.
+Explicit `/index.html`, admin/setup paths, APIs, assets and `/version.json` retain
+ordinary browser handling. The worker never caches the live dashboard HTML or its
+assets. A five-second network-first attempt bypasses old HTTP shell copies and covers the dashboard body; transport
+failure or timeout serves the public offline document at the original address.
+HTTP failures, including 401/403, and redirects keep their normal response. Cached
+photos do not turn a private denial into a successful API response. No TLS or native
+address/clock policy is relaxed.
+
+If dashboard HTML loads but its critical module fails, the independent inline
+guard waits twenty seconds, then obtains the installed fallback over a worker
+message port and replaces the failed document at its original address. This is the
+single deliberate `document.open/write/close` exception: the input is exclusively
+the installed worker's public, hash-CSP document, with no user/private markup. It
+starts its standalone script without a new top-level URL or an iframe. Normal
+weather/photo renderers still use native templates. A never-installed/evicted
+fallback cannot fabricate an offline start; an evicted active fallback returns a
+plain retryable 503. Browser support remains distinct from GeckoView acceptance.
+
+The fallback probes `/api/health` with no-store, redirect rejection, expected JSON
+and a five-second timeout. Checks back off from fifteen seconds to five minutes;
+one request runs at a time. Successful health is reachability only and never
+renews photo retention. A return attempt persists a deadline before reloading.
+Repeated partial-startup returns back off across navigations from one to five
+minutes; successful application startup resets them. If session storage is denied,
+a healthy connection enables an explicit manual return; automatic navigation stays
+disabled because its loop fence cannot be persisted. Reconnection revalidates
+private access through the ordinary live APIs. Public connectivity cannot override
+a photo-access denial or expired lease.
+
+Every build publishes `/version.json` with an opaque ID embedded in its dashboard
+and matching scripts. With the trial enabled, the dashboard checks on startup,
+every thirty minutes and on connectivity return, with no-store and one in-flight
+request. Failed, malformed and unchanged responses leave it running. A changed ID
+waits for the next Photos transition (or the next render turn in other modes/an
+empty Photos view). The attempted target is persisted before reload, suppressing
+loops if stale HTML returns. Only the unexpired manual mode override's remaining
+lifetime transfers through session storage; density, fit, credentials and the valid
+photo store retain their existing locations. Admin/setup pages do not check/reload.
+Weather and settings keep their independent refresh cycles. Page resume restarts
+update checks.
+
+Only the fallback content hash versions Cache Storage (`dayframe.fallback.*`).
+Install verifies the complete document against that exact hash before saving it;
+a failed/mismatched install leaves the active version usable. Successful install
+activates immediately and claims open clients, then removes obsolete fallback
+caches. This is safe for old pages because no dashboard asset is intercepted and
+schema 1 remains compatible. Destructive storage migration requires a separate
+review. Do not remove registration code as a retirement procedure: existing workers
+remain installed. A specifically authorized retirement build uses
+`DAYFRAME_OFFLINE_RETIRE=1 pnpm build` to serve a replacement at the same `/sw.js`;
+it removes only fallback caches and unregisters during activation. For a controlled
+local recovery, the current worker also accepts `RETIRE_DAYFRAME_OFFLINE` via a
+message port and acknowledges `retired` after cache cleanup/unregistration. Both
+paths preserve the photo store and unrelated caches. Reload/close existing pages
+after retirement; their old worker controller can remain attached until navigation.
+No retirement build has been deployed.

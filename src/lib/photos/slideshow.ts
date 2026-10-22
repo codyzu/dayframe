@@ -453,6 +453,7 @@ export function mountSlideshow(
         current = next;
         next = undefined;
         stage.replaceChildren(current.image);
+        globalThis.dispatchEvent(new Event('dayframe:slide'));
         release(old);
       }
 
@@ -467,6 +468,7 @@ export function mountSlideshow(
 
           current = loaded;
           stage.replaceChildren(current.image);
+          globalThis.dispatchEvent(new Event('dayframe:slide'));
         }
       }
 

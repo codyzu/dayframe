@@ -20,6 +20,13 @@ small-text Night screen without the Photos overlay. It did not verify the new UI
 loaded page may need a reload. No frame input or settings change was performed. See the
 [implementation and validation record](implementation-plan.md#display-refinements--20-october-2026).
 
+**22 October M5 offline extension:** M5.O3 standalone fallback is committed as
+`1bd07c3`; M5.O4 adds local navigation fallback, partial-startup recovery and
+controlled deployment detection. Ordinary builds keep worker/update activation
+disabled pending M5.O5 native readiness. No push, deployment, device action or
+physical cold-start acceptance is part of this slice. See [operations](photos.md#standalone-fallback-and-navigation--m5o3o4-22-october-2026)
+and the [current execution record](implementation-plan.md#m5o4--navigation-and-deployment-recovery-22-october-2026).
+
 ## Where we stand
 
 | Area                          | Current evidence                                                                                                                                                                                                                  | Remaining limit                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |

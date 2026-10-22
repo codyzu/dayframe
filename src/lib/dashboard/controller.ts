@@ -1,3 +1,4 @@
+import {mountUpdates} from '../offline/updates.ts';
 import {mountAlerts} from '../weather/alerts.ts';
 import {ApiError, photoRequest} from '../photos/client.ts';
 import {mountSlideshow} from '../photos/slideshow.ts';
@@ -42,6 +43,28 @@ function initializeDashboard(root: HTMLElement) {
   const agenda = mountAgenda(root.querySelector<HTMLElement>('[data-agenda]')!);
   let weather = mountWeather(weatherRoot, updatePhotoWeather);
   const state = createModeState();
+  const updateOverrideKey = 'dayframe.update-override';
+  try {
+    state.restore(
+      JSON.parse(sessionStorage.getItem(updateOverrideKey) ?? 'null'),
+      Date.now(),
+      performance.now(),
+    );
+    sessionStorage.removeItem(updateOverrideKey);
+  } catch {
+    // Unavailable session storage leaves the ordinary schedule in effect.
+  }
+
+  if (import.meta.env.PUBLIC_OFFLINE_NAVIGATION === true) {
+    mountUpdates(root, () => {
+      const snapshot = state.snapshot(Date.now(), performance.now());
+      sessionStorage.setItem(
+        updateOverrideKey,
+        JSON.stringify(snapshot ?? null),
+      );
+    });
+  }
+
   let settings = defaultSettings;
   let official: OfficialCalendar | undefined;
   let calendarRefreshAt = 0;
@@ -359,4 +382,6 @@ function initializeDashboard(root: HTMLElement) {
   globalThis.addEventListener('online', wake);
   root.querySelector('[data-display-retry]')?.addEventListener('click', wake);
   tick();
+  root.dataset.ready = 'true';
+  globalThis.dispatchEvent(new Event('dayframe:ready'));
 }

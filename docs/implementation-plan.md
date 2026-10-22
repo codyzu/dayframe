@@ -154,13 +154,13 @@ work, not retroactively completed by earlier offline tests.
 
 | Phase                          | Reviewable slice                                                                                                                                                                                                                                                                                                                              | Acceptance gate / status                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| M5.O1 — Contract               | Write ADR 0009, record selected architecture, retention/clearing boundaries, failure states and this sequence.                                                                                                                                                                                                                                | **Complete, including owner policy acceptance on 22 October 2026.** No policy decisions remain before phase 2. Original five-minute baseline is now superseded for authorized Photos browsers; O3–O5 remain planned.                                                                                                                                                  |
+| M5.O1 — Contract               | Write ADR 0009, record selected architecture, retention/clearing boundaries, failure states and this sequence.                                                                                                                                                                                                                                | **Complete, including owner policy acceptance on 22 October 2026.** No policy decisions remain before phase 2. Original five-minute baseline is now superseded for authorized Photos browsers; O3/O4 local evidence follows below and O5 remains open.                                                                                                                |
 | M5.O2 — Persistent photos      | Shared IndexedDB module; automatic authorized-browser persistence; bounded gradual downloads; live slideshow reads saved photos during outages and mode changes. Preserve two decoded images, catalog pagination, authorization denial and local invalidation.                                                                                | **Complete locally, 22 October 2026.** Shared store, automatic persistence in authorized browsers, incremental bounded persistence and live outage/mode-return playback. Browser acceptance and limits are recorded in the O2 execution record below. No service worker, cold-start, deployment or device claim.                                                      |
-| M5.O3 — Standalone fallback    | One self-contained offline HTML document using the same photo store, lease and playback preferences; empty/expired state, photos at all hours offline, manual/automatic reconnection. No external runtime assets or private data embedded in the public artifact.                                                                             | Direct fixture/browser testing with all networking blocked; storage corruption/absence, fit/interval, retention, continuous overnight playback, limited decoding and recovery backoff. Public fallback/CSP inspection. This establishes the document independently of navigation interception.                                                                        |
-| M5.O4 — Navigation fallback    | Stable small worker; allowlisted dashboard navigation only; bounded network-first attempt with saved fallback. All other requests retain ordinary handling. Cover partial dashboard startup failure without a new forbidden kiosk URL. Version only the public fallback, with compatible storage and explicit activation/retirement behavior. | Browser tests for offline reload, fresh online deployment, first visit without a saved fallback, timeouts, HTTP/auth/security failures, partial loads, reconnection without loops, admin/setup/API exclusions, old/new pages, interrupted update and worker removal. Desktop software evidence only; no device-wide activation before phase 5 integration is ready.   |
+| M5.O3 — Standalone fallback    | One self-contained offline HTML document using the same photo store, lease and playback preferences; empty/expired state, photos at all hours offline, manual/automatic reconnection. No external runtime assets or private data embedded in the public artifact.                                                                             | **Complete locally.** Standalone document, shared store/lease, all-hours playback and bounded recovery; 20 four-engine fixture checks and generated CSP inspection are recorded below. No device acceptance.                                                                                                                                                          |
+| M5.O4 — Navigation fallback    | Stable small worker; allowlisted dashboard navigation only; bounded network-first attempt with saved fallback. All other requests retain ordinary handling. Cover partial dashboard startup failure without a new forbidden kiosk URL. Version only the public fallback, with compatible storage and explicit activation/retirement behavior. | **Complete locally, 22 October 2026.** Navigation-only worker, partial-startup guard, build detection and explicit lifecycle/retirement. Ordinary builds keep activation disabled pending O5; enabled trial assets are isolated from the deployment handoff. Desktop software evidence only.                                                                          |
 | M5.O5 — Classic 10 integration | Refresh upstream device research and actual device identity/browser; teach the kiosk heartbeat/recovery policy to distinguish healthy offline playback and empty/expired retry states from faults. Preserve address/TLS restrictions, clock gate and maintenance paths.                                                                       | Host policy tests first; specifically authorized installation/restart/offline cold-start tests on the actual GeckoView profile, Wi-Fi return, local retention/eviction behavior, continuous overnight playback, supervisor stability and sustained operation. Record measured evidence and remaining limits; do not close unrelated H4/M4/M6/security/soak deferrals. |
 
-**O4 deployment update detection (added 22 October 2026; implementation pending):**
+**O4 deployment update detection (implemented locally 22 October 2026; activation gated pending O5):**
 Publish a small public `/version.json` with an opaque build ID, shipped with the
 matching application assets; embed that same ID in the running app. Check every
 30 minutes and when connectivity returns, using `cache: 'no-store'` and one
@@ -1351,3 +1351,81 @@ references/private metadata, and the shared schema. Reviewed synthetic
 for native decoding between advances; executing virtual hours during a native
 image decode otherwise creates artificial decode timeouts. No physical overnight,
 deployment, navigation interception or device acceptance is claimed in O3.
+
+## M5.O4 — Navigation and deployment recovery, 22 October 2026
+
+Implemented stable `/sw.js`, exact root/query navigation allowlisting, a five-second
+network-first deadline including response bodies, and fallback-only Cache Storage.
+HTTP/auth failures and redirects retain normal handling; assets/private APIs and
+version checks are excluded. A fallback content hash binds install to the complete
+matching public document. Successful installs activate/claim and retire old fallback
+caches; failed installs preserve the active version and schema-1 photos. A retirement
+build and local retirement message remove only fallback caches and unregister.
+
+An independent inline startup guard covers successful HTML with failed critical
+modules. It receives the installed public document over a message port and replaces
+the failed document at the same URL. This narrow, documented trusted-document write
+is required to execute its hash-authorized script without a forbidden kiosk path.
+It does not introduce HTML-string rendering into weather/admin components. Health
+and version checks never renew private photo leases. Partial-load return deadlines
+persist exponential backoff across navigations; successful startup resets it.
+
+Build-matched public version metadata supports startup/thirty-minute/connectivity
+checks with one in-flight request. A new ID queues one reload at a Photos transition
+or after the current render in other modes. Its persisted attempted target prevents
+stale-page reload loops. Only an unexpired override's remaining lifetime transfers
+through session storage; existing density/fit/auth/photo retention remains intact.
+Admin/setup pages do not auto-reload. Resume restarts version checks.
+
+Activation remains disabled in ordinary builds pending O5's native recovery work.
+`pnpm verify` tests that ordinary artifact, then saves it while a separately enabled
+build runs `playwright.offline.config.ts`; `finally` restores the exact original
+`dist` for the existing CI artifact handoff. No enabled-worker build is uploaded by
+this verification. Worker DOM typing has a separate TypeScript configuration;
+ordinary browser and Workers API declarations stay separate.
+
+Re-read the specification, offline phases and ADR 0009. Re-inspected pinned upstream
+`f1e0820918c926396e0ccafb4839568825f63edc`, MIT `LICENSE`,
+`dashboard/js/slideshow.js` and `dashboard/js/views/photos.js`. Its fullscreen and
+lifecycle ideas remain; the fallback/store/navigation/update implementation is
+independently authored. No upstream source/assets copied, new runtime dependency,
+service/binding/billing change, push, deployment or hardware action. O5 and prior
+physical/security/soak deferrals remain open. Final verification evidence follows.
+
+Acceptance refinements: the standalone overnight fixture now waits for each newly
+decoded image before advancing another virtual hour. Visibility alone could observe
+the previous image and race the bounded decoder timeout. It also checks the full
+saved 5–3600-second interval contract; the initial fallback's five-minute clamp was
+corrected to match validated live settings. Connectivity recovery can itself advance
+the live slideshow, so the update test observes real response → transition → unload
+ordering instead of assuming no slide advances during an online event. No test-only
+hooks or diagnostic logging are included in the production application.
+
+The final lifecycle audit also exposed a pending-image gap: rapid hide/show could
+outlive a native decode. The fallback now owns and cancels the pending image as
+well as the displayed image, fences concurrent playback runs, and ignores cancelled
+results without deleting valid copies. A delayed-decode/rapid-visibility browser
+case checks immediate URL release, the two-image limit and preservation of all
+three synthetic stored photos after the old decode timeouts. Session-storage denial
+now permits a healthy manual return while preventing unfenced automatic reloads.
+
+Final validation: `pnpm verify` passed Astro/Workers/service-worker types, XO,
+all 131 unit/integration tests, production build, 300 ordinary browser checks
+(with four existing intentional skips), and all 44 enabled-worker checks across
+Chromium, Firefox, WebKit and mobile WebKit. A subsequent small fullscreen correction
+sets images to block layout: direct measurement found a four-pixel inline baseline
+at 1280×800 and mobile. The final generation check also runs after the last async
+lease read before committing a decoded image. Regenerated CSP/build checks, eight
+focused fullscreen/default-build cases, and all 28 final standalone cases passed
+after these corrections. The storage-denial fixture waits for native IndexedDB
+initialization before advancing its clock, so a late empty-state render cannot
+race the recovery assertion. Final lint retains only the four existing complexity
+warnings; the trusted-document write has its documented deprecation hint.
+
+Reviewed synthetic Firefox/mobile evidence from O3; final tests assert no scrolling
+at both frame and mobile viewports. No household data is in the evidence. Changed
+local documentation links and `git diff --check` passed. An independent byte-for-byte
+check confirmed ordinary assets were restored after a failed enabled trial; final
+ordinary-build browser checks confirm matching build metadata and no registration.
+M5.O3/O4 are complete as local software slices. Navigation/update activation remains
+explicitly gated pending O5; no push, deployment or device action occurred.
