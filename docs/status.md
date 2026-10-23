@@ -5,8 +5,17 @@
 canonical install URL. Production privacy/exact-asset checks, fresh online browser
 worker installation and actual Classic online restart/private Photos passed.
 Native registration, matching public fallback cache and photo IndexedDB are present;
-storage remains subject to eviction. Outage, overnight, cold-power, destructive
-storage/credential and physical hold acceptance remain deferred. Production CI
+storage remains subject to eviction. Owner desk checks subsequently passed physical
+maintenance, short Wi-Fi disconnect, offline app restart and immediate reconnection
+without key entry. Text size, mode and next-photo controls passed. These are owner
+visual observations without measured outage/restart timing or host telemetry. Update
+recovery, overnight and destructive storage/credential acceptance remain deferred.
+A subsequent owner-authorized offline power cycle remained at the plausible-clock
+gate for three minutes from the launcher prompt, with no offline photos. Restoring
+Wi-Fi recovered private Photos in about 45 seconds. Offline cold startup is therefore
+a recorded limitation; network-assisted recovery passed. Full O5 remains open.
+A future UI simplification item covers routine storage/synchronization messaging
+and other everyday display clutter; no UI change is implemented yet. Production CI
 retains the verified enabled build on main pushes; local/PR verification restores
 the disabled build by default. [Current offline rollout and remaining gates](hardware/m5-offline.md).
 The historical status and deferrals below retain their dated scope.

@@ -1,7 +1,9 @@
 # M5.O5 — Classic 10 offline integration
 
 23 October 2026. **Kiosk 0.1.5/code 6 is installed and the enabled web release is
-live. Online integration checks passed; full O5 acceptance remains open.** The owner
+live. Online integration and owner short desk checks passed; full O5 acceptance
+remains open.** See the dated owner observations below for the subsequent
+clock-gated offline cold-power result and successful network-assisted recovery. The owner
 specifically authorized installation/deployment and checks without physical
 intervention, deferring outage, overnight and cold-power tests. O1–O4 retain their
 recorded software acceptance; the remaining gates below are device acceptance.
@@ -160,7 +162,11 @@ The first full run exposed an existing WebKit test's clock/decode race; the fixt
 now waits for native decode completion before advancing virtual time, and the
 focused case plus full rerun passed. Production photo code was unchanged.
 
-## Remaining device trial, in order
+## Device trial sequence at rollout
+
+This list records the initial rollout gates. Subsequent owner desk and cold-power
+results are recorded below; their completed observations supersede the initial
+physical-maintenance and short-outage deferrals here.
 
 1. **Rollout authorization — done.** Owner explicitly approved 0.1.5 installation,
    enabled deployment and checks without physical intervention. Exact artifacts,
@@ -248,8 +254,8 @@ combine this first session with a power cut, clock change or storage clearing.
    storage, change the clock or enter a new key to make the check pass.
 4. **Online return.** Re-enable Wi-Fi in Settings and return through DK. The fallback's
    **Réessayer la connexion** can expedite its normal validated recovery. Confirm
-   return to the live dashboard/private Photos without a key, then check framing,
-   interval, text size and mode controls. Record the result and approximate times;
+   return to the live dashboard/private Photos without a key, then check text size,
+   mode controls and the next-photo button. Record the result and approximate times;
    do not count a useful empty/retry screen as successful photo playback.
 
 Passing these checks supplies physical and short offline/restart/reconnection
@@ -257,6 +263,55 @@ observations. It does not complete measured update recovery, storage eviction/ex
 continuous overnight playback, cold-power startup or broader M6 acceptance.
 Coordinate those separately, particularly destructive storage/credential fixtures
 and any cold cycle where the clock could reset.
+
+## Owner desk observations — 23 October 2026
+
+Owner-reported physical checks on the installed kiosk 0.1.5 and enabled release:
+
+- Stationary two-finger maintenance and Android Settings → independent DK →
+  Retour au kiosk passed; fullscreen private Photos returned without key entry.
+- With the frame’s Wi-Fi disabled, photos continued rotating normally and the
+  saved-photo offline notice appeared. The owner reported no playback problem;
+  the elapsed outage duration was not measured.
+- One app restart with Wi-Fi still disabled recovered to the standalone saved-photo
+  slideshow, identified by its bottom offline notice and Réessayer la connexion
+  button. Recovery time was not measured.
+- After Wi-Fi was restored, returning to kiosk immediately recovered the full app
+  without key entry; the offline notice disappeared. Text size, mode controls and
+  the next-photo button worked. There is no rotation interval control in this UI;
+  the desk checklist was corrected accordingly.
+
+These observations close the physical maintenance and short Wi-Fi disconnect,
+offline app restart and reconnect checks for this session. They are owner visual
+reports, without host telemetry or a measured WAN-only outage. Weather remaining
+visible during the disconnect was also observed; this alone does not verify the
+45-minute stale-reading threshold. No power cut was part of this short session; the separately authorized cold-power
+trial follows below. No overnight run, update recovery, storage clearing, expiry
+or credential test was performed. Full O5 remains open.
+
+## Owner offline cold-power observation — 23 October 2026
+
+Owner explicitly authorized one offline power-cycle trial after the short desk
+checks. After power restoration, the frame progressed from the Rootless launcher
+prompt to the kiosk startup screen, then displayed « Attente d’une horloge plausible
+avant ouverture du profil ». No offline photos appeared during the owner’s
+three-minute wait, timed from the launcher prompt rather than power restoration.
+This establishes clock-gated offline cold startup on this trial; it does not
+establish the exact reset date/time or a measured boot duration.
+
+After the owner re-enabled Wi-Fi in Android Settings and returned through DK, the
+full app and private photos recovered in approximately 45 seconds, without any
+reported key entry. The online UI displayed « Stockage soumis à éviction ·
+synchronisation progressive », matching the pre-power-cycle storage limitation.
+This notice does not itself establish lost photos, completed synchronization or
+a new fault. No clock bypass, manual clock change or storage clearing was used.
+
+Cold-power observation and network-assisted recovery are now recorded. Offline
+photo startup after a power loss did not pass: the plausible-clock gate prevented
+profile opening. Retain this limitation unless a separately reviewed solution is
+implemented; do not weaken clock, retention or TLS checks to make startup pass.
+Overnight playback, measured update recovery and destructive storage/expiry/
+credential trials remain deferred. Full O5 acceptance remains open.
 
 ## Rollback and acceptance boundaries
 

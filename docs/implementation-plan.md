@@ -158,7 +158,7 @@ work, not retroactively completed by earlier offline tests.
 | M5.O2 — Persistent photos      | Shared IndexedDB module; automatic authorized-browser persistence; bounded gradual downloads; live slideshow reads saved photos during outages and mode changes. Preserve two decoded images, catalog pagination, authorization denial and local invalidation.                                                                                | **Complete locally, 22 October 2026.** Shared store, automatic persistence in authorized browsers, incremental bounded persistence and live outage/mode-return playback. Browser acceptance and limits are recorded in the O2 execution record below. No service worker, cold-start, deployment or device claim.                                                                                                                            |
 | M5.O3 — Standalone fallback    | One self-contained offline HTML document using the same photo store, lease and playback preferences; empty/expired state, photos at all hours offline, manual/automatic reconnection. No external runtime assets or private data embedded in the public artifact.                                                                             | **Complete locally.** Standalone document, shared store/lease, all-hours playback and bounded recovery; 20 four-engine fixture checks and generated CSP inspection are recorded below. No device acceptance.                                                                                                                                                                                                                                |
 | M5.O4 — Navigation fallback    | Stable small worker; allowlisted dashboard navigation only; bounded network-first attempt with saved fallback. All other requests retain ordinary handling. Cover partial dashboard startup failure without a new forbidden kiosk URL. Version only the public fallback, with compatible storage and explicit activation/retirement behavior. | **Complete locally, 22 October 2026.** Navigation-only worker, partial-startup guard, build detection and explicit lifecycle/retirement. Local/PR builds default disabled. Owner-authorized enabled production rollout passed online checks on 23 October after native 0.1.5 installation; full device outage/update/storage acceptance remains O5.                                                                                         |
-| M5.O5 — Classic 10 integration | Refresh upstream device research and actual device identity/browser; teach the kiosk heartbeat/recovery policy to distinguish healthy offline playback and empty/expired retry states from faults. Preserve address/TLS restrictions, clock gate and maintenance paths.                                                                       | **Installed/enabled deployed; online checks passed, 23 October 2026.** Actual Classic private Photos, online restart, worker registration/public fallback cache and initial storage passed. [Rollout and evidence](hardware/m5-offline.md). Outage/reconnection, update recovery, destructive storage/expiry, physical two-finger, overnight and cold-power acceptance remain open. Storage is subject to eviction; prior deferrals remain. |
+| M5.O5 — Classic 10 integration | Refresh upstream device research and actual device identity/browser; teach the kiosk heartbeat/recovery policy to distinguish healthy offline playback and empty/expired retry states from faults. Preserve address/TLS restrictions, clock gate and maintenance paths.                                                                       | **Installed/enabled deployed; online checks passed, 23 October 2026.** Actual Classic private Photos, online restart, worker registration/public fallback cache and initial storage passed. [Rollout and evidence](hardware/m5-offline.md). Owner desk checks subsequently passed physical maintenance, short Wi-Fi disconnect, offline app restart and immediate reconnection without key entry. Update recovery, destructive storage/expiry, measured sustained offline playback and overnight acceptance remain open. Subsequent offline cold-power observation was clock-gated; network-assisted recovery passed in about 45 seconds, with offline cold startup retained as a limitation. Storage is subject to eviction; prior deferrals remain. |
 
 **O4 deployment update detection (implemented locally 22 October; production activation authorized 23 October 2026):**
 Publish a small public `/version.json` with an opaque build ID, shipped with the
@@ -220,6 +220,22 @@ Start only after the core display is usable. Create a small separate proposal fo
 - iOS Shortcut: scoped revocable upload token or authenticated handoff; reuse validation/optimization requirements without assuming browser cookies are available.
 - Hue and other LAN devices: prove a secure connectivity path before adding controls; a hosted Worker cannot directly reach a private LAN bridge.
 - Calendar, alerts, or additional widgets: preserve the primary display's hierarchy and minimize private data held on the frame.
+
+### Deferred UI simplification — recorded 23 October 2026
+
+Owner requested a future review to simplify the everyday display UI, including
+photo synchronization/storage messaging. The persistent « Stockage soumis à
+éviction · synchronisation progressive » notice exposes technical details without
+helping the viewer decide what to do. Review other routine status text and controls
+in the same pass, retaining the controls the household uses.
+
+Proposed acceptance: normal photo playback stays visually quiet; detailed storage
+persistence and synchronization diagnostics remain available in maintenance or
+administration. Show concise French messages on the display when they explain an
+actual interruption or a useful action, including offline playback, unavailable
+photos and retry. Do not imply that storage is permanent or all photos are saved
+unless verified. Review the resulting normal, offline, syncing and failure states
+on the frame. This is backlog work; no UI or storage behavior changed in this slice.
 
 ## 10. Verification and completion records
 
@@ -1540,3 +1556,27 @@ configuration, Home and boot/supervision flags. Documentation links, private-art
 ignore checks and `git diff --check` passed. The owner subsequently authorized
 committing and pushing this verified slice. Actual-frame outage/overnight/cold-power
 and other explicit acceptance deferrals remain open.
+
+### M5.O5 owner desk observations — 23 October 2026
+
+Owner confirmed physical two-finger maintenance and Settings → independent DK
+return, continued saved-photo rotation with Wi-Fi off, one offline app restart
+into the standalone slideshow, and immediate full-app recovery after restoring
+Wi-Fi without key entry. Text size, mode and next-photo controls passed. Corrected
+the desk checklist: no rotation interval control is exposed. Outage and restart
+durations were not measured; no host telemetry was collected for these owner
+observations. [Detailed evidence and remaining limits](hardware/m5-offline.md#owner-desk-observations--23-october-2026).
+Update recovery, destructive storage/expiry/credentials, sustained overnight and
+cold-power acceptance remain deferred; full O5 and M6 remain open.
+
+### M5.O5 offline cold-power observation — 23 October 2026
+
+Owner authorized and operated one offline power cycle. Startup remained at the
+plausible-clock/profile gate for three minutes measured from the Rootless prompt;
+no offline photos appeared. Restoring Wi-Fi and returning through DK recovered
+private Photos in about 45 seconds, without reported key entry. Offline cold
+photo startup therefore did not pass; network-assisted clock/profile recovery did.
+The eviction/progressive synchronization notice remains consistent with the
+previously observed storage policy. [Detailed observation](hardware/m5-offline.md#owner-offline-cold-power-observation--23-october-2026).
+No clock/security bypass or storage clearing was performed. Overnight, measured
+update recovery and destructive storage/expiry/credential checks remain deferred.
