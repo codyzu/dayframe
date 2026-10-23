@@ -191,7 +191,15 @@ test('corrupt image is skipped and lease denial clears loaded photos across tabs
   });
   await expect(page.locator('main img')).toHaveCount(0);
   await expect(page.locator('[data-status]')).toContainText('expiré');
-  await page.clock.runFor(5000);
+  // The probe skips hidden documents. Return from the invalidating tab and
+  // advance beyond its next five-second report, including the animation frame
+  // that samples readiness; stopping exactly at the interval can strand it.
+  await page.bringToFront();
+  await expect(page.locator('body')).toHaveAttribute(
+    'data-offline-state',
+    'retry',
+  );
+  await page.clock.runFor(5100);
   await expect(page.locator('html')).toHaveAttribute(
     'data-native-ready',
     'true',

@@ -1580,3 +1580,16 @@ The eviction/progressive synchronization notice remains consistent with the
 previously observed storage policy. [Detailed observation](hardware/m5-offline.md#owner-offline-cold-power-observation--23-october-2026).
 No clock/security bypass or storage clearing was performed. Overnight, measured
 update recovery and destructive storage/expiry/credential checks remain deferred.
+
+### Desk-record CI corrections — 23 October 2026
+
+The documentation push initially failed XO/Prettier because the updated O5 table
+needed column alignment. Formatting was corrected and full local lint passed
+with the four existing complexity warnings. The next CI run passed types, lint,
+all 134 unit/integration tests and build, then exposed a timing race in the
+cross-tab offline invalidation browser test (299 passed, one failed, four skipped).
+The test now returns focus to the slideshow because the native probe skips hidden
+documents, and advances the virtual clock beyond the five-second heartbeat and
+its animation-frame readiness sample. Retry state and privacy-clearing assertions
+remain intact; production behavior is unchanged. Five repetitions in each of
+Chromium, Firefox, WebKit and mobile WebKit passed (20/20). Full CI is rerun on push.
