@@ -117,3 +117,47 @@ await Promise.all(
     /* eslint-enable no-await-in-loop */
   }),
 );
+
+// Check the canonical public fallback URL as well as HTML: the worker rejects
+// redirects during installation, including Static Assets' /offline.html redirect.
+await Promise.all(
+  [
+    {file: 'offline.html', pathname: '/offline', type: 'text/html'},
+    {file: 'sw.js', pathname: '/sw.js', type: 'javascript'},
+    {file: 'version.json', pathname: '/version.json', type: 'application/json'},
+  ].map(async ({file, pathname, type}) => {
+    const expected = await readFile(
+      new URL('../dist/' + file, import.meta.url),
+    );
+    // Like the route checks, tolerate bounded edge propagation after deployment.
+    /* eslint-disable no-await-in-loop -- Retry sequentially rather than hammering the public endpoint. */
+    for (let attempt = 1; ; attempt++) {
+      try {
+        const response = await fetch(base + pathname, {
+          redirect: 'error',
+          cache: 'no-store',
+          signal: AbortSignal.timeout(15_000),
+        });
+        assert.equal(response.status, 200, pathname);
+        assert.ok(
+          response.headers.get('content-type')?.includes(type),
+          pathname,
+        );
+        const body = new Uint8Array(await response.arrayBuffer());
+        assert.equal(hash(body), hash(expected), pathname);
+        console.log(`GET ${pathname}: exact public artifact, no redirect`);
+        return;
+      } catch (error) {
+        if (attempt === 12) {
+          throw error;
+        }
+
+        console.log(
+          `GET ${pathname}: retry ${attempt}/12 after ${error.message}`,
+        );
+        await delay(5000);
+      }
+    }
+    /* eslint-enable no-await-in-loop */
+  }),
+);

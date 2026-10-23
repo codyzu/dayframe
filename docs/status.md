@@ -1,5 +1,16 @@
 # Dayframe status and validation register
 
+**23 October M5.O handoff:** kiosk 0.1.5/code 6 is installed. Enabled web build
+`ae262aaf-c44c-4977-97df-23006ca4d373` is live after correcting the fallback's
+canonical install URL. Production privacy/exact-asset checks, fresh online browser
+worker installation and actual Classic online restart/private Photos passed.
+Native registration, matching public fallback cache and photo IndexedDB are present;
+storage remains subject to eviction. Outage, overnight, cold-power, destructive
+storage/credential and physical hold acceptance remain deferred. Production CI
+retains the verified enabled build on main pushes; local/PR verification restores
+the disabled build by default. [Current offline rollout and remaining gates](hardware/m5-offline.md).
+The historical status and deferrals below retain their dated scope.
+
 Updated 20 October 2026 against the current working tree and recorded acceptance evidence, including a read-only Classic 10 screen check. Web revision `bdd4e0a` was deployed successfully by GitHub Actions run [39494412178](https://github.com/codyzu/dayframe/actions/runs/39494412178); the earlier device observations predate that deployment. No new performance test was performed. The historical deployment record below is scoped to web revision `3763694`. H5 manual fullscreen and the H6 automatic-startup slice are accepted; H6 native operational recovery is accepted with explicit verification limits; full hardware acceptance remains open. Historical records retain the state at the time they were written.
 
 **20 October maintenance visibility update:** signed native **0.1.4/code 5** is installed. Normal display is visually verified without DK; protected Photos returned without key entry and Android Settings → independent DK → kiosk passed in the same process/session. Boot/supervision flags and Home preferences were retained. The owner confirms retaining the verified backup and waived reconnect/reverification for this APK update. Owner confirmed the physical two-finger menu opens and closes on this version; prior 0.1.3 boot/fault evidence retains its scope. [Execution record](hardware/h6-recovery.md#dk-visibility-update--20-october-2026).

@@ -6,10 +6,37 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import soak
+import faults
 from faults import GuardError
 
 
 class SoakTests(unittest.TestCase):
+    def test_new_artifact_observation_is_exact_and_cannot_inherit_fault_permission(self):
+        device = faults.Device(None)
+        device.acceptance_verified = True
+        device.signal_identity_verified = True
+        artifact = {'package': faults.PACKAGE, 'sha256': 'a' * 64, 'version': '0.1.5', 'versionCode': 6}
+        with patch.object(device, '_preflight', return_value=('baseline', 'home')) as preflight:
+            self.assertEqual(device.observation_preflight(Path('candidate.apk'), artifact), ('baseline', 'home'))
+            preflight.assert_called_once_with(Path('candidate.apk'), 'a' * 64, '0.1.5', 6, False)
+        self.assertFalse(device.acceptance_verified)
+        self.assertFalse(device.signal_identity_verified)
+        with self.assertRaises(GuardError):
+            device.preflight(Path('candidate.apk'), fault=True)
+
+    def test_observation_rejects_malformed_artifact_before_device_reads(self):
+        artifact = {'package': faults.PACKAGE, 'sha256': 'a' * 64, 'version': '0.1.5', 'versionCode': 6}
+        for key, bad in [('package', 'another.package'), ('sha256', 'bad'), ('version', '.*'),
+                         ('versionCode', True), ('versionCode', 0)]:
+            with self.subTest(key=key), self.assertRaises(GuardError):
+                faults.Device(None).observation_preflight(Path('candidate.apk'), dict(artifact, **{key: bad}))
+
+    def test_default_fault_runner_retains_original_artifact_pin(self):
+        device = faults.Device(None)
+        with patch.object(device, '_preflight') as preflight:
+            device.preflight(Path('old.apk'))
+            preflight.assert_called_once_with(Path('old.apk'), faults.REVIEWED_SHA256, '0.1.3', 4, False)
+
     def fixture(self):
         return ({'uptime': 120, 'processes': {'1': {}}, 'pss_kib': 100},
                 {'healthy': True, 'supervisor': {'pid': 2}, 'health': {'elapsedMs': 119000}})

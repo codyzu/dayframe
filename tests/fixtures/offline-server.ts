@@ -9,6 +9,7 @@ import {createHash} from 'node:crypto';
 import {build} from 'esbuild';
 import ts from 'typescript';
 import {defaultSettings} from '../../src/lib/dashboard/settings.ts';
+import {alertsFixture} from './alerts.ts';
 
 const root = path.resolve('dist');
 const version = JSON.parse(
@@ -92,7 +93,7 @@ const server = createServer(async (request, response) => {
     return;
   }
 
-  if (url.pathname === '/offline.html' && state.fallbackFailure === true) {
+  if (url.pathname === '/offline' && state.fallbackFailure === true) {
     response.writeHead(503);
     response.end('Interrupted');
     return;
@@ -119,7 +120,12 @@ const server = createServer(async (request, response) => {
 server.listen(8790, '127.0.0.1');
 
 async function serveAsset(pathname: string, response: ServerResponse) {
-  const target = path.resolve(root, '.' + decodeURIComponent(pathname));
+  const target = path.resolve(
+    root,
+    pathname === '/offline'
+      ? './offline.html'
+      : '.' + decodeURIComponent(pathname),
+  );
   if (target !== root && !target.startsWith(root + '/')) {
     response.writeHead(404);
     response.end();
@@ -138,7 +144,7 @@ async function serveAsset(pathname: string, response: ServerResponse) {
     };
     let body = await readFile(filename);
     const revision = typeof state.revision === 'number' ? state.revision : 0;
-    if (pathname === '/offline.html' && revision > 0) {
+    if (pathname === '/offline' && revision > 0) {
       body = Buffer.from(body.toString() + '\n<!-- new public fallback -->');
     }
 
@@ -189,6 +195,36 @@ async function serveAsset(pathname: string, response: ServerResponse) {
 }
 
 function serveApi(pathname: string, response: ServerResponse) {
+  // Match Workers Static Assets HTML canonicalization in the real deployment.
+  if (pathname === '/offline.html') {
+    response.writeHead(307, {Location: '/offline'});
+    response.end();
+    return true;
+  }
+
+  // This suite models authorized photo outages, not a calendar denial that would
+  // correctly invalidate saved photos whenever the real clock selects Morning.
+  if (pathname === '/api/calendar/events') {
+    response.setHeader('Content-Type', 'application/json');
+    response.end(
+      JSON.stringify({
+        connected: false,
+        events: [],
+        fetchedAt: Date.now(),
+        timezone: 'Europe/Paris',
+      }),
+    );
+    return true;
+  }
+
+  // Serve warnings here rather than evaluating a page from a route handler:
+  // controlled build reloads can destroy that page's execution context mid-read.
+  if (pathname === '/api/weather-alerts') {
+    response.setHeader('Content-Type', 'application/atom+xml');
+    response.end(alertsFixture([], Date.now()));
+    return true;
+  }
+
   if (pathname === '/api/photos' && state.photoOutage === true) {
     const send = () => {
       response.writeHead(503, {'Content-Type': 'application/json'});

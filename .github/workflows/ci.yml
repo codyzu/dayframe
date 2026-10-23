@@ -14,6 +14,9 @@ jobs:
     timeout-minutes: 20
     env:
       WRANGLER_SEND_METRICS: 'false'
+      # Ordinary browser checks run first; only the verified final enabled build
+      # becomes the production artifact on a main-branch push.
+      DAYFRAME_RELEASE_ASSETS: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && '1' || '0' }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

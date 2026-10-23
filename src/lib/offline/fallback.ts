@@ -9,6 +9,15 @@ import {
 const stage = document.querySelector<HTMLElement>('[data-stage]')!;
 const status = document.querySelector<HTMLElement>('[data-status]')!;
 const retry = document.querySelector<HTMLButtonElement>('button')!;
+const root = document.body;
+
+// Fixed readiness labels for the isolated native probe; never photo/lease data.
+// A document background alone must not satisfy the native load watchdog.
+function showRetry(message: string) {
+  status.textContent = message;
+  root.dataset.offlineState = 'retry';
+}
+
 let generation = 0;
 let currentUrl: string | undefined;
 let loading: {image: HTMLImageElement; url: string} | undefined;
@@ -44,6 +53,7 @@ function discard(candidate: {image: HTMLImageElement; url: string}) {
 
 function release() {
   generation++;
+  root.dataset.offlineState = 'loading';
   clearTimeout(slideTimer);
   releaseCurrent();
   if (loading) {
@@ -53,7 +63,7 @@ function release() {
 
 onOfflineInvalidation(() => {
   release();
-  status.textContent = 'Accès aux photos expiré. Reconnectez-vous à Dayframe.';
+  showRetry('Accès aux photos expiré. Reconnectez-vous à Dayframe.');
 });
 
 function playbackInterval(value: number) {
@@ -76,8 +86,7 @@ async function play() {
 
     if (!lease || photos.length === 0) {
       release();
-      status.textContent =
-        'Aucune photo hors connexion. Reconnectez-vous à Dayframe.';
+      showRetry('Aucune photo hors connexion. Reconnectez-vous à Dayframe.');
       return;
     }
 
@@ -138,6 +147,7 @@ async function play() {
       currentUrl = url;
       previousId = photo.id;
       status.textContent = 'Hors connexion · Photos enregistrées';
+      root.dataset.offlineState = 'playback';
     } catch {
       discard(candidate);
 
@@ -167,8 +177,7 @@ async function play() {
     }
 
     release();
-    status.textContent =
-      'Stockage des photos indisponible. Réessayez la connexion.';
+    showRetry('Stockage des photos indisponible. Réessayez la connexion.');
   } finally {
     if (pendingRun === turn) {
       pendingRun = undefined;

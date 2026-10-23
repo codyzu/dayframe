@@ -1,17 +1,17 @@
 # Classic 10 — setup and everyday operation
 
-Current documented configuration: 19 October 2026, Classic10 firmware `Classic10_A33M187_20250910-1617_V09`, Android 6.0.1/API 23, ARMv7, 1280 × 800. This guide consolidates the accepted installation and H6 operational result. It does not install anything or establish the deferred performance/network/stability acceptance. [Evidence and limits](h6-recovery.md#current-requirement-by-requirement-audit).
+Current documented configuration: 23 October 2026, Classic10 firmware `Classic10_A33M187_20250910-1617_V09`, Android 6.0.1/API 23, ARMv7, 1280 × 800. This guide consolidates the accepted installation and H6 operational result. It does not install anything or establish the deferred performance/network/stability acceptance. [Evidence and limits](h6-recovery.md#current-requirement-by-requirement-audit).
 
 ## Installed configuration
 
 | Component                                         | Current role                                                                              |
 | ------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| Dayframe kiosk `dev.dayframe.kiosk`, 0.1.3/code 4 | Primary fullscreen GeckoView 143 display. Native startup and supervision enabled.         |
+| Dayframe kiosk `dev.dayframe.kiosk`, 0.1.5/code 6 | Primary fullscreen GeckoView 143 display. Native startup and supervision enabled.         |
 | Dayframe maintenance helper, 0.3.0                | Retained Firefox fallback; its automatic startup is disabled to avoid competing launches. |
 | Firefox 143.0.4 ARMv7 and Rootless 3.9.1          | Retained manual browser/shortcut fallback with its existing profile.                      |
 | Stock Home and Android Settings                   | Retained physical maintenance route; preferred Home configuration unchanged.              |
 
-The current native APK, full digest and private artifact location are recorded at the top of [H6 recovery](h6-recovery.md). The GeckoView dependency graph, source licenses and build checks are documented in [the kiosk README](../../hardware/kiosk/README.md). Do not install an older artifact from a historical execution entry or clear either browser profile to troubleshoot.
+The current native APK, full digest, enabled web release and online rollout evidence are recorded in [M5 offline integration](m5-offline.md). Outage, overnight, cold-power and eviction acceptance remain deferred; the actual browser reports saved storage subject to eviction. A wrong-clock cold start still waits before opening the profile. [H6 recovery](h6-recovery.md) retains earlier version-scoped boot/fault evidence. The GeckoView dependency graph, source licenses and build checks are documented in [the kiosk README](../../hardware/kiosk/README.md). Do not install an older artifact from a historical execution entry or clear either browser profile to troubleshoot.
 
 ## Setup on a replacement or reset unit
 

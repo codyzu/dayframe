@@ -8,6 +8,24 @@
     return;
   }
 
+  const offlineReady = () => {
+    const offline = document.querySelector('[data-offline]');
+    const image = offline?.querySelector(':scope [data-stage] img');
+    const retry = offline?.querySelector('button');
+    const offlineStatus = offline?.querySelector('[data-status]');
+    const visible = (element) =>
+      element && !element.hidden && element.getBoundingClientRect().height > 0;
+    const isOfflineReady = Boolean(
+      offline?.dataset.offlineState === 'playback'
+        ? visible(image) && image.complete && image.naturalWidth > 0
+        : offline?.dataset.offlineState === 'retry' &&
+            visible(retry) &&
+            visible(offlineStatus) &&
+            offlineStatus.textContent?.trim(),
+    );
+    return isOfflineReady;
+  };
+
   const report = () => {
     if (document.hidden) {
       return;
@@ -30,6 +48,7 @@
         root?.querySelector('[data-photo-status]')?.textContent ?? '';
       const isReady =
         isSetup ||
+        offlineReady() ||
         Boolean(
           panel &&
           clock &&

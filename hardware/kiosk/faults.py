@@ -196,7 +196,22 @@ class Device:
 
     def preflight(self, apk, fault=False):
         require(not fault or self.acceptance_verified, 'Physical/profile acceptance record required before faults')
-        require(hashlib.sha256(apk.read_bytes()).hexdigest() == REVIEWED_SHA256,
+        return self._preflight(apk, REVIEWED_SHA256, '0.1.3', 4, fault)
+
+    def observation_preflight(self, apk, artifact):
+        """Read-only exact-artifact inspection; does not authorize any live fault."""
+        require(artifact.get('package') == PACKAGE, 'Unexpected observation package')
+        digest, version, code = artifact.get('sha256'), artifact.get('version'), artifact.get('versionCode')
+        require(isinstance(digest, str) and re.fullmatch(r'[0-9a-f]{64}', digest), 'Invalid observation digest')
+        require(isinstance(version, str) and re.fullmatch(r'\d+\.\d+\.\d+', version), 'Invalid observation version')
+        require(type(code) is int and code > 0, 'Invalid observation version code')
+        # A new observation cannot inherit a previous artifact's fault acceptance.
+        self.acceptance_verified = False
+        self.signal_identity_verified = False
+        return self._preflight(apk, digest, version, code, False)
+
+    def _preflight(self, apk, digest_expected, version, code, fault):
+        require(hashlib.sha256(apk.read_bytes()).hexdigest() == digest_expected,
                 'Local APK is not the separately reviewed trial artifact')
         require(self.adb.shell('id -u') == '0', 'Recorded root ADB transport changed')
         for key, expected in EXPECTED.items():
@@ -206,8 +221,8 @@ class Device:
         helper = self.adb.shell('dumpsys package dev.dayframe.maintenance')
         require(re.search(r'\bversionName=0\.3\.0(?:\s|$)', helper), 'Accepted helper fallback changed')
         package = self.adb.shell('dumpsys package ' + PACKAGE)
-        require(re.search(r'\bversionName=0\.1\.3(?:\s|$)', package)
-                and re.search(r'\bversionCode=4(?:\s|$)', package), 'Installed trial version mismatch')
+        require(re.search(r'\bversionName=' + re.escape(version) + r'(?:\s|$)', package)
+                and re.search(r'\bversionCode=' + str(code) + r'(?:\s|$)', package), 'Installed trial version mismatch')
         match = re.search(r'\buserId=(\d+)', package)
         require(match is not None and int(match[1]) >= 10000, 'Trial package UID unavailable/unsafe')
         self.uid = int(match[1])
@@ -215,7 +230,7 @@ class Device:
         match = re.fullmatch(r'package:(/data/app/[A-Za-z0-9._/-]+/base\.apk)', path)
         require(match is not None, 'Unexpected APK path/splits/system installation')
         digest = self.adb.shell('/sbin/busybox sha256sum ' + shlex.quote(match[1]), timeout=30).split()
-        require(len(digest) == 2 and digest[0] == REVIEWED_SHA256, 'Full installed APK hash mismatch')
+        require(len(digest) == 2 and digest[0] == digest_expected, 'Full installed APK hash mismatch')
         home = self.adb.shell('dumpsys package preferred-xml')
         baseline = self.snapshot()
         if fault:

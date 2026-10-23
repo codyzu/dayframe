@@ -34,7 +34,7 @@ final class RecoveryPolicy {
     return wall >= 1790812800000L && wall < 4102444800000L;
   }
 
-  Action tick(long now, boolean connected, boolean clockReady) {
+  Action tick(long now, boolean clockReady) {
     if (state == State.PAUSED || state == State.AUTH_REQUIRED || state == State.SECURITY_ERROR
         || state == State.CIRCUIT_OPEN) return Action.NONE;
     if (state == State.HEALTHY) {
@@ -51,7 +51,9 @@ final class RecoveryPolicy {
       if (now >= deadline) fail(now, true);
       return Action.NONE;
     }
-    if (!connected || !clockReady || now < deadline) return Action.NONE;
+    // A permitted HTTPS navigation may be served by the installed worker without
+    // any network. Missing fallback still uses the existing bounded retry policy.
+    if (!clockReady || now < deadline) return Action.NONE;
     boolean rebuild = replace;
     if (rebuild) {
       if (now - replacementWindow >= WINDOW) {

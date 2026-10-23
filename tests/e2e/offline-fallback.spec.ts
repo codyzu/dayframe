@@ -17,6 +17,34 @@ async function standalone(page: Page) {
     route.fulfill({contentType: 'text/html', body: html}),
   );
   await page.goto('/offline.html');
+  // Execute the packaged probe against the real generated DOM. This models its
+  // reads/message payload, not Android's isolated extension or native callbacks.
+  await page.evaluate(() => {
+    Object.defineProperty(globalThis, 'browser', {
+      value: {
+        runtime: {
+          async sendNativeMessage(
+            _app: string,
+            message: {ready: boolean; denied: boolean},
+          ) {
+            globalThis.document.documentElement.dataset.nativeReady = String(
+              message.ready,
+            );
+            globalThis.document.documentElement.dataset.nativeDenied = String(
+              message.denied,
+            );
+          },
+        },
+      },
+      configurable: true,
+    });
+  });
+  await page.evaluate(
+    await readFile(
+      'hardware/kiosk/app/src/main/assets/heartbeat/heartbeat.js',
+      'utf8',
+    ),
+  );
 }
 
 test('self-contained CSP document rotates overnight, honors preferences and retains only current/next', async ({
@@ -50,6 +78,11 @@ test('self-contained CSP document rotates overnight, honors preferences and reta
   });
   await standalone(page);
   await expect(page.locator('main img')).toBeVisible();
+  await page.clock.runFor(5000);
+  await expect(page.locator('html')).toHaveAttribute(
+    'data-native-ready',
+    'true',
+  );
   await expect(page.locator('main img')).toHaveCSS('object-fit', 'cover');
   const geometry = await page.evaluate(() => ({
     width: globalThis.document.documentElement.scrollWidth,
@@ -78,6 +111,14 @@ test('self-contained CSP document rotates overnight, honors preferences and reta
   }
 
   expect(errors).toEqual([]);
+  await expect(page.locator('html')).toHaveAttribute(
+    'data-native-ready',
+    'true',
+  );
+  await expect(page.locator('html')).toHaveAttribute(
+    'data-native-denied',
+    'false',
+  );
   await expect(page.locator('html')).toHaveAttribute('data-urls', '2');
   await page.screenshot({
     path: `test-results/offline-${test.info().project.name}.png`,
@@ -91,6 +132,11 @@ test('missing, expired and corrupt storage fail closed', async ({page}) => {
   await standalone(page);
   await expect(page.locator('main img')).toHaveCount(0);
   await expect(page.locator('[data-status]')).toContainText('Aucune photo');
+  await page.clock.runFor(5000);
+  await expect(page.locator('html')).toHaveAttribute(
+    'data-native-ready',
+    'true',
+  );
 });
 
 test('storage absence and corruption leave useful retry', async ({page}) => {
@@ -104,6 +150,10 @@ test('storage absence and corruption leave useful retry', async ({page}) => {
   await standalone(page);
   await expect(page.locator('[data-status]')).toContainText('Stockage');
   await expect(page.getByRole('button')).toBeEnabled();
+  await expect(page.locator('html')).toHaveAttribute(
+    'data-native-ready',
+    'true',
+  );
 });
 
 test('corrupt image is skipped and lease denial clears loaded photos across tabs', async ({
@@ -141,6 +191,15 @@ test('corrupt image is skipped and lease denial clears loaded photos across tabs
   });
   await expect(page.locator('main img')).toHaveCount(0);
   await expect(page.locator('[data-status]')).toContainText('expiré');
+  await page.clock.runFor(5000);
+  await expect(page.locator('html')).toHaveAttribute(
+    'data-native-ready',
+    'true',
+  );
+  await expect(page.locator('html')).toHaveAttribute(
+    'data-native-denied',
+    'false',
+  );
 });
 
 test('recovery validates health, backs off and limits partial-startup returns', async ({

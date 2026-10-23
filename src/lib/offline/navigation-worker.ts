@@ -20,7 +20,9 @@ scope.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
       if (!isRetired) {
-        const response = await fetch('/offline.html', {
+        // Workers Static Assets canonicalizes offline.html to /offline. Request
+        // that public URL directly so install can keep rejecting redirects.
+        const response = await fetch('/offline', {
           cache: 'no-store',
           redirect: 'error',
         });

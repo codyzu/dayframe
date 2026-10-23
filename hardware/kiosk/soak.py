@@ -49,7 +49,14 @@ def main():
     parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--duration', type=int, default=36000)
     parser.add_argument('--interval', type=int, default=60)
+    parser.add_argument('--apk', type=Path, default=ROOT / 'hardware/kiosk/build/dayframe-kiosk-0.1.3-trial-reviewed.apk')
+    parser.add_argument('--artifact-json', type=Path, help='Reviewed builder manifest for read-only observation of another version; grants no fault acceptance')
     args = parser.parse_args()
+    artifact = json.loads(args.artifact_json.read_text()) if args.artifact_json else None
+    def preflight(device):
+        if artifact is not None:
+            return device.observation_preflight(args.apk, artifact)
+        return device.preflight(args.apk)
     faults.require(60 <= args.duration <= 172800 and 30 <= args.interval <= 300,
                    'Use a bounded duration and a low-overhead interval')
     out = args.output.resolve()
@@ -59,7 +66,7 @@ def main():
     started = time.monotonic()
     manifest = {'status': 'starting', 'startedAt': utc(), 'hostPid': os.getpid(),
                 'durationSeconds': args.duration, 'intervalSeconds': args.interval,
-                'package': faults.PACKAGE, 'reviewedApkSha256': faults.REVIEWED_SHA256,
+                'package': faults.PACKAGE, 'reviewedApkSha256': artifact['sha256'] if artifact else faults.REVIEWED_SHA256,
                 'hostRevision': subprocess.check_output(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], text=True).strip(),
                 'hostDirty': bool(subprocess.check_output(['git', '-C', str(ROOT), 'status', '--porcelain'], text=True).strip()),
                 'automaticRecoveryAttempted': False, 'acceptance': 'observation only',
@@ -71,7 +78,7 @@ def main():
     try:
         adb = faults.Adb(args.target_file.read_text().strip(), out)
         device = faults.Device(adb)
-        before, home = device.preflight(ROOT / 'hardware/kiosk/build/dayframe-kiosk-0.1.3-trial-reviewed.apk')
+        before, home = preflight(device)
         faults.require(before['healthy'] and before['supervisor'], 'Native baseline not healthy')
         reader = Reader(adb.target, package=faults.PACKAGE)
         ticks = reader.clock_ticks()
@@ -123,7 +130,7 @@ def main():
                                'Host sleep or sampling gap; preserve interrupted run')
         faults.require(home == adb.shell('dumpsys package preferred-xml'), 'Home preferences changed')
         faults.require(adb.shell(flags) == 'enabled', 'Native flags changed')
-        device.preflight(ROOT / 'hardware/kiosk/build/dayframe-kiosk-0.1.3-trial-reviewed.apk')
+        preflight(device)
         manifest.update({'status': 'completed', 'finishedAt': utc(),
                          'pssKiB': {'first': pss[0], 'last': pss[-1], 'min': min(pss), 'max': max(pss)},
                          'cpuCoreIntervals': len(cpu),

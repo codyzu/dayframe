@@ -128,16 +128,26 @@ interval survive; weather, appointments and schedules do not run offline. Empty,
 expired, corrupt or unavailable storage leaves a useful retry state. Current/next
 object URLs remain bounded and are released on hiding, page exit or invalidation.
 
-Navigation activation is **disabled in ordinary builds**, pending M5.O5 native
-heartbeat/recovery readiness. O3/O4 are desktop software slices; do not enable the
-feature on the active Classic 10 by deploying a trial build. No device action is
-included. For isolated local browser validation, `pnpm test:offline-navigation`
-saves the current `dist`, builds with `DAYFRAME_OFFLINE_NAVIGATION=1`, runs the
-worker acceptance suite and restores the exact original assets even on failure.
-`pnpm verify` includes this separate trial after the ordinary browser suite. Its
-restored assets remain the existing verified deployment handoff.
+Navigation activation defaults to **disabled in ordinary local/PR builds**.
+The owner authorized installation of native 0.1.5 and the enabled production release
+on 23 October; online actual-frame checks passed. [Rollout and remaining device
+gates](hardware/m5-offline.md). Offline/overnight/cold-power acceptance remains open.
 
-When explicitly enabled, an inline startup guard registers stable `/sw.js` with
+`pnpm test:offline-navigation` saves the current `dist`, builds with
+`DAYFRAME_OFFLINE_NAVIGATION=1`, runs the worker acceptance suite and restores the
+exact original assets even on failure. `pnpm verify` includes this trial after the
+ordinary browser suite. Production CI explicitly selects
+`DAYFRAME_RELEASE_ASSETS=1` on main pushes: only a successful enabled trial retains
+its exact assets for upload; failure restores the ordinary build. Thus future
+production pushes preserve the authorized activation without changing ordinary
+local/PR defaults. Removing registration code does not retire an installed worker.
+
+The fallback publishes fixed readiness labels for the native probe. Installed
+kiosk 0.1.5 recognizes rendered offline photos and useful empty/expired retry
+screens, and permits bounded dashboard navigation without Android connectivity.
+This online integration does not establish actual offline startup.
+
+When enabled, an inline startup guard registers stable `/sw.js` with
 cache bypass for updates. Its scope is `/`, but it intercepts only same-origin GET
 **navigations to `/`**, optionally with one `display=frame` and/or one
 `density=standard|large`. Duplicate, unknown or invalid parameters exclude a URL.

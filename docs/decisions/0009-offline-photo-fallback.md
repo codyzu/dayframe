@@ -2,8 +2,8 @@
 
 Date: 22 October 2026. Status: architecture and offline policies accepted by the
 owner; phases 1–4 implemented locally. Phase 2 implements the persistent store
-and live slideshow integration described in [photo operations](../photos.md#persistent-photos--m5o2-22-october-2026). No deployment or device change is included.
-O3/O4 browser evidence and activation/retirement controls are recorded in [photo operations](../photos.md#standalone-fallback-and-navigation--m5o3o4-22-october-2026). Ordinary builds keep navigation/update activation disabled pending O5. Phase 5 remains planned.
+and live slideshow integration described in [photo operations](../photos.md#persistent-photos--m5o2-22-october-2026). The original contract included no deployment/device change; the subsequent authorized rollout is recorded below.
+O3/O4 browser evidence and activation/retirement controls are recorded in [photo operations](../photos.md#standalone-fallback-and-navigation--m5o3o4-22-october-2026). Local/PR builds default to disabled activation; the owner-authorized production release is enabled after native 0.1.5 installation on 23 October. Phase 5 host integration and candidate preparation are recorded in the [device trial](../hardware/m5-offline.md); the online rollout is complete and the remaining device acceptance is explicitly deferred.
 
 ## Context and scope
 

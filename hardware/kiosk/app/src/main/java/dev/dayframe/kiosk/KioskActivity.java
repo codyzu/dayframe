@@ -128,7 +128,7 @@ public final class KioskActivity extends Activity {
       previousElapsed = time;
       if (address != null && runtime == null && clockReady && !extensionFailed) initializeEngine();
       if (address != null && extension != null && !maintenance && !setup) {
-        RecoveryPolicy.Action action = recovery.tick(time, connected(), clockReady);
+        RecoveryPolicy.Action action = recovery.tick(time, clockReady);
         if (action != RecoveryPolicy.Action.NONE) {
           if (action == RecoveryPolicy.Action.REPLACE_SESSION || session == null) newSession();
           documentLoaded = false;
@@ -382,7 +382,7 @@ public final class KioskActivity extends Activity {
     else if (state == RecoveryPolicy.State.AUTH_REQUIRED) status.setText("Accès privé requis. Reconnectez cet affichage.");
     else if (state == RecoveryPolicy.State.SECURITY_ERROR) status.setText("Connexion sécurisée refusée. Vérifiez l’horloge et le certificat.");
     else if (state == RecoveryPolicy.State.CIRCUIT_OPEN) status.setText("Limite de reprises atteinte. Utilisez la maintenance.");
-    else if (!connected()) status.setText("Réseau indisponible. Reprise automatique après reconnexion.");
+    else if (!connected()) status.setText("Réseau indisponible. Recherche des photos enregistrées… reprises bornées actives.");
     else status.setText("Chargement du tableau de bord… reprises bornées actives.");
   }
 

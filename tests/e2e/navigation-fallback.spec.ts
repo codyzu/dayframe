@@ -1,6 +1,10 @@
 /* eslint-disable unicorn/no-await-expression-member -- Compact test-only storage/registration snapshots. */
-import type {Page, APIRequestContext} from '@playwright/test';
-import {test, expect} from '../fixtures/browser.ts';
+import {
+  test,
+  expect,
+  type Page,
+  type APIRequestContext,
+} from '@playwright/test';
 import {weatherFixture} from '../fixtures/weather.ts';
 import {seedOfflinePhotos} from '../fixtures/offline-store.ts';
 

@@ -17,6 +17,11 @@ function probe({
   setup = false,
   setupPath = '/setup',
   height = 700,
+  offlineState,
+  complete = true,
+  naturalWidth = 1600,
+  retryHidden = false,
+  status = 'Réessayez la connexion.',
 } = {}) {
   const messages = [];
   let interval;
@@ -54,8 +59,34 @@ function probe({
     document: {
       hidden,
       querySelector(selector) {
+        if (selector === '[data-offline]') {
+          if (offlineState === undefined) {
+            return undefined;
+          }
+
+          return {
+            dataset: {offlineState},
+            querySelector(childSelector) {
+              const visible = {
+                hidden: false,
+                getBoundingClientRect: () => ({height}),
+              };
+              if (childSelector === ':scope [data-stage] img') {
+                return {...visible, complete, naturalWidth};
+              }
+
+              if (childSelector === 'button') {
+                return {...visible, hidden: retryHidden};
+              }
+
+              assert.equal(childSelector, '[data-status]');
+              return {...visible, textContent: status};
+            },
+          };
+        }
+
         assert.equal(selector, '[data-dashboard]');
-        return setup ? undefined : root;
+        return setup || offlineState !== undefined ? undefined : root;
       },
       get forms() {
         throw new Error('Credentials must not be read');
@@ -139,4 +170,39 @@ test('canonical setup redirect stays separate without reading credentials', () =
     ready: true,
     denied: false,
   });
+});
+
+test('offline playback and empty/expired retry are ready without clock or private data', () => {
+  assert.deepEqual(
+    ['playback', 'retry'].map(
+      (offlineState) => probe({offlineState, clock: ''}).messages[0],
+    ),
+    Array.from({length: 2}, () => ({
+      kind: 'dashboard',
+      ready: true,
+      denied: false,
+    })),
+  );
+});
+
+test('offline background, failed decoding and missing recovery UI cannot mask faults', () => {
+  const cases = [
+    {offlineState: ''},
+    {offlineState: 'loading'},
+    {offlineState: 'unknown'},
+    {offlineState: 'playback', complete: false},
+    {offlineState: 'playback', naturalWidth: 0},
+    {offlineState: 'playback', height: 0},
+    {offlineState: 'retry', retryHidden: true},
+    {offlineState: 'retry', status: ''},
+  ];
+  assert.deepEqual(
+    cases.map((options) => probe(options).messages[0].ready),
+    Array.from({length: cases.length}, () => false),
+  );
+
+  assert.deepEqual(
+    probe({offlineState: 'playback', hidden: true}).messages,
+    [],
+  );
 });

@@ -14,7 +14,7 @@ public final class DocumentProgressTest {
     assertFalse(progress.start(10000, "about:blank", address, false, false));
     assertFalse(progress.stop(10010, true, false, false));
     assertEquals(RecoveryPolicy.State.WAITING, recovery.state());
-    assertEquals(RecoveryPolicy.Action.LOAD, recovery.tick(10020, true, true));
+    assertEquals(RecoveryPolicy.Action.LOAD, recovery.tick(10020, true));
     assertEquals(55020, recovery.deadline());
   }
 
@@ -50,9 +50,9 @@ public final class DocumentProgressTest {
     assertTrue(progress.stop(100, false, false, false));
     assertEquals(RecoveryPolicy.State.RETRY, recovery.state());
     recovery.manualReload(1000);
-    assertEquals(RecoveryPolicy.Action.LOAD, recovery.tick(1000, true, true));
+    assertEquals(RecoveryPolicy.Action.LOAD, recovery.tick(1000, true));
     assertTrue(progress.start(1001, address.dashboard(), address, false, false));
-    recovery.tick(46000, true, true);
+    recovery.tick(46000, true);
     assertEquals(RecoveryPolicy.State.RETRY, recovery.state());
   }
 

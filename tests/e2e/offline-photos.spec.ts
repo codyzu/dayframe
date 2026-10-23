@@ -117,6 +117,19 @@ test('authorized browsers automatically save gradually, rotate offline and retur
   });
   await page.addInitScript(() => {
     const urls = new Set<string>();
+    const {decode} = HTMLImageElement.prototype;
+    let decoding = 0;
+    HTMLImageElement.prototype.decode = async function () {
+      globalThis.document.documentElement.dataset.decoding = String(++decoding);
+      try {
+        await decode.call(this);
+      } finally {
+        globalThis.document.documentElement.dataset.decoding = String(
+          --decoding,
+        );
+      }
+    };
+
     const create = URL.createObjectURL.bind(URL);
     const revoke = URL.revokeObjectURL.bind(URL);
     URL.createObjectURL = (blob) => {
@@ -142,6 +155,7 @@ test('authorized browsers automatically save gradually, rotate offline and retur
   for (let index = 0; index < 5; index++) {
     await page.clock.runFor(20_000);
     await expect(page.locator('[data-photo-stage] img')).toHaveCount(1);
+    await expect(page.locator('html')).toHaveAttribute('data-decoding', '0');
   }
 
   await expect.poll(async () => storedCount(page)).toBe(3);
@@ -151,6 +165,9 @@ test('authorized browsers automatically save gradually, rotate offline and retur
   await expect(page.locator('[data-photo-status]')).toContainText(
     'Hors connexion',
   );
+  // Status is rendered before the asynchronous next-image decode. The rotation
+  // timer is armed afterward: finish native decoding before moving virtual time.
+  await expect(page.locator('html')).toHaveAttribute('data-decoding', '0');
   const first = await page
     .locator('[data-photo-stage] img')
     .getAttribute('src');
