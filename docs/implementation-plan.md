@@ -221,6 +221,19 @@ Start only after the core display is usable. Create a small separate proposal fo
 - Hue and other LAN devices: prove a secure connectivity path before adding controls; a hosted Worker cannot directly reach a private LAN bridge.
 - Calendar, alerts, or additional widgets: preserve the primary display's hierarchy and minimize private data held on the frame.
 
+### Future weather browsing — recorded 24 October 2026
+
+Owner requested the ability to see future weather beyond the current Morning
+forecast. Add an on-demand way to view upcoming days, keeping the everyday display
+uncluttered and providing a clear return to the current view. This expands the
+specification's later short multi-day forecast idea.
+
+Before implementation, decide the forecast horizon, daily versus hourly detail,
+and how viewers open the forecast on the frame and other browsers. Reuse the
+existing weather provider and cache where practical, preserve the €0 recurring-cost
+requirement, and distinguish stale or unavailable forecasts. This is backlog work;
+the interaction and detailed scope remain open.
+
 ### Deferred UI simplification — recorded 23 October 2026
 
 Owner requested a future review to simplify the everyday display UI, including
