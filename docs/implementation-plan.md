@@ -1700,3 +1700,29 @@ Dayframe Shortcut remains. Copies of task test artifacts stay in ignored private
 storage. Actual iPhone sync, first authenticated import and representative real
 camera/HEIC/HDR acceptance remain owner follow-ups. No helper, new token, server
 image conversion, paid service or device configuration was introduced.
+
+## Clipboard large-batch recovery — 25 October 2026
+
+Owner reports the authenticated iPhone flow works. A larger batch (roughly ten
+photos) hit a limit, with exact count/40 MiB/100 MB cause unconfirmed because the
+old error combined all three. Added precise limit messages and explicit two-photo
+clipboard recovery without reselecting in Photos. Recovery preserves the full
+Shortcut count (up to 100 source items), reads only the selected pair's image
+representations, retains existing per-group guards, previews and confirmation,
+and advances only when handed to the normal uploader. Existing failed rows remain
+retryable; completed rows release source-retaining retry listeners. No backend,
+credential, encoding-quality, service or cost change. Source/clipboard replacement
+with identical counts still requires visual review; single-image 40 MiB failures
+still require a smaller representation.
+
+Upstream reviewed from the pinned cached `0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189`
+README, MIT LICENSE, `dashboard/js/views/photos.js` and `dashboard/js/slideshow.js`.
+Mock slideshow reference only; no upload/clipboard recovery code reused or copied.
+
+Validation: type checks/build and repository lint passed (four existing complexity
+warnings), with 134 passing unit/Worker integration tests. All 68 photo browser
+cases passed; after the final retry-listener outcome refactor, all 32 focused
+clipboard/recovery/retry cases passed across Chromium, Firefox, WebKit and mobile
+WebKit. Reviewed the mobile recovery layout. Budget tests inflate Blob.size on
+small synthetic images to test guards, not actual 100 MB memory performance.
+Production release checks and actual iPhone recovery remain pending.

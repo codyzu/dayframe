@@ -111,7 +111,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             data-import-expected
             type="number"
             min="1"
-            max="10"
+            max="100"
             class="min-h-11 w-20 rounded-lg border border-border bg-elevated px-2"
           />
         </label>
@@ -136,6 +136,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           Connectez-vous avant de coller vos photos. Rien n’est envoyé avant
           votre confirmation.
         </p>
+        <button
+          data-import-small
+          type="button"
+          hidden
+          class="mt-3 min-h-12 rounded-full border border-border px-5 disabled:opacity-50"
+        >
+          Coller par lots de 2
+        </button>
         <details class="mt-3">
           <summary class="min-h-11 cursor-pointer underline">
             Collage manuel
@@ -165,7 +173,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           Ajouter à la collection
         </button>
         <p class="mt-3 text-xs text-slate-600">
-          10 photos maximum. Les aperçus ne sont pas sauvegardés. Après
+          10 photos maximum par lot. En cas de lot trop volumineux, collez par
+          lots de 2 sans refaire la sélection dans Photos. Ne copiez rien
+          d’autre avant la fin. Les aperçus ne sont pas sauvegardés. Après
           reconnexion dans un autre onglet, utilisez Actualiser ici pour
           reprendre. Quitter cette page efface le lot. Les photos réencodées
           passent par la vérification des ressemblances.

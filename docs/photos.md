@@ -244,3 +244,33 @@ photos/native Paste, review the complete batch, then Ajouter à la collection.
 Actual authenticated iPhone import and representative camera-photo acceptance
 remain pending. The tested three-photo PNG handoff/preview/WebP diagnostic passed
 on the owner's phone; rollout did not automatically upload any photo.
+
+## Clipboard batch recovery — 25 October 2026
+
+The owner reported a successful authenticated iPhone import, then a larger batch
+(approximately ten photos) rejected by the combined limit message. The exact
+trigger is unconfirmed: the previous message combined count, individual-size and
+aggregate-size limits. Full-resolution PNG expansion can reach the 100 MB batch
+limit even when the original photo-library files are smaller.
+
+The recovery slice distinguishes these errors and offers **Coller par lots de 2**
+after a count/size rejection. It reads only the current pair's image representations
+on each explicit Paste, previews them, and requires Add to collection. After
+handoff to the existing uploader, the next Paste advances to the following pair.
+Failed uploads retain their existing retry rows; progress means handed to the
+uploader, not necessarily uploaded successfully. Completed/skipped/duplicate rows
+remove their retry listeners so they no longer retain source PNGs.
+
+The full source count (up to 100 selected clipboard items) is still checked against
+the Shortcut count; changed counts during recovery are rejected. Every staged group
+retains the ten-photo, 40 MiB individual and 100 MB aggregate guards. A single image
+over 40 MiB still requires a smaller representation; splitting does not bypass it.
+No original-byte hash, WebP pipeline, API or authentication change is made.
+
+The page never writes/clears the system clipboard. Unless something else replaces
+or expires it, the current selection can be pasted again without going back to
+Photos. Keep that clipboard unchanged until all groups are handed off. Count checks
+cannot detect a replacement with the same count, so previews remain required.
+Clear/page exit discard staging and recovery position; refreshing starts at the
+first pair again. Exact delivered-byte checks and human similarity review remain
+available for repeated groups. No persistent original inbox is introduced.

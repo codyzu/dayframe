@@ -57,9 +57,14 @@ function mountAdmin(root: HTMLElement) {
     type: string,
     handler: () => Promise<void>,
   ) {
-    target.addEventListener(type, () => {
+    const listener = () => {
       void handler();
-    });
+    };
+
+    target.addEventListener(type, listener);
+    return () => {
+      target.removeEventListener(type, listener);
+    };
   }
 
   function showError(error: unknown) {
@@ -203,7 +208,7 @@ function mountAdmin(root: HTMLElement) {
       verifyGeneration(run);
       if (catalog.some(({id}) => id === photo.sha256)) {
         text.textContent = `${file.name} · doublon exact, déjà présent.`;
-        return;
+        return 'complete' as const;
       }
 
       const configured = Number(
@@ -220,7 +225,7 @@ function mountAdmin(root: HTMLElement) {
       );
       if (similar.length > 0 && !(await shouldKeepPhoto(photo.blob, similar))) {
         text.textContent = `${file.name} · passé à votre demande.`;
-        return;
+        return 'complete' as const;
       }
 
       verifyGeneration(run);
@@ -250,10 +255,12 @@ function mountAdmin(root: HTMLElement) {
       catalog = [...catalog.filter(({id}) => id !== body.photo.id), body.photo];
       render();
       text.textContent = `${file.name} · ${body.duplicate ? 'déjà présent' : 'ajouté'} (${body.photo.width} × ${body.photo.height}).`;
+      return 'complete' as const;
     } catch (error) {
       text.textContent = `${file.name} · ${error instanceof Error ? error.message : 'Envoi échoué.'}`;
       showError(error);
       retry.hidden = false;
+      return 'retry' as const;
     } finally {
       setBusy(false);
     }
@@ -302,19 +309,22 @@ function mountAdmin(root: HTMLElement) {
       const retry = row.querySelector<HTMLButtonElement>(
         '[data-upload-retry]',
       )!;
-      listen(retry, 'click', async () => {
+      const forgetRetry = listen(retry, 'click', async () => {
         if (isBusy) {
           return;
         }
 
         await initialize();
-        if (isAuthorized) {
-          await upload(file, row);
+        if (isAuthorized && (await upload(file, row)) === 'complete') {
+          forgetRetry();
         }
       });
       results.append(row);
       if (isAuthorized) {
-        await upload(file, row);
+        if ((await upload(file, row)) === 'complete') {
+          // Successful rows must not retain large source PNGs through a retry listener.
+          forgetRetry();
+        }
       } else {
         row.querySelector('[data-upload-message]')!.textContent =
           `${file.name} · en attente de reconnexion.`;

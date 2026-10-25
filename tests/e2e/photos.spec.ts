@@ -757,3 +757,127 @@ test('staged clipboard photos survive session recovery in the same tab and clear
   await expect(page.locator('[data-import-previews]')).toBeEmpty();
   await expect(page.locator('[data-import-add]')).toBeDisabled();
 });
+
+// Inflate only Blob.size to exercise guards without allocating a 100 MB fixture.
+async function mockSizedClipboard(
+  page: Page,
+  photo: {buffer: Uint8Array},
+  count: number,
+  size: number,
+) {
+  await page.evaluate(
+    ({bytes, total, reportedSize}) => {
+      const reads: number[] = [];
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: {
+          async read() {
+            return Array.from({length: total}, (_, index) => ({
+              types: ['image/png'],
+              async getType() {
+                reads.push(index);
+                globalThis.document.documentElement.dataset.clipboardReads =
+                  JSON.stringify(reads);
+                const blob = new Blob([new Uint8Array(bytes)], {
+                  type: 'image/png',
+                });
+                Object.defineProperty(blob, 'size', {value: reportedSize});
+                return blob;
+              },
+            }));
+          },
+        },
+      });
+    },
+    {bytes: [...photo.buffer], total: count, reportedSize: size},
+  );
+}
+
+test('oversized clipboard batch recovers in two-photo groups without repeating the share', async ({
+  page,
+}) => {
+  await login(page);
+  await page.goto('/admin/photos?import=clipboard&expected=10');
+  await expect(page.locator('[data-import-paste]')).toBeEnabled();
+  await mockSizedClipboard(page, await syntheticPhoto(page), 10, 11_000_000);
+  await page.locator('[data-import-paste]').click();
+  await expect(page.locator('[data-import-status]')).toContainText('110 Mo');
+  await expect(page.locator('[data-import-add]')).toBeDisabled();
+  await page.getByRole('button', {name: 'Coller par lots de 2'}).click();
+  await expect(page.locator('[data-import-previews] img')).toHaveCount(2);
+  await expect(page.locator('[data-import-status]')).toContainText(
+    'Photos 1 à 2 sur 10',
+  );
+  await expect(page.locator('[data-storage]')).toContainText('0 photos');
+  await page.locator('[data-import-add]').click();
+  await expect(page.locator('[data-upload-results] li')).toHaveCount(2);
+  await expect(page.locator('[data-upload-results]')).toContainText(
+    'doublon exact',
+  );
+  await expect(
+    page.getByRole('button', {name: 'Coller les photos 3 à 4'}),
+  ).toBeEnabled();
+  await page.getByRole('button', {name: 'Coller les photos 3 à 4'}).click();
+  await expect(page.locator('[data-import-status]')).toContainText(
+    'Photos 3 à 4 sur 10',
+  );
+  await expect(page.locator('html')).toHaveAttribute(
+    'data-clipboard-reads',
+    JSON.stringify([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3]),
+  );
+  await page.screenshot({
+    path:
+      '/private/tmp/dayframe-clipboard-recovery-' +
+      test.info().project.name +
+      '.png',
+    fullPage: true,
+  });
+});
+
+test('more than ten shared photos offers recovery before reading image bytes', async ({
+  page,
+}) => {
+  await login(page);
+  await page.goto('/admin/photos?import=clipboard&expected=11');
+  await expect(page.locator('[data-import-paste]')).toBeEnabled();
+  await mockSizedClipboard(page, await syntheticPhoto(page), 11, 1000);
+  await page.locator('[data-import-paste]').click();
+  await expect(page.locator('[data-import-status]')).toContainText(
+    '11 photos reçues',
+  );
+  await expect(page.locator('html')).not.toHaveAttribute(
+    'data-clipboard-reads',
+  );
+  await page.locator('[data-import-small]').click();
+  await expect(page.locator('[data-import-status]')).toContainText(
+    'Photos 1 à 2 sur 11',
+  );
+  await expect(page.locator('[data-import-add]')).toBeEnabled();
+  // Changing the source clipboard count cannot silently continue a split import.
+  await mockSizedClipboard(page, await syntheticPhoto(page), 10, 1000);
+  await page.locator('[data-import-paste]').click();
+  await expect(page.locator('[data-import-status]')).toContainText(
+    'presse-papiers a changé',
+  );
+  await expect(page.locator('[data-import-add]')).toBeDisabled();
+});
+
+test('individual oversized photo identifies the 40 MiB limit rather than the batch limit', async ({
+  page,
+}) => {
+  await login(page);
+  await page.goto('/admin/photos?import=clipboard&expected=1');
+  await expect(page.locator('[data-import-paste]')).toBeEnabled();
+  await mockSizedClipboard(
+    page,
+    await syntheticPhoto(page),
+    1,
+    41 * 1024 * 1024,
+  );
+  await page.locator('[data-import-paste]').click();
+  await expect(page.locator('[data-import-status]')).toContainText(
+    'photo 1 dépasse la limite de 40 Mio',
+  );
+  await expect(page.locator('[data-import-small]')).toBeHidden();
+  await expect(page.locator('[data-import-add]')).toBeDisabled();
+});

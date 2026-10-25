@@ -554,3 +554,21 @@ ignored `private/shortcut-cleanup-20261025/`; no personal Shortcut was selected.
 The earlier automatic-review block is resolved by that explicit confirmation.
 iPhone sync and the owner's first authenticated upload are still pending; no
 private photo upload was performed by the agent during rollout.
+
+## Owner authenticated acceptance and size recovery — 25 October 2026
+
+Owner: “It works.” This closes owner-reported actual-iPhone authenticated import
+acceptance for the production flow, without independent payload/format/HDR
+inspection. The owner also tried approximately ten photos and suspects the 100 MB
+limit; exact trigger is not established because the previous error named all
+three limits at once. They reported that reselecting the same photos is painful.
+
+Prepared precise errors and two-photo recovery using the same clipboard. No
+Shortcut reinstall or new permission scope is needed. Each group uses an explicit
+native Paste gesture and Add confirmation, then enters the existing uploader;
+source count is checked on every group. The page never empties the clipboard, but
+OS expiry or another copy operation can replace it. Recovery does not promise
+persistent bytes or detect same-count substitutions; previews remain mandatory.
+The 40 MiB individual cap remains; this slice does not silently enlarge it or add
+server-side conversion. Successful upload row listeners are removed to release
+large source references; failed rows preserve their current retry behavior.
