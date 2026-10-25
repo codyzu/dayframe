@@ -218,6 +218,36 @@ Read current upstream hardware guidance before this phase. Identify the real mod
 Start only after the core display is usable. Create a small separate proposal for each addition, with a threat model, authentication transport, outage behavior, compatibility checks, current terms, and €0-cost evidence.
 
 - iOS Shortcut: scoped revocable upload token or authenticated handoff; reuse validation/optimization requirements without assuming browser cookies are available.
+  Start with the [iPhone Share Sheet feasibility plan](ios-share-sheet-feasibility.md)
+  to prove on-device processing and photo handoff before adding authentication or endpoints.
+  The local-only **Dayframe-Photo-Check** diagnostic and synthetic fixtures are
+  prepared for the owner's iPhone 17 / iOS 27.0.1. The owner’s single-JPEG test
+  passed input/report/upright preview on 24 October; reported size differs from
+  source, with cause unestablished. A subsequent three-item report passed with
+  full dimensions, including the large JPEG; the HEIC-source portrait reports
+  PNG, so direct HEIC coverage is unproven. The owner confirmed browsing all three
+  previews and saving fixtures through ChatGPT, a possible conversion step.
+  Full sharing-route acceptance remains pending. No upload or
+  production endpoint has been added.
+  Owner selected testing the Paste compromise on 25 October and keeps helper apps
+  as a last resort. The clipboard diagnostic page/Shortcut are prepared with
+  temporary isolated HTTPS hosting; 16 simulated-clipboard browser checks passed.
+  Actual iPhone manual paste passed for one and three synthetic photos, including
+  local WebP conversion. The owner clarified the button opens the native Paste
+  control; that path retrieved only B (1/3), while manual paste retrieved 3/3.
+  Manual-paste feasibility is established for the tested inputs. Keep native
+  paste as a fallback, with count/preview checks and existing admin auth/upload
+  behavior. Temporary hosting was stopped after
+  the initial test. On owner request, reopened the isolated test for a focused
+  button investigation: visible item/type diagnostics and separately named mixed
+  input versus per-image PNG Shortcuts. Native Mac editor confirms PNG/Repeat
+  Results bindings. Actual iPhone mixed test returned 3 items but only the middle
+  item exposed `image/png`; PNG normalization returned 3 `image/png` items and
+  all 3 converted locally to WebP (owner screenshots 09:44/09:46). The button
+  route is viable for this synthetic batch. Full preview acceptance, representative
+  camera originals, intermediate size/memory, metadata and cross-route duplicate
+  identity remain open before authenticated upload integration. No production
+  upload changes, server-side conversion or helper installation is included.
 - Hue and other LAN devices: prove a secure connectivity path before adding controls; a hosted Worker cannot directly reach a private LAN bridge.
 - Calendar, alerts, or additional widgets: preserve the primary display's hierarchy and minimize private data held on the frame.
 
@@ -1606,3 +1636,35 @@ documents, and advances the virtual clock beyond the five-second heartbeat and
 its animation-frame readiness sample. Retry state and privacy-clearing assertions
 remain intact; production behavior is unchanged. Five repetitions in each of
 Chromium, Firefox, WebKit and mobile WebKit passed (20/20). Full CI is rerun on push.
+
+## M7 clipboard import slice — 25 October 2026
+
+Owner confirmed correct PNG batch previews and requested integration. Added staged
+clipboard intake to protected photo administration, explicit add confirmation,
+count/type/size gates, native paste fallback and reuse of the existing authenticated
+uploader, sequential WebP pipeline, duplicate review and retries. Same-tab staging
+survives reconnect; access denial clears previews and blocks sending. No new
+endpoint/token, helper, server conversion or deployment. Documented delivered-PNG
+SHA identity and remaining representative-photo/iPhone rollout gates in
+[photo operations](photos.md#clipboard-import--25-october-2026-local-implementation)
+and the [feasibility record](ios-share-sheet-feasibility.md).
+
+Upstream refreshed at `0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189`: README,
+`dashboard/js/views/photos.js`, `dashboard/js/slideshow.js`, MIT LICENSE. Mock
+slideshow research only; no code/assets copied. The completed diagnostic tunnel
+and read-only server were stopped after owner preview confirmation.
+
+Validation: type checks and production build passed; repository lint passed with
+four existing complexity warnings. All 134 unit/Worker integration tests passed.
+The 72 photo/clipboard browser checks passed across Chromium, Firefox, WebKit and
+mobile WebKit. After the final count-lock and sequential 320px thumbnail changes,
+all 12 clipboard integration checks passed again, including no upload before
+confirmation, exact/similar duplicates, mismatch blocking, ignored HTML and
+same-tab session recovery/page-exit cleanup. Reviewed staged mobile screenshot.
+No production deployment or real-photo authenticated iPhone import is claimed.
+
+Owner authorized production rollout and old test Shortcut cleanup. Installed
+**Dayframe PNG** with the production admin handoff and verified native action/URL
+bindings. Release verification is running; deployed release/actual iPhone upload
+are not yet claimed. Cleanup of the five retired test Shortcuts is selected but
+blocked by automatic approval review pending explicit named deletion confirmation.

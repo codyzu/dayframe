@@ -8,6 +8,7 @@ import {
   storageWarningBytes,
   type PhotoMetadata,
 } from './contracts.ts';
+import {mountClipboardImport} from './clipboard-import.ts';
 import {processPhoto} from './processing.ts';
 
 const adminRoot = document.querySelector<HTMLElement>('[data-photo-admin]');
@@ -43,9 +44,11 @@ function mountAdmin(root: HTMLElement) {
     showError(new ApiError('Accès privé à vérifier. Reconnectez-vous.', 401));
   });
   let privacyDeadline = Date.now() + 300_000;
+  const enableClipboard = mountClipboardImport(root, uploadFiles);
   const setBusy = (isBusyValue: boolean) => {
     isBusy = isBusyValue;
     choose.disabled = isBusyValue || !isAuthorized;
+    enableClipboard(!isBusyValue && isAuthorized);
     refreshButton.disabled = isBusyValue;
   };
 
@@ -286,13 +289,11 @@ function mountAdmin(root: HTMLElement) {
   choose.addEventListener('click', () => {
     input.click();
   });
-  listen(input, 'change', async () => {
+  async function uploadFiles(files: File[]) {
     if (isBusy || !isAuthorized) {
       return;
     }
 
-    const files = [...(input.files ?? [])];
-    input.value = '';
     for (const file of files) {
       const row = document.importNode(
         resultTemplate.content.firstElementChild!,
@@ -328,6 +329,12 @@ function mountAdmin(root: HTMLElement) {
         showError(error);
       }
     }
+  }
+
+  listen(input, 'change', async () => {
+    const files = [...(input.files ?? [])];
+    input.value = '';
+    await uploadFiles(files);
   });
   listen(refreshButton, 'click', async () => {
     if (!isBusy) {

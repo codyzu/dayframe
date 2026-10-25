@@ -201,6 +201,13 @@ For each selected original:
 
 Process sequentially or with very limited concurrency on iPhones to prevent memory pressure. Preserve originals in the existing Apple/Google photo library; the dashboard is not an archival backup.
 
+**Clipboard handoff, 25 October 2026:** The owner accepted the PNG-normalized
+Shortcut → browser Paste route after the actual iPhone three-photo test. For this
+route, “original file bytes” above means the PNG representation delivered to the
+browser, before browser resizing/WebP encoding, rather than the photo-library
+original. Byte identity across picker and Shortcut routes is not promised;
+perceptual matching retains human review. No server image conversion is added.
+
 ### 6.3 Duplicate detection
 
 - SHA-256 detects exact source-file duplicates.

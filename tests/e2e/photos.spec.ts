@@ -626,3 +626,134 @@ test('a signed-in admin automatically caches ordinary Photos visits for offline 
     'Hors connexion',
   );
 });
+
+async function mockPhotoClipboard(
+  page: Page,
+  photos: Array<{buffer: Uint8Array}>,
+) {
+  await page.evaluate(
+    (encoded) => {
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: {
+          async read() {
+            return encoded.map((bytes) => ({
+              types: ['image/png'],
+              async getType() {
+                return new Blob([new Uint8Array(bytes)], {type: 'image/png'});
+              },
+            }));
+          },
+        },
+      });
+    },
+    photos.map((photo) => [...photo.buffer]),
+  );
+}
+
+test('clipboard import previews the full batch before explicit authenticated upload and duplicate review', async ({
+  page,
+}, info) => {
+  await login(page);
+  await page.goto('/admin/photos?import=clipboard&expected=3');
+  await expect(page.locator('[data-import-paste]')).toBeEnabled();
+  await expect(page.locator('[data-import-expected]')).toHaveJSProperty(
+    'readOnly',
+    true,
+  );
+  await expect(page.locator('[data-clipboard-import]')).toHaveJSProperty(
+    'open',
+    true,
+  );
+  const photos = [
+    await syntheticPhoto(page, 'a.png', 2400, 1200),
+    await syntheticPhoto(page, 'b.png', 2400, 1200, 10),
+    await syntheticPhoto(page, 'c.png', 2400, 1200, 20),
+  ];
+  await mockPhotoClipboard(page, photos);
+  let posts = 0;
+  page.on('request', (request) => {
+    if (request.method() === 'POST' && request.url().endsWith('/api/photos')) {
+      posts++;
+    }
+  });
+  await page.locator('[data-import-paste]').click();
+  await expect(page.locator('[data-import-previews] img')).toHaveCount(3);
+  await expect(
+    page.locator('[data-import-previews] img').first(),
+  ).toHaveJSProperty('naturalWidth', 320);
+  expect(posts).toBe(0);
+  await page.screenshot({
+    path: info.outputPath('clipboard-staged.png'),
+    fullPage: true,
+  });
+  await page.locator('[data-import-add]').click();
+  for (let index = 0; index < 2; index++) {
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await page.getByRole('button', {name: 'Garder cette photo'}).click();
+  }
+
+  await expect(page.locator('[data-storage]')).toContainText('3 photos');
+  expect(posts).toBe(3);
+  await expect(page.locator('[data-import-previews] img')).toHaveCount(0);
+  await page.locator('[data-import-paste]').click();
+  await page.locator('[data-import-add]').click();
+  await expect(page.locator('[data-upload-results]')).toContainText(
+    'doublon exact',
+  );
+  await expect(page.locator('[data-upload-results] li')).toHaveCount(6);
+  expect(posts).toBe(3);
+});
+
+test('clipboard mismatches cannot upload and native paste ignores HTML', async ({
+  page,
+}) => {
+  await login(page);
+  await page.goto('/admin/photos?import=clipboard&expected=3');
+  await expect(page.locator('[data-import-paste]')).toBeEnabled();
+  await mockPhotoClipboard(page, [await syntheticPhoto(page)]);
+  await page.locator('[data-import-paste]').click();
+  await expect(page.locator('[data-import-status]')).toContainText(
+    '1 photo(s) reçue(s) sur 3',
+  );
+  await expect(page.locator('[data-import-add]')).toBeDisabled();
+  await page.evaluate(() => {
+    const event = new Event('paste', {cancelable: true});
+    Object.defineProperty(event, 'clipboardData', {
+      value: {
+        files: [],
+        types: ['text/html'],
+        getData: () => '<img src="https://example.invalid/private">',
+      },
+    });
+    globalThis.document
+      .querySelector('[data-import-zone]')!
+      .dispatchEvent(event);
+  });
+  await expect(page.locator('[data-import-zone]')).toBeEmpty();
+  await expect(page.locator('[data-import-previews]')).toBeEmpty();
+  await expect(page.locator('[data-import-add]')).toBeDisabled();
+  await expect(page.locator('[data-storage]')).toContainText('0 photos');
+});
+
+test('staged clipboard photos survive session recovery in the same tab and clear on page exit', async ({
+  page,
+}) => {
+  await login(page);
+  await page.goto('/admin/photos?import=clipboard&expected=1');
+  await expect(page.locator('[data-import-paste]')).toBeEnabled();
+  await mockPhotoClipboard(page, [await syntheticPhoto(page)]);
+  await page.locator('[data-import-paste]').click();
+  await expect(page.locator('[data-import-previews] img')).toHaveCount(1);
+  await page.context().clearCookies();
+  await page.locator('[data-refresh]').click();
+  await expect(page.locator('[data-import-previews] img')).toHaveCount(0);
+  await expect(page.locator('[data-import-add]')).toBeDisabled();
+  await page.request.get('/__test/login?admin=two');
+  await page.locator('[data-refresh]').click();
+  await expect(page.locator('[data-import-previews] img')).toHaveCount(1);
+  await expect(page.locator('[data-import-add]')).toBeEnabled();
+  await page.evaluate(() => globalThis.dispatchEvent(new Event('pagehide')));
+  await expect(page.locator('[data-import-previews]')).toBeEmpty();
+  await expect(page.locator('[data-import-add]')).toBeDisabled();
+});

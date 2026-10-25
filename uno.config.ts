@@ -27,7 +27,9 @@ export default defineConfig({
     filesystem: [
       'src/lib/weather/conditions.ts',
       'src/lib/photos/admin.ts',
+      'src/lib/photos/clipboard-import.ts',
       'src/lib/photos/weather.ts',
+      'src/lib/photos/paste-test.ts',
     ],
   },
   safelist: ['bg-night', 'text-night-ink'],

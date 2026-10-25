@@ -1,0 +1,82 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Test du presse-papiers">
+  <main class="mx-auto max-w-3xl px-5 py-8" data-paste-test>
+    <p class="text-sm font-semibold">Dayframe · expérience iPhone</p>
+    <h1 class="mt-3 text-3xl font-bold">Coller des photos</h1>
+    <p class="mt-4 leading-relaxed">
+      Utilisez les images de test. Les photos restent dans cette page : aucun
+      envoi, aucune sauvegarde. Fermer ou masquer la page efface les aperçus.
+    </p>
+    <div class="mt-6 flex flex-wrap items-center gap-3">
+      <label for="expected">Photos sélectionnées</label>
+      <input
+        id="expected"
+        data-expected
+        class="min-h-12 w-20 rounded-lg border border-current bg-transparent px-3"
+        type="number"
+        min="1"
+        max="10"
+        value="1"
+      />
+    </div>
+    <div class="mt-5 flex flex-wrap gap-3">
+      <button
+        type="button"
+        data-paste
+        class="min-h-12 rounded-xl bg-primary px-5 text-background focus-visible:outline-2"
+      >
+        Coller les photos
+      </button>
+      <button
+        type="button"
+        data-process
+        disabled
+        class="min-h-12 rounded-xl border border-current px-5 disabled:opacity-40"
+      >
+        Tester la conversion WebP
+      </button>
+      <button type="button" data-clear class="min-h-12 px-4 underline">
+        Effacer
+      </button>
+    </div>
+    <p data-status role="status" class="mt-5 leading-relaxed">
+      Prêt. Touchez « Coller les photos », puis autorisez le collage si iOS le
+      demande.
+    </p>
+    <p data-count class="mt-2 font-bold"></p>
+    <section
+      class="mt-5 rounded-xl border border-current p-4"
+      aria-label="Diagnostic du collage"
+    >
+      <h2 class="font-bold">Diagnostic du collage</h2>
+      <pre
+        data-clipboard-report
+        class="mt-2 whitespace-pre-wrap break-words text-sm"
+      ></pre>
+    </section>
+    <details class="mt-5">
+      <summary class="cursor-pointer py-3 underline">Collage manuel</summary>
+      <p class="my-3 text-sm">
+        Si le bouton ne fonctionne pas, maintenez le doigt dans la zone, puis
+        choisissez Coller. Le texte et le HTML sont ignorés.
+      </p>
+      <div
+        data-paste-zone
+        role="textbox"
+        aria-label="Zone de collage manuel"
+        contenteditable="true"
+        class="min-h-24 rounded-xl border border-current p-4"
+      ></div>
+    </details>
+    <ol data-results class="mt-6 grid gap-5"></ol>
+  </main>
+</BaseLayout>
+
+<script>
+  import {mountPasteTest} from '../../lib/photos/paste-test.ts';
+
+  mountPasteTest(document.querySelector<HTMLElement>('[data-paste-test]')!);
+</script>

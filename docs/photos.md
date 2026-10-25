@@ -207,3 +207,31 @@ message port and acknowledges `retired` after cache cleanup/unregistration. Both
 paths preserve the photo store and unrelated caches. Reload/close existing pages
 after retirement; their old worker controller can remain attached until navigation.
 No retirement build has been deployed.
+
+## Clipboard import — 25 October 2026, local implementation
+
+The protected admin page includes **Importer depuis le presse-papiers**. The PNG
+Shortcut counts selected images, converts each to PNG, copies locally and opens
+`/admin/photos?import=clipboard&expected=N`. Browser sign-in protects the existing
+page/API. Paste is explicit, previews appear before upload, and **Ajouter à la
+collection** enters the same sequential pipeline as the picker. Native manual
+Paste remains available. Preview thumbnails are generated sequentially at at most
+320 pixels on the longest edge; only those small images stay decoded in the grid.
+The original delivered files remain unchanged for processing. Incomplete batches are blocked; intake limits are ten
+photos, 40 MiB each and 100 MB total. Nothing uploads automatically on navigation
+or Paste. The normal picker remains available.
+
+Sign in before pasting. On expiry, reconnect in the separate tab linked by the
+existing admin UI, then click Actualiser in the original tab. Staged bytes and
+upload retries stay only in page memory; denial clears private previews and
+blocks sending until verification succeeds. Clear/page exit discard staging;
+reload loses pending input. Clipboard contents are not erased by the page.
+
+The Shortcut's intermediate PNG is lossless, with no resize requested. Browser
+processing still caps the longest edge at 1600, emits WebP and removes metadata.
+SHA-256 is computed from delivered PNG bytes, not inaccessible photo-library
+originals. Re-encoding can change exact identity across routes; dHash review
+remains advisory and never silently drops similar photos. Representative real
+camera/HEIC/HDR/large input acceptance remains pending. No new token, server-side
+conversion, storage service or recurring cost is introduced. Production rollout
+and actual authenticated iPhone acceptance are separate from local implementation.
