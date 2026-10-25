@@ -1668,3 +1668,17 @@ Owner authorized production rollout and old test Shortcut cleanup. Installed
 bindings. Release verification is running; deployed release/actual iPhone upload
 are not yet claimed. Cleanup of the five retired test Shortcuts is selected but
 blocked by automatic approval review pending explicit named deletion confirmation.
+
+### Clipboard release verification follow-up
+
+The complete local `pnpm verify` passed: 134 unit/integration tests, 328 browser
+passes with four existing intentional skips, and 44 navigation checks. First
+release run [40181128280](https://github.com/codyzu/dayframe/actions/runs/40181128280)
+failed only the existing Chromium cross-tab offline-fallback heartbeat assertion
+(327 other browser cases passed), so deployment was skipped. The simulated clock
+was advanced once before ordinary locator polling, which cannot deliver a later
+scheduled heartbeat while paused. The test now verifies foreground/visible retry
+UI and advances the clock inside a bounded poll of the real packaged probe.
+Readiness/denial assertions remain intact; no application/native code or physical
+frame setting changed. The focused case passed all 12 repetitions across four browsers before retrying
+the full gated release.

@@ -199,11 +199,23 @@ test('corrupt image is skipped and lease denial clears loaded photos across tabs
     'data-offline-state',
     'retry',
   );
-  await page.clock.runFor(5100);
-  await expect(page.locator('html')).toHaveAttribute(
-    'data-native-ready',
-    'true',
-  );
+  await expect
+    .poll(async () => page.evaluate(() => globalThis.document.visibilityState))
+    .toBe('visible');
+  await expect(page.locator('[data-status]')).toBeVisible();
+  await expect(page.getByRole('button')).toBeVisible();
+  // IndexedDB/visibility work can settle after the first heartbeat samples the
+  // loading state. Keep advancing the paused clock while polling the real probe;
+  // ordinary locator polling alone cannot deliver another scheduled heartbeat.
+  await expect
+    .poll(
+      async () => {
+        await page.clock.runFor(5100);
+        return page.locator('html').getAttribute('data-native-ready');
+      },
+      {timeout: 15_000},
+    )
+    .toBe('true');
   await expect(page.locator('html')).toHaveAttribute(
     'data-native-denied',
     'false',
