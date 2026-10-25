@@ -1682,3 +1682,21 @@ UI and advances the clock inside a bounded poll of the real packaged probe.
 Readiness/denial assertions remain intact; no application/native code or physical
 frame setting changed. The focused case passed all 12 repetitions across four browsers before retrying
 the full gated release.
+
+### Clipboard production rollout completed — 25 October 2026
+
+[Release 40182021955](https://github.com/codyzu/dayframe/actions/runs/40182021955)
+succeeded for `52ed5f4`: type/lint/build, 134 unit/integration tests, 328 browser
+passes with four existing skips, 44 navigation passes, deployment and live smoke.
+Worker version `6d164a6a-9c9f-4665-9bf1-219d24b0ab08`, build
+`38aa63f5-fe1a-45ce-b009-307186268407`. Independently verified the deployed
+clipboard module matches the local build, signed-out admin redirects to Access
+with the selected count, and anonymous photo catalog access remains denied.
+
+**Dayframe PNG** is installed and native bindings/destination are verified. After
+explicit owner confirmation of the exact five old names and iCloud deletion,
+removed the five retired test Shortcuts; native UI/CLI verify only the replacement
+Dayframe Shortcut remains. Copies of task test artifacts stay in ignored private
+storage. Actual iPhone sync, first authenticated import and representative real
+camera/HEIC/HDR acceptance remain owner follow-ups. No helper, new token, server
+image conversion, paid service or device configuration was introduced.

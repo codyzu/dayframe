@@ -235,3 +235,12 @@ remains advisory and never silently drops similar photos. Representative real
 camera/HEIC/HDR/large input acceptance remains pending. No new token, server-side
 conversion, storage service or recurring cost is introduced. Production rollout
 and actual authenticated iPhone acceptance are separate from local implementation.
+
+Rollout update: the clipboard importer is live from `52ed5f4`, verified by
+[successful release checks and smoke](https://github.com/codyzu/dayframe/actions/runs/40182021955).
+Use **Dayframe PNG** in the iPhone Share Sheet; the five test Shortcuts have been
+removed after explicit owner confirmation. Sign in if requested, tap Coller les
+photos/native Paste, review the complete batch, then Ajouter à la collection.
+Actual authenticated iPhone import and representative camera-photo acceptance
+remain pending. The tested three-photo PNG handoff/preview/WebP diagnostic passed
+on the owner's phone; rollout did not automatically upload any photo.

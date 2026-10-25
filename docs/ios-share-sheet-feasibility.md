@@ -3,8 +3,9 @@
 Recorded 24 October 2026. **Status updated 25 October: PNG-normalized button
 handoff demonstrated on the owner's iPhone with three synthetic photos, including
 local WebP conversion. Mixed-format button input exposes only the PNG image;
-manual paste also passed for one and three photos. Production upload integration,
-representative inputs and direct HEIC coverage remain open. The owner confirmed
+manual paste also passed for one and three photos. The authenticated importer is
+now deployed; actual iPhone upload, representative inputs and direct HEIC coverage
+remain open. The owner confirmed
 all three previews were correct. Diagnostic hosting is closed after acceptance.**
 
 Owner reports **iPhone 17, iOS 27.0.1**. The first local-only diagnostic source,
@@ -531,3 +532,25 @@ Dayframe-Photo-Check and Dayframe — test photos. Automatic approval review rej
 the delete action because it could be irreversible and sync across devices;
 no deletion occurred. Request explicit confirmation of these names before retrying.
 Personal Shortcuts and the replacement were not selected.
+
+## Rollout and cleanup completed — 25 October 2026
+
+Deployed application source `52ed5f4` (feature `674d90a` plus the test-only heartbeat
+fix) through successful [release 40182021955](https://github.com/codyzu/dayframe/actions/runs/40182021955).
+All 134 unit/integration, 328 browser and 44 navigation checks passed; four existing
+intentional browser skips remain. Deploy and live smoke jobs passed. Worker
+version `6d164a6a-9c9f-4665-9bf1-219d24b0ab08`; public build ID
+`38aa63f5-fe1a-45ce-b009-307186268407`. An independent live check matched the
+clipboard admin JS asset to the local build, verified admin sign-in 302 with
+selected-count preservation, and anonymous catalog denial 401.
+
+The owner explicitly confirmed **Delete those five** in response to the named
+cross-device cleanup question. Deleted exactly Dayframe-Paste-Mixed,
+Dayframe-Paste-PNG, Dayframe-Photo-Paste, Dayframe-Photo-Check and
+Dayframe — test photos through Shortcuts' iCloud deletion confirmation. Native UI
+and filtered CLI listing now show only **Dayframe PNG** among Dayframe Shortcuts.
+Four signed test copies plus the task-owned draft reference were retained in
+ignored `private/shortcut-cleanup-20261025/`; no personal Shortcut was selected.
+The earlier automatic-review block is resolved by that explicit confirmation.
+iPhone sync and the owner's first authenticated upload are still pending; no
+private photo upload was performed by the agent during rollout.
