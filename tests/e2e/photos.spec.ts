@@ -826,10 +826,7 @@ test('oversized clipboard batch recovers in two-photo groups without repeating t
     JSON.stringify([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3]),
   );
   await page.screenshot({
-    path:
-      '/private/tmp/dayframe-clipboard-recovery-' +
-      test.info().project.name +
-      '.png',
+    path: test.info().outputPath('clipboard-recovery.png'),
     fullPage: true,
   });
 });

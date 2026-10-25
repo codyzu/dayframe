@@ -1726,3 +1726,11 @@ clipboard/recovery/retry cases passed across Chromium, Firefox, WebKit and mobil
 WebKit. Reviewed the mobile recovery layout. Budget tests inflate Blob.size on
 small synthetic images to test guards, not actual 100 MB memory performance.
 Production release checks and actual iPhone recovery remain pending.
+
+Release [40193181775](https://github.com/codyzu/dayframe/actions/runs/40193181775)
+was blocked by four screenshot-write failures: the new recovery test used a
+Mac-only temporary path on Linux. Recovery assertions reached the screenshot
+successfully; 336 other cases passed, with four intentional skips. Replaced the
+path with Playwright's per-test output directory and reran that complete recovery
+case across all four browser projects: four passes. No application behavior
+changed in this correction; full release verification must run again.
