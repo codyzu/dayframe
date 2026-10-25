@@ -253,13 +253,25 @@ trigger is unconfirmed: the previous message combined count, individual-size and
 aggregate-size limits. Full-resolution PNG expansion can reach the 100 MB batch
 limit even when the original photo-library files are smaller.
 
-The recovery slice distinguishes these errors and offers **Coller par lots de 2**
-after a count/size rejection. It reads only the current pair's image representations
-on each explicit Paste, previews them, and requires Add to collection. After
-handoff to the existing uploader, the next Paste advances to the following pair.
+Recovery distinguishes these errors and offers **Coller par lots adaptés**
+after a count/size rejection. The owner requested replacing the initial fixed
+pairs with size-based groups. On each explicit Paste, read the next consecutive
+photos in clipboard order until ten images or 100 MB is reached. Inspect at most
+one additional image to discover that it does not fit; it is excluded from the
+staged group and read again next time. Do not reorder or skip photos to fill gaps.
+Preview the group and require Add to collection; the next Paste starts after the
+last photo handed to the existing uploader.
 Failed uploads retain their existing retry rows; progress means handed to the
 uploader, not necessarily uploaded successfully. Completed/skipped/duplicate rows
 remove their retry listeners so they no longer retain source PNGs.
+
+The staged range and encoded size are displayed. Ten 11 MB images yield groups
+of nine (99 MB) and one. An exact 100 MB group is allowed. Both button reads and
+native manual paste use the same grouping rule. An unreadable or individually
+oversized next image is deferred after any valid prefix, then reported when it
+becomes the first image; it is never silently skipped. The one-image lookahead
+can temporarily exceed the staged-byte budget in encoded references; it is not
+decoded or retained in staging. This is not a measured peak-memory guarantee.
 
 The full source count (up to 100 selected clipboard items) is still checked against
 the Shortcut count; changed counts during recovery are rejected. Every staged group
@@ -272,13 +284,17 @@ or expires it, the current selection can be pasted again without going back to
 Photos. Keep that clipboard unchanged until all groups are handed off. Count checks
 cannot detect a replacement with the same count, so previews remain required.
 Clear/page exit discard staging and recovery position; refreshing starts at the
-first pair again. Exact delivered-byte checks and human similarity review remain
+first group again. Exact delivered-byte checks and human similarity review remain
 available for repeated groups. No persistent original inbox is introduced.
 
-Recovery is deployed from `0d8413d`; the
+Initial fixed-pair recovery was deployed from `0d8413d`; the
 [release and live smoke passed](https://github.com/codyzu/dayframe/actions/runs/40194141441).
 Refresh/reopen the admin page and paste again to reach the recovery control.
 No Shortcut update is needed. Reuse of the previous selection depends on it still
 being present in the system clipboard; the page does not persist original photos.
 Actual iPhone recovery and a smaller-representation path for individually
 oversized photos remain pending.
+
+Adaptive recovery is prepared locally; rollout and actual iPhone acceptance are
+pending. No Shortcut reinstall, image-quality, fingerprint, API, credential or
+service changes are required. The 40 MiB individual-photo limit remains.

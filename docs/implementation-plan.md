@@ -1744,3 +1744,31 @@ asset equality, admin sign-in with selected-count preservation and anonymous
 catalog denial. The owner confirmed the old error listed all limits, leaving its
 exact cause unconfirmed. No Shortcut reinstall is needed; physical iPhone
 small-group recovery and individually oversized-image handling remain open.
+
+## Adaptive clipboard recovery groups — 25 October 2026
+
+Owner requested trying groups based on total encoded size instead of fixed pairs.
+Recovery now takes the next consecutive photos in original clipboard order, up to
+ten images and 100,000,000 bytes per group. A single encoded lookahead may be read
+to find the boundary, then excluded without advancing the cursor past it. The
+staged range and size are visible; preview and Add confirmation remain required.
+The button and native manual paste share the policy. Individual oversized or
+unsupported items are deferred after a valid prefix and reported when first;
+there is no silent skip or reordering. Existing source-count checks, per-image
+40 MiB cap, auth, retry behavior and quality/fingerprints are retained. No Shortcut
+change, new endpoint/service or cost. Actual peak memory is not benchmarked.
+
+Read local spec upload constraints and upstream foundation sequencing. Re-reviewed
+cached upstream README/MIT LICENSE/photo view/slideshow at
+`0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189`; no relevant uploader/grouping code
+exists there and none is copied. Independent change to Dayframe's existing intake.
+
+Adaptive validation: type checks, build and repository lint passed (four existing
+complexity warnings); all 134 unit/integration tests and all 76 photo browser
+checks passed across Chromium, Firefox, WebKit and mobile WebKit. Coverage includes
+nine-plus-one packing for ten 11 MB inputs, exact 100 MB inclusion with native
+paste parity, ten-image count cap, deferred single-image size rejection, unchanged
+source-count checks and existing auth/retry/privacy behavior. The final smaller
+count-only fixtures also passed on all four projects. Budget fixtures simulate
+Blob.size; no real 100 MB memory benchmark or iPhone adaptive acceptance is claimed.
+Mobile layout reviewed. Production rollout remains pending.

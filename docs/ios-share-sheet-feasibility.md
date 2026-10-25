@@ -582,3 +582,16 @@ build; signed-out admin still redirects to Access preserving `expected=10`, and
 anonymous catalog reads still return 401. No Shortcut reinstall is needed.
 Owner clarified the old message listed all limits, so the original failure's
 specific cause remains unknown. Actual iPhone recovery remains pending.
+
+## Adaptive recovery follow-up — 25 October 2026
+
+Owner found two-photo groups too small and requested the size-based alternative.
+Prepared **Coller par lots adaptés**: retain clipboard order, fill each group up
+to ten photos and 100 MB, show staged range/size, then await confirmation. A single
+lookahead can be read to locate the boundary but is not retained or skipped;
+future explicit Paste starts there. The native paste path uses the same rule.
+Exact 100 MB fits; the single-photo 40 MiB cap remains, and a problematic next
+photo cannot disappear silently. No re-encoding, Shortcut reinstall, backend or
+security-policy changes. The existing diagnostic single/batch acceptance does
+not establish actual iPhone adaptive recovery; deployment and phone testing are
+still pending in this follow-up.
