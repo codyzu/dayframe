@@ -1734,3 +1734,13 @@ successfully; 336 other cases passed, with four intentional skips. Replaced the
 path with Playwright's per-test output directory and reran that complete recovery
 case across all four browser projects: four passes. No application behavior
 changed in this correction; full release verification must run again.
+
+Recovery release [40194141441](https://github.com/codyzu/dayframe/actions/runs/40194141441)
+succeeded for `0d8413d`: 134 unit/integration, 340 browser passes with four existing
+skips, 44 navigation checks, deployment and live smoke. Worker version
+`0b545288-2ab3-448d-bd7d-655079bc649a`, build
+`1695d7c8-4818-4ece-8b84-c4e6fef03395`. Independently verified deployed recovery
+asset equality, admin sign-in with selected-count preservation and anonymous
+catalog denial. The owner confirmed the old error listed all limits, leaving its
+exact cause unconfirmed. No Shortcut reinstall is needed; physical iPhone
+small-group recovery and individually oversized-image handling remain open.

@@ -1,12 +1,11 @@
 # iPhone Share Sheet feasibility plan
 
-Recorded 24 October 2026. **Status updated 25 October: PNG-normalized button
-handoff demonstrated on the owner's iPhone with three synthetic photos, including
-local WebP conversion. Mixed-format button input exposes only the PNG image;
-manual paste also passed for one and three photos. The authenticated importer is
-now deployed; actual iPhone upload, representative inputs and direct HEIC coverage
-remain open. The owner confirmed
-all three previews were correct. Diagnostic hosting is closed after acceptance.**
+Recorded 24 October 2026. **Status updated 25 October: the owner confirmed the
+production iPhone import works. PNG-normalized button handoff, three correct
+synthetic previews and local WebP conversion passed earlier. Large-batch errors
+now identify the individual limit and offer two-photo recovery from the same
+clipboard. Actual iPhone recovery, representative-format and direct HEIC coverage
+remain open. Diagnostic hosting is closed.**
 
 Owner reports **iPhone 17, iOS 27.0.1**. The first local-only diagnostic source,
 synthetic fixture generator and test checklist are in
@@ -572,3 +571,14 @@ persistent bytes or detect same-count substitutions; previews remain mandatory.
 The 40 MiB individual cap remains; this slice does not silently enlarge it or add
 server-side conversion. Successful upload row listeners are removed to release
 large source references; failed rows preserve their current retry behavior.
+
+Recovery deployment completed from `0d8413d` through
+[release 40194141441](https://github.com/codyzu/dayframe/actions/runs/40194141441).
+Checks, deployment and live smoke all succeeded: 134 unit/integration tests,
+340 browser passes with four existing skips, and 44 navigation passes. Worker
+version `0b545288-2ab3-448d-bd7d-655079bc649a`; public build ID
+`1695d7c8-4818-4ece-8b84-c4e6fef03395`. The live recovery JS matched the local
+build; signed-out admin still redirects to Access preserving `expected=10`, and
+anonymous catalog reads still return 401. No Shortcut reinstall is needed.
+Owner clarified the old message listed all limits, so the original failure's
+specific cause remains unknown. Actual iPhone recovery remains pending.

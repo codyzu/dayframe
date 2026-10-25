@@ -274,3 +274,11 @@ cannot detect a replacement with the same count, so previews remain required.
 Clear/page exit discard staging and recovery position; refreshing starts at the
 first pair again. Exact delivered-byte checks and human similarity review remain
 available for repeated groups. No persistent original inbox is introduced.
+
+Recovery is deployed from `0d8413d`; the
+[release and live smoke passed](https://github.com/codyzu/dayframe/actions/runs/40194141441).
+Refresh/reopen the admin page and paste again to reach the recovery control.
+No Shortcut update is needed. Reuse of the previous selection depends on it still
+being present in the system clipboard; the page does not persist original photos.
+Actual iPhone recovery and a smaller-representation path for individually
+oversized photos remain pending.
