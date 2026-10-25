@@ -3,7 +3,7 @@
 Recorded 24 October 2026. **Status updated 25 October: the owner confirmed the
 production iPhone import works. PNG-normalized button handoff, three correct
 synthetic previews and local WebP conversion passed earlier. Large-batch errors
-now identify the individual limit and offer two-photo recovery from the same
+now identify the individual limit and offer size-based recovery from the same
 clipboard. Actual iPhone recovery, representative-format and direct HEIC coverage
 remain open. Diagnostic hosting is closed.**
 
@@ -595,3 +595,12 @@ photo cannot disappear silently. No re-encoding, Shortcut reinstall, backend or
 security-policy changes. The existing diagnostic single/batch acceptance does
 not establish actual iPhone adaptive recovery; deployment and phone testing are
 still pending in this follow-up.
+
+Adaptive follow-up is now deployed from `205642e`; the
+[release](https://github.com/codyzu/dayframe/actions/runs/40214009211) passed
+134 unit/integration, 348 browser cases (four existing skips), 44 navigation
+checks, deployment and live smoke. Worker version
+`e9425aac-5d4a-4f29-877c-dd4aa3678e1d`, build
+`383dfbc4-321f-46f4-95d6-be90ce634080`. Independent live module equality and
+private-access checks passed. Refresh/reopen the admin page; no Shortcut
+reinstallation is needed. Actual iPhone adaptive recovery remains an owner gate.

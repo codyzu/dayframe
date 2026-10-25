@@ -267,9 +267,9 @@ remove their retry listeners so they no longer retain source PNGs.
 
 The staged range and encoded size are displayed. Ten 11 MB images yield groups
 of nine (99 MB) and one. An exact 100 MB group is allowed. Both button reads and
-native manual paste use the same grouping rule. An unreadable or individually
-oversized next image is deferred after any valid prefix, then reported when it
-becomes the first image; it is never silently skipped. The one-image lookahead
+native manual paste use the same grouping rule. An item with no exposed image representation, or an individually oversized next
+image, is deferred after any valid prefix, then reported when first; it is never
+silently skipped. Image decode errors still block confirmation of the staged group. The one-image lookahead
 can temporarily exceed the staged-byte budget in encoded references; it is not
 decoded or retained in staging. This is not a measured peak-memory guarantee.
 
@@ -295,6 +295,12 @@ being present in the system clipboard; the page does not persist original photos
 Actual iPhone recovery and a smaller-representation path for individually
 oversized photos remain pending.
 
-Adaptive recovery is prepared locally; rollout and actual iPhone acceptance are
-pending. No Shortcut reinstall, image-quality, fingerprint, API, credential or
+Adaptive recovery is deployed from `205642e`; actual iPhone adaptive acceptance
+remains pending. No Shortcut reinstall, image-quality, fingerprint, API, credential or
 service changes are required. The 40 MiB individual-photo limit remains.
+
+Adaptive [release 40214009211](https://github.com/codyzu/dayframe/actions/runs/40214009211)
+passed all checks, deployment and live smoke: 134 unit/integration, 348 browser
+passes with four existing skips, and 44 navigation checks. Independently matched
+the live admin JS to the tested build and verified admin sign-in plus anonymous
+catalog denial. Refresh the admin page and use **Coller par lots adaptés**.

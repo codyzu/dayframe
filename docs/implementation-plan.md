@@ -1772,3 +1772,13 @@ source-count checks and existing auth/retry/privacy behavior. The final smaller
 count-only fixtures also passed on all four projects. Budget fixtures simulate
 Blob.size; no real 100 MB memory benchmark or iPhone adaptive acceptance is claimed.
 Mobile layout reviewed. Production rollout remains pending.
+
+Adaptive rollout completed for `205642e` through
+[release 40214009211](https://github.com/codyzu/dayframe/actions/runs/40214009211):
+134 unit/integration tests, 348 browser passes with four existing skips, 44
+navigation passes, deployment and live smoke. Worker version
+`e9425aac-5d4a-4f29-877c-dd4aa3678e1d`; public build
+`383dfbc4-321f-46f4-95d6-be90ce634080`. The deployed adaptive admin module matches
+the local build; signed-out admin redirects to Access preserving the selection
+count and anonymous catalog reads return 401. No Shortcut update or encoding
+change. Actual iPhone adaptive-group acceptance remains pending.
