@@ -4,7 +4,10 @@ export function mountClipboardImport(
   importFiles: (files: File[]) => Promise<void>,
 ) {
   const paste = root.querySelector<HTMLButtonElement>('[data-import-paste]')!;
-  const small = root.querySelector<HTMLButtonElement>('[data-import-small]')!;
+  const choose = root.querySelector<HTMLButtonElement>('[data-choose-files]')!;
+  const fallback = root.querySelector<HTMLDetailsElement>(
+    '[data-import-fallback]',
+  )!;
   const add = root.querySelector<HTMLButtonElement>('[data-import-add]')!;
   const clear = root.querySelector<HTMLButtonElement>('[data-import-clear]')!;
   const zone = root.querySelector<HTMLElement>('[data-import-zone]')!;
@@ -22,17 +25,11 @@ export function mountClipboardImport(
         : '0';
   }
 
-  if (new URL(location.href).searchParams.get('import') === 'clipboard') {
-    root.querySelector<HTMLDetailsElement>('[data-clipboard-import]')!.open =
-      true;
-  }
-
   let sourceCount = 0;
   let batchStart = 0;
   let batchEnd = 0;
-  let groupBytes = 0;
-  let isAdaptiveBatch = false;
-  let canSplit = false;
+  let isClipboard = true;
+  let selectedFiles: File[] = [];
   let isEnabled = false;
   let isReading = false;
   let isPreviewing = false;
@@ -59,29 +56,41 @@ export function mountClipboardImport(
           wanted >= 1 &&
           wanted <= 100 &&
           wanted === sourceCount)) &&
-      files.length === (isAdaptiveBatch ? batchEnd - batchStart : sourceCount)
+      files.length === batchEnd - batchStart
     );
   }
 
   function update() {
-    const isFinished = isAdaptiveBatch && batchStart >= sourceCount;
-    paste.disabled = !isEnabled || isReading || isPreviewing || isFinished;
+    const hasStaged = files.length > 0;
+    const isContinuing = sourceCount > 0 && batchStart < sourceCount;
+    paste.disabled = !isEnabled || isReading || isPreviewing;
+    paste.hidden = hasStaged;
     paste.textContent =
-      isAdaptiveBatch && !isFinished
-        ? `Coller à partir de la photo ${batchStart + 1}`
-        : 'Coller les photos';
-    small.hidden = !canSplit;
-    small.disabled = !isEnabled || isReading || isPreviewing;
+      isContinuing && batchStart > 0
+        ? isClipboard
+          ? 'Coller les suivantes'
+          : 'Préparer les suivantes'
+        : 'Coller des photos';
+    choose.hidden = hasStaged || (isContinuing && batchStart > 0);
+    choose.disabled = !isEnabled || isReading || isPreviewing;
+    clear.hidden = !hasStaged && !isContinuing;
+    clear.disabled = !isEnabled || isReading || isPreviewing;
+    add.hidden = !hasStaged;
     add.disabled = !isEnabled || isReading || isPreviewing || !complete();
     zone.contentEditable = String(isEnabled && !isReading && !isPreviewing);
-    expected.disabled = isReading;
+    status.hidden = (status.textContent ?? '').trim() === '';
+  }
+
+  function explain(message: string) {
+    status.textContent = message;
+    fallback.hidden = !isClipboard;
+    update();
   }
 
   function reset() {
     generation++;
     files = [];
     batchEnd = batchStart;
-    groupBytes = 0;
     hasValidPreviews = false;
     isPreviewing = false;
     releasePreviews();
@@ -143,10 +152,11 @@ export function mountClipboardImport(
           const url = URL.createObjectURL(thumbnail);
           urls.push(url);
           image.src = url;
-          image.alt = `Photo à importer ${index + 1}`;
+          image.alt = `Photo à importer ${batchStart + index + 1}`;
           image.className =
             'h-32 w-full object-contain rounded-lg bg-background';
           previews.append(image);
+          status.textContent = `Aperçu ${index + 1} sur ${batch.length}…`;
         } finally {
           URL.revokeObjectURL(sourceUrl);
           source.removeAttribute('src');
@@ -158,8 +168,9 @@ export function mountClipboardImport(
     } catch {
       if (run === generation) {
         releasePreviews();
-        status.textContent =
-          'Une photo ne peut pas être lue. Relancez le partage avec moins de photos ou utilisez Ajouter des photos.';
+        explain(
+          'Une photo ne peut pas être lue. Choisissez une version JPEG ou PNG, ou relancez le partage avec le raccourci Dayframe PNG.',
+        );
       }
     } finally {
       if (run === generation) {
@@ -170,78 +181,70 @@ export function mountClipboardImport(
   }
 
   function describe() {
-    const size =
-      groupBytes >= 1_000_000
-        ? `${Math.round(groupBytes / 1_000_000)} Mo`
-        : `${Math.ceil(groupBytes / 1000)} ko`;
     status.textContent =
       files.length === 0
-        ? 'Collez les photos, vérifiez les aperçus, puis ajoutez-les à la collection.'
-        : `${isAdaptiveBatch ? `Photos ${batchStart + 1} à ${batchStart + files.length} sur ${sourceCount} · ${size} : ` : ''}${files.length} photo(s) reçue(s)${isAdaptiveBatch || expected.value === '' ? '' : ` sur ${expected.value} attendue(s)`}. ${complete() ? 'Vérifiez les aperçus avant l’ajout.' : 'Lot incomplet : essayez le collage manuel ou relancez le raccourci PNG.'}`;
-    update();
-  }
+        ? ''
+        : complete()
+          ? `${files.length} photo${files.length > 1 ? 's' : ''} sur ${sourceCount} prête${files.length > 1 ? 's' : ''} à ajouter${batchStart > 0 ? ` · ${batchStart} déjà traitée${batchStart > 1 ? 's' : ''}` : ''}.`
+          : `${sourceCount} photo(s) reçue(s) sur ${expected.value} attendue(s). Relancez le raccourci ou essayez le collage manuel.`;
+    if (complete()) {
+      fallback.hidden = true;
+      fallback.open = false;
+    } else if (files.length > 0) {
+      fallback.hidden = !isClipboard;
+    }
 
-  function tooLarge(message: string) {
-    canSplit = !isAdaptiveBatch && sourceCount > 1;
-    status.textContent = `${message} Aucun ajout effectué. ${canSplit ? 'Le collage n’a pas vidé le presse-papiers : utilisez les petits lots ci-dessous sans retourner dans Photos.' : 'Le presse-papiers est conservé. Cette photo doit être partagée dans une version plus petite.'}`;
     update();
   }
 
   function selectRange(itemCount: number) {
-    if (isAdaptiveBatch && itemCount !== sourceCount) {
-      status.textContent =
-        'Le nombre de photos du presse-papiers a changé. Effacez le lot puis recommencez le collage.';
+    if (itemCount !== sourceCount && batchStart > 0) {
+      explain(
+        'Le nombre de photos du presse-papiers a changé. Annulez puis recommencez le collage.',
+      );
       return;
     }
 
     sourceCount = itemCount;
     if (itemCount > 100) {
-      status.textContent = 'Partagez au maximum 100 photos à la fois.';
+      explain('Choisissez au maximum 100 photos à la fois.');
       return;
     }
 
-    if (!isAdaptiveBatch && itemCount > 10) {
-      tooLarge(`${itemCount} photos reçues : la limite est de 10 par lot.`);
-      return;
-    }
-
-    return {
-      start: isAdaptiveBatch ? batchStart : 0,
-      end: isAdaptiveBatch ? Math.min(batchStart + 10, itemCount) : itemCount,
-    };
+    return {start: batchStart, end: Math.min(batchStart + 10, itemCount)};
   }
 
   function receive(blobs: Blob[], itemCount: number) {
     if (blobs.length !== itemCount || blobs.length === 0) {
-      status.textContent =
-        'Certaines images sont illisibles. Utilisez le raccourci PNG ou le collage manuel. Aucun ajout effectué.';
+      explain(
+        'Aucune image lisible. Utilisez le raccourci Dayframe PNG ou essayez le collage manuel.',
+      );
       return;
     }
 
     const oversized = blobs.findIndex((blob) => blob.size > 40 * 1024 * 1024);
     if (oversized !== -1) {
-      tooLarge(
-        `La photo ${batchStart + oversized + 1} dépasse la limite de 40 Mio par photo.`,
+      explain(
+        `La photo ${batchStart + oversized + 1} dépasse la limite de 40 Mio par photo. Partagez une version plus petite. ${isClipboard ? 'Les autres photos restent dans le presse-papiers.' : 'Annulez pour refaire votre sélection.'}`,
       );
       return;
     }
 
     const bytes = blobs.reduce((sum, blob) => sum + blob.size, 0);
     if (bytes > 100_000_000) {
-      tooLarge(
+      explain(
         `Le lot fait ${Math.ceil(bytes / 1_000_000)} Mo : la limite est de 100 Mo par lot.`,
       );
       return;
     }
 
-    canSplit = false;
     batchEnd = batchStart + blobs.length;
-    groupBytes = bytes;
-    files = blobs.map(
-      (blob, index) =>
-        new File([blob], `Photo partagée ${batchStart + index + 1}`, {
-          type: blob.type,
-        }),
+    files = blobs.map((blob, index) =>
+      blob instanceof File
+        ? blob
+        : new File([blob], `Photo ${batchStart + index + 1}`, {
+            type: blob.type,
+          }),
     );
     void showPreviews();
   }
@@ -250,7 +253,6 @@ export function mountClipboardImport(
   // never retain that lookahead in the staged group or advance past it.
   function shouldStartNextGroup(blob: Blob, accepted: Blob[]) {
     return (
-      isAdaptiveBatch &&
       accepted.length > 0 &&
       (!blob.type.startsWith('image/') ||
         blob.size > 40 * 1024 * 1024 ||
@@ -260,13 +262,23 @@ export function mountClipboardImport(
   }
 
   function readClipboard() {
-    if (!isEnabled || isReading) {
+    if (!isEnabled || isReading || isPreviewing) {
+      return;
+    }
+
+    if (batchStart >= sourceCount && sourceCount > 0) {
+      startSelection();
+    }
+
+    if (!isClipboard) {
+      stageSelected();
       return;
     }
 
     reset();
     if (typeof navigator.clipboard?.read !== 'function') {
-      status.textContent = 'Utilisez la zone de collage manuel ci-dessous.';
+      explain('Utilisez la zone de collage ci-dessous.');
+      fallback.open = true;
       return;
     }
 
@@ -274,8 +286,8 @@ export function mountClipboardImport(
     // Keep this call inside the click gesture, before any await or API request.
     const pending = navigator.clipboard.read();
     isReading = true;
-    update();
     status.textContent = 'Choisissez Coller si votre iPhone le demande…';
+    update();
     void (async () => {
       try {
         const items = await pending;
@@ -295,11 +307,7 @@ export function mountClipboardImport(
             ? 'image/png'
             : item.types.find((type) => type.startsWith('image/'));
           if (type === undefined) {
-            if (isAdaptiveBatch) {
-              break;
-            }
-
-            continue;
+            break;
           }
 
           const blob = await item.getType(type);
@@ -312,16 +320,17 @@ export function mountClipboardImport(
           }
 
           blobs.push(blob);
-          if (isAdaptiveBatch && blob.size > 40 * 1024 * 1024) {
+          if (blob.size > 40 * 1024 * 1024) {
             break;
           }
         }
 
-        receive(blobs, isAdaptiveBatch ? blobs.length : selected.length);
+        receive(blobs, blobs.length);
       } catch {
         if (run === generation) {
-          status.textContent =
-            'Collage refusé ou indisponible. Réessayez ou utilisez le collage manuel.';
+          explain(
+            'Collage refusé ou indisponible. Réessayez ou utilisez le collage manuel.',
+          );
         }
       } finally {
         isReading = false;
@@ -331,20 +340,14 @@ export function mountClipboardImport(
   }
 
   paste.addEventListener('click', readClipboard);
-  small.addEventListener('click', () => {
+  zone.addEventListener('paste', (event) => {
+    event.preventDefault();
     if (!isEnabled || isReading || isPreviewing) {
       return;
     }
 
-    isAdaptiveBatch = true;
-    batchStart = 0;
-    canSplit = false;
-    readClipboard();
-  });
-  zone.addEventListener('paste', (event) => {
-    event.preventDefault();
-    if (!isEnabled || isReading) {
-      return;
+    if (!isClipboard || batchStart >= sourceCount) {
+      startSelection();
     }
 
     reset();
@@ -357,33 +360,56 @@ export function mountClipboardImport(
     const selected = pasted.slice(range.start, range.end);
     const images: Blob[] = [];
     for (const file of selected) {
-      if (shouldStartNextGroup(file, images)) {
+      if (
+        shouldStartNextGroup(file, images) ||
+        !file.type.startsWith('image/')
+      ) {
         break;
       }
 
-      if (!file.type.startsWith('image/')) {
-        if (isAdaptiveBatch) {
-          break;
-        }
-
-        continue;
-      }
-
       images.push(file);
-      if (isAdaptiveBatch && file.size > 40 * 1024 * 1024) {
+      if (file.size > 40 * 1024 * 1024) {
         break;
       }
     }
 
-    receive(images, isAdaptiveBatch ? images.length : selected.length);
+    receive(images, images.length);
   });
-  expected.addEventListener('input', describe);
-  clear.addEventListener('click', () => {
+  function startSelection() {
     sourceCount = 0;
     batchStart = 0;
-    isAdaptiveBatch = false;
-    canSplit = false;
+    selectedFiles = [];
+    isClipboard = true;
+    expected.value =
+      queryCount === null
+        ? ''
+        : /^[1-9]\d{0,2}$/v.test(queryCount) && Number(queryCount) <= 100
+          ? queryCount
+          : '0';
+    fallback.hidden = true;
+    fallback.open = false;
     reset();
+  }
+
+  function stageSelected() {
+    reset();
+    const images: File[] = [];
+    for (const file of selectedFiles.slice(batchStart, batchStart + 10)) {
+      if (shouldStartNextGroup(file, images)) {
+        break;
+      }
+
+      images.push(file);
+      if (file.size > 40 * 1024 * 1024) {
+        break;
+      }
+    }
+
+    receive(images, images.length);
+  }
+
+  clear.addEventListener('click', () => {
+    startSelection();
     describe();
   });
   add.addEventListener('click', () => {
@@ -392,24 +418,24 @@ export function mountClipboardImport(
     }
 
     const batch = files;
-    if (isAdaptiveBatch) {
-      batchStart += batch.length;
-    }
+    batchStart += batch.length;
+    reset();
+    status.textContent = 'Ajout en cours…';
+    update();
+    void importFiles(batch).finally(() => {
+      status.textContent =
+        batchStart < sourceCount
+          ? `${sourceCount - batchStart} photo${sourceCount - batchStart > 1 ? 's' : ''} restante${sourceCount - batchStart > 1 ? 's' : ''}.`
+          : '';
+      if (batchStart >= sourceCount) {
+        selectedFiles = [];
+      }
 
-    reset();
-    status.textContent = isAdaptiveBatch
-      ? `Lot transmis à l’envoi. ${batchStart < sourceCount ? `Collez les photos suivantes, jusqu’à ${sourceCount} au total. Ne copiez rien d’autre avant la fin.` : 'Toutes les photos ont été transmises. Vérifiez les résultats ci-dessous.'}`
-      : 'Lot transmis à l’envoi. Suivez les résultats ci-dessous.';
-    void importFiles(batch);
+      update();
+    });
   });
-  globalThis.addEventListener('pagehide', () => {
-    sourceCount = 0;
-    batchStart = 0;
-    isAdaptiveBatch = false;
-    canSplit = false;
-    reset();
-  });
-  return (isAllowed: boolean) => {
+  globalThis.addEventListener('pagehide', startSelection);
+  const setAllowed = (isAllowed: boolean) => {
     if (!isAllowed && isEnabled) {
       generation++;
       isPreviewing = false;
@@ -420,13 +446,27 @@ export function mountClipboardImport(
     const isChanged = isEnabled !== isAllowed;
     isEnabled = isAllowed;
     if (isChanged && isAllowed) {
-      if (status.textContent?.trim().startsWith('Connectez-vous')) {
-        describe();
-      }
-
       void showPreviews();
     }
 
     update();
+  };
+
+  return {
+    setAllowed,
+    stageFiles(picked: File[]) {
+      if (!isEnabled || isReading || isPreviewing || picked.length === 0) {
+        return;
+      }
+
+      startSelection();
+      isClipboard = false;
+      selectedFiles = picked;
+      // The Shortcut's count applies only to clipboard inputs.
+      expected.value = '';
+      if (selectRange(picked.length)) {
+        stageSelected();
+      }
+    },
   };
 }

@@ -104,6 +104,7 @@ test('frame provisioning persists across browser contexts, rejects off-network r
     mimeType: 'image/png',
     buffer: Buffer.from(png, 'base64'),
   });
+  await page.locator('[data-import-add]').click();
   await expect(page.locator('[data-photo-gallery] img')).toHaveJSProperty(
     'naturalWidth',
     64,

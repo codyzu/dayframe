@@ -604,3 +604,18 @@ checks, deployment and live smoke. Worker version
 `383dfbc4-321f-46f4-95d6-be90ce634080`. Independent live module equality and
 private-access checks passed. Refresh/reopen the admin page; no Shortcut
 reinstallation is needed. Actual iPhone adaptive recovery remains an owner gate.
+
+## Owner acceptance and quieter upload UI — 26 October 2026
+
+Owner confirmed the adaptive flow works well on the actual iPhone, commonly
+splitting large selections into groups of three/four. Earlier pending adaptive
+phone-acceptance notes above are historical. Single-image size recovery remains
+limited to choosing/sharing a smaller representation.
+
+The next UI slice makes adaptive sizing automatic at first Paste, unifies picker
+and clipboard previews/confirmation, removes visible expected-count/recovery-mode
+controls, and preserves per-photo conversion feedback with a compact success
+summary. Manual paste appears only after a paste problem. The existing Dayframe
+PNG Shortcut remains compatible without reinstalling; no server conversion,
+helper app, credential or image-quality change. See the current photo operations
+and implementation-plan entries for validation/rollout evidence.

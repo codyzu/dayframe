@@ -1782,3 +1782,42 @@ navigation passes, deployment and live smoke. Worker version
 the local build; signed-out admin redirects to Access preserving the selection
 count and anonymous catalog reads return 401. No Shortcut update or encoding
 change. Actual iPhone adaptive-group acceptance remains pending.
+
+## Photo import UX — 26 October 2026
+
+Owner confirmed that adaptive batching works well on the iPhone, commonly making
+three- or four-photo groups. This closes the prior adaptive phone acceptance gate;
+it does not establish a measured device memory ceiling or remove the 40 MiB cap.
+
+The owner requested a quieter Paste/Browse interface, preserving per-photo
+conversion feedback. Both sources now share sequential thumbnails and explicit
+Add confirmation. Clipboard groups use adaptive sizing on the first paste, with
+no initial limit failure or recovery-mode button. Picker selections use the same
+grouping and retain remaining File references for the next explicit action.
+Progress distinguishes staged/remaining photos from actual added, duplicate,
+skipped and failed outcomes. Each conversion/upload remains visible while active;
+completed details collapse into a short aggregate summary, errors stay expanded.
+Manual paste is offered only after an unsupported/refused/incomplete paste.
+Expected count remains validated from the Shortcut query without a visible field;
+similarity calibration remains in Options. Successful access checks are silent,
+and errors/reconnection remain visible. Busy gating covers the complete batch,
+including similarity review and catalog refresh. Failed rows retain retry inputs;
+successful row listeners release their original inputs as before.
+
+Re-read local upload requirements and plan foundation. Re-inspected cached
+upstream README, MIT LICENSE, `dashboard/js/views/photos.js` and
+`dashboard/js/slideshow.js` at
+`0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189`. Upstream provides a mock slideshow,
+not this authenticated uploader. This interface is independently authored; no
+upstream source/assets copied. No Shortcut, encoding, API, credentials, storage,
+service or billing change. Validation and deployment evidence follow below.
+
+Local validation: type checks, lint (four existing complexity warnings), production
+build, 134 unit/integration tests and 132 affected browser cases passed across
+Chromium, Firefox, WebKit and mobile WebKit. Reviewed mobile staged and completed
+screenshots. New checks cover no picker upload before confirmation, visible
+conversion feedback, busy gating, compact success results, conditional manual
+paste, cancellation and picker continuation; existing auth/privacy/retry,
+byte/count boundaries and changed-clipboard checks remain covered. Budget fixtures
+simulate Blob.size, not an actual large-image memory benchmark. The simplified
+flow's actual iPhone acceptance and production rollout remain pending.

@@ -80,7 +80,7 @@ test('admin placeholder is responsive and cannot upload', async ({
   await page.goto('/admin/photos');
   await expect(page.getByRole('heading', {name: 'Vos photos'})).toBeVisible();
   await expect(
-    page.getByRole('button', {name: 'Ajouter des photos'}),
+    page.getByRole('button', {name: 'Choisir des photos'}),
   ).toBeDisabled();
   expect(
     await page.evaluate(

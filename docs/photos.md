@@ -304,3 +304,29 @@ passed all checks, deployment and live smoke: 134 unit/integration, 348 browser
 passes with four existing skips, and 44 navigation checks. Independently matched
 the live admin JS to the tested build and verified admin sign-in plus anonymous
 catalog denial. Refresh the admin page and use **Coller par lots adaptés**.
+
+## Simplified import flow — 26 October 2026
+
+This flow supersedes the older controls described above. The owner confirmed
+adaptive clipboard imports work on the iPhone (often three/four photos per group).
+The page now offers **Coller des photos** or **Choisir des photos**, then the same
+preview and **Ajouter les photos** confirmation. Browsing no longer sends files
+immediately. Every first paste is sized automatically, preserving the existing
+ten-photo/100 MB group and 40 MiB individual limits. Each next clipboard group
+still needs a user gesture; picker continuation uses the remaining selected files
+without reopening the chooser. Neither source uploads before confirmation.
+
+**Coller les suivantes** / **Préparer les suivantes** appears when there are more
+photos. Remaining counts mean not yet handed to the uploader; the result summary
+separately reports actual additions, duplicates, skipped photos and retries.
+Per-photo conversion/upload feedback stays visible during work. Successful results
+collapse under **Détails des ajouts**; errors keep details and retry buttons open.
+**Annuler** clears pending selection and progress, preserving uploaded photos and
+the system clipboard. Manual-paste help appears after a paste problem; successful
+previews hide it again. Similarity calibration remains under **Options**. Counts
+from the Shortcut URL remain checked internally. No reinstall or new service.
+
+Unsupported image decoding blocks confirmation and asks for JPEG/PNG or the
+Dayframe PNG Shortcut. On expired access, reconnect with the displayed link and
+use **Actualiser** in the original tab. Pending input and failed upload retries
+remain only in that tab's memory; leaving/reloading still loses pending work.

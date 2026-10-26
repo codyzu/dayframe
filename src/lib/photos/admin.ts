@@ -37,6 +37,7 @@ function mountAdmin(root: HTMLElement) {
   const deleted = new Set<string>();
   let catalog: PhotoMetadata[] = [];
   let isBusy = false;
+  let isUploading = false;
   let isAuthorized = false;
   let accessGeneration = 0;
   onOfflineInvalidation(() => {
@@ -44,12 +45,19 @@ function mountAdmin(root: HTMLElement) {
     showError(new ApiError('Accès privé à vérifier. Reconnectez-vous.', 401));
   });
   let privacyDeadline = Date.now() + 300_000;
-  const enableClipboard = mountClipboardImport(root, uploadFiles);
+  const intake = mountClipboardImport(root, uploadFiles);
+  const accessMessage = root.querySelector<HTMLElement>(
+    '[data-access-message]',
+  )!;
+  const summary = root.querySelector<HTMLElement>('[data-upload-summary]')!;
+  const uploadDetails = root.querySelector<HTMLDetailsElement>(
+    '[data-upload-details]',
+  )!;
   const setBusy = (isBusyValue: boolean) => {
-    isBusy = isBusyValue;
-    choose.disabled = isBusyValue || !isAuthorized;
-    enableClipboard(!isBusyValue && isAuthorized);
-    refreshButton.disabled = isBusyValue;
+    isBusy = isBusyValue || isUploading;
+    choose.disabled = isBusy || !isAuthorized;
+    intake.setAllowed(!isBusy && isAuthorized);
+    refreshButton.disabled = isBusy;
   };
 
   function listen(
@@ -68,6 +76,7 @@ function mountAdmin(root: HTMLElement) {
   }
 
   function showError(error: unknown) {
+    accessMessage.hidden = false;
     status.textContent =
       error instanceof Error ? error.message : 'Une erreur est survenue.';
     if (error instanceof ApiError && [401, 403].includes(error.status)) {
@@ -93,7 +102,7 @@ function mountAdmin(root: HTMLElement) {
       catalog.length > 0;
     const bytes = catalog.reduce((sum, photo) => sum + photo.size + 1024, 0);
     root.querySelector<HTMLElement>('[data-storage]')!.textContent =
-      `${catalog.length} photo${catalog.length === 1 ? '' : 's'} · ${(bytes / 1_000_000).toFixed(1)} Mo / 1 000 Mo · estimation, cohérence différée${bytes >= storageWarningBytes ? ' · Stockage bientôt plein : faites de la place avant d’ajouter des photos.' : ''}`;
+      `${catalog.length} photo${catalog.length === 1 ? '' : 's'} · ${(bytes / 1_000_000).toFixed(1)} Mo utilisés${bytes >= storageWarningBytes ? ' · Stockage bientôt plein : faites de la place avant d’ajouter des photos.' : ''}`;
     for (const photo of catalog) {
       const card = template.content.firstElementChild!.cloneNode(
         true,
@@ -124,8 +133,8 @@ function mountAdmin(root: HTMLElement) {
           pending.delete(photo.id);
           catalog = catalog.filter(({id}) => id !== photo.id);
           render();
-          status.textContent =
-            'Photo supprimée. La propagation sur les autres écrans peut prendre une minute ou plus.';
+          accessMessage.hidden = false;
+          status.textContent = 'Photo supprimée.';
         } catch (error) {
           showError(error);
         } finally {
@@ -202,11 +211,14 @@ function mountAdmin(root: HTMLElement) {
     const text = row.querySelector<HTMLElement>('[data-upload-message]')!;
     const retry = row.querySelector<HTMLButtonElement>('[data-upload-retry]')!;
     retry.hidden = true;
-    text.textContent = `${file.name} · préparation…`;
+    row.dataset.outcome = 'processing';
+    text.textContent = `${file.name} · conversion…`;
+    summarize();
     try {
       const photo = await processPhoto(file);
       verifyGeneration(run);
       if (catalog.some(({id}) => id === photo.sha256)) {
+        row.dataset.outcome = 'duplicate';
         text.textContent = `${file.name} · doublon exact, déjà présent.`;
         return 'complete' as const;
       }
@@ -224,12 +236,15 @@ function mountAdmin(root: HTMLElement) {
           threshold,
       );
       if (similar.length > 0 && !(await shouldKeepPhoto(photo.blob, similar))) {
+        row.dataset.outcome = 'skipped';
         text.textContent = `${file.name} · passé à votre demande.`;
         return 'complete' as const;
       }
 
       verifyGeneration(run);
-      text.textContent = `${file.name} · envoi…`;
+      row.dataset.outcome = 'uploading';
+      text.textContent = `${file.name} · convertie, envoi…`;
+      summarize();
       const response = await photoRequest('/api/photos', {
         method: 'POST',
         headers: {
@@ -254,15 +269,18 @@ function mountAdmin(root: HTMLElement) {
       deleted.delete(body.photo.id);
       catalog = [...catalog.filter(({id}) => id !== body.photo.id), body.photo];
       render();
+      row.dataset.outcome = body.duplicate ? 'duplicate' : 'added';
       text.textContent = `${file.name} · ${body.duplicate ? 'déjà présent' : 'ajouté'} (${body.photo.width} × ${body.photo.height}).`;
       return 'complete' as const;
     } catch (error) {
+      row.dataset.outcome = 'error';
       text.textContent = `${file.name} · ${error instanceof Error ? error.message : 'Envoi échoué.'}`;
       showError(error);
       retry.hidden = false;
       return 'retry' as const;
     } finally {
       setBusy(false);
+      summarize();
     }
   }
 
@@ -284,8 +302,8 @@ function mountAdmin(root: HTMLElement) {
       privacyDeadline = Date.now() + 300_000;
       isAuthorized = true;
       login.hidden = true;
-      status.textContent =
-        'Accès administrateur vérifié. Les photos restent privées.';
+      status.textContent = '';
+      accessMessage.hidden = true;
     } catch (error) {
       showError(error);
     } finally {
@@ -296,55 +314,92 @@ function mountAdmin(root: HTMLElement) {
   choose.addEventListener('click', () => {
     input.click();
   });
+  function summarize() {
+    const outcomes = [...results.querySelectorAll<HTMLElement>('li')].map(
+      (row) => row.dataset.outcome,
+    );
+    const count = (outcome: string) =>
+      outcomes.filter((value) => value === outcome).length;
+    const parts = [
+      count('added') > 0
+        ? `${count('added')} ajoutée${count('added') > 1 ? 's' : ''}`
+        : '',
+      count('duplicate') > 0
+        ? `${count('duplicate')} déjà présente${count('duplicate') > 1 ? 's' : ''}`
+        : '',
+      count('skipped') > 0
+        ? `${count('skipped')} passée${count('skipped') > 1 ? 's' : ''}`
+        : '',
+      count('error') > 0 ? `${count('error')} à réessayer` : '',
+      count('processing') > 0 ? 'Conversion en cours…' : '',
+      count('uploading') > 0 ? 'Envoi en cours…' : '',
+    ].filter(Boolean);
+    summary.textContent = parts.join(' · ');
+    summary.hidden = parts.length === 0;
+    uploadDetails.hidden = outcomes.length === 0;
+    uploadDetails.open =
+      count('processing') > 0 || count('uploading') > 0 || count('error') > 0;
+  }
+
   async function uploadFiles(files: File[]) {
     if (isBusy || !isAuthorized) {
       return;
     }
 
-    for (const file of files) {
-      const row = document.importNode(
-        resultTemplate.content.firstElementChild!,
-        true,
-      ) as HTMLLIElement;
-      const retry = row.querySelector<HTMLButtonElement>(
-        '[data-upload-retry]',
-      )!;
-      const forgetRetry = listen(retry, 'click', async () => {
-        if (isBusy) {
-          return;
-        }
+    isUploading = true;
+    setBusy(true);
+    try {
+      for (const file of files) {
+        const row = document.importNode(
+          resultTemplate.content.firstElementChild!,
+          true,
+        ) as HTMLLIElement;
+        const retry = row.querySelector<HTMLButtonElement>(
+          '[data-upload-retry]',
+        )!;
+        const forgetRetry = listen(retry, 'click', async () => {
+          if (isBusy) {
+            return;
+          }
 
-        await initialize();
-        if (isAuthorized && (await upload(file, row)) === 'complete') {
-          forgetRetry();
+          await initialize();
+          if (isAuthorized && (await upload(file, row)) === 'complete') {
+            forgetRetry();
+          }
+        });
+        results.append(row);
+        if (isAuthorized) {
+          if ((await upload(file, row)) === 'complete') {
+            // Successful rows must not retain large source PNGs through a retry listener.
+            forgetRetry();
+          }
+        } else {
+          row.dataset.outcome = 'error';
+          row.querySelector('[data-upload-message]')!.textContent =
+            `${file.name} · en attente de reconnexion.`;
+          retry.hidden = false;
+          summarize();
         }
-      });
-      results.append(row);
+      }
+
       if (isAuthorized) {
-        if ((await upload(file, row)) === 'complete') {
-          // Successful rows must not retain large source PNGs through a retry listener.
-          forgetRetry();
+        try {
+          await refresh();
+        } catch (error) {
+          showError(error);
         }
-      } else {
-        row.querySelector('[data-upload-message]')!.textContent =
-          `${file.name} · en attente de reconnexion.`;
-        retry.hidden = false;
       }
-    }
-
-    if (isAuthorized) {
-      try {
-        await refresh();
-      } catch (error) {
-        showError(error);
-      }
+    } finally {
+      isUploading = false;
+      setBusy(false);
+      summarize();
     }
   }
 
   listen(input, 'change', async () => {
     const files = [...(input.files ?? [])];
     input.value = '';
-    await uploadFiles(files);
+    intake.stageFiles(files);
   });
   listen(refreshButton, 'click', async () => {
     if (!isBusy) {

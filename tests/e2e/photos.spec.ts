@@ -65,7 +65,7 @@ async function login(page: Page, admin = 'one') {
   await page.request.get(`/__test/login?admin=${admin}`);
   await page.goto('/admin/photos');
   await expect(
-    page.getByRole('button', {name: 'Ajouter des photos'}),
+    page.getByRole('button', {name: 'Choisir des photos'}),
   ).toBeEnabled();
 }
 
@@ -83,6 +83,7 @@ test('two admins upload WebP, review duplicates, see protected thumbnails and co
   await login(page);
   const photo = await syntheticPhoto(page);
   await page.locator('[data-photo-files]').setInputFiles(photo);
+  await page.locator('[data-import-add]').click();
   await expect(page.locator('[data-upload-results]')).toContainText(
     'ajouté (1600 × 800)',
   );
@@ -97,11 +98,13 @@ test('two admins upload WebP, review duplicates, see protected thumbnails and co
   const anonymous = await page.request.get(url!, {headers: {Cookie: ''}});
   expect(anonymous.status()).toBe(401);
   await page.locator('[data-photo-files]').setInputFiles(photo);
+  await page.locator('[data-import-add]').click();
   await expect(page.locator('[data-upload-results]')).toContainText(
     'doublon exact',
   );
   const similar = await syntheticPhoto(page, 'autre.png', 2400, 1200, 10);
   await page.locator('[data-photo-files]').setInputFiles(similar);
+  await page.locator('[data-import-add]').click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await page.getByRole('button', {name: 'Garder cette photo'}).click();
   await expect(page.locator('[data-storage]')).toContainText('2 photos');
@@ -176,6 +179,7 @@ test('read-only cookie delivers images, slideshow refreshes, outages retain curr
   await page
     .locator('[data-photo-files]')
     .setInputFiles(await syntheticPhoto(page));
+  await page.locator('[data-import-add]').click();
   await expect(page.locator('[data-storage]')).toContainText('1 photo');
   await context.clearCookies();
   const session = await page.request.get('/__test/display');
@@ -240,6 +244,7 @@ test('photo access failures keep retry available when configuration and weather 
   await page
     .locator('[data-photo-files]')
     .setInputFiles(await syntheticPhoto(page));
+  await page.locator('[data-import-add]').click();
   await expect(page.locator('[data-storage]')).toContainText('1 photo');
   await context.clearCookies();
   await page.request.get('/__test/display');
@@ -273,7 +278,7 @@ test('photo access failures keep retry available when configuration and weather 
   expect(after!.y).toBeCloseTo(before!.y, 1);
 });
 
-test('unsupported formats report per-file errors and preserve a safe retry', async ({
+test('unsupported picker formats cannot be added and explain how to choose a readable photo', async ({
   page,
 }) => {
   await login(page);
@@ -282,15 +287,11 @@ test('unsupported formats report per-file errors and preserve a safe retry', asy
     mimeType: 'image/heic',
     buffer: Buffer.from('synthetic unsupported input'),
   });
-  await expect(page.locator('[data-upload-results]')).toContainText(
-    'exportez la photo en JPEG',
+  await expect(page.locator('[data-import-status]')).toContainText(
+    'Une photo ne peut pas être lue',
   );
-  await expect(
-    page.getByRole('button', {name: 'Réessayer', exact: true}),
-  ).toBeVisible();
-  await expect(page.locator('[data-upload-message]')).toContainText(
-    '<img src=x onerror=alert(1)>.heic',
-  );
+  await expect(page.locator('[data-import-add]')).toBeDisabled();
+  await expect(page.locator('[data-import-fallback]')).toBeHidden();
   await expect(page.locator('[data-upload-results] img')).toHaveCount(0);
   await expect(page.locator('[data-storage]')).toContainText('0 photos');
 });
@@ -328,6 +329,7 @@ test('orientation is applied without upscaling and metadata is removed', async (
     mimeType: 'image/jpeg',
     buffer: Buffer.concat([jpeg.subarray(0, 2), exif, jpeg.subarray(2)]),
   });
+  await page.locator('[data-import-add]').click();
   await expect(page.locator('[data-upload-results]')).toContainText(
     'ajouté (40 × 80)',
   );
@@ -388,6 +390,7 @@ test('failed uploads retry with the same identity and expired sessions clear pri
   await page
     .locator('[data-photo-files]')
     .setInputFiles(await syntheticPhoto(page));
+  await page.locator('[data-import-add]').click();
   await expect(page.locator('[data-upload-results]')).toContainText(
     'Quota temporairement atteint',
   );
@@ -410,7 +413,7 @@ test('failed uploads retry with the same identity and expired sessions clear pri
   await page.getByRole('button', {name: 'Actualiser', exact: true}).click();
   await expect(page.locator('[data-photo-gallery] img')).toHaveCount(0);
   await expect(
-    page.getByRole('button', {name: 'Ajouter des photos'}),
+    page.getByRole('button', {name: 'Choisir des photos'}),
   ).toBeDisabled();
 });
 
@@ -427,6 +430,7 @@ test('slideshow polls for additions and keeps at most two image URLs', async ({
   await page
     .locator('[data-photo-files]')
     .setInputFiles(await syntheticPhoto(page));
+  await page.locator('[data-import-add]').click();
   await expect(page.locator('[data-storage]')).toContainText('1 photo');
   await page.addInitScript(() => {
     const urls = new Set<string>();
@@ -468,6 +472,7 @@ test('slideshow polls for additions and keeps at most two image URLs', async ({
       .setInputFiles(
         await syntheticPhoto(adminPage, 'nouveau.png', 2400, 1200, 10),
       );
+    await adminPage.locator('[data-import-add]').click();
     await expect(adminPage.getByRole('dialog')).toBeVisible();
     await adminPage.getByRole('button', {name: 'Garder cette photo'}).click();
     await expect(adminPage.locator('[data-storage]')).toContainText('2 photos');
@@ -529,6 +534,7 @@ test('expired upload sessions retain the whole selected batch for recovery in th
     }
   });
   await page.locator('[data-photo-files]').setInputFiles(files);
+  await page.locator('[data-import-add]').click();
   await expect(page.locator('[data-upload-results]')).toContainText(
     'Session expirée',
   );
@@ -564,6 +570,7 @@ test('backward clocks clear private slideshow pixels and online verification res
   await page
     .locator('[data-photo-files]')
     .setInputFiles(await syntheticPhoto(page));
+  await page.locator('[data-import-add]').click();
   await expect(page.locator('[data-storage]')).toContainText('1 photo');
   await context.clearCookies();
   await page.request.get('/__test/display');
@@ -610,6 +617,7 @@ test('a signed-in admin automatically caches ordinary Photos visits for offline 
   await page
     .locator('[data-photo-files]')
     .setInputFiles(await syntheticPhoto(page));
+  await page.locator('[data-import-add]').click();
   await expect(page.locator('[data-storage]')).toContainText('1 photo');
   await page.goto('/');
   await page.getByRole('button', {name: 'Photos', exact: true}).click();
@@ -659,10 +667,6 @@ test('clipboard import previews the full batch before explicit authenticated upl
   await expect(page.locator('[data-import-paste]')).toBeEnabled();
   await expect(page.locator('[data-import-expected]')).toHaveJSProperty(
     'readOnly',
-    true,
-  );
-  await expect(page.locator('[data-clipboard-import]')).toHaveJSProperty(
-    'open',
     true,
   );
   const photos = [
@@ -810,12 +814,9 @@ test('oversized clipboard batch fills recovery groups by bytes without repeating
     11_000_000,
   );
   await page.locator('[data-import-paste]').click();
-  await expect(page.locator('[data-import-status]')).toContainText('110 Mo');
-  await expect(page.locator('[data-import-add]')).toBeDisabled();
-  await page.getByRole('button', {name: 'Coller par lots adaptés'}).click();
   await expect(page.locator('[data-import-previews] img')).toHaveCount(9);
   await expect(page.locator('[data-import-status]')).toContainText(
-    'Photos 1 à 9 sur 10',
+    '9 photos sur 10 prêtes',
   );
   await expect(page.locator('[data-storage]')).toContainText('0 photos');
   await page.locator('[data-import-add]').click();
@@ -824,19 +825,15 @@ test('oversized clipboard batch fills recovery groups by bytes without repeating
     'doublon exact',
   );
   await expect(
-    page.getByRole('button', {name: 'Coller à partir de la photo 10'}),
+    page.getByRole('button', {name: 'Coller les suivantes'}),
   ).toBeEnabled();
-  await page
-    .getByRole('button', {name: 'Coller à partir de la photo 10'})
-    .click();
+  await page.getByRole('button', {name: 'Coller les suivantes'}).click();
   await expect(page.locator('[data-import-status]')).toContainText(
-    'Photos 10 à 10 sur 10',
+    '1 photo sur 10 prête',
   );
   await expect(page.locator('html')).toHaveAttribute(
     'data-clipboard-reads',
-    JSON.stringify([
-      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9,
-    ]),
+    JSON.stringify([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9]),
   );
   await page.screenshot({
     path: test.info().outputPath('clipboard-recovery.png'),
@@ -844,7 +841,7 @@ test('oversized clipboard batch fills recovery groups by bytes without repeating
   });
 });
 
-test('more than ten shared photos offers recovery before reading image bytes', async ({
+test('more than ten shared photos automatically stages ten and detects clipboard replacement', async ({
   page,
 }) => {
   await login(page);
@@ -858,14 +855,7 @@ test('more than ten shared photos offers recovery before reading image bytes', a
   );
   await page.locator('[data-import-paste]').click();
   await expect(page.locator('[data-import-status]')).toContainText(
-    '11 photos reçues',
-  );
-  await expect(page.locator('html')).not.toHaveAttribute(
-    'data-clipboard-reads',
-  );
-  await page.locator('[data-import-small]').click();
-  await expect(page.locator('[data-import-status]')).toContainText(
-    'Photos 1 à 10 sur 11',
+    '10 photos sur 11 prêtes',
   );
   await expect(page.locator('[data-import-add]')).toBeEnabled();
   // Changing the source clipboard count cannot silently continue a split import.
@@ -875,6 +865,7 @@ test('more than ten shared photos offers recovery before reading image bytes', a
     10,
     1000,
   );
+  await page.locator('[data-import-add]').click();
   await page.locator('[data-import-paste]').click();
   await expect(page.locator('[data-import-status]')).toContainText(
     'presse-papiers a changé',
@@ -898,7 +889,6 @@ test('individual oversized photo identifies the 40 MiB limit rather than the bat
   await expect(page.locator('[data-import-status]')).toContainText(
     'photo 1 dépasse la limite de 40 Mio',
   );
-  await expect(page.locator('[data-import-small]')).toBeHidden();
   await expect(page.locator('[data-import-add]')).toBeDisabled();
 });
 
@@ -912,9 +902,8 @@ test('adaptive clipboard groups accept exactly 100 MB and native paste uses the 
   const sizes = [40_000_000, 35_000_000, 25_000_000, 1];
   await mockSizedClipboard(page, photo, sizes.length, sizes);
   await page.locator('[data-import-paste]').click();
-  await page.locator('[data-import-small]').click();
   await expect(page.locator('[data-import-status]')).toContainText(
-    'Photos 1 à 3 sur 4 · 100 Mo',
+    '3 photos sur 4 prêtes',
   );
   await expect(page.locator('[data-import-add]')).toBeEnabled();
   await page.evaluate(
@@ -935,7 +924,7 @@ test('adaptive clipboard groups accept exactly 100 MB and native paste uses the 
   await expect(page.locator('[data-import-previews] img')).toHaveCount(3);
   await expect(page.locator('[data-import-add]')).toBeEnabled();
   await expect(page.locator('[data-import-status]')).toContainText(
-    'Photos 1 à 3 sur 4 · 100 Mo',
+    '3 photos sur 4 prêtes',
   );
   await expect(page.locator('[data-storage]')).toContainText('0 photos');
 });
@@ -953,18 +942,126 @@ test('adaptive groups preserve order with uneven photo sizes and defer an indivi
     [1_000_000, 41 * 1024 * 1024, 1_000_000],
   );
   await page.locator('[data-import-paste]').click();
-  await page.locator('[data-import-small]').click();
   await expect(page.locator('[data-import-status]')).toContainText(
-    'Photos 1 à 1 sur 3',
+    '1 photo sur 3 prête',
   );
   await page.locator('[data-import-add]').click();
   await expect(page.locator('[data-upload-results]')).toContainText('ajouté');
-  await page
-    .getByRole('button', {name: 'Coller à partir de la photo 2'})
-    .click();
+  await page.getByRole('button', {name: 'Coller les suivantes'}).click();
   await expect(page.locator('[data-import-status]')).toContainText(
     'photo 2 dépasse la limite de 40 Mio',
   );
   await expect(page.locator('[data-import-add]')).toBeDisabled();
   await expect(page.locator('[data-upload-results] li')).toHaveCount(1);
+});
+
+test('picker and paste share a quiet preview flow, with conversion feedback and a compact result', async ({
+  page,
+}) => {
+  await login(page);
+  await expect(page.locator('[data-access-message]')).toBeHidden();
+  await expect(page.locator('[data-import-status]')).toBeHidden();
+  await expect(page.locator('[data-import-fallback]')).toBeHidden();
+  await expect(page.locator('[data-import-add]')).toBeHidden();
+  await expect(page.locator('[data-import-clear]')).toBeHidden();
+  let posts = 0;
+  const uploadGate = Promise.withResolvers<void>();
+  await page.route('**/api/photos', async (route) => {
+    if (route.request().method() === 'POST') {
+      posts++;
+      await uploadGate.promise;
+    }
+
+    await route.continue();
+  });
+  await page
+    .locator('[data-photo-files]')
+    .setInputFiles(await syntheticPhoto(page));
+  await expect(page.locator('[data-import-add]')).toBeEnabled();
+  await expect(page.locator('[data-import-previews] img')).toHaveCount(1);
+  expect(posts).toBe(0);
+  await page.locator('[data-import-add]').click();
+  await expect(page.locator('[data-upload-results]')).toContainText(
+    'convertie, envoi',
+  );
+  await expect(page.locator('[data-upload-details]')).toHaveJSProperty(
+    'open',
+    true,
+  );
+  await expect(page.locator('[data-import-paste]')).toBeDisabled();
+  await expect(page.locator('[data-choose-files]')).toBeDisabled();
+  await expect.poll(() => posts).toBe(1);
+  uploadGate.resolve();
+  await expect(page.locator('[data-upload-summary]')).toHaveText('1 ajoutée');
+  await expect(page.locator('[data-upload-details]')).toHaveJSProperty(
+    'open',
+    false,
+  );
+  await expect(page.locator('[data-import-paste]')).toBeEnabled();
+  await expect(page.locator('[data-import-status]')).toBeHidden();
+  await page.screenshot({
+    path: test.info().outputPath('simplified-uploads.png'),
+    fullPage: true,
+  });
+});
+
+test('failed paste reveals manual fallback and cancelling restores the two choices', async ({
+  page,
+}) => {
+  await login(page);
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        async read() {
+          throw new Error('denied');
+        },
+      },
+    });
+  });
+  await page.locator('[data-import-paste]').click();
+  await expect(page.locator('[data-import-status]')).toContainText(
+    'Collage refusé',
+  );
+  await expect(page.locator('[data-import-fallback]')).toBeVisible();
+  await page.getByText('Le collage ne fonctionne pas ?', {exact: true}).click();
+  await expect(page.locator('[data-import-zone]')).toBeVisible();
+  await mockPhotoClipboard(page, [await syntheticPhoto(page)]);
+  await page.locator('[data-import-paste]').click();
+  await expect(page.locator('[data-import-add]')).toBeEnabled();
+  await page.locator('[data-import-clear]').click();
+  await expect(page.locator('[data-import-previews]')).toBeEmpty();
+  await expect(page.locator('[data-import-fallback]')).toBeHidden();
+  await expect(page.locator('[data-import-paste]')).toBeVisible();
+  await expect(page.locator('[data-choose-files]')).toBeVisible();
+  await expect(page.locator('[data-storage]')).toContainText('0 photos');
+});
+
+test('picker retains remaining files for the next group without reopening the chooser', async ({
+  page,
+}) => {
+  await login(page);
+  const photo = await syntheticPhoto(page, 'picker.png', 240, 120);
+  const photos = Array.from({length: 11}, (_, index) => ({
+    ...photo,
+    name: `photo-${index + 1}.png`,
+  }));
+  await page.locator('[data-photo-files]').setInputFiles(photos);
+  await expect(page.locator('[data-import-add]')).toBeEnabled();
+  await expect(page.locator('[data-import-previews] img')).toHaveCount(10);
+  await page.locator('[data-import-add]').click();
+  await expect(page.locator('[data-upload-summary]')).toHaveText(
+    '1 ajoutée · 9 déjà présentes',
+  );
+  await expect(page.locator('[data-import-status]')).toHaveText(
+    '1 photo restante.',
+  );
+  await page.getByRole('button', {name: 'Préparer les suivantes'}).click();
+  await expect(page.locator('[data-import-add]')).toBeEnabled();
+  await expect(page.locator('[data-import-previews] img')).toHaveCount(1);
+  await page.locator('[data-import-add]').click();
+  await expect(page.locator('[data-upload-summary]')).toHaveText(
+    '1 ajoutée · 10 déjà présentes',
+  );
+  await expect(page.locator('[data-import-status]')).toBeHidden();
 });
