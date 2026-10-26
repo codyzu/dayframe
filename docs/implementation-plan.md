@@ -1821,3 +1821,21 @@ paste, cancellation and picker continuation; existing auth/privacy/retry,
 byte/count boundaries and changed-clipboard checks remain covered. Budget fixtures
 simulate Blob.size, not an actual large-image memory benchmark. The simplified
 flow's actual iPhone acceptance and production rollout remain pending.
+
+The complete local release gate also passed with `DAYFRAME_RELEASE_ASSETS=1`:
+134 unit/integration tests, 360 browser passes with four existing skips, and all
+44 offline navigation cases. Source committed/pushed as `3ac32c8`. The first
+GitHub attempt was cancelled before verification/deployment because its Ubuntu
+mirror downloads were extremely slow; the same run was retried on a fresh runner,
+which completed browser installation normally. No tests or deployment gates were
+removed to work around the runner delay.
+
+Production rollout completed for `3ac32c8` through
+[release 40407204551, attempt 2](https://github.com/codyzu/dayframe/actions/runs/40407204551/attempts/2).
+All checks, verified-asset deployment and live smoke passed. Worker version
+`73ee6d05-9883-4509-b544-6be181d0717a`; public build
+`b2a01451-1908-4e83-9a86-c0595f1a4972`. Independently matched the live admin module
+to the locally verified build, confirmed signed-out admin 302 with selection query
+preserved and anonymous catalog 401. No Shortcut update is required. The new UI's
+actual iPhone acceptance remains pending; the earlier adaptive-flow acceptance is
+owner-confirmed.

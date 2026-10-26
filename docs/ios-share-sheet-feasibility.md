@@ -619,3 +619,10 @@ summary. Manual paste appears only after a paste problem. The existing Dayframe
 PNG Shortcut remains compatible without reinstalling; no server conversion,
 helper app, credential or image-quality change. See the current photo operations
 and implementation-plan entries for validation/rollout evidence.
+
+Simplified UI rollout completed from `3ac32c8` through
+[release 40407204551, attempt 2](https://github.com/codyzu/dayframe/actions/runs/40407204551/attempts/2).
+Full release verification, deploy and smoke passed. The live upload module matches
+the local tested source and private access remains protected. Refresh the page;
+the installed Dayframe PNG Shortcut needs no update. Owner phone acceptance of the
+new interface remains separate from the already accepted adaptive batching.

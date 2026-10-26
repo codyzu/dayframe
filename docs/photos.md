@@ -330,3 +330,10 @@ Unsupported image decoding blocks confirmation and asks for JPEG/PNG or the
 Dayframe PNG Shortcut. On expired access, reconnect with the displayed link and
 use **Actualiser** in the original tab. Pending input and failed upload retries
 remain only in that tab's memory; leaving/reloading still loses pending work.
+
+Deployed from `3ac32c8` after the complete
+[release gate and live smoke](https://github.com/codyzu/dayframe/actions/runs/40407204551/attempts/2)
+passed. The live admin module matches the tested build; admin sign-in and anonymous
+catalog denial were independently checked. Refresh the photo page to use the new
+flow; the existing Shortcut remains compatible. Actual iPhone acceptance of this
+simplified UI is the remaining owner check.
