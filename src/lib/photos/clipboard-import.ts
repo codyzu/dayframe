@@ -225,8 +225,12 @@ export function mountClipboardImport(
     const oversized = blobs.findIndex((blob) => blob.size > 40 * 1024 * 1024);
     if (oversized !== -1) {
       explain(
-        `La photo ${batchStart + oversized + 1} dépasse la limite de 40 Mio par photo. Partagez une version plus petite. ${isClipboard ? 'Les autres photos restent dans le presse-papiers.' : 'Annulez pour refaire votre sélection.'}`,
+        `La photo ${batchStart + oversized + 1} dépasse la limite de 40 Mio par photo (${(blobs[oversized].size / (1024 * 1024)).toFixed(1)} Mio reçus). ${isClipboard ? 'Essayez le collage manuel ci-dessous pour reprendre les photos restantes.' : 'Annulez puis choisissez une version plus petite.'}`,
       );
+      if (isClipboard) {
+        fallback.open = true;
+      }
+
       return;
     }
 

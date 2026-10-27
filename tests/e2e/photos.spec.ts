@@ -1065,3 +1065,75 @@ test('picker retains remaining files for the next group without reopening the ch
   );
   await expect(page.locator('[data-import-status]')).toBeHidden();
 });
+
+test('manual paste recovers four remaining photos after a size error without restarting six-photo import', async ({
+  page,
+}) => {
+  await login(page);
+  await page.goto('/admin/photos?import=clipboard&expected=6');
+  await expect(page.locator('[data-import-paste]')).toBeEnabled();
+  const photo = await syntheticPhoto(page, 'recovery.png', 240, 120);
+  await mockSizedClipboard(page, photo, 6, [
+    20_000_000,
+    20_000_000,
+    41 * 1024 * 1024,
+    5_000_000,
+    5_000_000,
+    5_000_000,
+  ]);
+  await page.locator('[data-import-paste]').click();
+  await expect(page.locator('[data-import-previews] img')).toHaveCount(2);
+  await expect(page.locator('[data-import-add]')).toBeEnabled();
+  await page.locator('[data-import-add]').click();
+  await expect(page.locator('[data-upload-results] li')).toHaveCount(2);
+  await page.getByRole('button', {name: 'Coller les suivantes'}).click();
+  await expect(page.locator('[data-import-status]')).toContainText(
+    'photo 3 dépasse la limite de 40 Mio',
+  );
+  await expect(page.locator('[data-import-status]')).toContainText(
+    '41.0 Mio reçus',
+  );
+  await expect(page.locator('[data-import-zone]')).toBeVisible();
+  await expect(page.locator('[data-import-add]')).toBeDisabled();
+  // Native paste still exposes the original six items, in smaller representations.
+  await page.locator('[data-import-zone]').evaluate(
+    (zone, bytes) => {
+      const files = Array.from(
+        {length: 6},
+        (_, index) =>
+          new File([new Uint8Array(bytes)], `original-${index + 1}.png`, {
+            type: 'image/png',
+          }),
+      );
+      const event = new Event('paste', {cancelable: true});
+      Object.defineProperty(event, 'clipboardData', {value: {files}});
+      zone.dispatchEvent(event);
+    },
+    [...photo.buffer],
+  );
+  await expect(page.locator('[data-import-previews] img')).toHaveCount(4);
+  await expect(
+    page.locator('[data-import-previews] img').first(),
+  ).toHaveAttribute('alt', 'Photo à importer 3');
+  await expect(page.locator('[data-import-status]')).toContainText(
+    '4 photos sur 6 prêtes',
+  );
+  await expect(page.locator('[data-import-status]')).toContainText(
+    '2 déjà traitées',
+  );
+  await expect(page.locator('[data-import-fallback]')).toBeHidden();
+  // Preparing recovery must not send anything before explicit confirmation.
+  await expect(page.locator('[data-upload-results] li')).toHaveCount(2);
+  await page.locator('[data-import-add]').click();
+  await expect(page.locator('[data-upload-results] li')).toHaveCount(6);
+  await expect(page.locator('[data-upload-results]')).toContainText(
+    'original-3.png',
+  );
+  await expect(page.locator('[data-upload-results]')).toContainText(
+    'original-6.png',
+  );
+  await expect(page.locator('[data-upload-summary]')).toHaveText(
+    '1 ajoutée · 5 déjà présentes',
+  );
+  await expect(page.locator('[data-import-status]')).toBeHidden();
+});

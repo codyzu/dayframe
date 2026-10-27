@@ -337,3 +337,12 @@ passed. The live admin module matches the tested build; admin sign-in and anonym
 catalog denial were independently checked. Refresh the photo page to use the new
 flow; the existing Shortcut remains compatible. Actual iPhone acceptance of this
 simplified UI is the remaining owner check.
+
+### Oversized-photo recovery — 27 October 2026
+
+A photo over the 40 MiB input limit now reports its received size and, for clipboard
+input, opens manual paste immediately. Try native paste in that zone to resume at
+the same photo; the same size limits still apply. A different native representation
+may fit, but success is not guaranteed. If it remains too large, share a smaller
+version. The owner reported a successful manual-paste recovery after the first two
+of six iPad photos; without the error text the actual cause remains unconfirmed.

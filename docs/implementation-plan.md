@@ -1839,3 +1839,35 @@ to the locally verified build, confirmed signed-out admin 302 with selection que
 preserved and anonymous catalog 401. No Shortcut update is required. The new UI's
 actual iPhone acceptance remains pending; the earlier adaptive-flow acceptance is
 owner-confirmed.
+
+## iPad oversized-photo recovery — 27 October 2026
+
+Owner found the simplified page easier to use, then reported six shared photos:
+two prepared initially, a size-related error on the next button paste, and manual
+paste accepting the remaining four. No error text or screenshot is available;
+the exact rejected limit/bytes cannot be established. The button explicitly asks
+for PNG; native paste uses the File representation provided by the browser. Both
+paths apply the same individual/group limits, so smaller native representations
+are a plausible explanation, not a confirmed cause or a reproduced iPad defect.
+
+Reviewed local upload constraints and plan; re-inspected the pinned upstream
+photo-view/slideshow reference at `0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189`.
+No upstream code/assets copied. Also consulted the primary WebKit
+[clipboard API description](https://webkit.org/blog/10855/async-clipboard-api/)
+for representation/sanitization context; it does not prove this device's byte sizes.
+
+A small recovery UX change reports the measured incoming size for a photo over
+40 MiB and opens native-paste help immediately, without resetting the cursor or
+asking the owner to reselect photos first. Picker errors still request a smaller
+input. Limits, processing quality, Shortcut, authentication and backend are
+unchanged. Added a synthetic six-item scenario: first two handed off, third item
+reports 41 MiB on button paste, native paste supplies the original six smaller
+representations and stages only items three through six. Confirmation is still
+required and the upload rows/duplicate summary cover exactly six handoffs. This
+validates recovery/cursor behavior, not the unobserved iPad error's root cause.
+
+Local type checks, lint (four existing complexity warnings), build and 16 focused
+browser cases passed across Chromium, Firefox, WebKit and mobile WebKit. Coverage
+includes single-image rejection, deferred oversized items, exact 100 MB/native
+paste parity and the new six-photo recovery case. Blob.size is simulated; no actual
+large-image memory benchmark or root-cause claim. Production release pending.
