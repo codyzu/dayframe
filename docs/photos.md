@@ -346,3 +346,9 @@ the same photo; the same size limits still apply. A different native representat
 may fit, but success is not guaranteed. If it remains too large, share a smaller
 version. The owner reported a successful manual-paste recovery after the first two
 of six iPad photos; without the error text the actual cause remains unconfirmed.
+
+Recovery guidance is deployed from `035c5d4` after the full
+[release checks and live smoke](https://github.com/codyzu/dayframe/actions/runs/40546712610/attempts/2)
+passed. The live module matches the tested build and private-access checks passed.
+Refresh the page; no Shortcut update is needed. The new guidance improves recovery
+and error evidence, without claiming the original iPad error's cause is fixed.

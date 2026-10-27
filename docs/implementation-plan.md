@@ -1871,3 +1871,19 @@ browser cases passed across Chromium, Firefox, WebKit and mobile WebKit. Coverag
 includes single-image rejection, deferred oversized items, exact 100 MB/native
 paste parity and the new six-photo recovery case. Blob.size is simulated; no actual
 large-image memory benchmark or root-cause claim. Production release pending.
+
+Committed/pushed as `035c5d4`. Release `40546712610` attempt 1 was cancelled
+before application checks because Ubuntu dependencies were downloading extremely
+slowly from the runner's Azure mirror. Attempt 2 completed browser installation
+normally and is running the unchanged full release gate. No application-test or
+security gate was bypassed; the deployment outcome is recorded below.
+
+Production rollout completed for `035c5d4` through
+[release 40546712610, attempt 2](https://github.com/codyzu/dayframe/actions/runs/40546712610/attempts/2).
+Types/lint/build, 134 unit/integration tests, 364 browser passes (four existing
+skips), 44 navigation checks, deployment and live smoke passed. Worker version
+`6f0d5d42-0061-4e06-9a4d-ea921696829d`; public build
+`11f56ff7-7454-4a20-aed3-ceec437c61b0`. Independently matched the live admin module
+to the tested build, verified sign-in redirect preserving the selection query and
+anonymous catalog 401. No Shortcut change. Actual iPad acceptance of the clearer
+error remains pending; the reported event's exact cause is still unconfirmed.
