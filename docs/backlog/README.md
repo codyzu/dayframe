@@ -114,6 +114,6 @@ state and any separate device acceptance. Keep unmet gates explicit.
 
 ## Implementation follow-up — 27 October 2026
 
-F01 and F02 are implemented locally; the tables above retain the dated audit
-baseline. Current behavior, focused validation, upstream review and explicit
+F01 and F02 were deployed on 28 October with reading-age labels; the tables above
+retain the dated audit baseline. Current behavior, focused validation, upstream review and explicit
 production/device limits are in the [delivery record](../implementation-plan.md#f01-and-f02-weather-recovery-and-browsing--27-october-2026).

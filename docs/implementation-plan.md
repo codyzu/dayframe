@@ -2,7 +2,7 @@
 
 **27 October 2026 audit:** [Feature coverage and separate-chat implementation plans](backlog/README.md)
 provide the current backlog entry point. The audit distinguishes missing behavior,
-implemented features awaiting acceptance, and optional enhancements. F01 freshness and F02 future forecast browsing are now implemented locally;
+implemented features awaiting acceptance, and optional enhancements. F01 freshness and F02 future forecast browsing are deployed as of 28 October;
 see the delivery record at the end. Quiet-display work remains a separate slice. It changes no product
 behavior, deployment or hardware authorization; existing deferrals remain in force.
 Historical milestone headers and execution records below retain their dated scope.
@@ -2027,3 +2027,24 @@ Types/build and repository lint passed. Run `40630383321` was intentionally
 cancelled before deployment to include this small correction in the final release;
 its cancellation is not an application-test result. All prior retry/security
 assertions remain in place.
+
+### Weather production rollout completed — 28 October 2026
+
+[Release 40631119085](https://github.com/codyzu/dayframe/actions/runs/40631119085)
+succeeded for `8968dbf`: types/lint/build, all 163 unit/Worker integration tests,
+412 browser passes with four existing intentional skips, all 44 offline-navigation
+checks, verified-asset deployment and live smoke. This includes F01 recovery, F02
+seven-day browsing and the reading-age enhancement, plus the location-change guard.
+Worker version `cbfb09be-2bd8-457e-8d12-b04637ed628c`; public build
+`35e3e8b3-fa70-473d-a475-c57fbcf80084`.
+
+Downloaded that run's approved production artifact and independently matched live
+HTML, dashboard JavaScript/CSS, `/offline`, `/sw.js` and `/version.json` against it.
+Re-ran the full anonymous smoke matrix: admin redirects to Access, photo/calendar/
+settings/session reads remain denied, and headerless mutations remain denied with
+no-store responses. Public health remains production/healthy. No household data was
+read or mutated, and no device operation, credential/binding or billing change was
+introduced. Physical-device reading-distance/touch acceptance and previous deferred
+hardware/security checks remain separate. The committed feature audit/backlog is
+included. Rollback is the previous Worker version/web source revert; validated v1
+weather cache remains safe to refetch without migration.

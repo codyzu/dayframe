@@ -196,3 +196,9 @@ year boundary. Exact date/time/timezone are retained on a semantic `<time>` in i
 `datetime`, title and accessible label. Unavailable weather has no fabricated age.
 Stale Morning departure guidance and vigilance's separate policy are preserved.
 No scheduler, API request, cache format, setting, dependency or cost change.
+
+Production release: [40631119085](https://github.com/codyzu/dayframe/actions/runs/40631119085)
+deployed F01, F02 and reading ages from `8968dbf` on 28 October. The complete hosted
+gate passed (163 unit/integration, 412 browser passes/four existing skips, 44
+navigation checks), followed by live smoke and independent approved-artifact
+matching. Actual Classic 10/phone reading-distance/touch acceptance remains separate.

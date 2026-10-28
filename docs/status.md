@@ -1,5 +1,14 @@
 # Dayframe status and validation register
 
+**28 October weather release:** F01 recovery, F02 seven-day browsing and provider
+reading-age labels are deployed from `8968dbf` through
+[release 40631119085](https://github.com/codyzu/dayframe/actions/runs/40631119085).
+163 unit/integration, 412 browser passes (four existing skips) and 44 navigation
+checks passed, followed by deployment, live smoke and independent artifact matching.
+Worker `cbfb09be-2bd8-457e-8d12-b04637ed628c`; build
+`35e3e8b3-fa70-473d-a475-c57fbcf80084`. Physical/device and previously deferred
+security acceptance remain separate. Dated local-only records below are historical.
+
 **27 October audit entry point:** [Feature audit and implementation backlog](backlog/README.md)
 contains current source coverage and twenty self-contained follow-up plans. It
 separates missing features from deferred acceptance and optional enhancements.

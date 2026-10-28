@@ -1,7 +1,7 @@
 # Weather freshness and recovery
 
-**Status:** Implemented locally · 27 October 2026 (F01). Production rollout and
-physical-frame acceptance are separate. See the [delivery record](implementation-plan.md#f01-and-f02-weather-recovery-and-browsing--27-october-2026).
+**Status:** Deployed · 28 October 2026 (F01, with human-friendly reading ages).
+Physical-frame acceptance remains separate. See the [delivery record](implementation-plan.md#f01-and-f02-weather-recovery-and-browsing--27-october-2026).
 
 ## Problem
 

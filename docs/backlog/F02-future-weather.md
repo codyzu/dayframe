@@ -1,6 +1,6 @@
 # F02 — On-demand future weather
 
-Status: implemented locally 27 October 2026; rollout/device acceptance separate. P2 / M. F01 implemented first.
+Status: deployed 28 October 2026; physical-device acceptance separate. P2 / M. F01 implemented first.
 Follow the [delivery contract](delivery-contract.md).
 
 ## Evidence and proposed scope
@@ -48,4 +48,5 @@ horizon and interaction in `docs/weather.md` and the roadmap.
 
 Implementation and validation: [F01/F02 delivery record](../implementation-plan.md#f01-and-f02-weather-recovery-and-browsing--27-october-2026).
 The evidence above describes the audit baseline; current behavior and rollback are
-recorded in [weather operations](../weather.md). Production is not deployed by this slice.
+recorded in [weather operations](../weather.md). [Release 40631119085](https://github.com/codyzu/dayframe/actions/runs/40631119085)
+deployed `8968dbf` on 28 October; physical acceptance remains separate.
