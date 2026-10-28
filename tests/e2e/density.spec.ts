@@ -8,28 +8,32 @@ test.beforeEach(async ({page}) => {
   });
 });
 
-test('density defaults, overrides, switching and persistence', async ({
+test('large readable type is used everywhere, including old compact preferences', async ({
   page,
 }) => {
-  const dashboard = page.locator('[data-dashboard]');
-  const select = page.getByRole('combobox', {name: 'Taille du texte'});
-  await page.goto('/');
-  await expect(dashboard).toHaveAttribute('data-density', 'standard');
-  await page.goto('/?display=frame');
-  await expect(dashboard).toHaveAttribute('data-density', 'large');
-  await page.goto('/?display=frame&density=large');
-  await expect(dashboard).toHaveAttribute('data-density', 'large');
-  await page.reload();
-  await expect(select).toHaveValue('large');
-  await select.selectOption('standard');
-  await page.reload();
-  await expect(dashboard).toHaveAttribute('data-density', 'standard');
-  await select.selectOption('large');
-  await page.goto('/');
-  await expect(dashboard).toHaveAttribute('data-density', 'large');
+  await page.addInitScript(() => {
+    localStorage.setItem('dayframe.display-density.v1', 'standard');
+  });
+  for (const path of [
+    '/',
+    '/?display=frame',
+    '/?density=standard',
+    '/?density=large',
+  ]) {
+    await page.goto(path);
+    await expect(page.locator('[data-dashboard]')).toHaveAttribute(
+      'data-density',
+      'large',
+    );
+    await expect(page.getByLabel('Taille du texte')).toHaveCount(0);
+    await expect(page.locator('[data-temperature]')).toHaveCSS(
+      'font-size',
+      '100px',
+    );
+  }
 });
 
-test('frame defaults safely without browser storage', async ({page}) => {
+test('large readable type works without browser storage', async ({page}) => {
   await page.addInitScript(() => {
     Object.defineProperty(globalThis, 'localStorage', {
       get() {
@@ -37,16 +41,12 @@ test('frame defaults safely without browser storage', async ({page}) => {
       },
     });
   });
-  await page.goto('/?display=frame');
+  await page.goto('/');
   await expect(page.locator('[data-dashboard]')).toHaveAttribute(
     'data-density',
     'large',
   );
-  await page.getByRole('combobox').selectOption('standard');
-  await expect(page.locator('[data-dashboard]')).toHaveAttribute(
-    'data-density',
-    'standard',
-  );
+  await expect(page.getByLabel('Taille du texte')).toHaveCount(0);
 });
 
 for (const density of ['standard', 'large']) {
@@ -57,7 +57,7 @@ for (const density of ['standard', 'large']) {
     await expect(page.locator('[data-temperature]')).toHaveText('12°');
     await expect(page.locator('[data-dashboard]')).toHaveAttribute(
       'data-density',
-      density,
+      'large',
     );
     expect(
       await page.evaluate(
@@ -93,6 +93,10 @@ for (const density of ['standard', 'large']) {
       const box = await button.boundingBox();
       expect(box!.width).toBeGreaterThanOrEqual(44);
       expect(box!.height).toBeGreaterThanOrEqual(44);
+    }
+
+    if (testInfo.project.name === 'mobile') {
+      await page.locator('[data-chart-plot]').scrollIntoViewIfNeeded();
     }
 
     const plot = await page.locator('[data-chart-plot]').boundingBox();
@@ -187,4 +191,26 @@ test('large display retains long freezing conditions and full-scale rain', async
     path: testInfo.outputPath('freezing-rain.png'),
     fullPage: true,
   });
+});
+
+test('navigation keeps identical geometry across modes', async ({
+  page,
+}, info) => {
+  await page.goto('/');
+  const nav = page.getByRole('navigation', {name: 'Modes d’affichage'});
+  const original = await nav.boundingBox();
+  for (const name of ['Photos', 'Nuit', 'Matin']) {
+    await page.getByRole('button', {name, exact: true}).click();
+    await expect(nav).toBeVisible();
+    await page.clock.runFor(350);
+    const box = await nav.boundingBox();
+    expect(box!.x).toBeCloseTo(original!.x, 0);
+    expect(box!.y).toBeCloseTo(original!.y, 0);
+    expect(box!.width).toBeCloseTo(original!.width, 0);
+    expect(box!.height).toBeCloseTo(original!.height, 0);
+    await page.screenshot({
+      path: info.outputPath(`navigation-${name}.png`),
+      animations: 'disabled',
+    });
+  }
 });

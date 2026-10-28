@@ -3,6 +3,7 @@ import {startupGuard} from '../../scripts/offline-build.mjs';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import MorningWeather from '../components/MorningWeather.astro';
 import PhotoSlideshow from '../components/PhotoSlideshow.astro';
+import PhotoControls from '../components/PhotoControls.astro';
 import ModeNavigation from '../components/ModeNavigation.astro';
 import {displayConfig} from '../lib/dashboard/config';
 ---
@@ -16,8 +17,8 @@ import {displayConfig} from '../lib/dashboard/config';
     <script is:inline set:html={startupGuard()} />
   )}
   <main
-    class="dashboard min-h-screen flex flex-col px-4 py-4 md:p-6"
-    data-density="standard"
+    class="dashboard min-h-dvh flex flex-col px-4 py-4 md:p-6"
+    data-density="large"
     data-dashboard
     data-build={import.meta.env.PUBLIC_BUILD_ID}
     data-mode="morning"
@@ -111,28 +112,18 @@ import {displayConfig} from '../lib/dashboard/config';
     </section>
     <footer
       data-dashboard-footer
-      class="flex flex-col items-center gap-4 md:flex-row md:grid md:grid-cols-[1fr_auto_1fr]"
+      class="display-dock flex flex-col items-stretch gap-2"
     >
-      <label class="flex items-center gap-2 text-sm text-secondary md:justify-self-start">
-        Texte
-        <select
-          data-density-select
-          aria-label="Taille du texte"
-          class="min-h-11 rounded-xl border border-border bg-surface px-3 text-base text-primary"
-        >
-          <option value="standard">Standard</option>
-          <option value="large">Grand</option>
-        </select>
-      </label>
-      <ModeNavigation />
+      <PhotoControls />
       <button
         type="button"
         data-display-retry
         hidden
-        class="min-h-11 rounded-xl border border-border bg-surface px-3 text-sm md:justify-self-end"
+        class="min-h-12 rounded-xl border border-border bg-surface px-4 py-2 text-base text-primary"
       >
         Réessayer la connexion
       </button>
+      <ModeNavigation />
     </footer>
     <noscript>
       <p class="p-2.5 text-xs">
@@ -147,21 +138,10 @@ import {displayConfig} from '../lib/dashboard/config';
 </BaseLayout>
 
 <style>
-  /* Rem sizing is adjustable in one place; the frame reflows instead of scaling. */
+  /* Use the household’s large type everywhere; narrow layouts reflow. */
   .dashboard {
-    --font-weather-temperature: 5.75rem;
-    --font-weather-description: 1.5rem;
-    --font-weather-heading: 1.25rem;
-    --font-weather-detail: 1.0625rem;
-    --font-weather-summary: 1.75rem;
-    --font-chart-time: 1rem;
-    --font-navigation: 1rem;
-    --icon-weather-current: 8rem;
-    --font-checkpoint: 1.375rem;
     position: relative;
     background: var(--colors-background);
-  }
-  .dashboard[data-density='large'] {
     --font-weather-temperature: 6.25rem;
     --font-weather-description: 1.75rem;
     --font-weather-heading: 1.5rem;
@@ -186,59 +166,29 @@ import {displayConfig} from '../lib/dashboard/config';
   .dashboard[data-mode='photos'] [data-dashboard-header] {
     visibility: hidden;
   }
-  .dashboard[data-mode='photos'] [data-dashboard-footer] {
-    display: flex;
+  /* One anchored dock keeps navigation geometry identical in every mode.
+     Safe-area offsets and mode/visibility selectors belong to this page. */
+  .display-dock {
     position: fixed;
-    z-index: 5;
-    bottom: 1rem;
-    left: 1rem;
-    right: 1rem;
-    justify-content: center;
-  }
-  /* Recovery can hide retry during pointerdown. Keep navigation anchored so
-     the button under a finger cannot change before pointerup. */
-  .dashboard[data-mode='photos'] [data-dashboard-footer] :global(nav) {
-    position: fixed;
-    bottom: 1rem;
+    z-index: 6;
+    bottom: max(0.75rem, env(safe-area-inset-bottom));
     left: 50%;
     transform: translateX(-50%);
-    width: max-content;
-    max-width: calc(100vw - 2rem);
+    width: min(24rem, calc(100% - 2rem));
   }
-  .dashboard[data-mode='photos'] [data-display-retry] {
-    position: fixed;
-    top: 9rem;
-    right: 1rem;
-  }
-  /* Keep this narrow-screen override beside the existing mode-specific Photos
-     positioning; the retry button is also shared by Morning and Night. */
-  @media (max-width: 767px) {
-    .dashboard[data-mode='photos'] [data-display-retry] {
-      top: auto;
-      bottom: 10rem;
-    }
-  }
-  .dashboard[data-mode='photos']
-    [data-dashboard-footer]
-    > :not(nav):not([data-display-retry]) {
-    display: none;
+  .dashboard[data-mode='morning'] {
+    padding-bottom: 6rem;
   }
   .dashboard[data-mode='night'] {
     background: var(--colors-night);
-    color: var(--colors-night-ink);
-  }
-  .dashboard[data-navigation='hidden'] :global([data-photo-controls]) {
-    visibility: hidden;
-  }
-  .dashboard[data-mode='night'] [data-dashboard-footer] > label {
     color: var(--colors-night-ink);
   }
   .dashboard[data-mode='night'] [data-dashboard-header],
   .dashboard[data-mode='night'] .alpine-header {
     visibility: hidden;
   }
-  /* Controls float on demand instead of reserving an empty navigation row.
-     Keep mobile controls in flow, where the page can scroll naturally. */
+  /* The large display fits its native canvas. Phones keep readable type and
+     enough scroll clearance to reach content above the anchored navigation. */
   @media (min-width: 1000px) {
     /* Keep the weather and agenda readable when a vigilance banner is present:
        reclaim the decorative brand row before compressing any useful content. */
@@ -255,24 +205,11 @@ import {displayConfig} from '../lib/dashboard/config';
     .dashboard[data-mode='morning'][data-alerts='true'] .morning-panel {
       padding: 0;
     }
-    .dashboard[data-mode='morning'] [data-dashboard-footer] {
-      position: fixed;
-      bottom: 0.75rem;
-      left: 2rem;
-      right: 2rem;
-      z-index: 6;
-      pointer-events: none;
-    }
-    .dashboard[data-mode='morning'] [data-dashboard-footer] > :global(*) {
-      pointer-events: auto;
-    }
-    .dashboard[data-mode='morning'] [data-dashboard-footer] > label {
-      background: var(--colors-surface);
-      border-radius: 1rem;
-      padding: 0 0.5rem;
-    }
     .dashboard {
       padding: 0.75rem 2rem;
+    }
+    .dashboard[data-mode='morning'] {
+      padding-bottom: 0.75rem;
     }
     .morning-panel {
       padding: 0.5rem 0;

@@ -3,7 +3,7 @@
   data-slideshow
   aria-labelledby="photos-title"
   hidden
-  class="relative flex-1 grid place-items-center min-h-[500px] md:min-h-0 text-center"
+  class="relative flex-1 grid place-items-center min-h-0 text-center"
 >
   <div
     data-photo-stage
@@ -43,58 +43,17 @@
   </div>
   <div
     data-photo-empty
-    class="surface relative z-1 mx-4 max-w-[650px] p-7 md:p-11"
+    class="relative z-1 mx-4 max-w-[650px] px-5 py-7 text-white"
   >
-    <p class="eyebrow">Vos instants, au quotidien</p>
     <h1 class="display-title" id="photos-title">
-      Une place pour vos souvenirs.
+      Vos photos
     </h1>
-    <p class="mt-5 text-mist">
-      Votre collection privée s’affiche ici une fois cet écran connecté.
-    </p>
   </div>
-  <div
-    data-photo-controls
-    class="fixed bottom-56 md:bottom-auto md:top-4 right-4 z-2 flex max-w-[min(25rem,calc(100vw-2rem))] flex-wrap items-center gap-3 rounded-xl bg-surface text-primary border border-border p-2 text-sm"
-  >
-    <label class="flex items-center gap-2">
-      Cadrage
-      <select
-        data-photo-fit
-        aria-label="Cadrage des photos"
-        class="min-h-11 rounded-lg bg-elevated px-3 text-primary"
-      >
-        <option value="contain">Photo entière</option>
-        <option value="cover">Remplir l’écran</option>
-      </select>
-    </label>
-    <button
-      data-photo-next
-      type="button"
-      class="min-h-11 rounded-lg border border-border px-3"
-    >
-      Suivante
-    </button>
-    <p
-      data-photo-offline-status
-      hidden
-      role="status"
-      class="basis-full text-left text-xs text-mist"
-    ></p>
-  </div>
-  <p
-    data-photo-status
-    role="status"
-    class="fixed bottom-24 left-4 right-4 z-2 mx-auto w-fit max-w-[90vw] rounded-xl bg-surface text-primary border border-border px-4 py-2 text-sm"
-  ></p>
 </section>
 <style>
   /* Keep Photos calm; use the bundled Meteocons stills, as in the forecast. */
   [data-photo-weather-icon] {
     background-image: var(--dayframe-static-icon);
-  }
-  [data-photo-status]:empty {
-    display: none;
   }
   .photo-at-a-glance {
     text-shadow:

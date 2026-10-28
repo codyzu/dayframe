@@ -18,7 +18,6 @@ import {
   isDisplayMode,
   type DisplayMode,
 } from './config.ts';
-import {mountDensity} from './density.ts';
 import {createModeState} from './schedule.ts';
 
 const dashboard = document.querySelector<HTMLElement>('[data-dashboard]');
@@ -27,7 +26,6 @@ if (dashboard) {
 }
 
 function initializeDashboard(root: HTMLElement) {
-  mountDensity(root);
   const buttons =
     root.querySelectorAll<HTMLButtonElement>('[data-mode-button]');
   const panels = root.querySelectorAll<HTMLElement>('[data-mode-panel]');
@@ -39,7 +37,7 @@ function initializeDashboard(root: HTMLElement) {
     root.querySelector<HTMLElement>('[data-weather-alerts]')!,
   );
 
-  const slideshow = mountSlideshow(photoRoot);
+  const slideshow = mountSlideshow(photoRoot, footer);
   const agenda = mountAgenda(root.querySelector<HTMLElement>('[data-agenda]')!);
   let weather = mountWeather(weatherRoot, updatePhotoWeather);
   const state = createModeState();
@@ -167,6 +165,8 @@ function initializeDashboard(root: HTMLElement) {
       });
     }
 
+    footer.querySelector<HTMLElement>('[data-photo-feedback]')!.hidden =
+      mode !== 'photos';
     const retry = root.querySelector<HTMLButtonElement>('[data-display-retry]');
     if (retry) {
       retry.hidden = !(

@@ -710,6 +710,13 @@ for (const density of ['standard', 'large']) {
     await page.goto('/?display=frame');
     await page.getByRole('button', {name: 'Photos', exact: true}).click();
     await expect(page.locator('[data-photo-stage] img')).toBeVisible();
+    // The installed kiosk heartbeat requires a nonzero active panel even though
+    // the full-screen photo and overlay themselves use fixed positioning.
+    const panel = await page
+      .locator('[data-mode-panel="photos"]')
+      .boundingBox();
+    expect(panel!.height).toBeGreaterThan(0);
+
     await expect.poll(async () => storedCount(page)).toBeGreaterThan(0);
     await expect(page.locator('[data-photo-stage] img')).toHaveCSS(
       'animation-name',
@@ -719,8 +726,23 @@ for (const density of ['standard', 'large']) {
     expect(await storedCount(page)).toBeLessThan(3);
     await expect(page.locator('[data-photo-offline-status]')).toBeHidden();
     await expect(page.locator('[data-photo-status]')).toBeEmpty();
-    await expect(page.getByLabel('Cadrage des photos')).toBeVisible();
+    await expect(
+      page.getByRole('button', {name: 'Remplir l’écran', exact: true}),
+    ).toBeVisible();
     await expect(page.getByRole('button', {name: 'Suivante'})).toBeVisible();
+    const fitBox = await page.locator('[data-photo-fit]').boundingBox();
+    const nextBox = await page.locator('[data-photo-next]').boundingBox();
+    if (page.viewportSize()!.height > page.viewportSize()!.width) {
+      expect(nextBox!.x).toBeCloseTo(fitBox!.x, 0);
+      expect(nextBox!.y).toBeGreaterThan(fitBox!.y);
+    } else {
+      expect(nextBox!.y).toBeCloseTo(fitBox!.y, 0);
+      expect(nextBox!.x).toBeGreaterThan(fitBox!.x);
+    }
+
+    expect(fitBox!.width).toBeGreaterThanOrEqual(48);
+    expect(fitBox!.height).toBeGreaterThanOrEqual(48);
+
     const positions = await page.evaluate(() => {
       const clock = globalThis.document
         .querySelector('[data-slideshow] [data-clock]')!
@@ -757,7 +779,10 @@ for (const density of ['standard', 'large']) {
       retryBox!.y,
     );
     const statusBox = await page.locator('[data-photo-status]').boundingBox();
-    expect(retryBox!.y + retryBox!.height).toBeLessThanOrEqual(statusBox!.y);
+    expect(controlsBox!.y + controlsBox!.height).toBeLessThanOrEqual(
+      statusBox!.y,
+    );
+    expect(statusBox!.y + statusBox!.height).toBeLessThanOrEqual(retryBox!.y);
     await page.screenshot({path: info.outputPath(`offline-${density}.png`)});
 
     await page.route('**/api/photos**', async (route) =>
@@ -765,6 +790,7 @@ for (const density of ['standard', 'large']) {
     );
     await page.evaluate(() => globalThis.dispatchEvent(new Event('online')));
     await expect(page.locator('[data-photo-stage] img')).toHaveCount(0);
+    await expect(page.locator('[data-photo-controls]')).toBeHidden();
     await expect(page.locator('[data-photo-status]')).toContainText(
       'Accès privé requis',
     );

@@ -2163,3 +2163,49 @@ household data, credentials, bindings, services/billing or native settings chang
 Physical-frame visual/touch acceptance and previously deferred security/offline/
 stability checks remain separate. F03 web implementation, commit and deployment
 are complete; the dated local-pending records above describe earlier stages only.
+
+## Mobile photo controls and readability correction — 28 October 2026
+
+Owner iPhone screenshots showed F03's fixed-offset photo control strip floating
+across the image/empty card. The owner reaffirmed the larger type for household
+readability, proposed a vertical portrait toolbar and requested consistent mode
+navigation dimensions. This supersedes the original two-preset selector requirement
+and F03's first mobile placement; the prior deployment record is historical.
+
+Implemented one shared bottom navigation with equal-width buttons and identical
+bounds in Morning, Photos and Night. Its safe-area-aware anchor is independent of
+retry/message visibility. Photo controls are a pair of 56px icon buttons anchored
+at the dock edge: vertical in portrait, horizontal in landscape. The fit toggle
+has French accessible naming/pressed state and retains existing contain/cover
+persistence and offline preference writes. Next-photo behavior remains bounded.
+Controls hide without a loaded photo, on mode exit and with idle navigation;
+interruption text remains visible. The empty state uses readable plain copy instead
+of a large decorative card competing with recovery UI.
+
+The former Large type tokens now apply everywhere. Removed the selector, preset
+selection module and obsolete selector-precedence unit tests; browser checks now
+assert that old compact URL/storage choices cannot shrink the type, and retain
+large-font viewport/long-condition/keyboard/reduced-motion checks. Existing density
+URLs remain accepted by the navigation allowlist for bookmark compatibility.
+No private storage is cleared, no setting/schema/auth/retention/request change, and
+no dependency, native device or service/billing change. Rollback is a source revert.
+
+Read the spec, F03 delivery contract, current photo/readability records and relevant
+upstream source. Refreshed main at `0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189`,
+reviewing MIT `LICENSE` and `dashboard/js/views/photos.js`. Retained on-demand control
+ideas, independently implemented this household design; no code/assets or owner
+screenshots/photos copied into public artifacts. Also inspected the installed heartbeat source's dashboard/status selectors:
+status remains beneath `[data-dashboard]`, and active Photos retains a nonzero panel.
+No native code/package/action changed. Physical review of this new design remains
+separate from synthetic browser evidence. Validation/release evidence follows.
+
+Local validation: types, lint and build passed with the existing four complexity
+warnings and `document.write` hint. All 160 applicable unit/integration tests passed;
+three retired preset-selection tests were removed with that feature. The full
+browser sweep passed 455 cases with four existing skips and one WebKit admin-ready
+fixture race. That case now waits for the authenticated upload control; all 12
+final admin/toolbar cases passed across Chromium, Firefox, WebKit and mobile WebKit,
+including active-panel bounds. All 44 offline-navigation checks passed. The full
+hosted release gate remains pending. Reviewed synthetic native/mobile evidence is
+in [mobile-controls](evidence/mobile-controls/README.md); physical phone/frame review
+of this new layout remains separate.

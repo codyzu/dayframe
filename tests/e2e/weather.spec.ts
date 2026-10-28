@@ -125,9 +125,7 @@ test('cached weather survives reload offline, ages visibly and recovers', async 
   await expect(page.locator('[data-clock]').first()).toHaveText('09:16');
   await page.locator('[data-dashboard]').dispatchEvent('pointerdown');
   await page.getByRole('button', {name: 'Photos', exact: true}).click();
-  await expect(
-    page.getByRole('heading', {name: 'Une place pour vos souvenirs.'}),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', {name: 'Vos photos'})).toBeVisible();
   await page.getByRole('button', {name: 'Matin', exact: true}).click();
   await page.screenshot({
     path: testInfo.outputPath('weather-stale.png'),

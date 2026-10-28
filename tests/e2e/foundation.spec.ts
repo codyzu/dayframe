@@ -40,7 +40,7 @@ test('French weather shell, working modes and locally bundled assets', async ({
   const icon = page.locator('.weather-icon');
   await expect(icon).toHaveCSS('background-image', /data:image\/svg\+xml/v);
   for (const [button, title] of [
-    ['Photos', 'Une place pour vos souvenirs.'],
+    ['Photos', 'Vos photos'],
     ['Nuit', 'Bonne nuit.'],
     ['Matin', 'Bonjour, Annecy.'],
   ]) {
@@ -128,9 +128,7 @@ test('keyboard navigation and reduced motion', async ({page}) => {
   const photos = page.getByRole('button', {name: 'Photos', exact: true});
   await photos.focus();
   await page.keyboard.press('Enter');
-  await expect(
-    page.getByRole('heading', {name: 'Une place pour vos souvenirs.'}),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', {name: 'Vos photos'})).toBeVisible();
   await expect(photos).toHaveCSS('transition-duration', '0s');
   const css = await page
     .locator('.weather-icon')

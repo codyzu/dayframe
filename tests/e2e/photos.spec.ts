@@ -140,19 +140,24 @@ test('photo framing survives navigation, reload and settings refreshes', async (
   page,
 }) => {
   await login(page);
+  await page
+    .locator('[data-photo-files]')
+    .setInputFiles(await syntheticPhoto(page));
+  await page.locator('[data-import-add]').click();
+  await expect(page.locator('[data-storage]')).toContainText('1 photo');
   let settings = {...defaultSettings, fit: 'contain' as const};
   await page.route('**/api/config/display', async (route) => {
     await route.fulfill({json: settings});
   });
   await page.goto('/');
-  const fit = page.getByLabel('Cadrage des photos');
+  const fit = page.getByRole('button', {name: 'Remplir l’écran', exact: true});
   const stage = page.locator('[data-photo-stage]');
   await expect(stage).toHaveAttribute('data-fit', 'contain');
   await page.getByRole('button', {name: 'Photos', exact: true}).click();
-  await fit.selectOption('cover');
+  await fit.click();
   await page.getByRole('button', {name: 'Matin', exact: true}).click();
   await page.getByRole('button', {name: 'Photos', exact: true}).click();
-  await expect(fit).toHaveValue('cover');
+  await expect(fit).toHaveAttribute('aria-pressed', 'true');
   await page.goto('/admin/photos');
   await page.goto('/');
   await expect(stage).toHaveAttribute('data-fit', 'cover');
@@ -164,9 +169,9 @@ test('photo framing survives navigation, reload and settings refreshes', async (
     'Météo · Réglages actualisés',
   );
   await expect(stage).toHaveAttribute('data-fit', 'cover');
-  await expect(fit).toHaveValue('cover');
   await page.getByRole('button', {name: 'Photos', exact: true}).click();
-  await fit.selectOption('contain');
+  await expect(fit).toHaveAttribute('aria-pressed', 'true');
+  await fit.click();
   await page.reload();
   await expect(stage).toHaveAttribute('data-fit', 'contain');
 });
@@ -204,8 +209,12 @@ test('read-only cookie delivers images, slideshow refreshes, outages retain curr
   const image = page.locator('[data-photo-stage] img');
   await expect(image).toBeVisible();
   await expect(image).toHaveCSS('object-fit', 'cover');
-  await page.getByLabel('Cadrage des photos').selectOption('contain');
+  await page
+    .getByRole('button', {name: 'Remplir l’écran', exact: true})
+    .click();
   await expect(image).toHaveCSS('object-fit', 'contain');
+  await page.clock.runFor(350);
+  await expect(page.locator('[data-slideshow] [data-clock]')).toBeVisible();
   await page.screenshot({
     path: info.outputPath(`slideshow-${info.project.name}.png`),
     animations: 'disabled',
@@ -625,6 +634,9 @@ test('a signed-in admin automatically caches ordinary Photos visits for offline 
   await expect(page.locator('[data-photo-offline]')).toHaveCount(0);
   await expect(page.locator('[data-photo-offline-status]')).toBeHidden();
   await page.goto('/admin/photos');
+  await expect(
+    page.getByRole('button', {name: 'Choisir des photos'}),
+  ).toBeEnabled();
   const details = page.locator('[data-offline-details]');
   await expect(details).not.toHaveAttribute('open');
   await details.locator('summary').focus();

@@ -1,5 +1,14 @@
 # Dayframe status and validation register
 
+**28 October mobile/readability correction (local):** larger dashboard typography
+is now the only default; the selector is removed and old compact preferences are
+ignored. Mode navigation has identical dimensions/position across Morning, Photos
+and Night. Portrait photo controls are two edge buttons, hidden without a loaded
+photo; landscape uses a horizontal pair. This supersedes F03's first mobile
+placement after the owner’s iPhone review. Local unit/type/lint/build, focused
+browser and 44 navigation checks passed; full hosted release/deployment remain
+pending. [Current correction](implementation-plan.md#mobile-photo-controls-and-readability-correction--28-october-2026).
+
 **28 October F03 quiet display release:** normal online/partial-sync Photos no
 longer shows routine persistence/synchronization notices. On-demand storage details
 now live in collapsed photo administration, scoped to the current browser. Offline,

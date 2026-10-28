@@ -254,7 +254,7 @@ test('changed builds reload once at a render boundary, preserve override/prefere
     .locator('[data-dashboard]')
     .getAttribute('data-build');
   await page.getByRole('button', {name: 'Nuit', exact: true}).click();
-  await page.getByLabel('Taille du texte').selectOption('large');
+  await expect(page.getByLabel('Taille du texte')).toHaveCount(0);
   await page.clock.install();
   await control(request, {version: nextBuild, servedBuild: nextBuild});
   await Promise.all([

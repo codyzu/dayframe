@@ -380,3 +380,18 @@ redeployment with compatible existing storage; no clearing or migration is neede
 Local synthetic browser evidence and release scope are recorded in the
 [implementation plan](implementation-plan.md#f03-quiet-everyday-display--28-october-2026).
 Actual-frame visual/touch acceptance remains separate.
+
+## Portrait toolbar and shared navigation — 28 October 2026
+
+The owner's mobile review supersedes F03's initial fixed-offset strip. Next and
+fill/whole-photo controls now use two 56px buttons in a floating group just above
+the shared navigation: vertical in portrait, horizontal in landscape. The fill
+button's pressed state means cover; toggling off shows the whole photo. Existing
+framing preference and offline playback semantics are preserved. The group is
+hidden without a loaded image and with idle navigation. Recovery text/retry stay
+in an ordered group above the mode navigation; useful interruption text remains
+visible after navigation idles. The photo center/clock and denied state no longer
+carry useless framing controls. Mode navigation has identical width, touch targets
+and bottom anchor across all modes. The larger typography is now the default;
+there is no text-size selector. See [readability](display-density.md) and the latest
+[implementation record](implementation-plan.md#mobile-photo-controls-and-readability-correction--28-october-2026).

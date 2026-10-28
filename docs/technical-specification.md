@@ -52,7 +52,12 @@ The web app must remain usable without unlocking this particular frame.
 
 ### 2.2 Browser and UI requirements
 
-**Display density:** Standard is the default for ordinary desktop/mobile visits. Dedicated displays, including Classic 10, must be provisioned with `/?display=frame`, defaulting to Large independently of resolution/user agent. An explicit `density=standard|large` parameter overrides a saved browser preference, which overrides the profile default. The visible text-size selector persists explicit choices locally. Rem-based tokens respect font preferences; smaller viewports reflow without scaling the entire dashboard. See [display density](display-density.md) for precedence, persistence, provisioning and validation details.
+**Readability update, 28 October 2026:** Favor the larger typography selected for
+the household in every dashboard mode and browser. Remove the everyday text-size
+selector; narrow screens wrap and stack content instead of switching to a smaller
+preset. Browser zoom/font preferences remain supported. Legacy `density` URLs and
+saved Standard preferences must not shrink the type. Keep the frame launch URL
+`/?display=frame` compatible. See [readability](display-density.md).
 
 
 - Target Firefox/GeckoView 143 as a provisional older-Android compatibility baseline, not a promise that it runs on this device.
@@ -91,6 +96,13 @@ sources, unknown/stale coverage and current implementation/deployment limits.
 **Scope update, 20 October 2026:** Home is removed until useful household automation exists. The display and schedule editor offer Morning, Photos and Night. Existing saved/exported `home` periods are interpreted as Photos with their original times; unrelated settings remain intact. A future Home screen requires a separate feature slice.
 
 The schedule must be configurable without redeployment once settings persistence is implemented. Handle daylight-saving transitions correctly.
+
+**Navigation update, 28 October 2026:** Morning, Photos and Night share the same
+navigation width, button sizes and bottom anchor. Portrait Photos uses two large,
+floating edge buttons for next photo and fill/whole-photo toggle; landscape uses a
+compact horizontal pair. Hide photo controls when no photo is loaded and with idle
+navigation. Keep interruption/reconnect text accessible and avoid the clock/photo
+center. Preserve existing framing persistence, authentication and offline bounds.
 
 Touching the kiosk reveals minimal mode navigation. The user can manually switch modes; the override is temporary and returns to the scheduled mode after a configurable inactivity timeout. Overrides can be local to each display initially. Navigation fades or hides after inactivity. Admin tools are not exposed on the kiosk navigation.
 

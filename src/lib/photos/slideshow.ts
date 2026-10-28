@@ -50,12 +50,19 @@ export function shufflePhotos(
 type LoadedPhoto = {id: string; url: string; image: HTMLImageElement};
 export function mountSlideshow(
   root: HTMLElement,
+  controlsRoot: HTMLElement,
   settings: Settings = defaultSettings,
 ) {
   const stage = root.querySelector<HTMLElement>('[data-photo-stage]')!;
-  const status = root.querySelector<HTMLElement>('[data-photo-status]')!;
+  const status = controlsRoot.querySelector<HTMLElement>(
+    '[data-photo-status]',
+  )!;
+  const controls = controlsRoot.querySelector<HTMLElement>(
+    '[data-photo-controls]',
+  )!;
   const empty = root.querySelector<HTMLElement>('[data-photo-empty]')!;
-  const fit = root.querySelector<HTMLSelectElement>('[data-photo-fit]')!;
+  const fit =
+    controlsRoot.querySelector<HTMLButtonElement>('[data-photo-fit]')!;
   const fitKey = 'dayframe.photo-fit.v1';
   let preferredFit: Settings['fit'] | undefined;
   try {
@@ -69,10 +76,12 @@ export function mountSlideshow(
 
   function applyFit() {
     stage.dataset.fit = preferredFit ?? settings.fit;
-    fit.value = stage.dataset.fit;
+    const isCover = stage.dataset.fit === 'cover';
+    fit.setAttribute('aria-pressed', String(isCover));
+    fit.title = isCover ? 'Afficher la photo entière' : 'Remplir l’écran';
   }
 
-  const offlineStatus = root.querySelector<HTMLElement>(
+  const offlineStatus = controlsRoot.querySelector<HTMLElement>(
     '[data-photo-offline-status]',
   )!;
   let isStoredPlayback = false;
@@ -117,6 +126,7 @@ export function mountSlideshow(
     catalog = [];
     queue = [];
     empty.hidden = false;
+    controls.hidden = true;
   };
 
   function expirePrivacy() {
@@ -181,8 +191,8 @@ export function mountSlideshow(
   }
 
   onOfflineInvalidation(deny);
-  fit.addEventListener('change', () => {
-    preferredFit = fit.value === 'cover' ? 'cover' : 'contain';
+  fit.addEventListener('click', () => {
+    preferredFit = stage.dataset.fit === 'cover' ? 'contain' : 'cover';
     applyFit();
     if (offlineControl()) {
       void updateOfflinePlayback({
@@ -463,6 +473,7 @@ export function mountSlideshow(
       }
 
       empty.hidden = Boolean(current);
+      controls.hidden = !current;
       status.textContent = isStoredPlayback
         ? 'Hors connexion · photos enregistrées'
         : '';
@@ -527,17 +538,19 @@ export function mountSlideshow(
     }
   }
 
-  root.querySelector('[data-photo-next]')?.addEventListener('click', () => {
-    if (!isActive) {
-      return;
-    }
+  controlsRoot
+    .querySelector('[data-photo-next]')
+    ?.addEventListener('click', () => {
+      if (!isActive) {
+        return;
+      }
 
-    generation++;
-    clearTimeout(timer);
-    controller.abort();
-    controller = new AbortController();
-    void tick();
-  });
+      generation++;
+      clearTimeout(timer);
+      controller.abort();
+      controller = new AbortController();
+      void tick();
+    });
   function wake() {
     if (!isActive) {
       return;

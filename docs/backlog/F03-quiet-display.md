@@ -65,3 +65,10 @@ skips, 44 navigation checks), deployment and live smoke. Independently matched
 approved HTML, dashboard/admin scripts, CSS and offline artifacts to production.
 Worker `790be822-4735-47ab-9856-ba730aa075f5`; build
 `97968ea2-6de5-49ba-aad1-7a82d23026a2`. Physical review remains separate.
+
+The owner's subsequent iPhone review found the original mobile placement awkward.
+The [mobile/readability correction](../implementation-plan.md#mobile-photo-controls-and-readability-correction--28-october-2026)
+supersedes that placement and the earlier instruction to retain the text-size
+selector: the owner now explicitly chooses the larger type everywhere, portrait
+edge controls and identical navigation geometry across modes. The correction's
+validation and deployment state are recorded separately from the initial F03 release.
