@@ -185,6 +185,23 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         Actualiser
       </button>
     </div>
+    <details
+      data-offline-details
+      class="mt-5 rounded-xl border border-border p-4 text-sm"
+    >
+      <summary class="min-h-11 cursor-pointer">
+        Photos hors connexion · ce navigateur
+      </summary>
+      <p class="mt-2 text-slate-600">
+        Ces informations concernent ce navigateur, pas les autres écrans. Les
+        copies se remplissent progressivement pendant le diaporama : 100 photos
+        ou 100 Mo au maximum, pendant 7 jours au plus après la dernière
+        vérification d’accès. Le navigateur peut les effacer. Même un stockage
+        persistant ne constitue pas une sauvegarde complète. Rouvrez ce panneau
+        pour actualiser le relevé.
+      </p>
+      <p data-offline-diagnostics role="status" class="mt-3"></p>
+    </details>
     <p data-catalog-empty class="mt-6 rounded-xl bg-background p-6">
       Aucune photo pour le moment.
     </p>

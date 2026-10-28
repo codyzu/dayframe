@@ -697,3 +697,132 @@ test('automatic initialization in another tab preserves pending authorized work'
   );
   await other.close();
 });
+
+for (const density of ['standard', 'large']) {
+  test(`quiet ${density} playback keeps partial sync silent and failures actionable`, async ({
+    page,
+  }, info) => {
+    await page.addInitScript((value) => {
+      localStorage.setItem('dayframe.display-density.v1', value);
+    }, density);
+    await page.emulateMedia({reducedMotion: 'reduce'});
+    await routeSeededCatalog(page);
+    await page.goto('/?display=frame');
+    await page.getByRole('button', {name: 'Photos', exact: true}).click();
+    await expect(page.locator('[data-photo-stage] img')).toBeVisible();
+    await expect.poll(async () => storedCount(page)).toBeGreaterThan(0);
+    await expect(page.locator('[data-photo-stage] img')).toHaveCSS(
+      'animation-name',
+      'none',
+    );
+    // Current/next saving is gradual; a partially saved collection is normal.
+    expect(await storedCount(page)).toBeLessThan(3);
+    await expect(page.locator('[data-photo-offline-status]')).toBeHidden();
+    await expect(page.locator('[data-photo-status]')).toBeEmpty();
+    await expect(page.getByLabel('Cadrage des photos')).toBeVisible();
+    await expect(page.getByRole('button', {name: 'Suivante'})).toBeVisible();
+    const positions = await page.evaluate(() => {
+      const clock = globalThis.document
+        .querySelector('[data-slideshow] [data-clock]')!
+        .getBoundingClientRect();
+      const controls = globalThis.document
+        .querySelector('[data-photo-controls]')!
+        .getBoundingClientRect();
+      return {
+        clockBottom: clock.bottom,
+        controlsTop: controls.top,
+        width: globalThis.innerWidth,
+      };
+    });
+    if (positions.width < 768) {
+      expect(positions.controlsTop).toBeGreaterThan(positions.clockBottom);
+    }
+
+    await page.screenshot({path: info.outputPath(`quiet-${density}.png`)});
+
+    await page.route('**/api/photos**', async (route) => route.abort());
+    await page.evaluate(() => globalThis.dispatchEvent(new Event('online')));
+    await expect(page.locator('[data-photo-status]')).toHaveText(
+      'Hors connexion · photos enregistrées',
+    );
+    await expect(page.locator('[data-photo-offline-status]')).toBeHidden();
+    await page.clock.runFor(1000);
+    const retry = page.getByRole('button', {name: 'Réessayer la connexion'});
+    await expect(retry).toBeVisible();
+    const controlsBox = await page
+      .locator('[data-photo-controls]')
+      .boundingBox();
+    const retryBox = await retry.boundingBox();
+    expect(controlsBox!.y + controlsBox!.height).toBeLessThanOrEqual(
+      retryBox!.y,
+    );
+    const statusBox = await page.locator('[data-photo-status]').boundingBox();
+    expect(retryBox!.y + retryBox!.height).toBeLessThanOrEqual(statusBox!.y);
+    await page.screenshot({path: info.outputPath(`offline-${density}.png`)});
+
+    await page.route('**/api/photos**', async (route) =>
+      route.fulfill({status: 403, json: {error: {message: 'Denied'}}}),
+    );
+    await page.evaluate(() => globalThis.dispatchEvent(new Event('online')));
+    await expect(page.locator('[data-photo-stage] img')).toHaveCount(0);
+    await expect(page.locator('[data-photo-status]')).toContainText(
+      'Accès privé requis',
+    );
+    await expect(page.locator('[data-photo-offline-status]')).toBeHidden();
+    await page.screenshot({path: info.outputPath(`denied-${density}.png`)});
+  });
+}
+
+test('unavailable local storage warns during online playback and clears after recovery', async ({
+  page,
+}, info) => {
+  await page.addInitScript(() => {
+    const open = indexedDB.open.bind(indexedDB);
+    indexedDB.open = (...args) => {
+      if (document.documentElement.dataset.storageRecovered !== 'true') {
+        throw new Error('Storage unavailable');
+      }
+
+      return open(...args);
+    };
+  });
+  await routeSeededCatalog(page);
+  await page.goto('/?display=frame');
+  await page.getByRole('button', {name: 'Photos', exact: true}).click();
+  await expect(page.locator('[data-photo-stage] img')).toBeVisible();
+  await expect(page.locator('[data-photo-offline-status]')).toHaveText(
+    'Copies locales indisponibles · lecture en ligne.',
+  );
+  await expect(page.locator('[data-photo-offline-status]')).toBeVisible();
+  await page.screenshot({path: info.outputPath('storage-unavailable.png')});
+  await page.evaluate(() => {
+    globalThis.document.documentElement.dataset.storageRecovered = 'true';
+    globalThis.dispatchEvent(new Event('online'));
+  });
+  await expect.poll(async () => storedCount(page)).toBeGreaterThan(0);
+  await expect(page.locator('[data-photo-offline-status]')).toBeHidden();
+});
+
+for (const state of ['empty', 'failure'] as const) {
+  test(`${state} collection keeps useful display text without sync chatter`, async ({
+    page,
+  }, info) => {
+    await page.route('**/api/photos', async (route) =>
+      route.fulfill(
+        state === 'empty'
+          ? {json: {photos: [], cursor: null}}
+          : {status: 503, json: {error: {message: 'Unavailable'}}},
+      ),
+    );
+    await page.goto('/?display=frame');
+    await page.getByRole('button', {name: 'Photos', exact: true}).click();
+    await expect(page.locator('[data-photo-status]')).toContainText(
+      state === 'empty'
+        ? 'Ajoutez vos premiers souvenirs'
+        : 'Photos indisponibles',
+    );
+    await expect(page.locator('[data-photo-offline-status]')).toBeHidden();
+    await expect(page.locator('[data-photo-stage] img')).toHaveCount(0);
+    await page.screenshot({path: info.outputPath(`${state}.png`)});
+  });
+}

@@ -84,6 +84,12 @@ test('self-contained CSP document rotates overnight, honors preferences and reta
     'true',
   );
   await expect(page.locator('main img')).toHaveCSS('object-fit', 'cover');
+  await expect(page.locator('[data-status]')).toHaveText(
+    'Hors connexion · photos enregistrées',
+  );
+  await expect(
+    page.getByRole('button', {name: 'Réessayer la connexion'}),
+  ).toBeVisible();
   const geometry = await page.evaluate(() => ({
     width: globalThis.document.documentElement.scrollWidth,
     height: globalThis.document.documentElement.scrollHeight,
@@ -132,6 +138,7 @@ test('missing, expired and corrupt storage fail closed', async ({page}) => {
   await standalone(page);
   await expect(page.locator('main img')).toHaveCount(0);
   await expect(page.locator('[data-status]')).toContainText('Aucune photo');
+  await page.screenshot({path: test.info().outputPath('expired-fallback.png')});
   await page.clock.runFor(5000);
   await expect(page.locator('html')).toHaveAttribute(
     'data-native-ready',

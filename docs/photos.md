@@ -57,9 +57,15 @@ visitor cannot fill a collection because the private API rejects its reads.
 An existing valid collection can remain readable offline until its lease expires;
 logout and observed denial clear it immediately when execution is available.
 
-The browser requests persistent storage where supported, and the existing photo
-controls show a read-only grant/eviction status. Permission prompts do not block
-synchronization. Visiting administration preserves the shared collection; admin
+The browser requests persistent storage where supported. Normal photo playback
+keeps routine persistence/synchronization notices hidden (F03, 28 October).
+Permission prompts do not block synchronization. In `/admin/photos`, expand
+**Photos hors connexion · ce navigateur** for an on-demand local-copy count and
+persistence grant/eviction status. The snapshot concerns that browser only, never
+a remote frame; reopen it to refresh. Unsupported persistence APIs are reported
+as unverified. This panel does not download photos or renew access, and it clears
+on observed authorization denial. Its explanation retains the gradual-sync,
+seven-day/100-photo/100 MB limits and eviction/backup caveats. Visiting administration preserves the shared collection; admin
 previews keep their existing shorter memory lifetime. The slideshow, rather than
 the management gallery, fills the durable store. Reload the dashboard to load this
 policy revision after deployment; no device restart or reprovisioning is required.
@@ -352,3 +358,25 @@ Recovery guidance is deployed from `035c5d4` after the full
 passed. The live module matches the tested build and private-access checks passed.
 Refresh the page; no Shortcut update is needed. The new guidance improves recovery
 and error evidence, without claiming the original iPad error's cause is fixed.
+
+## Quiet everyday display — F03, 28 October 2026
+
+| State                                        | Display behavior                                                                                                                                                                                                             |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Online ready / progressively saving a subset | No routine sync/persistence notice; clock, weather, framing, next photo and existing mode/text-size navigation remain unchanged.                                                                                             |
+| Saved offline playback                       | `Hors connexion · photos enregistrées`, identical in live and standalone fallback; existing reconnection controls remain.                                                                                                    |
+| Local storage unavailable / saving fails     | Concise `Copies locales indisponibles · lecture en ligne.` or `Copies locales incomplètes · lecture en ligne.` warning. A successful catalog refresh clears old warnings; saved offline playback uses its own offline label. |
+| Empty collection                             | Existing invitation to add photos; no claim that a collection is saved.                                                                                                                                                      |
+| Missing/expired fallback copies              | Existing no-photo/reconnect or access-expired message and retry; no private image remains after invalidation.                                                                                                                |
+| Access denied                                | Existing reconnect/private-access message, immediate decoded/saved-photo cleanup and retry behavior.                                                                                                                         |
+| Service failure without saved copies         | Existing unavailable/automatic-retry message; the current image stays only within existing privacy bounds.                                                                                                                   |
+
+Status regions retain polite accessibility announcements. Normal controls keep their
+existing touch, keyboard, focus and inactivity behavior. On narrow screens, photo
+controls and retry sit below the clock/weather to avoid covering useful information. No photo schema, lease,
+retention, request cadence, authorization, service-worker route, native maintenance
+path, dependency or infrastructure change. Rollback is a web source revert and
+redeployment with compatible existing storage; no clearing or migration is needed.
+Local synthetic browser evidence and release scope are recorded in the
+[implementation plan](implementation-plan.md#f03-quiet-everyday-display--28-october-2026).
+Actual-frame visual/touch acceptance remains separate.

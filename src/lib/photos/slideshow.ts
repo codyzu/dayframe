@@ -77,18 +77,11 @@ export function mountSlideshow(
   )!;
   let isStoredPlayback = false;
   let savedSubset = new Set<string>();
-  let storageMessage = '';
-  async function reportPersistence(shouldRequest = false) {
-    const token = offlineControl()?.token;
-    const {isPersistent} = await offlinePersistence(shouldRequest);
-    if (token === undefined || offlineControl()?.token !== token) {
-      return;
-    }
-
-    storageMessage = isPersistent
-      ? 'Stockage persistant accordé · synchronisation progressive.'
-      : 'Stockage soumis à éviction · synchronisation progressive.';
-    offlineStatus.textContent = storageMessage;
+  // Routine persistence/sync details belong in administration. This region only
+  // announces storage failures that affect offline availability.
+  function reportStorageFailure(message: string) {
+    offlineStatus.textContent = message;
+    offlineStatus.hidden = false;
   }
 
   let lastPrivacyWall = Date.now();
@@ -162,8 +155,9 @@ export function mountSlideshow(
         fit: preferredFit ?? settings.fit,
         interval: settings.slideshowIntervalSeconds,
       }).catch(() => {
-        offlineStatus.textContent =
-          'Stockage local indisponible · lecture en ligne.';
+        reportStorageFailure(
+          'Copies locales indisponibles · lecture en ligne.',
+        );
       });
     }
   }
@@ -179,7 +173,7 @@ export function mountSlideshow(
     isStoredPlayback = false;
     refreshAt = 0;
     offlineStatus.hidden = true;
-    storageMessage = '';
+    offlineStatus.textContent = '';
     status.textContent = 'Accès privé requis. Reconnectez cet affichage.';
     if (isActive) {
       timer = setTimeout(wake, 60_000);
@@ -232,8 +226,7 @@ export function mountSlideshow(
       try {
         await savePhoto(photo, blob, token);
       } catch {
-        offlineStatus.textContent =
-          'Stockage saturé ou indisponible · copies existantes conservées.';
+        reportStorageFailure('Copies locales incomplètes · lecture en ligne.');
       }
     }
 
@@ -290,15 +283,12 @@ export function mountSlideshow(
       const wasEnabled = Boolean(offlineControl());
       const token = await enableOfflinePhotos(revision);
       if (token !== undefined) {
-        offlineStatus.hidden = false;
-        void reportPersistence(!wasEnabled);
+        void offlinePersistence(!wasEnabled);
       }
 
       return token;
     } catch {
-      offlineStatus.hidden = false;
-      offlineStatus.textContent =
-        'Stockage local indisponible · lecture en ligne.';
+      reportStorageFailure('Copies locales indisponibles · lecture en ligne.');
       return undefined;
     }
   }
@@ -314,6 +304,8 @@ export function mountSlideshow(
       return false;
     }
 
+    offlineStatus.hidden = true;
+    offlineStatus.textContent = '';
     const token = await prepareOfflineCatalog(revision);
     if (run !== generation) {
       return false;
@@ -350,14 +342,10 @@ export function mountSlideshow(
           savedSubset.add(id);
           bytes += photo.size;
         }
-
-        offlineStatus.textContent =
-          storageMessage === ''
-            ? 'Copies locales activées · conservation maximale de 7 jours.'
-            : storageMessage;
       } catch {
-        offlineStatus.textContent =
-          'Stockage local indisponible · lecture en ligne.';
+        reportStorageFailure(
+          'Copies locales indisponibles · lecture en ligne.',
+        );
       }
     }
 
@@ -422,6 +410,8 @@ export function mountSlideshow(
 
       armPrivacyLease(lease.verifiedAt, offlineLeaseMs);
       isStoredPlayback = true;
+      offlineStatus.hidden = true;
+      offlineStatus.textContent = '';
       catalog = stored;
       queue = queue.filter((id) => stored.some((photo) => photo.id === id));
       refreshAt = Date.now() + 60_000;

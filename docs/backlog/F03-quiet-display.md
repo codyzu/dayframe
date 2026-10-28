@@ -1,6 +1,6 @@
 # F03 — Quiet everyday display
 
-Status: owner-requested 23 October; absent; P2 / S.
+Status: implemented locally 28 October 2026; release verification/deployment pending. Physical-frame visual acceptance remains separate. P2 / S.
 Follow the [delivery contract](delivery-contract.md). Coordinate stale copy with F01.
 
 ## Evidence and target
@@ -41,3 +41,20 @@ Update photo operations and the existing deferred item with exact evidence.
 > Implement F03 from docs/backlog/F03-quiet-display.md. Simplify normal display
 > messaging while preserving useful controls and failure/privacy states. Review
 > upstream, verify live/fallback layouts and update the feature documentation.
+
+## Delivery — 28 October 2026
+
+Normal online and partial-sync notices are hidden; actionable local-storage failures
+and existing offline/empty/expired/denied/retry states remain visible. Read-only
+local-copy/persistence diagnostics are available on demand in collapsed photo
+administration details, explicitly scoped to that browser. Existing controls,
+privacy limits and native maintenance paths are preserved. Live and fallback use
+the same offline label. No new requests, services, dependencies or schema changes.
+
+Refreshed upstream `0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189`:
+MIT `LICENSE`, `dashboard/js/views/photos.js`, `dashboard/js/slideshow.js`.
+Adopted the idea of quiet playback with on-demand details; independently implemented
+administration diagnostics and retained Dayframe controls, authenticated images and
+bounded decode/storage rather than upstream mock favorites, motion/layouts or history.
+No source/assets copied. Tests, release evidence and remaining physical limits are
+tracked in the [delivery record](../implementation-plan.md#f03-quiet-everyday-display--28-october-2026).

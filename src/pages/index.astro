@@ -210,6 +210,14 @@ import {displayConfig} from '../lib/dashboard/config';
     top: 9rem;
     right: 1rem;
   }
+  /* Keep this narrow-screen override beside the existing mode-specific Photos
+     positioning; the retry button is also shared by Morning and Night. */
+  @media (max-width: 767px) {
+    .dashboard[data-mode='photos'] [data-display-retry] {
+      top: auto;
+      bottom: 10rem;
+    }
+  }
   .dashboard[data-mode='photos']
     [data-dashboard-footer]
     > :not(nav):not([data-display-retry]) {

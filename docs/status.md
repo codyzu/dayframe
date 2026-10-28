@@ -1,5 +1,13 @@
 # Dayframe status and validation register
 
+**28 October F03 quiet display (local):** normal online/partial-sync Photos no
+longer shows routine persistence/synchronization notices. On-demand storage details
+now live in collapsed photo administration, scoped to the current browser. Offline,
+local-storage failure, empty/expired/access-denied messages and recovery controls
+remain. Narrow-screen photo controls/retry sit below the clock/weather. Release
+verification and deployment are pending; physical-frame visual acceptance remains
+separate. [Delivery record](implementation-plan.md#f03-quiet-everyday-display--28-october-2026).
+
 **28 October forecast inactivity release:** `701e918` is deployed through
 [release 40647681115](https://github.com/codyzu/dayframe/actions/runs/40647681115).
 The weather dialog closes after 60 idle seconds; pointer/keyboard/wheel/touch input

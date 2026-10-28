@@ -623,6 +623,26 @@ test('a signed-in admin automatically caches ordinary Photos visits for offline 
   await page.getByRole('button', {name: 'Photos', exact: true}).click();
   await expect(page.locator('[data-photo-stage] img')).toBeVisible();
   await expect(page.locator('[data-photo-offline]')).toHaveCount(0);
+  await expect(page.locator('[data-photo-offline-status]')).toBeHidden();
+  await page.goto('/admin/photos');
+  const details = page.locator('[data-offline-details]');
+  await expect(details).not.toHaveAttribute('open');
+  await details.locator('summary').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('[data-offline-diagnostics]')).toContainText(
+    '1 copie locale',
+  );
+  await expect(details).toContainText('pas les autres écrans');
+  await expect(details).toContainText(
+    'ne constitue pas une sauvegarde complète',
+  );
+  await page.screenshot({
+    path: test.info().outputPath('offline-administration.png'),
+    fullPage: true,
+  });
+  await page.goto('/');
+  await page.getByRole('button', {name: 'Photos', exact: true}).click();
+  await expect(page.locator('[data-photo-stage] img')).toBeVisible();
   await context.setOffline(true);
   await page.clock.fastForward(301_000);
   await page.keyboard.press('Tab');
@@ -1136,4 +1156,66 @@ test('manual paste recovers four remaining photos after a size error without res
     '1 ajoutée · 5 déjà présentes',
   );
   await expect(page.locator('[data-import-status]')).toBeHidden();
+});
+
+test('offline diagnostics collapse and clear when administrator access is denied', async ({
+  page,
+}) => {
+  await login(page);
+  const details = page.locator('[data-offline-details]');
+  await details.locator('summary').click();
+  await expect(page.locator('[data-offline-diagnostics]')).toContainText(
+    '0 copies locales',
+  );
+  await page.route('**/api/photos**', async (route) =>
+    route.fulfill({
+      status: 403,
+      json: {error: {message: 'Denied'}},
+    }),
+  );
+  await page.getByRole('button', {name: 'Actualiser', exact: true}).click();
+  await expect(details).not.toHaveAttribute('open');
+  await expect(page.locator('[data-offline-diagnostics]')).toBeEmpty();
+  await details.locator('summary').click();
+  await expect(page.locator('[data-offline-diagnostics]')).toHaveText(
+    'Connectez-vous pour consulter les copies locales.',
+  );
+});
+
+test('late persistence diagnostics cannot return after the admin session loses its role', async ({
+  page,
+}) => {
+  await login(page);
+  await page.evaluate(() => {
+    Object.defineProperty(navigator.storage, 'persisted', {
+      configurable: true,
+      value: async () =>
+        new Promise<boolean>((resolve) => {
+          globalThis.addEventListener(
+            'test:resolve-persistence',
+            () => {
+              resolve(false);
+            },
+            {once: true},
+          );
+        }),
+    });
+  });
+  const details = page.locator('[data-offline-details]');
+  await details.locator('summary').click();
+  await page.route('**/api/session', async (route) =>
+    route.fulfill({json: {role: 'display'}}),
+  );
+  await page.clock.runFor(30_000);
+  await expect(details).not.toHaveAttribute('open');
+  await details.locator('summary').click();
+  await expect(page.locator('[data-offline-diagnostics]')).toHaveText(
+    'Connectez-vous pour consulter les copies locales.',
+  );
+  await page.evaluate(() =>
+    globalThis.dispatchEvent(new Event('test:resolve-persistence')),
+  );
+  await expect(page.locator('[data-offline-diagnostics]')).toHaveText(
+    'Connectez-vous pour consulter les copies locales.',
+  );
 });

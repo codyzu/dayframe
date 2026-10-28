@@ -117,3 +117,8 @@ state and any separate device acceptance. Keep unmet gates explicit.
 F01 and F02 were deployed on 28 October with reading-age labels; the tables above
 retain the dated audit baseline. Current behavior, focused validation, upstream review and explicit
 production/device limits are in the [delivery record](../implementation-plan.md#f01-and-f02-weather-recovery-and-browsing--27-october-2026).
+
+F03 quiet display is implemented locally on 28 October; release verification and
+deployment are pending. The dated audit table above remains historical. See its
+[delivery record](../implementation-plan.md#f03-quiet-everyday-display--28-october-2026)
+for current scope and separate physical-frame acceptance.

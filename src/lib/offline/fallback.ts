@@ -146,7 +146,7 @@ async function play() {
 
       currentUrl = url;
       previousId = photo.id;
-      status.textContent = 'Hors connexion · Photos enregistrées';
+      status.textContent = 'Hors connexion · photos enregistrées';
       root.dataset.offlineState = 'playback';
     } catch {
       discard(candidate);

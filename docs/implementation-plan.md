@@ -3,8 +3,9 @@
 **27 October 2026 audit:** [Feature coverage and separate-chat implementation plans](backlog/README.md)
 provide the current backlog entry point. The audit distinguishes missing behavior,
 implemented features awaiting acceptance, and optional enhancements. F01 freshness and F02 future forecast browsing are deployed as of 28 October;
-see the delivery record at the end. Quiet-display work remains a separate slice. It changes no product
-behavior, deployment or hardware authorization; existing deferrals remain in force.
+see the delivery record at the end. F03 quiet display is implemented locally on 28 October; its release record is at the end.
+The audit itself changed no product behavior or deployment; existing hardware/security
+deferrals remain in force.
 Historical milestone headers and execution records below retain their dated scope.
 
 **Status:** M1–M2 delivered; M3/M4 production active with deferred live acceptance; M5 and icon timing repair deployed at `ca922ad`; short Classic 10 checks passed; H5 manifest deployed at `3763694`, Rootless trial and standalone layout measured; physical fullscreen return passed; normal-reboot cookie failure recovered with the existing key and Firefox restart persistence passed; cold power reproduced cookie expiry with Firefox-before-clock-correction logs; physical post-cold fullscreen passed but photos needed access; the approved browser preference trial retained the future cookie expiry through another cold cycle; physical fullscreen/private Photos passed without key entry; H5 manual-fullscreen acceptance is complete, with prior skips deferred; full H4/M4/M5/M6 acceptance remains open
@@ -286,7 +287,8 @@ administration. Show concise French messages on the display when they explain an
 actual interruption or a useful action, including offline playback, unavailable
 photos and retry. Do not imply that storage is permanent or all photos are saved
 unless verified. Review the resulting normal, offline, syncing and failure states
-on the frame. This is backlog work; no UI or storage behavior changed in this slice.
+on the frame. Implemented as the F03 web slice on 28 October; see the delivery
+record below. Physical-frame visual acceptance remains separate.
 
 ## 10. Verification and completion records
 
@@ -2093,3 +2095,50 @@ admin routes redirect to Access. No credentials, private data, services/billing 
 native-device settings changed. Physical touch acceptance remains separate from
 the browser/emulation checks. The dialog now closes after 60 idle seconds, resets
 on interaction, retains explicit close/mode behavior and restores opener focus.
+
+## F03 quiet everyday display — 28 October 2026
+
+Removed routine persistence/eviction/progressive-sync text from normal online Photos,
+including partially saved collections. Preserved concise storage-failure warnings,
+existing empty/private-access/interruption states and recovery controls. Offline
+playback says `Hors connexion · photos enregistrées` in both the live slideshow and
+standalone fallback. Successful catalog refresh clears obsolete storage warnings;
+offline playback replaces online-storage warnings with its offline label.
+
+A collapsed `/admin/photos` section reports the current browser's saved-copy count
+and persistence status only when opened. It does not query another frame, request
+persistence, download photos, renew access or poll. Unknown API support is explicit;
+copy counts are not proof of full synchronization or backup. Authorization denial
+clears/collapses the report and fences pending results. Existing clock/weather,
+framing, next-photo, text-size/mode controls, reduced motion and native maintenance
+remain available. Screenshot review found phone controls overlapping the clock;
+only on narrow screens, the photo control strip and retry now sit below weather,
+with spacing checks against clock, status and navigation. Desktop placement stays
+as before. Storage/lease/auth semantics, request cadence, private resources,
+worker allowlist, services and €0 infrastructure are unchanged.
+
+Read F03/shared contract, spec and relevant M5/operations records. Refreshed upstream
+main at `0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189`; reviewed MIT `LICENSE`,
+`dashboard/js/views/photos.js` and `dashboard/js/slideshow.js` at that SHA. Adopted
+quiet playback/on-demand information as an idea, independently authored this change,
+and retained Dayframe's protected catalog, bounded decode/storage and controls.
+No upstream code/assets, mock data, favorites, continuous motion or history copied.
+
+Local validation and hosted full-release evidence follow. Synthetic browser checks
+are not actual-frame/phone acceptance. Physical reading-distance/touch review remains
+separate, as do previous security, outage/update and stability deferrals. Rollback
+is a source revert/redeployment; existing offline database and settings remain
+compatible, with no migration or deletion. The original 23 October request above
+is now linked to this implementation rather than treated as unstarted work.
+
+Local validation: types, build and lint passed (four existing complexity warnings
+and the existing `document.write` deprecation hint). All 22 affected photo/offline
+unit/integration tests passed, followed by 212 photo/offline browser checks across
+Chromium, Firefox, WebKit and mobile WebKit, and all 44 enabled/disabled offline
+navigation checks. Final diagnostics checks also cover pending persistence results
+after role loss, including reopening the panel while denied. Screenshots in
+[evidence/f03](evidence/f03/README.md) document Standard/Large frame layouts and
+mobile, normal/partial-sync/offline/empty/expired/denied/failure states and keyboard
+administration. No actual device operation or new physical acceptance is claimed.
+Hosted `pnpm verify`, verified-artifact deployment and independent live matching
+remain pending until the release record below.

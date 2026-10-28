@@ -1,6 +1,10 @@
 /* eslint-disable @typescript-eslint/no-loop-func -- Each card captures its own immutable photo; shared catalog updates are serialized by isBusy. */
 /* eslint-disable no-alert -- Native confirmation is required before permanent deletion. */
-import {onOfflineInvalidation} from './offline.ts';
+import {
+  onOfflineInvalidation,
+  offlinePersistence,
+  savedPhotos,
+} from './offline.ts';
 import {ApiError, fetchCatalog, photoRequest} from './client.ts';
 import {
   hammingDistance,
@@ -33,6 +37,51 @@ function mountAdmin(root: HTMLElement) {
   const dialog = root.querySelector<HTMLDialogElement>(
     '[data-similar-dialog]',
   )!;
+  const offlineDetails = root.querySelector<HTMLDetailsElement>(
+    '[data-offline-details]',
+  )!;
+  const offlineDiagnostics = root.querySelector<HTMLElement>(
+    '[data-offline-diagnostics]',
+  )!;
+  offlineDetails.addEventListener('toggle', () => {
+    if (offlineDetails.open) {
+      void reportOfflineStorage();
+    }
+  });
+
+  async function reportOfflineStorage() {
+    offlineDiagnostics.textContent = '';
+    if (!isAuthorized) {
+      offlineDiagnostics.textContent =
+        'Connectez-vous pour consulter les copies locales.';
+      return;
+    }
+
+    const run = accessGeneration;
+    try {
+      const [photos, {isPersistent}] = await Promise.all([
+        savedPhotos(),
+        offlinePersistence(),
+      ]);
+      if (run !== accessGeneration || !isAuthorized || !offlineDetails.open) {
+        return;
+      }
+
+      const persistence =
+        isPersistent === undefined
+          ? 'Persistance non vérifiable'
+          : isPersistent
+            ? 'Stockage persistant accordé'
+            : 'Stockage soumis à éviction';
+      offlineDiagnostics.textContent = `${photos.length} copie${photos.length === 1 ? '' : 's'} locale${photos.length === 1 ? '' : 's'} ici · ${persistence}. Synchronisation progressive, sans garantie de collection complète.`;
+    } catch {
+      if (run === accessGeneration && isAuthorized && offlineDetails.open) {
+        offlineDiagnostics.textContent =
+          'Stockage local indisponible dans ce navigateur.';
+      }
+    }
+  }
+
   const pending = new Map<string, PhotoMetadata>();
   const deleted = new Set<string>();
   let catalog: PhotoMetadata[] = [];
@@ -81,6 +130,8 @@ function mountAdmin(root: HTMLElement) {
       error instanceof Error ? error.message : 'Une erreur est survenue.';
     if (error instanceof ApiError && [401, 403].includes(error.status)) {
       isAuthorized = false;
+      offlineDiagnostics.textContent = '';
+      offlineDetails.open = false;
       login.hidden = false;
       catalog = [];
       pending.clear();
