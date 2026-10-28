@@ -1,5 +1,14 @@
 # Dayframe status and validation register
 
+**28 October forecast inactivity release:** `701e918` is deployed through
+[release 40647681115](https://github.com/codyzu/dayframe/actions/runs/40647681115).
+The weather dialog closes after 60 idle seconds; pointer/keyboard/wheel/touch input
+restarts the timer. Full verification passed: 163 unit/integration tests, 424
+browser passes (four existing skips) and 44 navigation checks, followed by live
+smoke and independent artifact matching. Worker
+`40ea0cb1-562f-4b39-b017-99ac68b5bc9f`; build
+`84013353-dc50-4b46-8e44-ccc47c8bd1bd`. Prior physical/security deferrals remain.
+
 **28 October weather release:** F01 recovery, F02 seven-day browsing and provider
 reading-age labels are deployed from `8968dbf` through
 [release 40631119085](https://github.com/codyzu/dayframe/actions/runs/40631119085).

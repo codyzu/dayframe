@@ -204,3 +204,10 @@ deployed F01, F02 and reading ages from `8968dbf` on 28 October. The complete ho
 gate passed (163 unit/integration, 412 browser passes/four existing skips, 44
 navigation checks), followed by live smoke and independent approved-artifact
 matching. Actual Classic 10/phone reading-distance/touch acceptance remains separate.
+
+The 60-second dialog inactivity timeout was deployed on 28 October from `701e918`
+through [release 40647681115](https://github.com/codyzu/dayframe/actions/runs/40647681115).
+All release checks passed (163 unit/integration, 424 browser passes/four existing
+skips and 44 navigation checks), followed by independent live-artifact matching
+and anonymous access checks. One timer exists only while the dialog is open;
+weather polling and its request budget are unchanged.

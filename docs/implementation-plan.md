@@ -2076,3 +2076,20 @@ Existing long-refresh focus coverage now keeps the dialog active with keyboard
 input; stale-response recovery reopens the timed-out dialog before inspecting the
 updated forecast. No weather-service or retry assertions were removed. Full hosted
 release checks, deployment and independent live verification remain pending here.
+
+### Forecast inactivity rollout completed — 28 October 2026
+
+[Release 40647681115](https://github.com/codyzu/dayframe/actions/runs/40647681115)
+succeeded for `701e918`: types/lint/build, 163 unit/Worker integration tests,
+424 browser passes with four existing intentional skips, all 44 offline-navigation
+checks, verified-artifact deployment and live smoke. Worker version
+`40ea0cb1-562f-4b39-b017-99ac68b5bc9f`; public build
+`84013353-dc50-4b46-8e44-ccc47c8bd1bd`.
+
+Downloaded the approved artifact and independently matched live HTML, dashboard
+JavaScript/CSS, `/offline`, `/sw.js` and `/version.json`. Anonymous photo/calendar/
+settings/session reads remain denied, headerless mutations remain denied, and
+admin routes redirect to Access. No credentials, private data, services/billing or
+native-device settings changed. Physical touch acceptance remains separate from
+the browser/emulation checks. The dialog now closes after 60 idle seconds, resets
+on interaction, retains explicit close/mode behavior and restores opener focus.
