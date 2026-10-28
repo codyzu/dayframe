@@ -740,3 +740,38 @@ test('reading age advances in both modes without counting the download as a new 
     fullPage: true,
   });
 });
+
+test('a location change hides the previous reading age until validated weather is available', async ({
+  page,
+}) => {
+  let {timezone} = defaultSettings;
+  await page.route('**/api/config/display', async (route) =>
+    route.fulfill({json: {...defaultSettings, timezone}}),
+  );
+  await page.route('https://api.open-meteo.com/**', async (route) =>
+    route.fulfill({json: weatherFixture()}),
+  );
+  await page.goto('/');
+  const age = page.locator('[data-reading-age]');
+  await expect(age).toHaveText('Relevé à l’instant');
+  await expect(age).toBeVisible();
+  timezone = 'America/New_York';
+  await page.clock.fastForward(301_000);
+  await expect(page.locator('[data-dashboard]')).toHaveAttribute(
+    'data-mode',
+    'night',
+  );
+  await expect(age).toHaveAttribute('hidden', '');
+  await expect(page.locator('[data-photo-weather-status]')).toHaveAttribute(
+    'hidden',
+    '',
+  );
+  timezone = defaultSettings.timezone;
+  await page.clock.fastForward(301_000);
+  await expect(age).toHaveText('Relevé il y a 10 min');
+  await expect(age).toBeVisible();
+  await expect(age).toHaveAttribute(
+    'datetime',
+    new Date(fixtureNow).toISOString(),
+  );
+});

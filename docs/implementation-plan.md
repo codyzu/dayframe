@@ -2016,3 +2016,14 @@ response's retrieval timestamp before moving to the next deadline. Count, stale
 UI, five-minute backoff and fresh recovery assertions remain unchanged. All 20
 focused repetitions passed (five per browser). Product code, retry policy and
 security gates are unchanged; a fresh full hosted release is required.
+
+Before deployment, review identified an age-label edge case during weather
+location/timezone replacement: the old Morning label could remain in the reused
+DOM after the new service had no validated data. Clear it on every no-data update,
+including while Morning is inactive. A four-browser configuration-change check
+passed: the previous age becomes hidden in Night, then the original Paris cache
+restores its actual ten-minute reading age rather than a new download age.
+Types/build and repository lint passed. Run `40630383321` was intentionally
+cancelled before deployment to include this small correction in the final release;
+its cancellation is not an application-test result. All prior retry/security
+assertions remain in place.

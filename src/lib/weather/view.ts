@@ -55,6 +55,10 @@ export function mountWeather(
   function render({weather, failed}: WeatherState) {
     notifyWeatherUpdate({weather, failed});
     future.update({weather, failed});
+    if (!weather) {
+      root.querySelector<HTMLTimeElement>('[data-reading-age]')!.hidden = true;
+    }
+
     if (!isActive || document.hidden) {
       return;
     }
