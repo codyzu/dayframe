@@ -54,9 +54,9 @@ describe('provider boundary', () => {
     const url = new URL(weatherUrl());
     expect(url.origin).toBe('https://api.open-meteo.com');
     expect(url.searchParams.get('timeformat')).toBe('unixtime');
-    expect(url.searchParams.get('forecast_days')).toBe('2');
+    expect(url.searchParams.get('forecast_days')).toBe('7');
     expect(url.searchParams.get('daily')).toBe(
-      'temperature_2m_max,temperature_2m_min',
+      'temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max',
     );
     const weather = parseWeather(weatherFixture(), fixtureNow);
     expect(weather.current.temperature).toBe(12);
@@ -369,5 +369,121 @@ describe('cache and refresh lifecycle', () => {
       weather: {fetchedAt: fixtureNow},
     });
     service.stop();
+  });
+});
+
+describe('conditions freshness recovery', () => {
+  it('refreshes stale startup immediately and ages cache before the normal refresh deadline', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(fixtureNow);
+    const raw = weatherFixture(fixtureNow - 40 * 60_000);
+    const cache = {
+      getItem: () => JSON.stringify({raw, fetchedAt: fixtureNow}),
+      setItem: vi.fn(),
+    };
+    const fetcher = vi.fn(async () =>
+      Response.json(weatherFixture(Date.now())),
+    );
+    vi.stubGlobal('fetch', fetcher);
+    const service = createWeatherService(
+      vi.fn<(state: WeatherState) => void>(),
+      cache,
+    );
+    service.start();
+    await vi.advanceTimersByTimeAsync(5 * 60_000 - 1);
+    expect(fetcher).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    service.stop();
+    vi.setSystemTime(fixtureNow + 46 * 60_000);
+    const restarted = createWeatherService(
+      vi.fn<(state: WeatherState) => void>(),
+      cache,
+    );
+    restarted.start();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    restarted.stop();
+  });
+
+  it('shares backoff across stale 200s, equal timestamps, failures and wake storms, then recovers', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(fixtureNow);
+    const stale = weatherFixture(fixtureNow - 50 * 60_000);
+    const fetcher = vi.fn().mockResolvedValue(Response.json(stale));
+    // Each Response body is single-use.
+    fetcher.mockImplementation(async () => Response.json(stale));
+    vi.stubGlobal('fetch', fetcher);
+    const render = vi.fn<(state: WeatherState) => void>();
+    const service = createWeatherService(render);
+    service.start();
+    await vi.advanceTimersByTimeAsync(0);
+    for (const delay of [60_000, 300_000, 900_000, 1_800_000]) {
+      const calls = fetcher.mock.calls.length;
+      service.wake();
+      service.wake();
+      service.start();
+      await vi.advanceTimersByTimeAsync(delay - 1);
+      expect(fetcher).toHaveBeenCalledTimes(calls);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(fetcher).toHaveBeenCalledTimes(calls + 1);
+      if (calls === 2) {
+        fetcher.mockRejectedValue(new Error('offline'));
+      }
+    }
+
+    fetcher.mockImplementation(async () =>
+      Response.json(weatherFixture(Date.now())),
+    );
+    await vi.advanceTimersByTimeAsync(1_800_000);
+    expect(render.mock.lastCall?.[0].failed).toBe(false);
+    expect(render.mock.lastCall?.[0].weather?.current.time).toBe(Date.now());
+    const calls = fetcher.mock.calls.length;
+    await vi.advanceTimersByTimeAsync(refreshInterval - 1);
+    expect(fetcher).toHaveBeenCalledTimes(calls);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(fetcher).toHaveBeenCalledTimes(calls + 1);
+    service.stop();
+  });
+
+  it('rejects older responses, permits equal forecast updates without resetting recovery', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(fixtureNow);
+    const initial = weatherFixture(fixtureNow - 50 * 60_000);
+    const raw = weatherFixture(fixtureNow - 60 * 60_000);
+    const cache = {
+      getItem: () => JSON.stringify({raw: initial, fetchedAt: fixtureNow}),
+      setItem: vi.fn(),
+    };
+    const fetcher = vi.fn(async () => Response.json(raw));
+    vi.stubGlobal('fetch', fetcher);
+    const render = vi.fn<(state: WeatherState) => void>();
+    const service = createWeatherService(render, cache);
+    service.start();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(render.mock.lastCall?.[0]).toMatchObject({
+      failed: true,
+      weather: {current: {time: initial.current.time * 1000}},
+    });
+    expect(cache.setItem).not.toHaveBeenCalled();
+    raw.current.time = initial.current.time;
+    raw.daily.temperature_2m_max[0] = 25;
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(render.mock.lastCall?.[0].weather?.daily[0].high).toBe(25);
+    await vi.advanceTimersByTimeAsync(300_000 - 1);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(fetcher).toHaveBeenCalledTimes(3);
+    service.stop();
+  });
+
+  it('disables HTTP cache reuse', async () => {
+    const fetcher = vi.fn(async () => Response.json(weatherFixture()));
+    vi.stubGlobal('fetch', fetcher);
+    await fetchWeather(new AbortController().signal, () => fixtureNow);
+    expect(fetcher).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({cache: 'no-store', credentials: 'omit'}),
+    );
   });
 });

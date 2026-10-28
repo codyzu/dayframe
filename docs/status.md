@@ -1,5 +1,13 @@
 # Dayframe status and validation register
 
+**27 October audit entry point:** [Feature audit and implementation backlog](backlog/README.md)
+contains current source coverage and twenty self-contained follow-up plans. It
+separates missing features from deferred acceptance and optional enhancements.
+Latest recorded import release evidence remains in the final dated entries of the
+[implementation plan](implementation-plan.md). This documentation audit did not
+reverify production/device state or close any validation gap. Older records below
+retain their dates; the backlog includes a dedicated documentation-reconciliation slice.
+
 **23 October M5.O handoff:** kiosk 0.1.5/code 6 is installed. Enabled web build
 `ae262aaf-c44c-4977-97df-23006ca4d373` is live after correcting the fallback's
 canonical install URL. Production privacy/exact-asset checks, fresh online browser
@@ -131,3 +139,11 @@ The unattended observation is complete; the follow-up is being stopped. No extra
 [Analysis of the retained overnight samples](hardware/overnight-analysis-20261020.md) validates all 601 rows and 600 CPU intervals. Morning median CPU is 1.52225 core equivalents versus 0.08885 during the scheduled Night window; GPU-process work dominates. Main-process PSS grows 82.29 MiB of the 87.20 MiB net Morning increase, largely under unclassified private-dirty memory. Gradual growth is separate from a 57.72 MiB main-process step at 07:31. No mode/animation/allocation trace was collected, so animated rendering is a leading CPU hypothesis, not a proven memory cause. Sanitized per-process CSV/JSON preserve the comparison baseline. The owner is changing icons separately. No device action or application behavior change was performed; full performance/stability acceptance stays open.
 
 The subsequent [focused 07:31 log audit](hardware/overnight-analysis-20261020.md#focused-0731-log-audit--20-october-2026) identifies 52.27 main-process CPU seconds, 54,218 minor faults and 94 major faults in the event interval. The burst largely precedes that sample's memory dump; system anonymous memory rises while file-backed residency/free RAM decline. Sampled app identities, native state and window output are unchanged; GPU CPU does not spike. This supports a main-process private-memory/page-fault event with accompanying paging/reclaim, but no retained event-level trace identifies its trigger. Existing logs have reached their attribution limit; no new device action or icon change occurred.
+
+## F01/F02 local weather implementation — 27 October 2026
+
+Weather recovery and seven-day Morning browsing are implemented locally. See the
+[delivery record](implementation-plan.md#f01-and-f02-weather-recovery-and-browsing--27-october-2026)
+for behavior, validation and rollback. Checks/lint/build, 148 unit/Worker tests
+and 116 focused browser checks passed (four existing skips). Production remains the previously recorded
+release; no deployment or physical-device change forms part of this task.

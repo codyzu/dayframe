@@ -3,6 +3,7 @@ import {
   fetchWeather,
   parseWeather,
   refreshInterval,
+  staleAfter,
   type Weather,
 } from './adapter.ts';
 
@@ -37,12 +38,45 @@ export function createWeatherService(
   now = Date.now,
 ) {
   let state: WeatherState = {weather: readCache(storage, now()), failed: false};
-  let due = state.weather ? state.weather.fetchedAt + refreshInterval : 0;
+  const freshDeadline = (weather: Weather) =>
+    Math.min(
+      weather.fetchedAt + refreshInterval,
+      weather.current.time + staleAfter,
+    );
+  let due = state.weather ? freshDeadline(state.weather) : 0;
   let failures = 0;
   let isRunning = false;
   let generation = 0;
   let pending: AbortController | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
+
+  function acceptResult(result: Awaited<ReturnType<typeof fetchWeather>>) {
+    const previousTime = state.weather?.current.time ?? -Infinity;
+    if (result.weather.current.time < previousTime) {
+      throw new Error('Older conditions');
+    }
+
+    state = {weather: result.weather, failed: false};
+    const isFresh = now() - result.weather.current.time < staleAfter;
+    const isRecovered =
+      isFresh && (failures === 0 || result.weather.current.time > previousTime);
+    if (isRecovered) {
+      failures = 0;
+      due = freshDeadline(result.weather);
+    } else {
+      due = now() + retryDelays[Math.min(failures, retryDelays.length - 1)];
+      failures++;
+    }
+
+    try {
+      storage?.setItem(
+        weatherCacheKey(),
+        JSON.stringify({raw: result.raw, fetchedAt: result.fetchedAt}),
+      );
+    } catch {
+      // Storage can be unavailable or full. Keep validated weather in memory.
+    }
+  }
 
   async function tick() {
     if (!isRunning || pending) {
@@ -59,21 +93,15 @@ export function createWeatherService(
       }, 12_000);
       try {
         const result = await fetchWeather(controller.signal, now);
-        if (!isRunning || epoch !== generation || controller.signal.aborted) {
+        if (!isRunning || epoch !== generation) {
           return;
         }
 
-        state = {weather: result.weather, failed: false};
-        failures = 0;
-        due = now() + refreshInterval;
-        try {
-          storage?.setItem(
-            weatherCacheKey(),
-            JSON.stringify({raw: result.raw, fetchedAt: result.fetchedAt}),
-          );
-        } catch {
-          // Storage can be unavailable or full. Keep validated weather in memory.
+        if (controller.signal.aborted) {
+          throw new Error('Weather request timed out');
         }
+
+        acceptResult(result);
       } catch {
         if (!isRunning || epoch !== generation) {
           return;

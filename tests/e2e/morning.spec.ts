@@ -1,4 +1,5 @@
 import {expect, test} from '../fixtures/browser.ts';
+import {alertsFixture} from '../fixtures/alerts.ts';
 import {defaultSettings} from '../../src/lib/dashboard/settings.ts';
 import {fixtureNow, weatherFixture} from '../fixtures/weather.ts';
 
@@ -87,6 +88,13 @@ test('stale and unavailable weather keep essential content within the frame', as
   page,
 }, info) => {
   test.skip(info.project.name === 'mobile');
+  // This reload scenario shares a fixed clock; no evaluate in a document being replaced.
+  await page.route('**/api/weather-alerts', async (route) =>
+    route.fulfill({
+      contentType: 'application/atom+xml',
+      body: alertsFixture([], fixtureNow),
+    }),
+  );
   await page.goto('/?display=frame');
   await expect(page.locator('[data-temperature]')).toHaveText('12°');
   await page.unroute('https://api.open-meteo.com/**');
@@ -100,7 +108,7 @@ test('stale and unavailable weather keep essential content within the frame', as
     'true',
   );
   await expect(page.locator('[data-advice]')).toHaveText(
-    'Vérifiez la météo avant de partir.',
+    'Relevé il y a 45 min · non actualisé',
   );
   expect(
     await page.evaluate(() => globalThis.document.documentElement.scrollHeight),

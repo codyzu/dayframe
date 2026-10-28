@@ -35,9 +35,11 @@
         Météo indisponible
       </span>
     </p>
-    <p data-photo-weather-status class="mt-1 text-sm" hidden>
-      Dernier relevé
-    </p>
+    <time
+      data-photo-weather-status
+      class="block mt-1 text-sm pointer-events-auto data-[stale=true]:font-bold"
+      hidden
+    ></time>
   </div>
   <div
     data-photo-empty

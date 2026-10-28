@@ -1,7 +1,7 @@
 # Weather freshness and recovery
 
-**Status:** Proposed implementation slice · 22 October 2026. Documentation only;
-the existing application behavior is unchanged.
+**Status:** Implemented locally · 27 October 2026 (F01). Production rollout and
+physical-frame acceptance are separate. See the [delivery record](implementation-plan.md#f01-and-f02-weather-recovery-and-browsing--27-october-2026).
 
 ## Problem
 
@@ -36,17 +36,27 @@ does not explain when those conditions applied.
 
 ## Display copy
 
-Use the configured location's timezone and French formatting, independently of
+**Age enhancement accepted 28 October 2026:** Use the configured location's timezone and French formatting, independently of
 the browser timezone. Display the **conditions timestamp**, not the download time.
 
-| State                            | Photos, below the weather                   | Morning, Conseil du jour                                                                                  |
-| -------------------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| Fresh, latest request successful | No extra label                              | Normal advice                                                                                             |
-| Stale, dated today               | `Météo de 13:00 · non actualisée`           | `Météo de 13:00 · non actualisée. Actualisation automatique en cours. Vérifiez la météo avant de partir.` |
-| Stale, earlier local date        | `Météo du 21 oct. à 23:45 · non actualisée` | Same dated wording, followed by the recovery and departure guidance above                                 |
-| No usable data                   | Existing unavailable placeholder            | `Météo indisponible. Nouvelle tentative automatique. Vérifiez la météo avant de partir.`                  |
+| State              | Morning/Photos label                        | Morning advice                                                                           |
+| ------------------ | ------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Fresh              | `Relevé il y a 15 min`                      | Normal advice                                                                            |
+| Stale today        | `Relevé il y a 50 min · non actualisé`      | Same label, followed by recovery/departure guidance                                      |
+| Previous local day | `Relevé hier à 23:45 · non actualisé`       | Same warning and guidance                                                                |
+| Earlier date       | `Relevé du 21 oct. à 23:45 · non actualisé` | Same warning and guidance                                                                |
+| No usable data     | Existing unavailable placeholder            | `Météo indisponible. Nouvelle tentative automatique. Vérifiez la météo avant de partir.` |
 
-Include the year when it differs from the current local year. A failed refresh
+Age uses `current.time`, never `fetchedAt`. Within today's local date use
+“à l’instant” for under a minute, whole minutes below an hour, then whole hours.
+At local midnight switch to “hier à…”; older dates are explicit. Include the year
+when it differs from the current local year, taking precedence over “hier”.
+The label advances on the existing minute scheduler while offline. Both modes
+show a quiet fresh label and bold stale label; stale Morning advice retains its
+warning. A failed refresh keeps the stale suffix even if conditions are young.
+The semantic `<time>` holds the provider instant in `datetime`, with the exact
+local date/time and configured timezone in its title and accessible label.
+Future provider instants display their time rather than a negative age. A failed refresh
 also shows the timestamp and warning, even if the retained conditions are under
 45 minutes old. Hide stale warnings automatically after fresh recovery. Replace
 Morning's generic stale heading with the same dated wording; avoid presenting

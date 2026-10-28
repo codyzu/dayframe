@@ -1,4 +1,5 @@
 ---
+import FutureWeather from './FutureWeather.astro';
 import Agenda from './Agenda.astro';
 import WeatherCheckpoints from './WeatherCheckpoints.astro';
 import WeatherChart from './WeatherChart.astro';
@@ -98,6 +99,11 @@ import WeatherChart from './WeatherChart.astro';
       >
         Prévisions en cours de chargement.
       </p>
+      <time
+        data-reading-age
+        hidden
+        class="block mt-1 text-sm text-secondary data-[stale=true]:font-bold"
+      ></time>
     </section>
     <section
       class="surface min-w-0 px-4 py-3 group-data-[observance=true]/weather:py-1.5"
@@ -111,6 +117,7 @@ import WeatherChart from './WeatherChart.astro';
         >
           Les repères de la journée
         </h2>
+        <FutureWeather />
       </div>
       <WeatherCheckpoints />
       <WeatherChart />
@@ -131,7 +138,7 @@ import WeatherChart from './WeatherChart.astro';
         Conseil du jour
       </h2>
       <p
-        class="mt-1 text-[length:var(--font-weather-summary)] font-bold leading-tight"
+        class="mt-1 text-[length:var(--font-weather-summary)] group-data-[stale=true]/weather:text-[length:var(--font-weather-detail)] font-bold leading-tight"
         data-advice
       >
         Préparons la journée.

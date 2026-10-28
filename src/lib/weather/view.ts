@@ -3,13 +3,7 @@ import {
   type DayPlanning,
   type OfficialCalendar,
 } from '../dashboard/day-planning.ts';
-import {
-  dateKey,
-  hourLabel,
-  staleAfter,
-  type Hour,
-  type Weather,
-} from './adapter.ts';
+import {dateKey, type Hour, type Weather} from './adapter.ts';
 import {conditionFor} from './conditions.ts';
 import {summarize} from './summary.ts';
 import {
@@ -24,6 +18,14 @@ import {
   type WeatherState,
 } from './service.ts';
 import {renderChart, renderCheckpoints} from './forecast-view.ts';
+import {
+  isWeatherStale,
+  weatherReadingLabel,
+  renderReadingTime,
+  recoveryAdvice,
+  unavailableAdvice,
+} from './freshness.ts';
+import {mountFutureWeather} from './future.ts';
 
 const rounded = (value: number) => `${Math.round(value)}°`;
 
@@ -31,6 +33,7 @@ export function mountWeather(
   root: HTMLElement,
   onUpdate?: (state: WeatherState) => void,
 ) {
+  const future = mountFutureWeather(root);
   const notifyWeatherUpdate = onUpdate ?? (() => undefined);
   let planning: DayPlanning = emptyPlanning;
   let calendar: OfficialCalendar | undefined;
@@ -51,6 +54,7 @@ export function mountWeather(
 
   function render({weather, failed}: WeatherState) {
     notifyWeatherUpdate({weather, failed});
+    future.update({weather, failed});
     if (!isActive || document.hidden) {
       return;
     }
@@ -71,11 +75,8 @@ export function mountWeather(
       if (failed) {
         text('[data-condition]', 'Météo indisponible');
         text('[data-rain]', 'Connexion météo interrompue.');
-        text('[data-advice]', 'Consultez la météo avant de partir.');
-        text(
-          '[data-summary]',
-          'Les prévisions réapparaîtront automatiquement.',
-        );
+        text('[data-advice]', 'Météo indisponible.');
+        text('[data-summary]', unavailableAdvice);
         text(
           '[data-weather-status]',
           'Aucune donnée en cache · nouvelle tentative automatique.',
@@ -85,10 +86,14 @@ export function mountWeather(
       return;
     }
 
-    const age = Math.max(0, Math.floor((now - weather.fetchedAt) / 60_000));
-    const isStale =
-      failed ||
-      now - Math.min(weather.fetchedAt, weather.current.time) >= staleAfter;
+    const isStale = isWeatherStale(weather, now, failed);
+    const staleLabel = weatherReadingLabel(weather, now, failed);
+    renderReadingTime(
+      root.querySelector<HTMLTimeElement>('[data-reading-age]')!,
+      weather,
+      now,
+      failed,
+    );
     root.dataset.stale = String(isStale);
     text('[data-weather-heading]', isStale ? 'Dernier relevé' : 'En ce moment');
     const {label, icon} = conditionFor(
@@ -119,28 +124,18 @@ export function mountWeather(
     const summary = summarize(weather, now);
     const routine = routineForDay(now, planning, calendar);
     const advice = morningAdvice(weather, now, routine.points);
-    text(
-      '[data-advice]',
-      isStale ? 'Vérifiez la météo avant de partir.' : advice.title,
-    );
+    text('[data-advice]', isStale ? staleLabel : advice.title);
     text('[data-checkpoint-heading]', routine.heading);
 
     text('[data-day-context]', routine.note);
     text(
       '[data-rain]',
-      isStale
-        ? `Dernier relevé : ${dateKey(weather.current.time)} à ${hourLabel(weather.current.time)}.`
-        : summary.current,
+      isStale ? 'Conditions non actualisées.' : summary.current,
     );
-    text(
-      '[data-summary]',
-      isStale
-        ? 'Données anciennes : vérifiez la météo avant de partir.'
-        : advice.detail,
-    );
+    text('[data-summary]', isStale ? recoveryAdvice : advice.detail);
     text(
       '[data-weather-status]',
-      `${isStale ? 'Données anciennes' : 'Mise à jour'} · il y a ${age} min${failed ? ' · connexion interrompue, nouvelle tentative automatique' : ''}`,
+      isStale ? `${staleLabel}. ${recoveryAdvice}` : '',
     );
     const status = root.querySelector<HTMLElement>('[data-weather-status]');
     if (status) {
@@ -270,12 +265,18 @@ export function mountWeather(
       isActive = isActiveValue;
       if (isActive) {
         render(latest);
+      } else {
+        future.close();
       }
+    },
+    closeForecast() {
+      future.close();
     },
     wake() {
       service.wake();
     },
     dispose() {
+      future.dispose();
       lifecycle.abort();
       service.stop();
     },

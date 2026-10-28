@@ -55,3 +55,29 @@ export function weatherFixture(now = fixtureNow) {
     },
   };
 }
+
+export function sevenDayFixture(now = fixtureNow) {
+  const raw = weatherFixture(now);
+  const start = raw.hourly.time[0];
+  const hours = Array.from({length: 168}, (_, index) => start + index * 3600);
+  const days = Array.from({length: 7}, (_, index) => start + index * 86_400);
+  return {
+    ...raw,
+    daily_units: {...raw.daily_units, precipitation_probability_max: '%'},
+    hourly: Object.fromEntries(
+      Object.entries(raw.hourly).map(([key, values]) => [
+        key,
+        key === 'time'
+          ? hours
+          : hours.map((_, index) => values[index % values.length]),
+      ]),
+    ),
+    daily: {
+      time: days,
+      temperature_2m_max: days.map(() => 19),
+      temperature_2m_min: days.map(() => 8),
+      weather_code: days.map(() => 61),
+      precipitation_probability_max: days.map(() => 65),
+    },
+  };
+}

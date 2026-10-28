@@ -2,18 +2,18 @@
 
 The browser requests Open-Meteo directly for the public Annecy example coordinates in `src/lib/dashboard/config.ts`. Change location, latitude, longitude and timezone together when adapting the example. These are checked-in defaults, not persisted settings; M4 adds private configuration. No geolocation permission, account, API key, proxy, or new Cloudflare service is used. The provider sees the display's IP address and requested public coordinates; requests omit credentials and referrer.
 
-`src/lib/weather/adapter.ts` requests two forecast days, five current fields, five hourly fields and two daily fields: temperature, apparent temperature, condition code, day/night, precipitation amount/probability, and daily extremes as applicable. The normalized model includes location, timezone, metric units, fetch time and absolute hourly timestamps. The adapter rejects wrong units/timezone, missing numeric values, invalid ranges, misaligned arrays, gaps, unordered times, inverted extremes, and outdated/incomplete forecasts. Unknown condition codes retain temperatures and use an explicit fallback.
+`src/lib/weather/adapter.ts` requests seven forecast days, five current fields, five hourly fields and four daily fields: temperature, apparent temperature, condition code, day/night, precipitation amount/probability, and daily extremes, condition code and maximum precipitation probability as applicable. The normalized model includes location, timezone, metric units, fetch time and absolute hourly timestamps. The adapter rejects wrong units/timezone, missing numeric values, invalid ranges, misaligned arrays, gaps, unordered times, inverted extremes, and outdated/incomplete forecasts. Unknown condition codes retain temperatures and use an explicit fallback.
 
 Unix hourly timestamps are formatted with the IANA timezone, independently of the browser's timezone. Daily dates follow the provider's fixed `utc_offset_seconds` convention so the autumn DST change cannot repeat a date. See [Open-Meteo time parameters](https://open-meteo.com/en/docs). Daily extrema only appear when their date matches today's local date.
 
 ## Refresh and recovery
 
-- One request on first use, then approximately every 30 minutes; a fresh cache delays the first request until due. Switching modes does not create requests or timers.
-- A single scheduler updates age and chart position each minute. Visibility/online events check the existing deadline. Requests time out after 12 seconds; failures retry after 1, 5, 15, then at most once every 30 minutes. There is no infinite immediate retry loop.
+- One request on first use, then at the earlier of 30 minutes after retrieval or 45 minutes after the conditions timestamp; stale startup cache requests immediately. Switching modes does not create requests or timers.
+- A single scheduler updates age and chart position each minute. Visibility/online events check the existing deadline. Requests time out after 12 seconds; failures and stale HTTP 200 responses share retries after 1, 5, 15, then every 30 minutes. Expired freshness deadlines cannot bypass recovery. There is no infinite immediate retry loop.
 - Page exit aborts the request and clears the scheduler; a restored page resumes it. Clock/navigation operate independently.
 - One versioned localStorage entry holds the last validated provider response and fetch time, keyed by coordinates/timezone. Reads revalidate through the same adapter. Entries from the future, malformed entries, and entries over 72 hours old are ignored on load. Cache failures fall back to in-memory weather.
-- A failed refresh or a fetch/current timestamp at least 45 minutes old marks the display stale. It shows cache age and the last reading's date/time, and replaces current advice with a warning. Existing in-memory weather remains visible through extended failures. Expired forecast ranges show an unavailable message.
-- A successful response replaces the cache; failed responses never replace valid weather. The initial unavailable state has no fabricated temperature or forecast.
+- A failed refresh or a fetch/current timestamp at least 45 minutes old marks the display stale. It shows the conditions time using the configured timezone, including date/year when needed, and replaces current advice with a dated warning shared with Photos. Existing in-memory weather remains visible through extended failures. Expired forecast ranges show an unavailable message.
+- Older conditions never replace retained weather or cache. Equal timestamps may update forecasts but cannot reset conditions age or an active recovery sequence. Fresh advancing conditions reset recovery. Requests disable HTTP cache reuse with `cache: no-store`; application fallback remains validated. The initial unavailable state has no fabricated temperature or forecast.
 
 Only public weather is persisted. This does not establish offline app-shell loading, private-photo caching, or credential retention. If the browser cannot load the site itself while offline, its weather cache alone cannot start the app. No service worker is added.
 
@@ -37,9 +37,27 @@ When upgrading an already-running dev server from the original static-only confi
 
 ## Provider terms and request budget
 
-Reviewed 16 October 2026: the [free API terms](https://open-meteo.com/en/terms) allow personal noncommercial use below 10,000 calls/day, 5,000/hour and 600/minute. The [pricing page](https://open-meteo.com/en/pricing) also lists 300,000/month and variable-weighted calls. The [data licence](https://open-meteo.com/en/licence) requires attribution, a licence link, and disclosure of adaptation. The UI links Open-Meteo and CC BY 4.0 beside the data; rounding, French descriptions, charts and derived advice are disclosed here and as “présentation adaptée” on screen. No provider uptime guarantee is assumed.
+Rechecked 27 October 2026: the [free API terms](https://open-meteo.com/en/terms) allow personal noncommercial use below 10,000 calls/day, 5,000/hour and 600/minute. The [pricing page](https://open-meteo.com/en/pricing) also lists 300,000/month and variable-weighted calls. The [data licence](https://open-meteo.com/en/licence) requires attribution, a licence link, and disclosure of adaptation. The UI links Open-Meteo and CC BY 4.0 beside the data; rounding, French descriptions, charts and derived advice are disclosed here and as “présentation adaptée” on screen. No provider uptime guarantee is assumed.
 
-An uninterrupted display makes about **48 HTTP requests/day**, or **1,488 in 31 days**. Three displays make about **144/day**, or **4,464/month**, plus cold starts and bounded retries. Conservatively count the 12 requested variable slots as 1.2 calls/request: about **173 calls/day and 5,357/month** for three displays, well below the published allowance. A sustained outage adds only the initial short retry steps before returning to a 30-minute cadence. Tabs have independent schedulers and persistent failure backoff is not shared across reloads: many users/tabs or automated reload loops require a new budget review. This budget covers the intended household, not an unrestricted public weather service.
+With ordinary fresh conditions, an uninterrupted display makes about **48 HTTP
+requests/day**. Persistent stale HTTP 200s and failures settle at the same cadence,
+with at most **52 requests in the first 24 hours** including the 1/5/15-minute
+recovery steps (request latency only reduces this count). Three displays therefore
+budget 156 HTTP requests/day or 4,836 in 31 days. Conservatively count the 14
+current/hourly/daily variable slots as 1.4 calls/request: **219 weighted calls/day,
+6,771/month** rounded up, below the published 10,000/day and 300,000/month limits.
+Seven days is below the provider's two-week duration multiplier. Opening, selecting
+and closing forecasts makes **zero additional requests**. Unusually old but still
+fresh replies can bring forward the normal freshness deadline; reloads and new
+tabs also add requests, so these estimates are for continuous household displays,
+not a hard global request cap or unrestricted public service. Backoff is local to
+each service lifetime. Reassess usage for many tabs or automated reload loops.
+
+The same response includes all seven days of hourly data: synthetic JSON grew
+from 2,536 bytes (old two-day fixture) to 7,354 bytes; this is fixture measurement,
+not a provider byte guarantee. Validation bounds hourly rows to 175 (seven 25-hour
+local days) and daily rows to seven. No per-tap download, service, secret, proxy or
+billing change is introduced.
 
 No subscription or billing account is configured. Quota rejection becomes a normal cached/unavailable state. Reassess terms and measured usage before commercial use, additional providers, or a proxy.
 
@@ -130,3 +148,51 @@ No Meteoalarm artwork or website code is copied. A live national-feed download
 confirmed the namespace/field structure and current feed timestamp; synthetic browser
 fixtures establish departmental warning behavior, not a real current Haute-Savoie
 warning or actual-frame acceptance.
+
+## Seven-day browsing (F02) — 27 October 2026
+
+The Morning **Prévisions sur 7 jours** button opens a native modal dialog. Seven
+local calendar dates, today through day six, show condition, low/high and daily
+maximum precipitation probability. Selecting a day shows only returned hourly
+coverage, including timezone offsets to distinguish repeated DST hours. Missing
+days, missing rain values and exhausted hourly coverage remain explicitly
+unavailable. No values roll forward from a previous day. Old two-day v1 caches
+remain readable and display unavailable values for their missing fields/days.
+
+The shared weather service owns loading, stale/offline and recovery states; the
+panel adds no fetch, scheduler, mode or persistent selection. Close/Escape restores
+focus to the opener; mode changes and override expiry close it. Reopening selects
+today. Native modal focus containment, static verified Meteocons, internal hourly
+scrolling and responsive daily cards keep the frame page still and mobile usable.
+Freshness warnings follow F01; vigilance remains independent.
+
+Provider fields and terms were checked in the official [forecast documentation](https://open-meteo.com/en/docs),
+[terms](https://open-meteo.com/en/terms), [pricing](https://open-meteo.com/en/pricing)
+and [licence](https://open-meteo.com/en/licence). French text, rounded temperatures
+and daily/hourly presentation adapt the attributed CC BY 4.0 data.
+
+Upstream refreshed at `0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189` (GitHub default
+head verified 27 October). Read root MIT `LICENSE`, `dashboard/js/data.js` and
+`dashboard/js/views/home.js`: retained glanceable hierarchy as an idea; independently
+implemented timestamp recovery and dated seven-day browsing instead of repeating
+hour-indexed mock weather. No upstream source or assets copied.
+
+Rollback: revert the dialog, view/controller integration and provider-field change
+together; revert freshness independently if needed. The v1 cache remains compatible
+with the previous build (new arrays exceed its old bounds and safely refetch).
+No migration, private cache, navigation worker or device change. Local synthetic
+validation and rollout state are recorded in the implementation plan; desktop
+browsers/emulation do not establish physical Classic 10 or iPhone acceptance.
+
+## Reading age — 28 October 2026
+
+Morning and Photos now always show a quiet reading-age label when weather exists:
+**Relevé il y a 15 min**, with **· non actualisé** when stale or a refresh failed.
+The source is the provider's `current.time`, not `fetchedAt`. The existing minute
+scheduler advances the age without downloads, including in Photos and offline.
+Under a minute reads “à l’instant”; today's older readings use minutes then hours.
+Previous local dates use “hier à…” or an explicit date, including the year at a
+year boundary. Exact date/time/timezone are retained on a semantic `<time>` in its
+`datetime`, title and accessible label. Unavailable weather has no fabricated age.
+Stale Morning departure guidance and vigilance's separate policy are preserved.
+No scheduler, API request, cache format, setting, dependency or cost change.

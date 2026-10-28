@@ -1,5 +1,12 @@
 # Dayframe: Implementation Plan
 
+**27 October 2026 audit:** [Feature coverage and separate-chat implementation plans](backlog/README.md)
+provide the current backlog entry point. The audit distinguishes missing behavior,
+implemented features awaiting acceptance, and optional enhancements. F01 freshness and F02 future forecast browsing are now implemented locally;
+see the delivery record at the end. Quiet-display work remains a separate slice. It changes no product
+behavior, deployment or hardware authorization; existing deferrals remain in force.
+Historical milestone headers and execution records below retain their dated scope.
+
 **Status:** M1–M2 delivered; M3/M4 production active with deferred live acceptance; M5 and icon timing repair deployed at `ca922ad`; short Classic 10 checks passed; H5 manifest deployed at `3763694`, Rootless trial and standalone layout measured; physical fullscreen return passed; normal-reboot cookie failure recovered with the existing key and Firefox restart persistence passed; cold power reproduced cookie expiry with Firefox-before-clock-correction logs; physical post-cold fullscreen passed but photos needed access; the approved browser preference trial retained the future cookie expiry through another cold cycle; physical fullscreen/private Photos passed without key entry; H5 manual-fullscreen acceptance is complete, with prior skips deferred; full H4/M4/M5/M6 acceptance remains open
 **Date:** 16 October 2026  
 **Requirements:** [Family Dashboard: Technical Specification](technical-specification.md)  
@@ -75,11 +82,11 @@ Use the source layout proposed in specification §15. Keep ADRs in `docs/decisio
 
 ## 4. M2 — Morning weather
 
-**Pending follow-up, 22 October 2026:** Implement [weather freshness and recovery](weather-freshness.md)
+**Follow-up proposed 22 October, implemented locally 27 October 2026:** [weather freshness and recovery](weather-freshness.md)
 as one M2/M5 slice: timestamp-based retry deadlines, bounded recovery for stale
 HTTP 200 responses, and dated stale-weather copy in Photos and Conseil du jour.
-The spec is written; implementation, request-budget update and acceptance checks
-remain pending. No product code or deployment change is included in this entry.
+Implementation, request-budget update and local acceptance evidence are recorded
+in the F01/F02 delivery entry below. Production rollout remains separate.
 
 1. **M2.1 — Data adapter:** Define a normalized weather model with timestamped hourly data, location, timezone, units, and fetch time. Fetch only required Open-Meteo fields; validate responses. Use deterministic fixtures for development and tests.
 2. **M2.2 — Icons and descriptions:** Implement exhaustive WMO-to-condition mapping, explicit day/night Meteocons identifiers, French labels, and an unknown fallback. Verify names against the installed collection and keep UnoCSS references literal/extractable.
@@ -261,8 +268,9 @@ specification's later short multi-day forecast idea.
 Before implementation, decide the forecast horizon, daily versus hourly detail,
 and how viewers open the forecast on the frame and other browsers. Reuse the
 existing weather provider and cache where practical, preserve the €0 recurring-cost
-requirement, and distinguish stale or unavailable forecasts. This is backlog work;
-the interaction and detailed scope remain open.
+requirement, and distinguish stale or unavailable forecasts. Implemented locally on 27 October as F02: a seven-day Morning dialog with daily
+summaries and returned hourly coverage from the shared response. See the delivery
+record below; production and physical acceptance remain separate.
 
 ### Deferred UI simplification — recorded 23 October 2026
 
@@ -1887,3 +1895,113 @@ skips), 44 navigation checks, deployment and live smoke passed. Worker version
 to the tested build, verified sign-in redirect preserving the selection query and
 anonymous catalog 401. No Shortcut change. Actual iPad acceptance of the clearer
 error remains pending; the reported event's exact cause is still unconfirmed.
+
+## Feature audit and implementation handoffs — 27 October 2026
+
+Audited source at `6bca9694bfd629de315a20b2459cb36ceaa68df7` against the specification,
+milestone/feature records, current code and test inventory. The [audit index](backlog/README.md)
+records requirement coverage, priorities, dependencies and upstream review at
+`0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189`. Twenty individual plans supply code entry
+points, implementation/validation stages, acceptance and rollback requirements,
+and copyable prompts for independent chats.
+
+Confirmed the pending weather-freshness behavior remains absent. Forecast browsing
+and everyday display simplification are recorded owner requests. Bulk collection
+backup/restore and bounded admin gallery are operational enhancements. Calendar,
+vigilance, school/day profiles, offline fallback and authenticated adaptive Paste
+already exist and are not new baseline gaps. Live authorization, physical import,
+offline/update and performance/stability checks remain separately scoped acceptance
+work. Hardware hardening retains the explicit owner deferral. Documentation drift
+has a dedicated reconciliation plan; this audit preserves historical records.
+
+No application changes, test-suite execution, production inspection/deployment,
+credentials, paid services or device actions form part of this documentation slice.
+
+Documentation validation: all 22 backlog documents passed local-link checks; all
+20 individual plans contain the shared-contract link and separate-chat prompt.
+Prettier checks passed for the backlog and README; `git diff --check` passed.
+Existing large historical documents were not globally reformatted.
+
+## F01 and F02 weather recovery and browsing — 27 October 2026
+
+Implemented sequentially in the working tree based on
+`6bca9694bfd629de315a20b2459cb36ceaa68df7`. F01 updates the single weather service
+with conditions-aware deadlines, immediate stale-cache startup, common bounded
+stale-200/failure recovery, old-timestamp rejection, equal-timestamp forecast
+updates without recovery reset and no-store provider requests. Shared French dated
+warnings replace misleading fresh advice in Morning and Photos, including failed
+refreshes of young conditions. The 12-second timeout, lifecycle cancellation,
+validated v1 fallback and independent vigilance policy are retained.
+
+F02 chooses the backlog's seven-day default: Morning opens a native modal with
+seven dated daily summaries and selected-day returned hourly detail. One seven-day
+provider response serves both views. Missing rain/days/hours are unavailable;
+keyboard focus, Escape/return, reopening reset, mode/override close, static icons,
+mobile reflow and internal hourly scrolling are implemented. The button sits in
+the existing forecast heading row to preserve the frame height. No selection is
+saved and no new fetch service/timer, private API, offline retention, dependency,
+paid service, credentials or device operation is added.
+
+Refreshed upstream default head through GitHub:
+`0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189`. Read MIT `LICENSE`,
+`dashboard/js/data.js` and `dashboard/js/views/home.js`. Retained glanceable weather
+hierarchy as an idea; independently authored live timestamp handling and future-day
+UI. No code/assets copied. Official Open-Meteo field/terms/pricing/licence review,
+payload fixture measurement and aggregate retry budget are recorded in
+[weather operations](weather.md#provider-terms-and-request-budget).
+
+Local validation passed: `pnpm check`, `pnpm lint` (four existing complexity
+warnings), `pnpm test` (148 unit/Worker integration tests), `pnpm build`, and
+`pnpm exec playwright test tests/e2e/weather.spec.ts tests/e2e/morning.spec.ts tests/e2e/density.spec.ts tests/e2e/scheduling.spec.ts`
+(116 passes, four existing intentional skips across Chromium, Firefox, WebKit and
+mobile WebKit). The focused weather/morning unit set also passed all 46 tests.
+Reviewed Standard/Large frame and mobile screenshots, including dated stale copy;
+the mobile Close control stays visible while scrolling. Unit/browser coverage includes
+old/equal/stale responses, recovery, lifecycle/wake storms, missing coverage,
+loading/offline, Paris versus Los Angeles timezone, repeated DST hours, year change,
+focus restoration and expiry within the same Morning mode. The reload test now
+uses a fixed synthetic vigilance bulletin to avoid evaluating a replaced document;
+production vigilance code is untouched. Documentation links and `git diff --check`
+passed. This is local synthetic evidence, not a full release-gate/deployment run.
+No production deployment, real household weather observation or physical-device
+acceptance is claimed.
+Rollback: web revert, keeping UI/provider fields together; old v1 cache degrades
+safely and no migration/restoration is required. Existing user documentation edits
+and deferred hardware/security acceptance remain intact.
+
+## F01 reading-age enhancement and F01/F02 release — 28 October 2026
+
+Owner accepted a quiet human-friendly reading age for both fresh and stale weather,
+then authorized committing and deploying the accumulated work. Morning and Photos
+use the provider conditions timestamp, show minutes/hours today, yesterday's local
+time or an older dated reading, and retain the stale suffix and Morning departure
+warning after failed refreshes. Exact timestamp/timezone remain accessible on the
+semantic time label. One existing minute scheduler updates ages while offline;
+there are no additional requests, timers, storage/billing changes or device actions.
+Year-boundary dates remain explicit. Future provider instants show their time.
+
+Re-read specification §4.2, the roadmap upstream/delivery requirements and weather
+freshness proposal. Refreshed GitHub upstream main on 28 October: still
+`0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189`; re-inspected root MIT `LICENSE` and
+`dashboard/js/views/home.js`. Independently implemented provider reading ages;
+upstream's mock weather remains an idea reference. No upstream code/assets copied.
+
+Focused validation and full release/deployment evidence follow. The release will
+include the accumulated F01/F02 implementation and feature-audit documentation.
+Existing deferred physical/security acceptance stays deferred; no live identity,
+photo mutation, outage or native-device test is authorized by this web rollout.
+Rollback remains a web revert/previous Worker version, with compatible validated
+weather cache and no data migration.
+
+Reading-age local validation: types, lint (four existing complexity warnings),
+163 unit/Worker integration tests and build passed. The focused age tests exercise
+provider-time versus retrieval-time, minute/hour boundaries, local yesterday/year
+boundaries, DST and recovery. The initial full browser run passed 402 cases and
+four existing skips, exposing six dense frame-layout failures. Reclaimed decorative
+Morning intro spacing, retaining all font sizes, warnings and six event rows; all
+20 calendar/day-planning checks then passed across the four browser projects.
+Reviewed fresh/stale Morning and Photos screenshots and the corrected dense views.
+WebKit's exact timestamp punctuation differs from Chromium/Firefox; the test accepts
+both localized separators while checking date, time and timezone. Application
+behavior is identical. The complete hosted release gate and deployment are pending
+at this commit; no check, layout assertion, security gate or billing gate is bypassed.

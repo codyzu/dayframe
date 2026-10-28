@@ -1,5 +1,5 @@
 // @unocss-include
-import {staleAfter} from '../weather/adapter.ts';
+import {renderReadingTime} from '../weather/freshness.ts';
 import {conditionFor} from '../weather/conditions.ts';
 import {type WeatherState} from '../weather/service.ts';
 
@@ -9,7 +9,7 @@ export function mountPhotoWeather(root: HTMLElement) {
   )!;
   const condition = root.querySelector<HTMLElement>('[data-photo-condition]')!;
   const icon = root.querySelector<HTMLElement>('[data-photo-weather-icon]')!;
-  const status = root.querySelector<HTMLElement>(
+  const status = root.querySelector<HTMLTimeElement>(
     '[data-photo-weather-status]',
   )!;
   return ({weather, failed}: WeatherState) => {
@@ -41,12 +41,9 @@ export function mountPhotoWeather(root: HTMLElement) {
       icon.className = classes;
     }
 
-    status.hidden =
-      !weather ||
-      !(
-        failed ||
-        Date.now() - Math.min(weather.fetchedAt, weather.current.time) >=
-          staleAfter
-      );
+    status.hidden = !weather;
+    if (weather) {
+      renderReadingTime(status, weather, Date.now(), failed);
+    }
   };
 }

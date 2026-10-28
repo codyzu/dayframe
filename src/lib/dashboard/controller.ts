@@ -115,6 +115,7 @@ function initializeDashboard(root: HTMLElement) {
   }
 
   let activeMode: DisplayMode | undefined;
+  let hadOverride = false;
   let clockMinute: number | undefined;
   let clockTimezone: string | undefined;
   const clocks = root.querySelectorAll<HTMLTimeElement>('[data-clock]');
@@ -145,6 +146,13 @@ function initializeDashboard(root: HTMLElement) {
     }
 
     const mode = state.mode(Date.now(), performance.now());
+    const hasOverride =
+      state.snapshot(Date.now(), performance.now()) !== undefined;
+    if (hadOverride && !hasOverride) {
+      weather.closeForecast();
+    }
+
+    hadOverride = hasOverride;
     if (mode !== activeMode) {
       activeMode = mode;
       root.dataset.mode = mode;

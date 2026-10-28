@@ -144,7 +144,7 @@ test('Photos weather refreshes without opening Morning and labels cached data', 
   const icon = page.locator('[data-photo-weather-icon]');
   const status = page.locator('[data-photo-weather-status]');
   await expect(condition).toHaveText('Quelques éclaircies');
-  await expect(status).toBeHidden();
+  await expect(status).toHaveText('Relevé à l’instant');
   fixture.current.weather_code = 66;
   fixture.current.is_day = 0;
   fixture.current.time += 30 * 60;

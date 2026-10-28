@@ -142,7 +142,8 @@ Refresh about every 30 minutes; cache the last successful response locally and l
 
 **Proposed follow-up, 22 October 2026:** [Weather freshness and recovery](weather-freshness.md)
 specifies bounded retries for successful responses containing old conditions and
-dated stale-weather copy in Photos and Conseil du jour. Implementation is pending.
+dated stale-weather copy in Photos and Conseil du jour. Implemented locally on
+27 October (F01); production rollout remains separate.
 
 ### 4.3 Weather icons
 

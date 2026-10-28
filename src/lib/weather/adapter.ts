@@ -22,7 +22,13 @@ export type Weather = {
     precipitation: number;
   };
   hourly: Hour[];
-  daily: Array<{date: string; high: number; low: number}>;
+  daily: Array<{
+    date: string;
+    high: number;
+    low: number;
+    code?: number;
+    probability?: number;
+  }>;
 };
 
 export const refreshInterval = 30 * 60_000;
@@ -40,14 +46,15 @@ export function weatherUrl() {
     longitude: String(runtimeConfig.longitude),
     timezone: runtimeConfig.timezone,
     timeformat: 'unixtime',
-    forecast_days: '2',
+    forecast_days: '7',
     temperature_unit: 'celsius',
     precipitation_unit: 'mm',
     current:
       'temperature_2m,apparent_temperature,weather_code,is_day,precipitation',
     hourly:
       'temperature_2m,precipitation_probability,precipitation,weather_code,is_day',
-    daily: 'temperature_2m_max,temperature_2m_min',
+    daily:
+      'temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max',
   }).toString();
   return url.href;
 }
@@ -211,7 +218,7 @@ export function parseWeather(input: unknown, fetchedAt: number): Weather {
       'is_day',
     ],
     24,
-    72,
+    175,
   ).map(({time, get}) => ({
     time,
     temperature: number(get('temperature_2m'), -100, 70),
@@ -232,8 +239,8 @@ export function parseWeather(input: unknown, fetchedAt: number): Weather {
   const days = rows(
     daily,
     ['temperature_2m_max', 'temperature_2m_min'],
-    2,
-    3,
+    1,
+    7,
   ).map(({time, get}) => {
     const high = number(get('temperature_2m_max'), -100, 70);
     const low = number(get('temperature_2m_min'), -100, 70);
@@ -241,7 +248,32 @@ export function parseWeather(input: unknown, fetchedAt: number): Weather {
       throw new Error('Invalid daily range');
     }
 
-    return {date: providerDate(time), high, low};
+    const extra: {code?: number; probability?: number} = {};
+    for (const field of ['weather_code', 'precipitation_probability_max']) {
+      if (daily[field] === undefined) {
+        continue; // Old v1 caches remain readable, without invented rain data.
+      }
+
+      if (
+        !Array.isArray(daily[field]) ||
+        daily[field].length !== (daily.time as unknown[]).length
+      ) {
+        throw new Error('Mismatched daily forecast arrays');
+      }
+
+      const value: unknown = get(field);
+      if (field === 'weather_code') {
+        extra.code = code(value);
+      } else if (value !== null) {
+        if (record(root.daily_units).precipitation_probability_max !== '%') {
+          throw new Error('Unexpected daily probability unit');
+        }
+
+        extra.probability = number(value, 0, 100);
+      }
+    }
+
+    return {date: providerDate(time), high, low, ...extra};
   });
   const time = number(current.time, 1_577_836_800, 4_102_444_800) * 1000;
   if (
@@ -275,6 +307,7 @@ export async function fetchWeather(signal: AbortSignal, now = Date.now) {
   const response = await fetch(weatherUrl(), {
     signal,
     credentials: 'omit',
+    cache: 'no-store',
     referrerPolicy: 'no-referrer',
   });
   if (!response.ok) {
