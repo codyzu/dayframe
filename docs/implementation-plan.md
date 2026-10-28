@@ -2005,3 +2005,14 @@ WebKit's exact timestamp punctuation differs from Chromium/Firefox; the test acc
 both localized separators while checking date, time and timezone. Application
 behavior is identical. The complete hosted release gate and deployment are pending
 at this commit; no check, layout assertion, security gate or billing gate is bypassed.
+
+First hosted release [40628782891](https://github.com/codyzu/dayframe/actions/runs/40628782891)
+passed types/lint/build and all 163 unit/Worker tests, then passed 406 browser cases
+with four existing skips. Two instances of the stale-200 recovery test failed
+(Chromium/mobile); deployment was skipped. Its request counter advanced before
+response parsing/acceptance, so a virtual-clock jump could shift the intended
+recovery deadline. The test now explicitly pauses time and waits for the accepted
+response's retrieval timestamp before moving to the next deadline. Count, stale
+UI, five-minute backoff and fresh recovery assertions remain unchanged. All 20
+focused repetitions passed (five per browser). Product code, retry policy and
+security gates are unchanged; a fresh full hosted release is required.

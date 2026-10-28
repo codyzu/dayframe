@@ -534,12 +534,14 @@ test('future dates use Paris across year change with a different browser timezon
 test('stale successful responses follow backoff and recover without extra browse requests', async ({
   page,
 }) => {
+  const start = fixtureNow + 60_000;
+  await page.clock.pauseAt(start);
   let calls = 0;
   await page.route('https://api.open-meteo.com/**', async (route) => {
     calls++;
     await route.fulfill({
       json: sevenDayFixture(
-        calls < 3 ? fixtureNow - 50 * 60_000 : fixtureNow + 6 * 60_000,
+        calls < 3 ? start - 50 * 60_000 : start + 6 * 60_000,
       ),
     });
   });
@@ -554,6 +556,18 @@ test('stale successful responses follow backoff and recover without extra browse
   );
   await page.clock.fastForward(60_000);
   await expect.poll(() => calls).toBe(2);
+  // Route entry precedes response processing. Wait for acceptance before moving
+  // the paused clock, so the five-minute deadline starts at the intended time.
+  await expect
+    .poll(async () =>
+      page.evaluate((key) => {
+        const cached = JSON.parse(localStorage.getItem(key) ?? '{}') as {
+          fetchedAt?: number;
+        };
+        return cached.fetchedAt;
+      }, cacheKey),
+    )
+    .toBe(start + 60_000);
   await page.clock.fastForward(299_000);
   expect(calls).toBe(2);
   await page.clock.fastForward(1000);
