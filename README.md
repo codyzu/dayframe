@@ -1,5 +1,9 @@
 # Dayframe
 
+The [27 October feature audit and backlog](docs/backlog/README.md) maps existing
+features, acceptance gaps and enhancements to twenty separate-chat implementation
+plans. Start there when selecting the next slice.
+
 A French household dashboard for a browser-based photo frame. M2 adds live Annecy weather from Open-Meteo, a temperature/rain chart, French day/night conditions, deterministic rain advice, and cached-weather recovery. The Astro shell includes a Paris clock, manual modes, responsive photo administration, and a Cloudflare Worker API. M3 adds protected KV photo storage, sequential WebP uploads (including a Safari encoder fallback), duplicate review and a bounded slideshow.
 
 **Based on Wes Bos's work in [photo-frame-dashboard](https://github.com/wesbos/photo-frame-dashboard).** His dashboard and Android frame research are the starting reference. [ADR 0001](docs/decisions/0001-upstream-foundation.md) records the reviewed revision, source paths, license findings, and independent implementation choices. The Classic 10 has accepted fullscreen rendering, protected photos, physical maintenance and native automatic startup/recovery. Extended stability and the other recorded physical/network checks remain deferred; hardening is also deferred at the owner’s request. See the [current status and skipped validation](docs/status.md).

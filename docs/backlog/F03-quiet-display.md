@@ -1,0 +1,43 @@
+# F03 — Quiet everyday display
+
+Status: owner-requested 23 October; absent; P2 / S.
+Follow the [delivery contract](delivery-contract.md). Coordinate stale copy with F01.
+
+## Evidence and target
+
+Read the roadmap's “Deferred UI simplification”, `src/lib/photos/slideshow.ts`
+(`storageMessage`, `updateStorageStatus` behavior), `PhotoSlideshow.astro`,
+`ModeNavigation.astro`, `src/lib/offline/fallback.ts` and `docs/photos.md`.
+Routine eviction/synchronization information is visible during normal playback.
+The upload-admin simplification on 26 October is already implemented and is a
+different feature; do not redo it.
+
+## Implementation
+
+1. Inventory display messages and controls by state: online ready, synchronizing,
+   offline playable, no saved photos, expired, auth denied and service failure.
+   Preserve clock/weather, text size, mode and next-photo controls the owner uses.
+2. Hide routine successful sync/storage chatter during normal display. Put accurate
+   technical details in existing admin/maintenance UI, preferably a collapsed
+   details section. Keep concise interruption/action text on the display.
+3. Retain visible offline and expired/auth states and useful retry controls. Never
+   claim permanent storage or a complete backup. Separate presentation changes
+   from storage state transitions and preserve accessibility announcements.
+4. Apply consistent copy to live and standalone fallback without expanding the
+   service worker's intercepted routes or introducing new runtime dependencies.
+
+## Acceptance and delivery
+
+Use `tests/e2e/photos.spec.ts`, `offline-photos.spec.ts`,
+`offline-fallback.spec.ts` and relevant navigation tests if fallback markup changes.
+Check normal/partial-sync/offline/empty/expired/denied screenshots at frame densities
+and mobile. No private image survives denial because a message was hidden; retention,
+downloads, lease and reconnection behavior stay covered. Keep maintenance reachable
+and record actual-frame visual acceptance separately. Rollback is markup/copy revert.
+Update photo operations and the existing deferred item with exact evidence.
+
+## Start a separate chat
+
+> Implement F03 from docs/backlog/F03-quiet-display.md. Simplify normal display
+> messaging while preserving useful controls and failure/privacy states. Review
+> upstream, verify live/fallback layouts and update the feature documentation.
