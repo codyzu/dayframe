@@ -2209,3 +2209,23 @@ including active-panel bounds. All 44 offline-navigation checks passed. The full
 hosted release gate remains pending. Reviewed synthetic native/mobile evidence is
 in [mobile-controls](evidence/mobile-controls/README.md); physical phone/frame review
 of this new layout remains separate.
+
+### Mobile/readability production rollout completed — 28 October 2026
+
+[Release 40732168963](https://github.com/codyzu/dayframe/actions/runs/40732168963)
+succeeded for `10e3c321828211b1829671eb19da79b88550648e`: full `pnpm verify`,
+160 unit/Worker integration tests, 456 browser passes with four existing skips,
+all 44 offline-navigation checks, verified-artifact deployment and live smoke.
+Worker version `e94b5a65-e28c-48e2-aa2e-3452f4ba4129`; public build
+`23e48e01-f7ab-4d21-b11b-d2907339441d`.
+
+Downloaded the approved production artifact and independently matched live home
+HTML, dashboard/photo-admin scripts, shared/dashboard CSS, `/offline`, `/sw.js`
+and `/version.json` byte hashes without redirects. The full anonymous smoke matrix
+passed again: production health is healthy, administration redirects to Access,
+private photo/calendar/settings/session reads are denied and headerless mutations
+remain denied with no-store responses. The new large-type default, matching
+navigation dimensions and portrait edge controls are deployed. No credentials,
+private household data, bindings, native settings or paid services changed.
+Physical phone/frame review of this new layout remains separate; prior dated
+acceptance deferrals retain their scope. The local-pending notes above are historical.

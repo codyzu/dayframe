@@ -1,13 +1,16 @@
 # Dayframe status and validation register
 
-**28 October mobile/readability correction (local):** larger dashboard typography
+**28 October mobile/readability correction deployed:** larger dashboard typography
 is now the only default; the selector is removed and old compact preferences are
 ignored. Mode navigation has identical dimensions/position across Morning, Photos
 and Night. Portrait photo controls are two edge buttons, hidden without a loaded
 photo; landscape uses a horizontal pair. This supersedes F03's first mobile
-placement after the owner’s iPhone review. Local unit/type/lint/build, focused
-browser and 44 navigation checks passed; full hosted release/deployment remain
-pending. [Current correction](implementation-plan.md#mobile-photo-controls-and-readability-correction--28-october-2026).
+placement after the owner’s iPhone review. [Release 40732168963](https://github.com/codyzu/dayframe/actions/runs/40732168963)
+deployed `10e3c32` after full verification: 160 unit/integration, 456 browser passes
+(four existing skips), and 44 navigation checks. Live smoke and independent artifact
+matching passed. Worker `e94b5a65-e28c-48e2-aa2e-3452f4ba4129`; build
+`23e48e01-f7ab-4d21-b11b-d2907339441d`. New physical phone/frame review remains
+separate. [Current correction](implementation-plan.md#mobile-photo-controls-and-readability-correction--28-october-2026).
 
 **28 October F03 quiet display release:** normal online/partial-sync Photos no
 longer shows routine persistence/synchronization notices. On-demand storage details

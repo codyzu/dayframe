@@ -72,3 +72,8 @@ supersedes that placement and the earlier instruction to retain the text-size
 selector: the owner now explicitly chooses the larger type everywhere, portrait
 edge controls and identical navigation geometry across modes. The correction's
 validation and deployment state are recorded separately from the initial F03 release.
+
+The mobile/readability correction is now deployed as `10e3c32` through
+[release 40732168963](https://github.com/codyzu/dayframe/actions/runs/40732168963),
+with full verification, live smoke and independent artifact matching passed.
+Physical phone/frame review of the revised controls remains separate.

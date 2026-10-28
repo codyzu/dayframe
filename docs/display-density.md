@@ -62,3 +62,11 @@ Refreshed upstream on 28 October at
 `dashboard/js/views/photos.js`. Retained on-demand controls as a design idea;
 independently implemented the owner-requested edge toolbar, shared navigation and
 large-type default. No upstream code/assets or household photos were copied.
+
+Deployed on 28 October as `10e3c32` through
+[release 40732168963](https://github.com/codyzu/dayframe/actions/runs/40732168963).
+Full verification passed (160 unit/integration, 456 browser passes, four existing
+skips, 44 navigation checks), followed by live smoke and independent artifact matching.
+[Current synthetic screenshots](evidence/mobile-controls/README.md) include the
+portrait toolbar, shared navigation, denied state and large-type native-frame layouts.
+New physical phone/frame review remains separate.
