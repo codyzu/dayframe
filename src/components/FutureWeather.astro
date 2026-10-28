@@ -9,6 +9,7 @@
 <dialog
   data-forecast-dialog
   aria-labelledby="future-weather-title"
+  aria-describedby="future-weather-idle-help"
   class="m-auto w-[min(72rem,96vw)] max-h-[92dvh] overflow-y-auto rounded-3xl border border-border bg-surface text-primary p-4 shadow-xl"
 >
   <div class="sticky top-0 z-1 bg-surface flex items-center justify-between gap-4">
@@ -24,6 +25,10 @@
       Fermer
     </button>
   </div>
+  <p id="future-weather-idle-help" class="sr-only">
+    Fermeture automatique après une minute sans interaction. Touchez l’écran,
+    utilisez le clavier ou faites défiler pour prolonger la consultation.
+  </p>
   <p
     data-future-status
     role="status"

@@ -160,9 +160,11 @@ unavailable. No values roll forward from a previous day. Old two-day v1 caches
 remain readable and display unavailable values for their missing fields/days.
 
 The shared weather service owns loading, stale/offline and recovery states; the
-panel adds no fetch, scheduler, mode or persistent selection. Close/Escape restores
-focus to the opener; mode changes and override expiry close it. Reopening selects
-today. Native modal focus containment, static verified Meteocons, internal hourly
+panel adds no weather polling, mode or persistent selection. A single timeout
+closes it after 60 seconds without pointer, keyboard, wheel or touch-scroll input;
+background refreshes and programmatic focus do not extend the deadline. Close/Escape restores
+focus to the opener; mode changes and override expiry close it and cancel its
+timeout. Reopening selects today and starts a fresh minute. Native modal focus containment, static verified Meteocons, internal hourly
 scrolling and responsive daily cards keep the frame page still and mobile usable.
 Freshness warnings follow F01; vigilance remains independent.
 

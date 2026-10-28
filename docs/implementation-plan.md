@@ -2048,3 +2048,31 @@ introduced. Physical-device reading-distance/touch acceptance and previous defer
 hardware/security checks remain separate. The committed feature audit/backlog is
 included. Rollback is the previous Worker version/web source revert; validated v1
 weather cache remains safe to refetch without migration.
+
+## Forecast dialog inactivity — 28 October 2026
+
+Owner approved closing seven-day browsing after 60 seconds without interaction.
+Added one timeout owned by the open dialog: pointer presses, keyboard, mouse wheel
+and touch scrolling reset it; weather renders and programmatic focus do not. Close,
+Escape, mode/override transitions and disposal clear it. Reopening starts a fresh
+minute and selects today, and closing restores focus without changing the mode.
+An accessible French description announces the timeout and how to extend browsing.
+No weather request, persistent setting, private data, service, billing, dependency
+or device change. Rollback is a web revert of this dialog behavior.
+
+Re-read the weather spec and F02 delivery contract. Refreshed upstream main at
+`0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189`; read MIT `LICENSE` and
+`dashboard/js/views/home.js`. Upstream remains a mock weather/hierarchy reference;
+this dialog timeout is independently authored and no code/assets were copied.
+Validation and production rollout evidence follow below.
+
+Local validation: types, production build and repository lint passed (four existing
+complexity warnings); all 61 affected weather/morning unit checks and all 88 weather
+browser checks passed across Chromium, Firefox, WebKit and mobile WebKit. Coverage
+includes the exact 59,999/60,000 ms boundary, focus restoration, reopening, input
+resets and a response accepted at 55 seconds that does not prolong the deadline.
+Touch input is synthetic in desktop engines, not a physical-device acceptance claim.
+Existing long-refresh focus coverage now keeps the dialog active with keyboard
+input; stale-response recovery reopens the timed-out dialog before inspecting the
+updated forecast. No weather-service or retry assertions were removed. Full hosted
+release checks, deployment and independent live verification remain pending here.

@@ -575,6 +575,7 @@ test('stale successful responses follow backoff and recover without extra browse
     'data-stale',
     'false',
   );
+  await page.getByRole('button', {name: 'Prévisions sur 7 jours'}).click();
   await expect(page.locator('[data-future-status]')).toContainText(
     'Prévisions pour Annecy',
   );
@@ -603,7 +604,16 @@ test.describe('location timezone and DST', () => {
     await expect(repeated).toHaveCount(2);
     await expect(repeated.first()).toContainText('UTC+2');
     await expect(repeated.last()).toContainText('UTC+1');
-    await page.clock.fastForward(1_800_000);
+    const original = await first.elementHandle();
+    // Keep browsing during the half-hour refresh without changing selection.
+    for (let elapsed = 0; elapsed < 1_800_000; elapsed += 50_000) {
+      await page.clock.fastForward(50_000);
+      await page.keyboard.press('Shift');
+    }
+
+    await expect
+      .poll(async () => original.evaluate((element) => element.isConnected))
+      .toBe(false);
     await expect(first).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(
@@ -774,4 +784,111 @@ test('a location change hides the previous reading age until validated weather i
     'datetime',
     new Date(fixtureNow).toISOString(),
   );
+});
+
+test('forecast closes after 60 idle seconds, restores focus and reopens with a fresh timeout', async ({
+  page,
+}) => {
+  await page.clock.pauseAt(fixtureNow + 60_000);
+  await page.route('https://api.open-meteo.com/**', async (route) =>
+    route.fulfill({json: sevenDayFixture()}),
+  );
+  await page.goto('/');
+  const open = page.getByRole('button', {name: 'Prévisions sur 7 jours'});
+  const dialog = page.getByRole('dialog');
+  await open.click();
+  await page.clock.fastForward(59_999);
+  await expect(dialog).toBeVisible();
+  await page.clock.fastForward(1);
+  await expect(dialog).toBeHidden();
+  await expect(open).toBeFocused();
+  await expect(page.locator('[data-dashboard]')).toHaveAttribute(
+    'data-mode',
+    'morning',
+  );
+  await page.clock.fastForward(20_000);
+  await open.click();
+  await page.clock.fastForward(59_999);
+  await expect(dialog).toBeVisible();
+  await page.clock.fastForward(1);
+  await expect(dialog).toBeHidden();
+  await expect(open).toBeFocused();
+});
+
+test('pointer, keyboard, wheel and touch input reset the forecast idle timeout', async ({
+  page,
+}) => {
+  await page.clock.pauseAt(fixtureNow + 60_000);
+  await page.route('https://api.open-meteo.com/**', async (route) =>
+    route.fulfill({json: sevenDayFixture()}),
+  );
+  await page.goto('/');
+  const open = page.getByRole('button', {name: 'Prévisions sur 7 jours'});
+  const dialog = page.getByRole('dialog');
+  await open.click();
+  const card = dialog.locator('[data-future-days] button').last();
+  for (const event of ['pointerdown', 'keydown', 'wheel', 'touchmove']) {
+    await page.clock.fastForward(40_000);
+    // Desktop Firefox has no TouchEvent constructor; exercise the shared input
+    // listener without implying a physical touch-device acceptance check.
+    await card.evaluate((element, eventName) => {
+      element.dispatchEvent(new Event(eventName, {bubbles: true}));
+    }, event);
+    await page.clock.fastForward(10_000);
+    await expect(dialog).toBeVisible();
+  }
+
+  await page.clock.fastForward(49_999);
+  await expect(dialog).toBeVisible();
+  await page.clock.fastForward(1);
+  await expect(dialog).toBeHidden();
+  await expect(open).toBeFocused();
+});
+
+test('weather refresh and programmatic focus do not prolong forecast browsing', async ({
+  page,
+}) => {
+  const start = fixtureNow + 60_000;
+  await page.clock.pauseAt(start);
+  await page.addInitScript(
+    ({key, cached, fetchedAt}) => {
+      localStorage.setItem(key, JSON.stringify({raw: cached, fetchedAt}));
+    },
+    {
+      key: cacheKey,
+      cached: sevenDayFixture(start - (45 * 60_000 - 55_000)),
+      fetchedAt: start,
+    },
+  );
+  let calls = 0;
+  await page.route('https://api.open-meteo.com/**', async (route) => {
+    calls++;
+    const now = await page.evaluate(() => Date.now());
+    await route.fulfill({json: sevenDayFixture(now)});
+  });
+  await page.goto('/');
+  const open = page.getByRole('button', {name: 'Prévisions sur 7 jours'});
+  await open.click();
+  const dialog = page.getByRole('dialog');
+  const card = dialog.locator('[data-future-days] button').last();
+  await card.focus();
+  expect(calls).toBe(0);
+  await page.clock.fastForward(55_000);
+  await expect
+    .poll(async () =>
+      page.evaluate((key) => {
+        const cached = JSON.parse(localStorage.getItem(key) ?? '{}') as {
+          fetchedAt?: number;
+        };
+        return cached.fetchedAt;
+      }, cacheKey),
+    )
+    .toBe(start + 55_000);
+  expect(calls).toBe(1);
+  await expect(card).toBeFocused();
+  await page.clock.fastForward(4999);
+  await expect(dialog).toBeVisible();
+  await page.clock.fastForward(1);
+  await expect(dialog).toBeHidden();
+  await expect(open).toBeFocused();
 });

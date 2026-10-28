@@ -38,6 +38,33 @@ export function mountFutureWeather(root: HTMLElement) {
   let renderedDay: string | undefined;
   let renderedWeather: Weather | undefined;
   let signature = '';
+  let idleTimer: ReturnType<typeof setTimeout> | undefined;
+
+  function clearIdleTimer() {
+    clearTimeout(idleTimer);
+    idleTimer = undefined;
+  }
+
+  function closeDialog() {
+    clearIdleTimer();
+    if (dialog.open) {
+      dialog.close();
+    }
+  }
+
+  function resetIdleTimer() {
+    if (!dialog.open) {
+      return;
+    }
+
+    clearIdleTimer();
+    idleTimer = setTimeout(closeDialog, 60_000);
+  }
+
+  // Real input extends browsing; data refreshes and programmatic focus do not.
+  for (const event of ['pointerdown', 'keydown', 'wheel', 'touchmove']) {
+    dialog.addEventListener(event, resetIdleTimer, {...options, passive: true});
+  }
 
   function text(selector: string, value: string, parent: ParentNode = dialog) {
     parent.querySelector(selector)!.textContent = value;
@@ -180,6 +207,7 @@ export function mountFutureWeather(root: HTMLElement) {
       selected = undefined;
       signature = '';
       dialog.showModal();
+      resetIdleTimer();
       render();
     },
     options,
@@ -187,13 +215,14 @@ export function mountFutureWeather(root: HTMLElement) {
   close.addEventListener(
     'click',
     () => {
-      dialog.close();
+      closeDialog();
     },
     options,
   );
   dialog.addEventListener(
     'close',
     () => {
+      clearIdleTimer();
       selected = undefined;
       open.focus();
     },
@@ -219,13 +248,9 @@ export function mountFutureWeather(root: HTMLElement) {
       latest = state;
       render();
     },
-    close() {
-      if (dialog.open) {
-        dialog.close();
-      }
-    },
+    close: closeDialog,
     dispose() {
-      dialog.close();
+      closeDialog();
       lifecycle.abort();
     },
   };
