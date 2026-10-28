@@ -6,6 +6,25 @@
   class="photo-tools absolute right-0 bottom-[calc(100%+0.75rem)] flex gap-1 rounded-2xl border border-border bg-surface p-1 text-primary shadow-lg"
 >
   <button
+    data-photo-previous
+    type="button"
+    aria-label="Précédente"
+    title="Photo précédente"
+    disabled
+    class="grid size-14 place-items-center rounded-xl hover:bg-background disabled:opacity-40"
+  >
+    <svg
+      viewBox="0 0 24 24"
+      class="size-7"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      aria-hidden="true"
+    >
+      <path d="m15 5-7 7 7 7" />
+    </svg>
+  </button>
+  <button
     data-photo-fit
     type="button"
     aria-label="Remplir l’écran"
@@ -58,7 +77,7 @@
   ></p>
 </div>
 <style>
-  /* Portrait gets two large edge buttons; landscape keeps a compact horizontal
+  /* Portrait gets large edge buttons; landscape keeps a compact horizontal
      row. The dock anchors both above navigation without screen-height offsets. */
   @media (orientation: portrait) {
     .photo-tools {

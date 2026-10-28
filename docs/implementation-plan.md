@@ -44,6 +44,13 @@ Review upstream first, then decide deliberately. Dayframe keeps Astro/TypeScript
 
 ## 2. Delivery approach
 
+**F10 selected, 28 October 2026:** [Touch navigation, photo history and screen
+continuity](backlog/F10-touch-navigation.md) now has a web implementation: horizontal
+screen swipes, photo tap history/restoration and bounded live transitions. It uses
+the recommended non-wrapping Morning ↔ Photos ↔ Night order. The delivery record
+at the end tracks verification and rollout; actual-frame touch/performance
+acceptance remains separate.
+
 Deliver one demonstrable slice at a time. Keep task IDs in commits/PRs and update this document with validation evidence. M1 is delivered with local and Workers Free acceptance evidence below. M2 is publicly deployed (see its deployment follow-up below). M3 has local acceptance evidence and production authentication/KV activation below; household upload/delete testing and second-admin setup remain pending. M4 is deployed with the explicit live acceptance gaps recorded below. M5 has local synthetic acceptance evidence below and is committed/pushed; the latest deployment state is recorded in the [current handoff](status.md). M6 physical acceptance remains pending. A task is done only when its acceptance evidence exists; a mock or desktop-only test must be labeled as such.
 
 ```text
@@ -2229,3 +2236,73 @@ navigation dimensions and portrait edge controls are deployed. No credentials,
 private household data, bindings, native settings or paid services changed.
 Physical phone/frame review of this new layout remains separate; prior dated
 acceptance deferrals retain their scope. The local-pending notes above are historical.
+
+## F10 touch navigation and photo continuity — 28 October 2026
+
+Owner selected [F10](backlog/F10-touch-navigation.md) for implementation and asked
+for commit/deployment. Implemented bounded 30-ID viewing history, previous/forward
+retracing and last-photo restoration before gesture/animation work. Mode exit
+still releases decoded images; validated queue/catalog IDs survive only within
+existing refresh/privacy rules. Authorized saved bytes avoid forced image downloads on
+return; catalog revalidation on entry preserves the existing access-check boundary. Storage recovery saves missing current/next bytes without advancing.
+
+Horizontal screen swipes use Morning ↔ Photos ↔ Night without wrapping and feed
+the same temporary override as mode buttons. Photo edge taps browse; centre taps
+reveal controls. Explicit previous/next buttons, background arrow-key navigation,
+focus return, dim Night controls, cancellation/multitouch/dialog exclusions and
+compatibility-click suppression are included. Native dragging is disabled for
+slideshow images, with vertical touch scroll/pinch zoom retained.
+
+Two 110 ms live-page slide halves run after release, with up to 250 ms bounded
+photo preparation. No screenshots or duplicate private views retained. Reduced
+motion/API failure/watchdog use immediate switching; scheduled/lifecycle changes
+cancel pending transforms. Physical smoothness and any preview alternative remain
+an actual-frame acceptance/follow-up, not a desktop performance claim.
+
+Refreshed upstream HEAD `0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189`; read pinned MIT
+`LICENSE`, `dashboard/js/views/photos.js`, `dashboard/js/slideshow.js` and pointer/
+idle shell sections of `dashboard/js/app.js`. Used tap areas/on-demand controls as
+ideas; independently implemented bounded history, forward retracing, privacy-aware
+restoration and transitions. No upstream source/assets copied. No dependency,
+provider request service, retention expansion, credential, billing or device change.
+Rollback is a web revert/previous Worker version; no data migration/deletion.
+
+First F10 browser pass: 24 cases passed across Chromium, Firefox, WebKit and mobile
+WebKit, after focused Chromium offline/privacy checks. Edge-case additions and the
+full local release gate are running. Final local/hosted verification, commit,
+production rollout and independent asset matching will be recorded below.
+
+F10 verification follow-up: the first full gate passed types/lint, all 164
+unit/Worker tests and build, then exposed a re-entry authorization regression and
+animation timing assumptions in geometry/inactive-weather tests. Stopped that
+known-failing run; restored catalog revalidation before publishing saved pixels
+while retaining image-byte reuse. Existing denial assertions remain unchanged.
+Relevant layout checks now wait for mode/transition completion. All 64 focused
+checks passed across four browser projects, including 40 F10 cases and the original
+read-only-cookie denial check. A fresh complete gate is running.
+
+The next complete browser sweep finished with 494 passes, four existing skips and
+two failures of the same storage-warning fixture in WebKit/mobile WebKit. Synthetic
+diagnostics showed the IndexedDB instance override was not intercepting opens
+(the native method remained in place). The fixture now intercepts the prototype
+and asserts that the simulated failure actually ran; no production storage policy
+or warning assertion was weakened. All 16 targeted cases then passed across four
+browsers: storage recovery, keyboard/Night hover contrast, nonfinishing animation
+watchdog and delayed-image preparation. The latter two explicitly prove that
+fallbacks cannot strand the live page offscreen. Night controls use the dark
+hover palette, and slide gaps use a dark backdrop to avoid a bright Night flash.
+A fresh full gate on this final source follows below.
+
+F10 local closeout: types, lint (four existing warnings), all 164 unit/Worker tests,
+build and 508 regular browser checks passed, with four existing skips. The update
+navigation test still began its reload before the animated Night selection had
+committed; it now establishes Night and waits for transition completion, retaining
+all existing override-preservation assertions. All 44 navigation checks passed on
+a complete rerun. Final Night hint/spacing polish avoids overlap with the large
+greeting when retry is visible; all 12 final geometry/photo-tap/Night keyboard
+checks passed across four browsers, with an explicit greeting/dock clearance
+assertion. Reviewed [synthetic screenshots](evidence/f10/README.md) cover frame and
+phone layouts. Formatting, documentation links and diff whitespace passed. The
+hosted full gate will verify the exact committed source before deployment; commit,
+release and independent live verification follow below. No physical acceptance
+or deferred device/security gate is closed by this web evidence.

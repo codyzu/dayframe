@@ -1,4 +1,5 @@
 import {defaultSettings, type Settings} from '../dashboard/settings.ts';
+import {createPhotoHistory} from './history.ts';
 import {
   offlinePersistence,
   updateOfflinePlayback,
@@ -47,7 +48,13 @@ export function shufflePhotos(
   return result;
 }
 
-type LoadedPhoto = {id: string; url: string; image: HTMLImageElement};
+type PhotoDirection = 'next' | 'previous' | 'resume';
+type LoadedPhoto = {
+  id: string;
+  url: string;
+  image: HTMLImageElement;
+  blob: Blob;
+};
 export function mountSlideshow(
   root: HTMLElement,
   controlsRoot: HTMLElement,
@@ -97,6 +104,10 @@ export function mountSlideshow(
   let storageCheckAt = 0;
   let catalog: DisplayPhoto[] = [];
   let queue: string[] = [];
+  const history = createPhotoHistory();
+  const previousButton = controlsRoot.querySelector<HTMLButtonElement>(
+    '[data-photo-previous]',
+  );
   let current: LoadedPhoto | undefined;
   let next: LoadedPhoto | undefined;
   let isActive = false;
@@ -123,6 +134,8 @@ export function mountSlideshow(
     current = undefined;
     next = undefined;
     stage.replaceChildren();
+    delete stage.dataset.photoId;
+    history.clear();
     catalog = [];
     queue = [];
     empty.hidden = false;
@@ -266,8 +279,15 @@ export function mountSlideshow(
 
     const url = URL.createObjectURL(blob);
     const image = new Image();
+    image.draggable = false;
     image.alt = 'Photo de la collection familiale';
     image.src = url;
+    const abortDecode = () => {
+      image.removeAttribute('src');
+      URL.revokeObjectURL(url);
+    };
+
+    signal.addEventListener('abort', abortDecode, {once: true});
     try {
       await image.decode();
       if (signal.aborted) {
@@ -280,12 +300,15 @@ export function mountSlideshow(
         await forgetSavedPhoto(id).catch(() => undefined);
         queue = queue.filter((candidate) => candidate !== id);
         catalog = catalog.filter((photo) => photo.id !== id);
+        history.reconcile(new Set(catalog.map((photo) => photo.id)));
       }
 
       throw error;
+    } finally {
+      signal.removeEventListener('abort', abortDecode);
     }
 
-    return {id, url, image};
+    return {id, url, image, blob};
   }
 
   async function prepareOfflineCatalog(revision: string) {
@@ -300,6 +323,26 @@ export function mountSlideshow(
     } catch {
       reportStorageFailure('Copies locales indisponibles · lecture en ligne.');
       return undefined;
+    }
+  }
+
+  async function saveLoadedPhotos(
+    token: string,
+    existing: DisplayPhoto[],
+    run: number,
+  ) {
+    // Recovery can enable storage while these images are already decoded.
+    for (const loaded of [current, next]) {
+      const photo = catalog.find(({id}) => id === loaded?.id);
+      if (
+        run === generation &&
+        loaded &&
+        photo &&
+        savedSubset.has(loaded.id) &&
+        existing.every(({id}) => id !== loaded.id)
+      ) {
+        await savePhoto(photo, loaded.blob, token);
+      }
     }
   }
 
@@ -352,6 +395,8 @@ export function mountSlideshow(
           savedSubset.add(id);
           bytes += photo.size;
         }
+
+        await saveLoadedPhotos(token, existing, run);
       } catch {
         reportStorageFailure(
           'Copies locales indisponibles · lecture en ligne.',
@@ -363,6 +408,7 @@ export function mountSlideshow(
       return false;
     }
 
+    history.reconcile(new Set(catalog.map(({id}) => id)));
     queue = queue.filter((id) => catalog.some((photo) => photo.id === id));
     if (next && catalog.every((photo) => photo.id !== next?.id)) {
       release(next);
@@ -423,6 +469,7 @@ export function mountSlideshow(
       offlineStatus.hidden = true;
       offlineStatus.textContent = '';
       catalog = stored;
+      history.reconcile(new Set(catalog.map(({id}) => id)));
       queue = queue.filter((id) => stored.some((photo) => photo.id === id));
       refreshAt = Date.now() + 60_000;
       return true;
@@ -440,55 +487,134 @@ export function mountSlideshow(
     return queue.shift();
   }
 
-  async function tick() {
+  function candidateFor(direction: PhotoDirection): string | undefined {
+    if (direction === 'previous') {
+      return history.previous ?? current?.id;
+    }
+
+    const historical = direction === 'resume' ? history.current : history.next;
+    return historical ?? next?.id ?? takeNext();
+  }
+
+  function discardNext() {
+    if (next && history.next === undefined) {
+      queue.unshift(next.id);
+    }
+
+    release(next);
+    next = undefined;
+  }
+
+  function show(loaded: LoadedPhoto, direction: PhotoDirection) {
+    const old = current;
+    if (loaded === next) {
+      next = undefined;
+    }
+
+    current = loaded;
+    history.visit(loaded.id, direction);
+    stage.replaceChildren(loaded.image);
+    stage.dataset.photoId = loaded.id;
+    globalThis.dispatchEvent(new Event('dayframe:slide'));
+    release(old);
+  }
+
+  // eslint-disable-next-line unicorn/consistent-boolean-name -- The return reports whether there is a usable collection.
+  async function display(
+    direction: PhotoDirection,
+    run: number,
+    signal: AbortSignal,
+  ) {
+    while (catalog.length > 0) {
+      const candidate = candidateFor(direction);
+      if (candidate === undefined || candidate === current?.id) {
+        return true;
+      }
+
+      if (next && next.id !== candidate) {
+        discardNext();
+      }
+
+      let loaded: LoadedPhoto;
+      try {
+        loaded = next?.id === candidate ? next : await load(candidate, signal);
+      } catch (error) {
+        if (run !== generation) {
+          return false;
+        }
+
+        const isMissing =
+          (error instanceof ApiError && error.status === 404) ||
+          catalog.every(({id}) => id !== candidate);
+        if (!isMissing) {
+          throw error;
+        }
+
+        catalog = catalog.filter(({id}) => id !== candidate);
+        queue = queue.filter((id) => id !== candidate);
+        history.reconcile(new Set(catalog.map(({id}) => id)));
+        continue;
+      }
+
+      if (run !== generation) {
+        release(loaded);
+        return false;
+      }
+
+      show(loaded, direction);
+      return true;
+    }
+
+    clear();
+    status.textContent =
+      'Ajoutez vos premiers souvenirs depuis l’espace privé.';
+    return false;
+  }
+
+  async function preload(run: number, signal: AbortSignal) {
+    const upcoming = history.next ?? next?.id ?? takeNext();
+    if (
+      upcoming === undefined ||
+      upcoming === current?.id ||
+      upcoming === next?.id
+    ) {
+      return;
+    }
+
+    discardNext();
+    const loaded = await load(upcoming, signal);
+    if (run !== generation) {
+      release(loaded);
+      return;
+    }
+
+    next = loaded;
+  }
+
+  async function tick(direction: PhotoDirection = 'next') {
     const run = generation;
     const {signal} = controller;
+    stage.setAttribute('aria-busy', 'true');
     try {
-      if (!(await ensureCatalog(run, signal))) {
+      const isCatalogReady = await ensureCatalog(run, signal);
+      if (
+        run !== generation ||
+        !isCatalogReady ||
+        !(await display(direction, run, signal))
+      ) {
         return;
-      }
-
-      if (next) {
-        const old = current;
-        current = next;
-        next = undefined;
-        stage.replaceChildren(current.image);
-        globalThis.dispatchEvent(new Event('dayframe:slide'));
-        release(old);
-      }
-
-      if (!current) {
-        const id = takeNext();
-        if (id !== undefined) {
-          const loaded = await load(id, signal);
-          if (run !== generation) {
-            release(loaded);
-            return;
-          }
-
-          current = loaded;
-          stage.replaceChildren(current.image);
-          globalThis.dispatchEvent(new Event('dayframe:slide'));
-        }
       }
 
       empty.hidden = Boolean(current);
       controls.hidden = !current;
+      if (previousButton) {
+        previousButton.disabled = history.previous === undefined;
+      }
+
       status.textContent = isStoredPlayback
         ? 'Hors connexion · photos enregistrées'
         : '';
-      // Only one upcoming image is held.
-      const candidate = takeNext();
-      if (candidate !== undefined && candidate !== current?.id) {
-        const loaded = await load(candidate, signal);
-        if (run !== generation) {
-          release(loaded);
-          return;
-        }
-
-        next = loaded;
-      }
-
+      await preload(run, signal);
       hasFailed = isStoredPlayback;
     } catch (error) {
       if (run !== generation) {
@@ -508,6 +634,7 @@ export function mountSlideshow(
       refreshAt = Date.now() + 60_000;
     } finally {
       if (isActive && run === generation) {
+        stage.setAttribute('aria-busy', 'false');
         timer = setTimeout(
           () => {
             void tick();
@@ -530,27 +657,47 @@ export function mountSlideshow(
     controller = new AbortController();
     // Exiting a mode releases decoded images; opted-in disk copies remain lease-bound.
     if (isActive) {
-      void tick();
+      void tick('resume');
     } else {
-      clearTimeout(privacyTimer);
-      clear();
+      // Preserve IDs and validated catalog state, but no decoded images while away.
+      if (next && next.id !== history.next) {
+        queue.unshift(next.id);
+      }
+
+      release(current);
+      release(next);
+      current = undefined;
+      next = undefined;
+      stage.replaceChildren();
+      delete stage.dataset.photoId;
+      empty.hidden = false;
+      controls.hidden = true;
+      // Re-entry preserves the previous access-verification boundary: revalidate
+      // the catalog before publishing saved pixels, while retaining viewing IDs.
       refreshAt = 0;
     }
+  }
+
+  function navigate(direction: 'next' | 'previous') {
+    if (!isActive) {
+      return;
+    }
+
+    generation++;
+    clearTimeout(timer);
+    controller.abort();
+    controller = new AbortController();
+    void tick(direction);
   }
 
   controlsRoot
     .querySelector('[data-photo-next]')
     ?.addEventListener('click', () => {
-      if (!isActive) {
-        return;
-      }
-
-      generation++;
-      clearTimeout(timer);
-      controller.abort();
-      controller = new AbortController();
-      void tick();
+      navigate('next');
     });
+  previousButton?.addEventListener('click', () => {
+    navigate('previous');
+  });
   function wake() {
     if (!isActive) {
       return;
@@ -561,10 +708,11 @@ export function mountSlideshow(
     controller = new AbortController();
     clearTimeout(timer);
     refreshAt = 0;
-    void tick();
+    void tick('resume');
   }
 
   return {
+    navigate,
     setActive,
     wake,
     get hasFailed() {
@@ -581,7 +729,7 @@ export function mountSlideshow(
       }
 
       if (
-        current &&
+        history.current !== undefined &&
         (Date.now() >= leaseWall ||
           performance.now() >= leaseMonotonic ||
           Date.now() < lastPrivacyWall)

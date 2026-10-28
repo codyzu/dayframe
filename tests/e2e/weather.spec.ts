@@ -267,6 +267,13 @@ test('inactive weather keeps fetching and renders the latest data on return', as
   const curve = await page.locator('[data-chart] path').first().elementHandle();
   const initialCurve = await curve.getAttribute('d');
   await page.getByRole('button', {name: 'Nuit', exact: true}).click();
+  await expect(page.locator('[data-dashboard]')).toHaveAttribute(
+    'data-mode',
+    'night',
+  );
+  await expect(page.locator('[data-dashboard]')).not.toHaveAttribute(
+    'data-transition',
+  );
   await page.clock.fastForward(1_800_000);
   await expect.poll(() => calls).toBe(2);
   await expect(page.locator('[data-temperature]')).toHaveText('12°');
@@ -476,6 +483,13 @@ for (const density of ['standard', 'large']) {
       fullPage: true,
     });
     await page.getByRole('button', {name: 'Matin', exact: true}).click();
+    await expect(page.locator('[data-dashboard]')).toHaveAttribute(
+      'data-mode',
+      'morning',
+    );
+    await expect(page.locator('[data-dashboard]')).not.toHaveAttribute(
+      'data-transition',
+    );
     await page.screenshot({
       path: testInfo.outputPath('morning-dated-stale.png'),
       fullPage: true,

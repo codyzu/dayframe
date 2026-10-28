@@ -19,6 +19,8 @@ import {
   type DisplayMode,
 } from './config.ts';
 import {createModeState} from './schedule.ts';
+import {mountTouchNavigation} from './touch.ts';
+import {mountScreenTransition} from './transition.ts';
 
 const dashboard = document.querySelector<HTMLElement>('[data-dashboard]');
 if (dashboard) {
@@ -26,6 +28,7 @@ if (dashboard) {
 }
 
 function initializeDashboard(root: HTMLElement) {
+  const transition = mountScreenTransition(root);
   const buttons =
     root.querySelectorAll<HTMLButtonElement>('[data-mode-button]');
   const panels = root.querySelectorAll<HTMLElement>('[data-mode-panel]');
@@ -128,6 +131,13 @@ function initializeDashboard(root: HTMLElement) {
   let isPaused = false;
   let isConfigurationFailed = false;
 
+  function focusActivePanel() {
+    const focused = document.activeElement;
+    if (focused?.closest('[data-mode-panel]')) {
+      root.focus({preventScroll: true});
+    }
+  }
+
   function render() {
     const context = dayContext(
       Date.now(),
@@ -152,6 +162,8 @@ function initializeDashboard(root: HTMLElement) {
 
     hadOverride = hasOverride;
     if (mode !== activeMode) {
+      transition.cancel();
+      focusActivePanel();
       activeMode = mode;
       root.dataset.mode = mode;
       panels.forEach((panel) => {
@@ -340,6 +352,20 @@ function initializeDashboard(root: HTMLElement) {
 
   root.addEventListener('pointerdown', interact);
   document.addEventListener('keydown', interact);
+  function selectMode(mode: DisplayMode) {
+    void transition.select(mode, () => {
+      state.interact(Date.now(), performance.now(), mode);
+      navigationUntil = performance.now() + 15_000;
+      navigationWall = Date.now() + 15_000;
+      render();
+    });
+  }
+
+  mountTouchNavigation(root, {
+    mode: () => transition.target ?? state.mode(Date.now(), performance.now()),
+    select: selectMode,
+    photo: slideshow.navigate,
+  });
   buttons.forEach((button) => {
     button.addEventListener('click', () => {
       const mode = button.dataset.modeButton ?? '';
@@ -347,10 +373,7 @@ function initializeDashboard(root: HTMLElement) {
         return;
       }
 
-      state.interact(Date.now(), performance.now(), mode);
-      navigationUntil = performance.now() + 15_000;
-      navigationWall = Date.now() + 15_000;
-      render();
+      selectMode(mode);
     });
   });
   function wake() {

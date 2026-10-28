@@ -203,7 +203,16 @@ test('navigation keeps identical geometry across modes', async ({
     await page.getByRole('button', {name, exact: true}).click();
     await expect(nav).toBeVisible();
     await page.clock.runFor(350);
+    await expect(page.locator('[data-dashboard]')).not.toHaveAttribute(
+      'data-transition',
+    );
     const box = await nav.boundingBox();
+    if (name === 'Nuit') {
+      const title = await page.locator('#night-title').boundingBox();
+      const dock = await page.locator('[data-dashboard-footer]').boundingBox();
+      expect(title!.y + title!.height + 8).toBeLessThanOrEqual(dock!.y);
+    }
+
     expect(box!.x).toBeCloseTo(original!.x, 0);
     expect(box!.y).toBeCloseTo(original!.y, 0);
     expect(box!.width).toBeCloseTo(original!.width, 0);

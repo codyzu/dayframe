@@ -17,11 +17,12 @@ import {displayConfig} from '../lib/dashboard/config';
     <script is:inline set:html={startupGuard()} />
   )}
   <main
-    class="dashboard min-h-dvh flex flex-col px-4 py-4 md:p-6"
+    class="dashboard min-h-dvh flex flex-col px-4 py-4 md:p-6 select-none"
     data-density="large"
     data-dashboard
     data-build={import.meta.env.PUBLIC_BUILD_ID}
     data-mode="morning"
+    tabindex="-1"
   >
     <svg
       class="alpine-header"
@@ -123,6 +124,12 @@ import {displayConfig} from '../lib/dashboard/config';
       >
         Réessayer la connexion
       </button>
+      <p
+        data-touch-hint
+        class="rounded-xl bg-surface px-3 py-2 text-center text-xs text-secondary"
+      >
+        Balayez pour changer d’écran. Photos : touchez les côtés pour parcourir.
+      </p>
       <ModeNavigation />
     </footer>
     <noscript>
@@ -138,8 +145,14 @@ import {displayConfig} from '../lib/dashboard/config';
 </BaseLayout>
 
 <style>
+  /* Clip the translated page; a dark backdrop avoids a bright flash into Night. */
+  :global(body.display-page) {
+    overflow-x: clip;
+    background: var(--colors-night);
+  }
   /* Use the household’s large type everywhere; narrow layouts reflow. */
   .dashboard {
+    touch-action: pan-y pinch-zoom;
     position: relative;
     background: var(--colors-background);
     --font-weather-temperature: 6.25rem;
@@ -183,9 +196,23 @@ import {displayConfig} from '../lib/dashboard/config';
     background: var(--colors-night);
     color: var(--colors-night-ink);
   }
+  .dashboard[data-mode='night'] .display-dock {
+    --colors-background: var(--colors-night);
+    --colors-surface: var(--colors-night);
+    --colors-primary: var(--colors-night-ink);
+    --colors-secondary: var(--colors-night-ink);
+    --colors-border: #625b4e;
+  }
   .dashboard[data-mode='night'] [data-dashboard-header],
   .dashboard[data-mode='night'] .alpine-header {
     visibility: hidden;
+  }
+  /* Keep the large greeting clear even when retry and navigation are revealed. */
+  .dashboard[data-mode='night'] [data-touch-hint] {
+    display: none;
+  }
+  .dashboard[data-mode='night'] [data-mode-panel='night'] {
+    padding-bottom: 3rem;
   }
   /* The large display fits its native canvas. Phones keep readable type and
      enough scroll clearance to reach content above the anchored navigation. */

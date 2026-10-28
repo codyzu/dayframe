@@ -104,6 +104,15 @@ compact horizontal pair. Hide photo controls when no photo is loaded and with id
 navigation. Keep interruption/reconnect text accessible and avoid the clock/photo
 center. Preserve existing framing persistence, authentication and offline bounds.
 
+**F10 implementation direction, 28 October 2026:** horizontal swipes select the
+non-wrapping Morning ↔ Photos ↔ Night sequence, using the same temporary override
+as bottom buttons. Photos adds previous/next tap zones and explicit buttons,
+bounded viewing history and last-photo restoration. Night taps reveal dim controls
+only. Short post-release slides respect reduced motion and fail back to immediate
+switching. This supersedes the earlier two-photo-control layout description;
+privacy, memory and offline limits remain unchanged. See [F10](backlog/F10-touch-navigation.md)
+for local/release evidence and separate physical-frame acceptance.
+
 Touching the kiosk reveals minimal mode navigation. The user can manually switch modes; the override is temporary and returns to the scheduled mode after a configurable inactivity timeout. Overrides can be local to each display initially. Navigation fades or hides after inactivity. Admin tools are not exposed on the kiosk navigation.
 
 For the native kiosk, normal dashboard display has no persistent DK maintenance button. A stationary two-finger hold for approximately 1.5 seconds opens native maintenance. Keep the independent service-owned DK return control visible outside the kiosk, including Android Settings, so the owner can return to the display. Native failure/setup screens retain explicit maintenance access.

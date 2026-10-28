@@ -804,18 +804,28 @@ test('unavailable local storage warns during online playback and clears after re
 }, info) => {
   await page.addInitScript(() => {
     const open = indexedDB.open.bind(indexedDB);
-    indexedDB.open = (...args) => {
-      if (document.documentElement.dataset.storageRecovered !== 'true') {
-        throw new Error('Storage unavailable');
-      }
+    // Prototype interception also exercises WebKit’s store opens.
+    Object.defineProperty(IDBFactory.prototype, 'open', {
+      configurable: true,
+      writable: true,
+      value(...args: Parameters<IDBFactory['open']>) {
+        if (document.documentElement.dataset.storageRecovered !== 'true') {
+          document.documentElement.dataset.storageUnavailable = 'true';
+          throw new Error('Storage unavailable');
+        }
 
-      return open(...args);
-    };
+        return open(...args);
+      },
+    });
   });
   await routeSeededCatalog(page);
   await page.goto('/?display=frame');
   await page.getByRole('button', {name: 'Photos', exact: true}).click();
   await expect(page.locator('[data-photo-stage] img')).toBeVisible();
+  await expect(page.locator('html')).toHaveAttribute(
+    'data-storage-unavailable',
+    'true',
+  );
   await expect(page.locator('[data-photo-offline-status]')).toHaveText(
     'Copies locales indisponibles · lecture en ligne.',
   );

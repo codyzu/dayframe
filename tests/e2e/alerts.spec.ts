@@ -124,6 +124,13 @@ test('larger Photos overlay fits long conditions and Night has no technical copy
   await page.goto('/');
   await page.getByRole('button', {name: 'Photos', exact: true}).click();
   const overlay = page.locator('.photo-at-a-glance');
+  await expect(page.locator('[data-dashboard]')).toHaveAttribute(
+    'data-mode',
+    'photos',
+  );
+  await expect(page.locator('[data-dashboard]')).not.toHaveAttribute(
+    'data-transition',
+  );
   const clock = await overlay.locator('[data-clock]').boundingBox();
   expect(clock!.height).toBeGreaterThanOrEqual(
     info.project.name === 'mobile' ? 72 : 96,

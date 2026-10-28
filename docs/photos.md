@@ -395,3 +395,27 @@ carry useless framing controls. Mode navigation has identical width, touch targe
 and bottom anchor across all modes. The larger typography is now the default;
 there is no text-size selector. See [readability](display-density.md) and the latest
 [implementation record](implementation-plan.md#mobile-photo-controls-and-readability-correction--28-october-2026).
+
+## Touch browsing and continuity — F10, 28 October 2026
+
+Web implementation, release evidence tracked in [F10](backlog/F10-touch-navigation.md).
+Swipe horizontally between Morning, Photos and Night; the sequence does not wrap.
+Bottom buttons select the same screens. Every manual screen selection uses the
+existing inactivity-based temporary override; it does not edit the schedule or
+mean “stay dark until morning.” A Night tap only reveals dim controls.
+
+In Photos, tap the left/right outer thirds (30% each) for previous/next, or use the
+explicit buttons. The centre reveals controls without advancing. Previous follows
+actual viewing history, and forward retraces it before continuing the shuffle.
+At the oldest retained entry, Previous is disabled. History is limited to 30 IDs
+in page memory and resets on reload or access invalidation. Returning from another
+screen restores the last viewed photo/cursor and starts a full configured interval.
+No decoded image stays resident while away. Entry revalidates the catalog before
+publishing pixels; authorized local image bytes are reused without a forced image
+download. Network failure can still use the existing valid offline lease. Existing photo expiry/deletion/offline rules apply.
+
+Screen slides occur after release and respect reduced motion; animation failures
+fall back to immediate switching. Forecast-dialog scrolling and native maintenance
+remain separate. Actual frame touch/smoothness acceptance is still pending; no
+native package/settings change is part of F10. Revert the web build to undo F10;
+existing saved photos and configuration require no migration.
