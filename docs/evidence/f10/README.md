@@ -22,3 +22,11 @@ not physical frame performance, touch precision or native maintenance acceptance
 production rollout and remaining actual-device gate. Preview screenshots are
 documentation artifacts; the app does not retain screenshots or duplicate views
 for its transitions.
+
+## Production verification
+
+[Live asset matches](live-assets.json) record 17 public deployed files compared
+byte-for-byte with release 40760808299's approved artifact, including the main
+HTML, bundled JavaScript/CSS and offline/version files. This production evidence
+is separate from the synthetic screenshots above. Anonymous smoke checks passed;
+no private household data or credentials were read for this verification.

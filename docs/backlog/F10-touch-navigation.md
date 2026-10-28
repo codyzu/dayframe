@@ -1,7 +1,7 @@
 # F10 — Touch navigation, photo history and screen continuity
 
-Status: web implementation complete locally, 28 October 2026. Commit/hosted
-release and production rollout pending; actual-frame animation acceptance remains
+Status: deployed 28 October 2026 as `4224129`. Full hosted verification and
+independent live asset matching passed; actual-frame animation acceptance remains
 separate.
 P2 / M.
 Follow the [delivery contract](delivery-contract.md).
@@ -282,3 +282,36 @@ in [F10 evidence](../evidence/f10/README.md). These CSS/layout checks supplement
 the regular sweep; the hosted full gate will verify the exact committed source
 before deployment. Formatting, local links and diff whitespace checks passed.
 Production rollout and independent live matching remain pending below.
+
+## Production rollout completed — 28 October 2026
+
+[Release 40760808299](https://github.com/codyzu/dayframe/actions/runs/40760808299)
+succeeded for `4224129541629a3324ebf0520cf7fb6d3603e298`: full hosted `pnpm verify`,
+164 unit/Worker tests, 508 browser passes with four existing intentional skips,
+all 44 offline-navigation checks, verified-asset deployment and live smoke.
+Worker version `33868b6b-0585-4351-88e8-d509d7d11d78`; public build
+`6fcd305d-b059-497a-b9e2-eddeb7ebd111`. The previous public build was independently
+observed as `23e48e01-f7ab-4d21-b11b-d2907339441d` before promotion.
+
+Downloaded the approved production artifact and independently matched live home
+HTML, all bundled JavaScript/CSS, `/offline`, `/sw.js` and `/version.json`: 17 files,
+with redirects forbidden. The public [asset-match record](../evidence/f10/live-assets.json)
+retains their SHA-256 hashes. Re-ran the complete anonymous smoke matrix: health
+remains production/healthy, admin routes redirect to Access, private photo/
+calendar/settings/session reads remain denied, and headerless mutations remain
+denied with no-store responses. No household data, credentials, bindings, native
+settings or paid services changed. Web implementation, commit and deployment are
+complete. Actual frame touch/animation performance and previous hardware/security/
+soak deferrals remain separate. Earlier pending notes describe prior stages.
+
+CI timing: checks took 19m09s including browser installation; the regular browser
+suite took 12.7m (previous release: 8.2m), and navigation 2.7m (previous: 1.1m).
+Unit tests took 7.94s. F10 adds four unit tests and 13 scenarios across four browser
+projects (52 executions). Existing tests also now wait for screen animations.
+One concrete navigation-suite contributor is the Photos update-order test: wake
+now restores the current photo instead of advancing, so it waits for the next
+scheduled slide (about 20 real seconds in each browser). Preserving that behavior
+and its ordering assertion while advancing the test clock is a possible separate
+CI optimization. No complete per-test timing report was retained by the passing
+CI reporter, so the remaining slowdown has not been isolated. No test, security,
+Free-plan or deployment gate was removed to obtain this release.

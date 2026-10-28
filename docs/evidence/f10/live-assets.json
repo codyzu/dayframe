@@ -1,0 +1,77 @@
+{
+  "release": "https://github.com/codyzu/dayframe/actions/runs/40760808299",
+  "commit": "4224129541629a3324ebf0520cf7fb6d3603e298",
+  "build": "6fcd305d-b059-497a-b9e2-eddeb7ebd111",
+  "workerVersion": "33868b6b-0585-4351-88e8-d509d7d11d78",
+  "recordedAt": "2026-10-28T20:33:10.383896+00:00",
+  "files": [
+    {
+      "path": "/",
+      "sha256": "00e8362757e717ceb16292aef58b3d2371c122da9a76fcea2a4f379a482b6a36"
+    },
+    {
+      "path": "/offline",
+      "sha256": "78904ec2bb387196c267d7df0ece329d0362718f0c664a650900d9d9c4ab6621"
+    },
+    {
+      "path": "/sw.js",
+      "sha256": "8b3d194376bc7edf6f9a5c2da4a9075e494e034b96df839894f763ff65d0b622"
+    },
+    {
+      "path": "/version.json",
+      "sha256": "7032727cc08ff3d8b7aafe594e70b974d68d4a44f2ba02fd306ad4d7e492b9de"
+    },
+    {
+      "path": "/_astro/BaseLayout.CEf0gPTy.css",
+      "sha256": "2a24a59855967a637f7b2d3fdda2b19b996d1f35d5da89182cab3c6cb8f76465"
+    },
+    {
+      "path": "/_astro/client.HcxFdxc0.js",
+      "sha256": "2bf040e2d9587e3ccb0c0f2ee62926e5de00977e0f443cc888ae163e2043c5b0"
+    },
+    {
+      "path": "/_astro/contracts.BNykGCl8.js",
+      "sha256": "2202eb7a1391f86054a098487db4d2afa41a52e824c494ac0a96169577c23916"
+    },
+    {
+      "path": "/_astro/index.DxjssKv0.css",
+      "sha256": "36bb952474f067a21ac72c23a2da49059a67d52b83cdf0440d24e5aa0adebfb4"
+    },
+    {
+      "path": "/_astro/index.astro_astro_type_script_index_0_lang.BMPwpLxd.js",
+      "sha256": "dea6b05632038c0a8200f0b1a4bd9dd36524dfcbbda90496f418bbd2d5d4280b"
+    },
+    {
+      "path": "/_astro/photo-paste.astro_astro_type_script_index_0_lang.CI42aHWi.js",
+      "sha256": "cd8693fb4e20da3338e802089baf2bd79e39c7ff383f2413a9ba2256d995e3ed"
+    },
+    {
+      "path": "/_astro/photos.astro_astro_type_script_index_0_lang.8xQuygYc.js",
+      "sha256": "85c83c77c3337c751f73fdbf4b10277c68f208d6bacd943bbe3cd8e44bafa5a7"
+    },
+    {
+      "path": "/_astro/processing.CouALDc_.js",
+      "sha256": "4d9999c97aff644f2a55b74cd82832dc8407e9ba6e6e34018deb0cf56995e965"
+    },
+    {
+      "path": "/_astro/settings.astro_astro_type_script_index_0_lang.hkAHfWA8.js",
+      "sha256": "dfaa06f6c7feb062449e2d1ccb5d83469795a33539588bd17196f4cc597d0f47"
+    },
+    {
+      "path": "/_astro/settings.bqPRxmhq.js",
+      "sha256": "dac2461a224e5c92f19bfc468f6b7e470dc4519664354621265bbc845441ebea"
+    },
+    {
+      "path": "/_astro/setup.astro_astro_type_script_index_0_lang.4ESIHOvW.js",
+      "sha256": "d397ad467cf2d9d40c747aeab35ce1fbf161a540354eb8ea193125d9fdbd7c37"
+    },
+    {
+      "path": "/_astro/webp-fallback.BuSKc065.js",
+      "sha256": "b42c73a8e8017da66f9aa34eec286ab0a44663680474414b358b9e0559751cd5"
+    },
+    {
+      "path": "/_astro/webp-worker-Bp5tRGUh.js",
+      "sha256": "fd817449ae01ab2bacbc13db71017b6320f12015e68b0cdac56b0fe2dcd792d4"
+    }
+  ]
+}

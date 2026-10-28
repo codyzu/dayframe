@@ -398,7 +398,8 @@ there is no text-size selector. See [readability](display-density.md) and the la
 
 ## Touch browsing and continuity — F10, 28 October 2026
 
-Web implementation, release evidence tracked in [F10](backlog/F10-touch-navigation.md).
+Deployed 28 October 2026 as `4224129`; full release and independent live verification
+passed. Evidence is tracked in [F10](backlog/F10-touch-navigation.md).
 Swipe horizontally between Morning, Photos and Night; the sequence does not wrap.
 Bottom buttons select the same screens. Every manual screen selection uses the
 existing inactivity-based temporary override; it does not edit the schedule or

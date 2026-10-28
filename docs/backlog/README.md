@@ -114,12 +114,13 @@ state and any separate device acceptance. Keep unmet gates explicit.
 
 ## Implementation follow-up — 27 October 2026
 
-Feature selected for implementation 28 October: [F10 touch navigation, photo history and screen
+Deployed 28 October: [F10 touch navigation, photo history and screen
 continuity](F10-touch-navigation.md) (P2 / M). Captures screen swipes, photo tap
 zones, previous/forward history, restoring the last photo and measured transition
 options. The implementation uses the recommended non-wrapping Morning ↔ Photos ↔ Night
-order. Local validation is complete; hosted release and rollout are pending. Physical
-touch/performance acceptance remains separate. See the plan for implementation decisions and evidence.
+order. Deployed as `4224129` through release `40760808299`; full verification,
+live smoke and independent asset matching passed. Physical touch/performance
+acceptance remains separate. See the plan for implementation decisions and evidence.
 
 F01 and F02 were deployed on 28 October with reading-age labels; the tables above
 retain the dated audit baseline. Current behavior, focused validation, upstream review and explicit
