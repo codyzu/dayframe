@@ -3,7 +3,7 @@
 **27 October 2026 audit:** [Feature coverage and separate-chat implementation plans](backlog/README.md)
 provide the current backlog entry point. The audit distinguishes missing behavior,
 implemented features awaiting acceptance, and optional enhancements. F01 freshness and F02 future forecast browsing are deployed as of 28 October;
-see the delivery record at the end. F03 quiet display is implemented locally on 28 October; its release record is at the end.
+see the delivery record at the end. F03 quiet display is deployed as of 28 October; its release record is at the end.
 The audit itself changed no product behavior or deployment; existing hardware/security
 deferrals remain in force.
 Historical milestone headers and execution records below retain their dated scope.
@@ -2142,3 +2142,24 @@ mobile, normal/partial-sync/offline/empty/expired/denied/failure states and keyb
 administration. No actual device operation or new physical acceptance is claimed.
 Hosted `pnpm verify`, verified-artifact deployment and independent live matching
 remain pending until the release record below.
+
+### F03 production rollout completed — 28 October 2026
+
+[Release 40718575390](https://github.com/codyzu/dayframe/actions/runs/40718575390)
+succeeded for `ced80dffbd275a3f2b15a48af0ea197e07aa1edf`: full `pnpm verify`,
+163 unit/Worker integration tests, 452 browser passes with four existing intentional
+skips, all 44 offline-navigation checks, verified-artifact upload and live smoke.
+The final local diagnostics run also passed all eight cases across the four browser
+projects. Worker version `790be822-4735-47ab-9856-ba730aa075f5`; public build
+`97968ea2-6de5-49ba-aad1-7a82d23026a2`.
+
+Downloaded the approved production artifact and independently matched live home
+HTML, dashboard and photo-admin JavaScript, shared/dashboard CSS, `/offline`,
+`/sw.js` and `/version.json` byte hashes with redirects forbidden. Re-ran the full
+anonymous smoke matrix using that artifact: public health is production/healthy,
+admin redirects to Access, private photo/calendar/settings/session reads remain
+denied and headerless mutations remain denied with no-store responses. No private
+household data, credentials, bindings, services/billing or native settings changed.
+Physical-frame visual/touch acceptance and previously deferred security/offline/
+stability checks remain separate. F03 web implementation, commit and deployment
+are complete; the dated local-pending records above describe earlier stages only.

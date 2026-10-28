@@ -1,11 +1,14 @@
 # Dayframe status and validation register
 
-**28 October F03 quiet display (local):** normal online/partial-sync Photos no
+**28 October F03 quiet display release:** normal online/partial-sync Photos no
 longer shows routine persistence/synchronization notices. On-demand storage details
 now live in collapsed photo administration, scoped to the current browser. Offline,
 local-storage failure, empty/expired/access-denied messages and recovery controls
-remain. Narrow-screen photo controls/retry sit below the clock/weather. Release
-verification and deployment are pending; physical-frame visual acceptance remains
+remain. Narrow-screen photo controls/retry sit below the clock/weather. [Release 40718575390](https://github.com/codyzu/dayframe/actions/runs/40718575390)
+deployed `ced80df` after 163 unit/integration, 452 browser passes (four existing
+skips) and 44 navigation checks. Live smoke and independent approved-artifact
+matching passed. Worker `790be822-4735-47ab-9856-ba730aa075f5`; build
+`97968ea2-6de5-49ba-aad1-7a82d23026a2`. Physical-frame visual acceptance remains
 separate. [Delivery record](implementation-plan.md#f03-quiet-everyday-display--28-october-2026).
 
 **28 October forecast inactivity release:** `701e918` is deployed through

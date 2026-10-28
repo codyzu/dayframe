@@ -1,6 +1,6 @@
 # F03 — Quiet everyday display
 
-Status: implemented locally 28 October 2026; release verification/deployment pending. Physical-frame visual acceptance remains separate. P2 / S.
+Status: deployed 28 October 2026 as `ced80df`; full release and live verification passed. Physical-frame visual acceptance remains separate. P2 / S.
 Follow the [delivery contract](delivery-contract.md). Coordinate stale copy with F01.
 
 ## Evidence and target
@@ -58,3 +58,10 @@ administration diagnostics and retained Dayframe controls, authenticated images 
 bounded decode/storage rather than upstream mock favorites, motion/layouts or history.
 No source/assets copied. Tests, release evidence and remaining physical limits are
 tracked in the [delivery record](../implementation-plan.md#f03-quiet-everyday-display--28-october-2026).
+
+Production [release 40718575390](https://github.com/codyzu/dayframe/actions/runs/40718575390)
+passed full `pnpm verify` (163 unit/integration, 452 browser passes, four existing
+skips, 44 navigation checks), deployment and live smoke. Independently matched
+approved HTML, dashboard/admin scripts, CSS and offline artifacts to production.
+Worker `790be822-4735-47ab-9856-ba730aa075f5`; build
+`97968ea2-6de5-49ba-aad1-7a82d23026a2`. Physical review remains separate.
