@@ -22,3 +22,11 @@ parsed Annecy search results and resolved rounded New York coordinates to the
 expected timezone. See the [feature contract](../../weather-location.md) and dated
 [release record](../../implementation-plan.md) for full verification/deployment.
 These captures do not claim physical iPhone permission/keyboard or frame acceptance.
+
+[Release 40968059381](https://github.com/codyzu/dayframe/actions/runs/40968059381)
+deployed source `54b9559` after 176 unit/Worker tests, 576 browser cases (four existing
+skips), and 44 offline-navigation cases passed. The independent
+[live-file comparison](live-assets.json) matched 17 files against the verified
+artifact, including all public JavaScript/CSS and offline entry points. Anonymous
+smoke checks and real town search/selection/forecast/reset in isolated mobile
+WebKit passed. No signed-in household session or personal location was used.

@@ -1,8 +1,8 @@
 # Dayframe: Implementation Plan
 
 **Device weather location, 29 October 2026:** Selected as one M2/M5 feature slice;
-[feature contract and operations](weather-location.md). Implemented and locally verified; the authorized main-push verification and
-deployment are tracked in the delivery entry at the end.
+[feature contract and operations](weather-location.md). Implemented and deployed at `54b9559`; successful full verification, production
+smoke tests and independent live checks are tracked in the delivery entry at the end.
 
 **27 October 2026 audit:** [Feature coverage and separate-chat implementation plans](backlog/README.md)
 provide the current backlog entry point. The audit distinguishes missing behavior,
@@ -2555,3 +2555,26 @@ Release correction local validation: all 16 focused scheduling/reload/location/
 vigilance regression cases passed across Chromium, Firefox, WebKit and iPhone
 emulation. Types, XO and the production build passed; only the four existing
 complexity warnings remain. The original failing kiosk assertion is unchanged.
+
+Production closeout — 30 October 2026 (Europe/Paris): corrected source commit
+`54b955994fd55975804cfcd96826af215df801d2` passed
+[Checks and deployment 40968059381](https://github.com/codyzu/dayframe/actions/runs/40968059381).
+Types, lint (four existing warnings), all 176 unit/Worker tests, 576 browser cases
+with four existing intentional skips, and all 44 enabled offline-navigation cases
+passed. The existing Free-plan assertion gate passed, followed by upload and live
+smoke checks. Worker version `0f695a1c-5ac3-440b-9295-0cddaf3a49b2`, public
+build `d50cd569-899d-4a1c-bb0b-679130aa71b3`. No service/binding/billing change.
+
+Independent [live-file comparison](evidence/weather-location/live-assets.json)
+matched 17 files against the downloaded verified artifact: home HTML, offline
+entry points and all public JavaScript/CSS. Independently repeated anonymous
+smoke checks passed, preserving private-resource denial and no-store responses.
+An isolated mobile WebKit context on the deployed site passed real Open-Meteo
+town search, selection, forecast loading, independent Paris household clock and
+household reset. It used only public example locations and no signed-in household
+session; its browser data was discarded. Local enabled offline-navigation checks
+also passed all 44 cases before release. Documentation, implementation, commits,
+push, deployment and independent live verification are complete. Physical iPhone
+permission/keyboard and actual-frame acceptance remain separate, with previous
+security/hardware/soak deferrals unchanged. Historical pending notes above retain
+their earlier scope.

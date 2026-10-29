@@ -120,3 +120,12 @@ gate; see the dated [implementation record](implementation-plan.md). Rollback us
 the previous Cloudflare Worker version or a revert through that workflow. Previous
 builds ignore the additive localStorage key; no migration or data deletion is needed.
 The independent minimal offline fallback remains photo/time-only, without a picker.
+
+Production closeout: source `54b9559` deployed through
+[release 40968059381](https://github.com/codyzu/dayframe/actions/runs/40968059381).
+Full verification passed: 176 unit/Worker tests, 576 browser cases (four existing
+skips), and 44 offline-navigation cases. Independent anonymous smoke checks and
+[17 live-file hashes](evidence/weather-location/live-assets.json) matched the tested
+release. Real town search/selection/forecast/reset and household clock independence
+also passed in an isolated mobile WebKit context on production. Actual iPhone
+permission/keyboard and frame acceptance remain separate.
