@@ -214,7 +214,7 @@ weather polling and its request budget are unchanged.
 
 ## Time-aware advice and graph-first browsing — 28 October 2026
 
-Local implementation; not deployed. Advice uses hourly forecasts still ahead,
+Implemented locally on 28 October and deployed on 29 October. Advice uses hourly forecasts still ahead,
 not the daily maximum as a promise of future warming. Before the forecast peak,
 it can name the expected temperature and time. After that peak it names the
 21h forecast; from 21h it names tomorrow's 07h forecast, using local calendar
@@ -241,4 +241,7 @@ One shared provider response, existing cache format and request budget, existing
 modal focus/close/idle lifecycle, static icons and reduced-motion policy remain.
 Rollback is a web-source revert; no data migration or service/device change.
 Local validation and upstream provenance are recorded in the implementation plan.
-Physical Classic 10/iPhone acceptance and production rollout remain separate.
+Physical Classic 10/iPhone acceptance remains separate. Production rollout from
+`bec84c3` passed through [release 40831092865](https://github.com/codyzu/dayframe/actions/runs/40831092865),
+including the corrected complete focus rings, the full gate and independent live
+asset matching/access checks.

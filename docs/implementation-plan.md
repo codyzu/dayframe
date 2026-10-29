@@ -2397,3 +2397,29 @@ build passed. All 16 focused browser checks passed, including complete ring
 clearance and full graph visibility. Reviewed and refreshed the frame/phone
 previews in [weather evidence](evidence/weather-outlook/README.md). The corrected
 main-push release and live verification follow below.
+
+### Weather outlook production rollout completed — 29 October 2026
+
+[Release 40831092865](https://github.com/codyzu/dayframe/actions/runs/40831092865)
+succeeded for `bec84c30724daeba55b64d8564f3cf58b3ce7577`, including the weather
+implementation `b434c3e` and complete focus-outline correction. Full hosted
+`pnpm verify` passed: types/lint/build, all 173 unit/Worker integration tests,
+524 regular browser passes with four existing intentional skips, and all 44
+offline-navigation checks. Checks took 17m43s; deployment and live smoke took 34s.
+Worker version `4df668e8-11ad-4538-81c7-b1fb5fff3d88`; public build
+`f8622925-4792-4303-8669-2e404182ab28`. The previous build was independently
+observed as `6fcd305d-b059-497a-b9e2-eddeb7ebd111` before promotion. The earlier
+cancelled run did not deploy.
+
+Downloaded this run's approved `production-assets` artifact and independently
+matched live home HTML, every bundled JavaScript/CSS file, `/offline`, `/sw.js`
+and `/version.json`: 17 files, with redirects rejected. The public
+[asset-match record](evidence/weather-outlook/live-assets.json) retains hashes,
+commit/build identifiers and the Worker version. Re-ran the complete anonymous
+smoke matrix: production health is healthy; admin routes redirect to Access;
+private photo/calendar/settings/session reads and headerless mutations remain
+denied with no-store responses. No bindings, credentials, household data, native
+settings or paid services changed. Commit, deployment and independent live
+verification are complete; physical-device touch/reading acceptance and previous
+hardware/security/soak deferrals remain separate. Earlier local-only/pending
+notes describe preceding stages.
