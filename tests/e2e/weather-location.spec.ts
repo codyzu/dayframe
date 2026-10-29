@@ -347,6 +347,7 @@ test('vigilance details retain a location entry point when the compact frame hid
     }),
   );
   await page.goto('/?display=frame');
+  await expect(page.locator('a[href^="/admin"]')).toHaveCount(0);
   await expect(page.locator('[data-alert-title]')).toContainText(
     'Vigilance orange',
   );

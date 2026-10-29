@@ -2537,3 +2537,21 @@ rounded New York coordinates to America/New_York. No personal location was sent.
 The authorized release commit/main push follows; CI must complete full verification
 and its existing Free-plan gate before deployment. Physical permission/keyboard
 and frame acceptance remain separate.
+
+First release attempt `e6b0b68`, run [40965133442](https://github.com/codyzu/dayframe/actions/runs/40965133442),
+stopped at the original 20-minute job limit without deployment. All 176 unit/Worker
+tests passed. Browser results were 571 passed, four existing skips and five failures:
+four scheduling checks correctly rejected the new admin link in frame mode; one
+weather reload hit an old-document fixture-clock evaluation race. Frame mode now
+removes the admin link entirely; ordinary phone/desktop browsing retains it. The
+shared warning fixture aborts only requests whose document is destroyed/closed
+during navigation, propagating other errors. This preserves the scheduling
+boundary and does not weaken assertions. Verification now has a bounded 25-minute
+job allowance for the roughly 18-minute browser matrix plus setup and offline
+checks; the deployment job stays at 20 minutes. All verification gates remain.
+Focused regression checks and a new main-push release follow below.
+
+Release correction local validation: all 16 focused scheduling/reload/location/
+vigilance regression cases passed across Chromium, Firefox, WebKit and iPhone
+emulation. Types, XO and the production build passed; only the four existing
+complexity warnings remain. The original failing kiosk assertion is unchanged.

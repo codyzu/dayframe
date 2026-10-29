@@ -30,6 +30,12 @@ export function mountLocationPicker(
   )!;
   // Vigilance can hide the decorative header; its modal must remain available.
   root.append(dialog);
+  if (
+    new URLSearchParams(globalThis.location.search).get('display') === 'frame'
+  ) {
+    dialog.querySelector('[data-location-admin]')!.remove();
+  }
+
   const form = dialog.querySelector<HTMLFormElement>('form')!;
   const input = form.querySelector<HTMLInputElement>('input')!;
   const status = dialog.querySelector<HTMLElement>('[data-location-status]')!;

@@ -18,8 +18,9 @@ failure leaves town search usable. Position is a snapshot, not travel tracking.
 
 “Revenir au lieu de la maison” removes the browser preference and uses the latest
 authorized household configuration, or the public Annecy example when unauthorized.
-The separate administration link opens the existing authenticated settings editor
-for household-wide changes. The picker itself never writes household settings.
+Outside `?display=frame`, the separate administration link opens the existing
+authenticated settings editor for household-wide changes. Frame mode omits the
+admin entry entirely, preserving the kiosk navigation boundary. The picker itself never writes household settings.
 
 ## Time and coverage
 

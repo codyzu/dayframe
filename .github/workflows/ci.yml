@@ -11,7 +11,7 @@ jobs:
       group: checks-${{ github.event.pull_request.number || github.ref }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     env:
       WRANGLER_SEND_METRICS: 'false'
       # Ordinary browser checks run first; only the verified final enabled build

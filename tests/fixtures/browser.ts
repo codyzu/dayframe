@@ -7,11 +7,26 @@ const test = base.extend<{officialWarnings: void}>({
   officialWarnings: [
     async ({page}, use) => {
       await page.route('**/api/weather-alerts', async (route) => {
-        const now = await page.evaluate(() => Date.now());
-        await route.fulfill({
-          contentType: 'application/atom+xml',
-          body: alertsFixture([], now),
-        });
+        try {
+          const now = await page.evaluate(() => Date.now());
+          await route.fulfill({
+            contentType: 'application/atom+xml',
+            body: alertsFixture([], now),
+          });
+        } catch (error) {
+          // Reload can destroy the old document while its intercepted request
+          // reads the fixture clock. Abort that request; the new page owns its feed.
+          if (
+            !(error instanceof Error) ||
+            !/Execution context was destroyed|Target page, context or browser has been closed|Test ended/v.test(
+              error.message,
+            )
+          ) {
+            throw error;
+          }
+
+          await route.abort().catch(() => undefined);
+        }
       });
       await use();
     },
