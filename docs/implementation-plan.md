@@ -2374,3 +2374,26 @@ and unchanged request counts. Formatting and diff whitespace passed. Reviewed
 forecast and late-evening advice. This is local web evidence; no physical-device
 acceptance is claimed. The owner authorized commit and deployment on 29 October;
 the main-push release gate and independent live verification follow below.
+
+### Forecast focus-outline correction — 29 October 2026
+
+The owner noticed clipped button outlines in the previews while the authorized
+release of `b434c3e` was checking. Confirmed the borders were present; the horizontal
+day strip clipped the outside keyboard-focus ring because it had no top/side
+padding. Partially visible neighbouring phone cards remain an intentional scroll
+affordance. Add 8 px strip/scroll padding and a 16 px gap so the complete ring
+fits, including the first and last selected cards. This uses literal UnoCSS
+utilities; the upstream hierarchy/provenance review above still applies and no
+upstream code/assets are copied.
+
+Cancelled [40830448603](https://github.com/codyzu/dayframe/actions/runs/40830448603)
+before any deployment ran. The production build remained
+`6fcd305d-b059-497a-b9e2-eddeb7ebd111`. Added a focused geometry assertion for
+first/middle/last rings under keyboard modality across four browser projects;
+Safari's native Tab cycle depends on platform preferences, so the test establishes
+keyboard modality then focuses each card before activating it. Existing full-graph
+phone and frame-fit assertions remain. Types, lint (four existing warnings) and
+build passed. All 16 focused browser checks passed, including complete ring
+clearance and full graph visibility. Reviewed and refreshed the frame/phone
+previews in [weather evidence](evidence/weather-outlook/README.md). The corrected
+main-push release and live verification follow below.

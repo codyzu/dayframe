@@ -16,3 +16,8 @@ changes, keyboard selection, focus restoration, reopening with today's graph and
 collapsed details, idle closure, and one shared weather request. See the dated
 implementation-plan entry for final command results. Production deployment and
 physical Classic 10/iPhone acceptance remain separate.
+
+The frame and phone forecast previews were refreshed on 29 October after reserving
+space around day cards for their complete keyboard-focus outlines. A partially
+visible neighbouring card on the phone indicates horizontal scrolling; the focused
+card's outline must remain inside the strip on all four sides.

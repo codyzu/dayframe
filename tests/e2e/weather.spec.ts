@@ -1051,3 +1051,41 @@ test('partial hourly coverage is labeled without inventing earlier hours', async
     .getAttribute('d');
   expect(fullPath!.match(/M/gv)).toHaveLength(1);
 });
+
+test('forecast day buttons keep their complete focus outlines inside the scrolling strip', async ({
+  page,
+}) => {
+  await page.route('https://api.open-meteo.com/**', async (route) =>
+    route.fulfill({json: sevenDayFixture()}),
+  );
+  await page.goto('/');
+  await page.getByRole('button', {name: 'Prévisions sur 7 jours'}).click();
+  const dialog = page.getByRole('dialog');
+  const strip = dialog.locator('[data-future-days]');
+  // Establish keyboard modality; Safari's Tab cycle depends on platform preferences.
+  await page.keyboard.press('Tab');
+  for (const index of [0, 3, 6]) {
+    const day = strip.locator('button').nth(index);
+    await day.focus();
+    await page.keyboard.press('Enter');
+    await expect(day).toBeFocused();
+    await expect(day).toHaveCSS('outline-style', 'solid');
+    const bounds = await day.evaluate((button) => {
+      const style = getComputedStyle(button);
+      const inset =
+        Number(style.outlineWidth.replace('px', '')) +
+        Number(style.outlineOffset.replace('px', ''));
+      const card = button.getBoundingClientRect();
+      const parent = button.parentElement!.getBoundingClientRect();
+      return {
+        left: card.left - inset - parent.left,
+        right: parent.right - card.right - inset,
+        top: card.top - inset - parent.top,
+        bottom: parent.bottom - card.bottom - inset,
+      };
+    });
+    for (const clearance of Object.values(bounds)) {
+      expect(clearance).toBeGreaterThanOrEqual(-1);
+    }
+  }
+});
