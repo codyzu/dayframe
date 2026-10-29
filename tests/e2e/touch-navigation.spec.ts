@@ -161,10 +161,14 @@ test('photo edge taps browse history, centre reveals controls, and small drags d
   const root = page.locator('[data-dashboard]');
   const first = await stage.getAttribute('data-photo-id');
   const {width, height} = page.viewportSize()!;
+  // Keep the gesture in the photo area: the visible portrait toolbar now
+  // includes space for full focus rings and can cross the screen midpoint.
+  const toolbar = await page.locator('[data-photo-controls]').boundingBox();
+  const rightY = Math.min(height * 0.5, toolbar!.y - 16);
   if (info.project.name === 'mobile') {
-    await page.touchscreen.tap(width * 0.9, height * 0.5);
+    await page.touchscreen.tap(width * 0.9, rightY);
   } else {
-    await page.mouse.click(width * 0.9, height * 0.5);
+    await page.mouse.click(width * 0.9, rightY);
   }
 
   await expect(stage).not.toHaveAttribute('data-photo-id', first!);

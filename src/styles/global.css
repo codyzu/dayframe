@@ -2,6 +2,9 @@
 @import '@unocss/reset/tailwind.css' layer(reset);
 
 /* Cross-page invariants only. Use UnoCSS utilities for component styling. */
+html {
+  scroll-padding-block: 0.5rem;
+}
 :root {
   font-synthesis: none;
 }

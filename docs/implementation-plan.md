@@ -2423,3 +2423,44 @@ settings or paid services changed. Commit, deployment and independent live
 verification are complete; physical-device touch/reading acceptance and previous
 hardware/security/soak deferrals remain separate. Earlier local-only/pending
 notes describe preceding stages.
+
+### Web-wide focus-ring audit — 29 October 2026
+
+Owner requested auditing all buttons after the main forecast opener showed the
+same symptom, then explicitly authorized fixing, committing, pushing and deploying.
+Read the local specification/UI invariants and delivery contract. Refreshed Wes
+Bos upstream main at `0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189`; inspected root
+MIT `LICENSE`, `dashboard/css/base.css` and `dashboard/js/views/home.js`. Retain
+large touch controls/glanceable hierarchy as ideas; deliberately use responsive
+flows, complete native keyboard outlines and scroll clearance rather than the
+upstream fixed/overflow-hidden stage and compact segmented gaps. No upstream
+code/assets copied.
+
+[The audit](focus-accessibility.md) inventories all 39 web button declarations,
+including templates and enabled retry/credential/calendar/upload/duplicate states.
+A rendered-pixel check reproduced five clipped/covered edges before correction:
+forecast-opener bottom, photo previous/framing right edges, and active-neighbour
+mode-button right edges. It also found a phone methodology disclosure obscured by
+the anchored dock. This was coverage missing from the earlier forecast-strip-only
+geometry check.
+
+Reserve 8 px for the unchanged focus indicator: opener margin, mode/photo gaps
+and padding, viewport/modal scroll clearance and sticky-header inset. Morning
+content/native focus scrolling reserve the actual dock height, including wrapped
+hints and retry, using an observed CSS variable with pagehide/wake lifecycle and
+a conservative fallback. Preserve typography/touch sizes, navigation anchors,
+authentication, request budgets, offline retention and €0 service constraints.
+Setup/admin controls passed without style changes except duplicate-modal scroll
+clearance. The photo-edge test selects a clear photo area above the enlarged
+portrait toolbar; all existing gesture/history/idle assertions remain.
+
+Local validation: types, lint (four existing warnings), production build and all
+173 unit/Worker tests passed. All 16 focus-audit browser scenarios passed, with
+81 rendered checks in 15 states per browser (324 checks total, no missing sides),
+covering 52 distinct control identities including disclosures. Twenty targeted
+forecast/gesture checks passed across the same four projects. The broader layout,
+warning and touch matrix retained its four existing skips; the photo-edge point
+was corrected as described above and passed in all four projects. Final synthetic
+[images and inventory](evidence/focus-audit/README.md) were reviewed. No physical
+acceptance is claimed. The authorized main-push verification/deployment and live
+artifact comparison follow below.

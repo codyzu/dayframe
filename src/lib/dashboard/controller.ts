@@ -33,6 +33,18 @@ function initializeDashboard(root: HTMLElement) {
     root.querySelectorAll<HTMLButtonElement>('[data-mode-button]');
   const panels = root.querySelectorAll<HTMLElement>('[data-mode-panel]');
   const footer = root.querySelector<HTMLElement>('[data-dashboard-footer]')!;
+  // The fixed dock grows when hints/retry text wraps. Reserve its real height
+  // for mobile content and native keyboard scrolling without polling layout.
+  const dockObserver =
+    typeof ResizeObserver === 'undefined'
+      ? undefined
+      : new ResizeObserver(() => {
+          document.documentElement.style.setProperty(
+            '--display-dock-height',
+            `${Math.ceil(footer.getBoundingClientRect().height)}px`,
+          );
+        });
+  dockObserver?.observe(footer);
   const photoRoot = root.querySelector<HTMLElement>('[data-slideshow]')!;
   const weatherRoot = root.querySelector<HTMLElement>('[data-weather]')!;
   const updatePhotoWeather = mountPhotoWeather(photoRoot);
@@ -377,6 +389,7 @@ function initializeDashboard(root: HTMLElement) {
     });
   });
   function wake() {
+    dockObserver?.observe(footer);
     isPaused = false;
     calendarRefreshAt = 0;
     tick();
@@ -400,6 +413,7 @@ function initializeDashboard(root: HTMLElement) {
     }
   });
   globalThis.addEventListener('pagehide', () => {
+    dockObserver?.disconnect();
     isPaused = true;
     clearTimeout(timer);
     pending?.abort();

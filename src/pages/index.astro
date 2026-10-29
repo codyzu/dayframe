@@ -189,8 +189,19 @@ import {displayConfig} from '../lib/dashboard/config';
     transform: translateX(-50%);
     width: min(24rem, calc(100% - 2rem));
   }
+  /* Keep content and native focus scrolling above the fixed dock, including
+     wrapped hints/retry. The conservative fallback works before observation. */
+  :global(html:has(.dashboard[data-mode='morning'])) {
+    scroll-padding-bottom: calc(
+      var(--display-dock-height, 14rem) +
+        max(0.75rem, env(safe-area-inset-bottom)) + 0.5rem
+    );
+  }
   .dashboard[data-mode='morning'] {
-    padding-bottom: 6rem;
+    padding-bottom: calc(
+      var(--display-dock-height, 14rem) +
+        max(0.75rem, env(safe-area-inset-bottom)) + 0.5rem
+    );
   }
   .dashboard[data-mode='night'] {
     background: var(--colors-night);
@@ -217,6 +228,9 @@ import {displayConfig} from '../lib/dashboard/config';
   /* The large display fits its native canvas. Phones keep readable type and
      enough scroll clearance to reach content above the anchored navigation. */
   @media (min-width: 1000px) {
+    :global(html:has(.dashboard[data-mode='morning'])) {
+      scroll-padding-bottom: 0.5rem;
+    }
     /* Keep the weather and agenda readable when a vigilance banner is present:
        reclaim the decorative brand row before compressing any useful content. */
     .dashboard[data-mode='morning'][data-alerts='true']

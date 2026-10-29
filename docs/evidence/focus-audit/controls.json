@@ -1,0 +1,271 @@
+{
+  "recordedAt": "2026-10-29",
+  "data": "synthetic local browser fixtures",
+  "buttonDeclarations": 39,
+  "sources": [
+    {
+      "path": "src/components/PhotoControls.astro",
+      "buttonDeclarations": 3
+    },
+    {
+      "path": "src/components/ModeNavigation.astro",
+      "buttonDeclarations": 1
+    },
+    {
+      "path": "src/components/FutureWeather.astro",
+      "buttonDeclarations": 3
+    },
+    {
+      "path": "src/pages/index.astro",
+      "buttonDeclarations": 1
+    },
+    {
+      "path": "src/pages/setup.astro",
+      "buttonDeclarations": 2
+    },
+    {
+      "path": "src/pages/experiments/photo-paste.astro",
+      "buttonDeclarations": 3
+    },
+    {
+      "path": "src/pages/admin/photos.astro",
+      "buttonDeclarations": 9
+    },
+    {
+      "path": "src/pages/admin/settings.astro",
+      "buttonDeclarations": 17
+    }
+  ],
+  "projects": {
+    "chromium": {
+      "states": 15,
+      "renderedChecks": 81,
+      "missingSides": 0
+    },
+    "firefox": {
+      "states": 15,
+      "renderedChecks": 81,
+      "missingSides": 0
+    },
+    "webkit": {
+      "states": 15,
+      "renderedChecks": 81,
+      "missingSides": 0
+    },
+    "mobile": {
+      "states": 15,
+      "renderedChecks": 81,
+      "missingSides": 0
+    }
+  },
+  "controls": [
+    {
+      "control": "",
+      "name": "Collage manuel"
+    },
+    {
+      "control": "",
+      "name": "Connecter"
+    },
+    {
+      "control": "",
+      "name": "Détails des ajouts"
+    },
+    {
+      "control": "",
+      "name": "Enregistrer les réglages"
+    },
+    {
+      "control": "",
+      "name": "Garder cette photo"
+    },
+    {
+      "control": "",
+      "name": "Options"
+    },
+    {
+      "control": "",
+      "name": "Passer cette photo"
+    },
+    {
+      "control": "",
+      "name": "Photos hors connexion · ce navigateur"
+    },
+    {
+      "control": "",
+      "name": "Voir heure par heure"
+    },
+    {
+      "control": "",
+      "name": "À propos des prévisions"
+    },
+    {
+      "control": "data-add-checkpoint=",
+      "name": "Ajouter un repère météo"
+    },
+    {
+      "control": "data-add-day-period=",
+      "name": "Personnaliser les horaires / ajouter une plage"
+    },
+    {
+      "control": "data-add-period=",
+      "name": "Ajouter une plage"
+    },
+    {
+      "control": "data-calendar-connect=",
+      "name": "Reconnecter Google Calendar"
+    },
+    {
+      "control": "data-calendar-disconnect=",
+      "name": "Déconnecter Google Calendar"
+    },
+    {
+      "control": "data-calendar-refresh=",
+      "name": "Actualiser Google Calendar"
+    },
+    {
+      "control": "data-calendar-save=",
+      "name": "Afficher ces agendas"
+    },
+    {
+      "control": "data-choose-files=",
+      "name": "Choisir des photos"
+    },
+    {
+      "control": "data-clear=",
+      "name": "Effacer"
+    },
+    {
+      "control": "data-date=2026-10-16",
+      "name": "ven. 16 oct. 2026. Pluie, 8 à 19 degrés. Pluie : 65 %."
+    },
+    {
+      "control": "data-date=2026-10-17",
+      "name": "sam. 17 oct. 2026. Pluie, 8 à 19 degrés. Pluie : 65 %."
+    },
+    {
+      "control": "data-date=2026-10-18",
+      "name": "dim. 18 oct. 2026. Pluie, 8 à 19 degrés. Pluie : 65 %."
+    },
+    {
+      "control": "data-date=2026-10-19",
+      "name": "lun. 19 oct. 2026. Pluie, 8 à 19 degrés. Pluie : 65 %."
+    },
+    {
+      "control": "data-date=2026-10-20",
+      "name": "mar. 20 oct. 2026. Pluie, 8 à 19 degrés. Pluie : 65 %."
+    },
+    {
+      "control": "data-date=2026-10-21",
+      "name": "mer. 21 oct. 2026. Pluie, 8 à 19 degrés. Pluie : 65 %."
+    },
+    {
+      "control": "data-date=2026-10-22",
+      "name": "jeu. 22 oct. 2026. Pluie, 8 à 19 degrés. Pluie : 65 %."
+    },
+    {
+      "control": "data-delete=",
+      "name": "Supprimer"
+    },
+    {
+      "control": "data-disconnect=",
+      "name": "Déconnecter ce navigateur"
+    },
+    {
+      "control": "data-display-retry=",
+      "name": "Réessayer la connexion"
+    },
+    {
+      "control": "data-export=",
+      "name": "Exporter les réglages"
+    },
+    {
+      "control": "data-forecast-close=",
+      "name": "Fermer"
+    },
+    {
+      "control": "data-forecast-open=",
+      "name": "Prévisions sur 7 jours"
+    },
+    {
+      "control": "data-hide-token=",
+      "name": "Masquer la clé"
+    },
+    {
+      "control": "data-import-add=",
+      "name": "Ajouter les photos"
+    },
+    {
+      "control": "data-import-clear=",
+      "name": "Annuler"
+    },
+    {
+      "control": "data-import-paste=",
+      "name": "Coller des photos"
+    },
+    {
+      "control": "data-issue=",
+      "name": "Créer ou remplacer la clé"
+    },
+    {
+      "control": "data-mode-button=morning",
+      "name": "Matin"
+    },
+    {
+      "control": "data-mode-button=night",
+      "name": "Nuit"
+    },
+    {
+      "control": "data-mode-button=photos",
+      "name": "Photos"
+    },
+    {
+      "control": "data-paste=",
+      "name": "Coller les photos"
+    },
+    {
+      "control": "data-photo-fit=",
+      "name": "Remplir l’écran"
+    },
+    {
+      "control": "data-photo-next=",
+      "name": "Suivante"
+    },
+    {
+      "control": "data-photo-previous=",
+      "name": "Précédente"
+    },
+    {
+      "control": "data-process=",
+      "name": "Tester la conversion WebP"
+    },
+    {
+      "control": "data-refresh=",
+      "name": "Actualiser"
+    },
+    {
+      "control": "data-reload=",
+      "name": "Actualiser l’accès"
+    },
+    {
+      "control": "data-remove=",
+      "name": "Retirer"
+    },
+    {
+      "control": "data-reset-checkpoints=",
+      "name": "Utiliser les repères habituels"
+    },
+    {
+      "control": "data-reset-day-periods=",
+      "name": "Utiliser le programme quotidien"
+    },
+    {
+      "control": "data-revoke=",
+      "name": "Révoquer la clé"
+    },
+    {
+      "control": "data-upload-retry=",
+      "name": "Réessayer"
+    }
+  ]
+}
