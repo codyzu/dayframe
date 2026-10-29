@@ -3,6 +3,8 @@ import {mountAlerts} from '../weather/alerts.ts';
 import {ApiError, photoRequest} from '../photos/client.ts';
 import {mountSlideshow} from '../photos/slideshow.ts';
 import {mountWeather} from '../weather/view.ts';
+import {mountLocationPicker} from '../weather/location-picker.ts';
+import {validateLocation} from '../weather/location.ts';
 import {mountPhotoWeather} from '../photos/weather.ts';
 import {mountAgenda} from '../calendar/view.ts';
 import {
@@ -54,7 +56,23 @@ function initializeDashboard(root: HTMLElement) {
 
   const slideshow = mountSlideshow(photoRoot, footer);
   const agenda = mountAgenda(root.querySelector<HTMLElement>('[data-agenda]')!);
-  let weather = mountWeather(weatherRoot, updatePhotoWeather);
+  let settings = defaultSettings;
+  const picker = mountLocationPicker(
+    root,
+    (location) => {
+      picker.selected = location;
+      applyWeatherLocation();
+      render();
+    },
+    () => runtimeConfig,
+  );
+  Object.assign(runtimeConfig, validateLocation(picker.selected ?? settings));
+  let isWeatherLocal = Boolean(picker.selected);
+  let weather = mountWeather(
+    weatherRoot,
+    updatePhotoWeather,
+    Boolean(picker.selected),
+  );
   const state = createModeState();
   const updateOverrideKey = 'dayframe.update-override';
   try {
@@ -78,7 +96,6 @@ function initializeDashboard(root: HTMLElement) {
     });
   }
 
-  let settings = defaultSettings;
   let official: OfficialCalendar | undefined;
   let calendarRefreshAt = 0;
   let calendarPending: AbortController | undefined;
@@ -222,7 +239,7 @@ function initializeDashboard(root: HTMLElement) {
 
     clockMinute = minute;
     clockTimezone = settings.timezone;
-    const {time, date} = formatClock(now);
+    const {time, date} = formatClock(now, settings.timezone);
     clocks.forEach((element) => {
       if (element.textContent !== time) {
         element.textContent = time;
@@ -242,18 +259,7 @@ function initializeDashboard(root: HTMLElement) {
       return;
     }
 
-    const isWeatherChanged = [
-      'timezone',
-      'location',
-      'latitude',
-      'longitude',
-    ].some(
-      (key) =>
-        settings[key as keyof typeof settings] !==
-        next[key as keyof typeof next],
-    );
     settings = next;
-    Object.assign(runtimeConfig, settings);
     state.configure(settings);
     if (!settings.planning.schoolCalendar) {
       calendarPending?.abort();
@@ -264,13 +270,40 @@ function initializeDashboard(root: HTMLElement) {
     calendarRefreshAt = 0;
     weather.configure(settings.planning, official);
     slideshow.configure(settings);
-    if (!isWeatherChanged) {
-      return;
+    applyWeatherLocation();
+  }
+
+  function applyWeatherLocation() {
+    const next = validateLocation(picker.selected ?? settings);
+    const isChanged = (
+      ['location', 'timezone', 'latitude', 'longitude'] as const
+    ).some((key) => next[key] !== runtimeConfig[key]);
+    if (isChanged || isWeatherLocal !== Boolean(picker.selected)) {
+      isWeatherLocal = Boolean(picker.selected);
+      weather.dispose();
+      Object.assign(runtimeConfig, next);
+      weather = mountWeather(
+        weatherRoot,
+        updatePhotoWeather,
+        Boolean(picker.selected),
+      );
+      weather.configure(settings.planning, official);
     }
 
-    weather.dispose();
-    weather = mountWeather(weatherRoot, updatePhotoWeather);
-    weather.configure(settings.planning, official);
+    root.querySelectorAll<HTMLElement>('[data-location]').forEach((element) => {
+      element.textContent = `Météo · ${next.location}`;
+    });
+    root
+      .querySelectorAll<HTMLElement>('[data-location-footer]')
+      .forEach((element) => {
+        element.textContent = `${next.location} · ${next.timezone}`;
+      });
+    root
+      .querySelectorAll<HTMLElement>('[data-location-greeting]')
+      .forEach((element) => {
+        element.textContent = `Bonjour, ${next.location}.`;
+      });
+    picker.update();
   }
 
   async function refreshConfiguration() {
@@ -308,21 +341,7 @@ function initializeDashboard(root: HTMLElement) {
         refreshAt = 0;
       }
 
-      root
-        .querySelectorAll<HTMLElement>('[data-location]')
-        .forEach((element) => {
-          element.textContent = `Météo · ${settings.location}`;
-        });
-      root
-        .querySelectorAll<HTMLElement>('[data-location-footer]')
-        .forEach((element) => {
-          element.textContent = `${settings.location} · ${settings.timezone}`;
-        });
-      root
-        .querySelectorAll<HTMLElement>('[data-location-greeting]')
-        .forEach((element) => {
-          element.textContent = `Bonjour, ${settings.location}.`;
-        });
+      applyWeatherLocation();
       render();
     }
   }
@@ -426,6 +445,7 @@ function initializeDashboard(root: HTMLElement) {
   globalThis.addEventListener('pageshow', wake);
   globalThis.addEventListener('online', wake);
   root.querySelector('[data-display-retry]')?.addEventListener('click', wake);
+  applyWeatherLocation();
   tick();
   root.dataset.ready = 'true';
   globalThis.dispatchEvent(new Event('dayframe:ready'));

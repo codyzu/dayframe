@@ -1,5 +1,9 @@
 # Dayframe: Implementation Plan
 
+**Device weather location, 29 October 2026:** Selected as one M2/M5 feature slice;
+[feature contract and operations](weather-location.md). Implemented and locally verified; the authorized main-push verification and
+deployment are tracked in the delivery entry at the end.
+
 **27 October 2026 audit:** [Feature coverage and separate-chat implementation plans](backlog/README.md)
 provide the current backlog entry point. The audit distinguishes missing behavior,
 implemented features awaiting acceptance, and optional enhancements. F01 freshness and F02 future forecast browsing are deployed as of 28 October;
@@ -2489,3 +2493,47 @@ household data, bindings, native settings, paid services or offline retention
 policy changed. Commit, push, deployment and live verification are complete;
 physical frame/iPhone acceptance and previous security/hardware/soak deferrals
 remain separate. Earlier pending notes describe preceding stages.
+
+### Device weather location picker — 29 October 2026
+
+Owner authorized documenting, implementing, testing, committing and deploying the
+previously discussed browser-specific weather picker. Refreshed upstream main
+through GitHub at `0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189`; inspected
+`dashboard/js/views/home.js` and root MIT `LICENSE` (Copyright 2026 Wes Bos).
+Retain the glanceable current/hourly hierarchy as an idea. Device preferences,
+Open-Meteo search and real weather remain independently authored on Dayframe's
+Astro/UnoCSS stack; no upstream code/assets copied.
+
+[Feature contract](weather-location.md): tappable header location, explicit
+city/postcode search with disambiguation, opt-in rounded current position and
+resolved weather timezone, browser-local persistence, household reset and a link
+to the existing authenticated household editor. Weather timezone is independent
+of household clock/scheduling/calendar. Browser overrides show neutral checkpoints.
+Location changes abort old weather work and clear its UI; old results cannot
+repaint/cache over a new location. Unsupported vigilance stays explicit. No new
+service, dependency, secret, private API, billing, native or offline-retention change.
+
+First focused pass: 176 unit/Worker tests passed; 16 picker cases passed across
+Chromium, Firefox, WebKit and iPhone emulation. Types/build and lint passed (four
+existing complexity warnings). Reviewed synthetic phone/desktop screenshots;
+shortened the dashboard town label while keeping full search disambiguation.
+Expanded browser coverage adds blocked storage, latest-household reset, late
+weather responses and rendered focus outlines. Final release verification,
+commit/deployment and live smoke evidence are pending below. Physical iPhone
+permission/keyboard and frame acceptance remain separate; prior deferrals stand.
+
+Final local validation: types and XO passed (four existing complexity warnings),
+production build passed, and all 176 unit/Worker tests passed. All 60 targeted
+browser cases passed across Chromium, Firefox, WebKit and iPhone emulation,
+including nine location scenarios per browser plus existing calendar/focus checks.
+The first broad run caught a taller header; the badge now preserves header flow
+with an extended touch box. The busiest Firefox calendar layout also needs a
+6 px rather than 8 px weather-section gap; typography is unchanged. Vigilance
+details retain an entry point when the frame hides its decorative header; the
+modal mounts outside that hidden header. Rendered focus checks pass for the new
+controls. [Reviewed synthetic screenshots](evidence/weather-location/README.md).
+Live public-example provider checks parsed Annecy search results and resolved
+rounded New York coordinates to America/New_York. No personal location was sent.
+The authorized release commit/main push follows; CI must complete full verification
+and its existing Free-plan gate before deployment. Physical permission/keyboard
+and frame acceptance remain separate.

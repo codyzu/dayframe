@@ -1,0 +1,107 @@
+---
+const control =
+  'min-h-12 rounded-xl border border-border px-4 py-2 font-bold hover:bg-elevated';
+---
+
+<!-- Keep the original header flow height; the button extends its touch/focus box. -->
+<span class="relative min-w-0 max-w-[65%] break-words border border-border bg-surface rounded-full px-2 py-1.75 md:px-3 text-base tracking-wide hover:bg-elevated">
+  <span id="weather-location-name" class="pointer-events-none">
+    <span data-location>Météo · Annecy</span>
+    <span aria-hidden="true"> ▾</span>
+    <span data-location-scope class="text-xs text-secondary" hidden>
+      {' '}
+      · Sur cet appareil
+    </span>
+  </span>
+  <button
+    type="button"
+    data-location-open
+    aria-label="Changer le lieu météo"
+    aria-describedby="weather-location-name"
+    aria-haspopup="dialog"
+    class="absolute inset-x-0 -inset-y-1 rounded-full cursor-pointer"
+  ></button>
+</span>
+<dialog
+  data-location-dialog
+  aria-labelledby="location-title"
+  aria-describedby="location-help"
+  class="m-auto w-[min(36rem,94vw)] max-h-[90dvh] overflow-y-auto scroll-p-3 rounded-3xl border border-border bg-surface text-primary p-6 shadow-xl"
+>
+  <div class="flex items-center justify-between gap-4">
+    <h2 id="location-title" class="text-2xl font-bold">
+      Lieu météo
+    </h2>
+    <button type="button" data-location-close class={control}>
+      Fermer
+    </button>
+  </div>
+  <p id="location-help" class="mt-4 text-base text-secondary">
+    Ce choix concerne uniquement cet appareil. L’horloge, les rendez-vous et le
+    programme de la maison gardent leur fuseau. Les prévisions suivent l’heure
+    du lieu choisi.
+  </p>
+  <p data-location-current class="mt-3 font-bold"></p>
+  <form data-location-search class="mt-4 flex flex-col gap-3 p-2">
+    <label for="location-search" class="font-bold">
+      Ville ou code postal
+    </label>
+    <input
+      id="location-search"
+      name="location"
+      type="search"
+      minlength="2"
+      maxlength="100"
+      required
+      autocomplete="off"
+      autofocus
+      class="min-h-12 w-full rounded-xl border border-border bg-background px-3 py-2 select-text"
+    />
+    <button type="submit" class={control}>
+      Rechercher
+    </button>
+  </form>
+  <p
+    data-location-status
+    role="status"
+    class="mt-3 text-base text-secondary"
+  ></p>
+  <div
+    data-location-results
+    class="mt-3 flex flex-col gap-4 p-2"
+    role="group"
+    aria-label="Résultats de recherche"
+  ></div>
+  <div class="mt-4 flex flex-col gap-4 p-2">
+    <button type="button" data-location-geolocate class={control}>
+      Utiliser ma position
+    </button>
+    <button type="button" data-location-reset class={control}>
+      Revenir au lieu de la maison
+    </button>
+    <a
+      href="/admin/settings"
+      class="min-h-12 flex items-center underline underline-offset-4"
+    >
+      Modifier le lieu de la maison (administration)
+    </a>
+  </div>
+  <p class="mt-4 text-sm text-secondary">
+    Recherche :{' '}
+    <a class="underline" href="https://open-meteo.com/">
+      Open-Meteo
+    </a>{' '}
+    · lieux :{' '}
+    <a class="underline" href="https://www.geonames.org/">
+      GeoNames
+    </a>
+    . Votre recherche ou votre position est transmise à Open-Meteo uniquement à
+    votre demande.
+  </p>
+</dialog>
+
+<style>
+  dialog::backdrop {
+    background: #182c3580;
+  }
+</style>

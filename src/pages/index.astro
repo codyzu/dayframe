@@ -2,6 +2,7 @@
 import {startupGuard} from '../../scripts/offline-build.mjs';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import MorningWeather from '../components/MorningWeather.astro';
+import WeatherLocation from '../components/WeatherLocation.astro';
 import PhotoSlideshow from '../components/PhotoSlideshow.astro';
 import PhotoControls from '../components/PhotoControls.astro';
 import ModeNavigation from '../components/ModeNavigation.astro';
@@ -57,9 +58,7 @@ import {displayConfig} from '../lib/dashboard/config';
         </span>
         dayframe
       </a>
-      <span class="border border-border bg-surface rounded-full px-2 py-1.75 md:px-3 text-base tracking-wide">
-        <span data-location>Météo · Annecy</span>
-      </span>
+      <WeatherLocation />
     </header>
     <section
       class="morning-panel flex flex-1 flex-col py-4 font-bold"

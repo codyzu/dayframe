@@ -149,6 +149,15 @@ The visual direction follows the approved mockups: scenic Annecy-style backgroun
 
 ### 4.2 Weather provider
 
+**Device location update, 29 October 2026:** The tappable weather location opens
+a town/postal-code search and an opt-in current-position lookup. A validated
+browser-local preference affects only weather, with an explicit household reset.
+Weather uses the selected place's timezone; household clock, schedule and calendar
+retain their configured timezone. Custom locations use neutral weather checkpoints
+and retain explicit unsupported-vigilance states. Household-wide edits remain in
+authenticated administration. See [device weather location](weather-location.md)
+for persistence, privacy, request bounds and acceptance evidence.
+
 Use **Open-Meteo** for initial noncommercial weather data. Include its required attribution and comply with its usage terms.
 
 Request the fields needed for:

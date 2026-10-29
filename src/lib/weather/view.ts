@@ -32,6 +32,7 @@ const rounded = (value: number) => `${Math.round(value)}°`;
 export function mountWeather(
   root: HTMLElement,
   onUpdate?: (state: WeatherState) => void,
+  isLocalLocation = false,
 ) {
   const future = mountFutureWeather(root);
   const notifyWeatherUpdate = onUpdate ?? (() => undefined);
@@ -51,6 +52,20 @@ export function mountWeather(
       element.textContent = value;
     }
   }
+
+  const routine = (now: number) =>
+    isLocalLocation
+      ? {
+          points: [
+            {time: '08:00', label: 'Matin'},
+            {time: '11:30', label: 'Midi'},
+            {time: '16:30', label: 'Après-midi'},
+            {time: '18:00', label: 'Soir'},
+          ],
+          heading: 'Les repères · heure du lieu',
+          note: 'Repères météo du lieu choisi sur cet appareil. Le programme de la maison reste inchangé.',
+        }
+      : routineForDay(now, planning, calendar);
 
   function render({weather, failed}: WeatherState) {
     notifyWeatherUpdate({weather, failed});
@@ -126,12 +141,12 @@ export function mountWeather(
       `Ressenti ${rounded(weather.current.feelsLike)} · ${daily ? `Max. ${rounded(daily.high)} / Min. ${rounded(daily.low)}` : 'Max. / Min. du jour indisponibles'}`,
     );
     const summary = summarize(weather, now);
-    const routine = routineForDay(now, planning, calendar);
-    const advice = morningAdvice(weather, now, routine.points);
+    const dayRoutine = routine(now);
+    const advice = morningAdvice(weather, now, dayRoutine.points);
     text('[data-advice]', isStale ? staleLabel : advice.title);
-    text('[data-checkpoint-heading]', routine.heading);
+    text('[data-checkpoint-heading]', dayRoutine.heading);
 
-    text('[data-day-context]', routine.note);
+    text('[data-day-context]', dayRoutine.note);
     text(
       '[data-rain]',
       isStale ? 'Conditions non actualisées.' : summary.current,
@@ -151,8 +166,8 @@ export function mountWeather(
 
   function renderForecast(weather: Weather, now: number) {
     const today = dateKey(now);
-    const routine = routineForDay(now, planning, calendar);
-    const signature = JSON.stringify(routine.points);
+    const dayRoutine = routine(now);
+    const signature = JSON.stringify(dayRoutine.points);
     if (
       signature !== renderedRoutine ||
       weather !== renderedWeather ||
@@ -161,7 +176,7 @@ export function mountWeather(
       renderedRoutine = signature;
       renderCheckpoints(
         root,
-        checkpointForecasts(weather, now, routine.points),
+        checkpointForecasts(weather, now, dayRoutine.points),
       );
     }
 
@@ -205,6 +220,23 @@ export function mountWeather(
     */
   }
 
+  text('[data-temperature]', '—°');
+  text('[data-condition]', 'Chargement de la météo…');
+  text('[data-extremes]', 'Ressenti — · Max. — / Min. —');
+  text('[data-rain]', 'Prévisions en cours de chargement.');
+  text('[data-advice]', 'Préparons la journée.');
+  text('[data-summary]', 'La météo se met à jour automatiquement.');
+  root.dataset.stale = 'false';
+  const icon = root.querySelector<HTMLElement>('[data-current-icon]')!;
+  for (const name of icon.classList) {
+    if (name.startsWith('i-meteocons-')) {
+      icon.classList.remove(name);
+    }
+  }
+
+  icon.classList.add('i-meteocons-not-available-fill');
+  root.querySelector('[data-checkpoints]')!.replaceChildren();
+  renderChart(root, []);
   const service = createWeatherService((state) => {
     latest = state;
     // Retry visibility also needs failures received while another mode is active.

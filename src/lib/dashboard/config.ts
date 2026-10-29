@@ -17,7 +17,7 @@ export const displayConfig = {
   ],
 } as const;
 
-// Updated only from a validated, authorized display configuration on startup and refresh.
+// Weather context: validated household configuration plus an optional device-only location.
 export const runtimeConfig: {
   timezone: string;
   location: string;
@@ -35,21 +35,21 @@ let clockTimezone: string | undefined;
 let clockTime: Intl.DateTimeFormat;
 let clockDate: Intl.DateTimeFormat;
 
-export function formatClock(now: Date) {
-  if (clockTimezone !== runtimeConfig.timezone) {
+export function formatClock(now: Date, timezone = runtimeConfig.timezone) {
+  if (clockTimezone !== timezone) {
     clockTime = new Intl.DateTimeFormat(displayConfig.locale, {
-      timeZone: runtimeConfig.timezone,
+      timeZone: timezone,
       hour: '2-digit',
       minute: '2-digit',
       hourCycle: 'h23',
     });
     clockDate = new Intl.DateTimeFormat(displayConfig.locale, {
-      timeZone: runtimeConfig.timezone,
+      timeZone: timezone,
       weekday: 'long',
       day: 'numeric',
       month: 'long',
     });
-    clockTimezone = runtimeConfig.timezone;
+    clockTimezone = timezone;
   }
 
   return {time: clockTime.format(now), date: clockDate.format(now)};

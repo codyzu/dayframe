@@ -5,7 +5,10 @@ import WeatherCheckpoints from './WeatherCheckpoints.astro';
 import WeatherChart from './WeatherChart.astro';
 ---
 
-<div data-weather class="group/weather grid gap-2 data-[observance=true]:gap-1">
+<div
+  data-weather
+  class="group/weather grid gap-1.5 data-[observance=true]:gap-1"
+>
   <aside
     data-weather-alerts
     data-level="unknown"
@@ -28,7 +31,7 @@ import WeatherChart from './WeatherChart.astro';
           data-alert-full
           class="text-base leading-relaxed whitespace-pre-line"
         ></p>
-        <p class="mt-2 flex gap-4 text-sm">
+        <p class="mt-2 flex flex-wrap gap-4 text-sm">
           <a class="underline" href="https://meteoalarm.org/en/live/">
             Meteoalarm
           </a>
@@ -41,6 +44,15 @@ import WeatherChart from './WeatherChart.astro';
             Flux original
           </a>
         </p>
+        <button
+          type="button"
+          data-location-open
+          aria-label="Changer le lieu météo"
+          aria-haspopup="dialog"
+          class="mt-4 min-h-12 rounded-xl border border-border px-4 py-2 font-bold hover:bg-elevated"
+        >
+          Changer de lieu météo
+        </button>
       </div>
     </details>
     <p data-alert-detail class="text-base leading-tight"></p>
