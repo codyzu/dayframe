@@ -6,6 +6,7 @@ import {
   type RoutinePoint,
 } from '../dashboard/day-planning.ts';
 import {runtimeConfig} from '../dashboard/config.ts';
+import {adviceHours, temperatureOutlook} from './outlook.ts';
 import {dateKey, hourLabel, type Hour, type Weather} from './adapter.ts';
 
 export type Checkpoint = RoutinePoint & {weekendLabel?: string};
@@ -110,8 +111,7 @@ export function morningAdvice(
   now: number,
   checkpoints?: readonly Checkpoint[],
 ) {
-  const hours = dayHours(weather, now);
-  const future = hours.filter((hour) => hour.time + 3_600_000 > now);
+  const future = adviceHours(weather, now);
   if (future.length === 0) {
     return {
       title: 'Consultez la météo avant de partir.',
@@ -130,10 +130,10 @@ export function morningAdvice(
       point.at >= now &&
       (point.forecast.probability >= 50 || point.forecast.precipitation >= 0.2),
   );
-  const daily = weather.daily.find((day) => day.date === dateKey(now));
   const feels = weather.current.feelsLike;
-  const isCold = feels <= 3;
-  const isJacket = feels < 15;
+  const remainingLow = Math.min(...future.map((hour) => hour.temperature));
+  const isCold = Math.min(feels, remainingLow) <= 3;
+  const isJacket = Math.min(feels, remainingLow) < 15;
   const isHazardous =
     future.some((hour) =>
       [56, 57, 66, 67, 95, 96, 97, 99].includes(hour.code ?? -1),
@@ -168,12 +168,10 @@ export function morningAdvice(
         ? `Pluie possible vers ${pickup.time.replace(':', 'h')}.`
         : wet.time <= now
           ? 'Pluie possible en ce moment.'
-          : `Pluie possible vers ${hourLabel(wet.time).replace(':', 'h')}.`,
+          : `Pluie possible ${dateKey(wet.time) === dateKey(now) ? '' : 'demain '}vers ${hourLabel(wet.time).replace(':', 'h')}.`,
     );
-  } else if (!isHazardous && daily) {
-    details.push(
-      `${Math.round(weather.current.temperature)}° maintenant, jusqu’à ${Math.round(daily.high)}° aujourd’hui${daily.high - weather.current.temperature >= 8 ? ' : pensez aux couches légères' : ''}.`,
-    );
+  } else if (!isHazardous) {
+    details.push(temperatureOutlook(weather, now));
   }
 
   return {title, detail: details.slice(0, 2).join(' ')};

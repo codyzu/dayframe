@@ -120,7 +120,7 @@ describe('short deterministic French advice', () => {
     expect(morningAdvice(weather, fixtureNow).title).toBe(
       'Prévoyez une veste.',
     );
-    weather.daily[0].high = 23;
+    weather.hourly[14].temperature = 23;
     expect(morningAdvice(weather, fixtureNow).detail).toContain(
       'couches légères',
     );
@@ -129,6 +129,10 @@ describe('short deterministic French advice', () => {
       'Bonnet et gants',
     );
     weather.current.feelsLike = 18;
+    for (const hour of weather.hourly) {
+      hour.temperature = 18;
+    }
+
     expect(morningAdvice(weather, fixtureNow).title).toContain('tenue légère');
     weather.hourly[16].precipitation = 0.2;
     expect(morningAdvice(weather, fixtureNow).title).toContain('parapluie');

@@ -1,0 +1,107 @@
+<div data-future-chart hidden class="mt-3 rounded-2xl bg-elevated p-3">
+  <div class="flex justify-between gap-3 text-[length:var(--font-weather-detail)] font-bold">
+    <span class="text-temperature">Température °C</span>
+    <span class="text-rain">Pluie %</span>
+  </div>
+  <div class="mt-3 grid grid-cols-[2.5rem_minmax(0,1fr)_3.5rem] gap-x-2">
+    <div
+      data-future-temperature-scale
+      class="relative h-32 min-[1000px]:h-40 text-temperature font-bold text-[length:var(--font-chart-time)] tabular-nums"
+      aria-hidden="true"
+    ></div>
+    <div class="relative h-32 min-[1000px]:h-40">
+      <svg
+        viewBox="0 0 600 100"
+        preserveAspectRatio="none"
+        class="absolute inset-0 size-full overflow-visible"
+        role="img"
+        aria-labelledby="future-chart-title future-chart-description"
+      >
+        <title id="future-chart-title">Température et pluie de la journée sélectionnée</title>
+        <desc id="future-chart-description">
+          Courbe cuivre : température, échelle en degrés à gauche. Barres bleues
+          : probabilité de pluie pour chaque heure, échelle de 0 à 100 % à
+          droite. Trait pointillé : maintenant, uniquement aujourd’hui. Valeurs
+          exactes dans « Voir heure par heure ».
+        </desc>
+        <line
+          x1="0"
+          x2="600"
+          y1="100"
+          y2="100"
+          stroke="var(--colors-border)"
+          vector-effect="non-scaling-stroke"
+        />
+        <line
+          x1="0"
+          x2="600"
+          y1="60"
+          y2="60"
+          stroke="var(--colors-border)"
+          stroke-dasharray="4 6"
+          vector-effect="non-scaling-stroke"
+        />
+        <g data-future-chart-rain></g>
+        <path
+          data-future-chart-curve
+          fill="none"
+          stroke="var(--colors-surface)"
+          stroke-width="8"
+          stroke-linejoin="round"
+          vector-effect="non-scaling-stroke"
+        />
+        <path
+          data-future-chart-curve
+          fill="none"
+          stroke="var(--colors-temperature)"
+          stroke-width="4"
+          stroke-linejoin="round"
+          vector-effect="non-scaling-stroke"
+        />
+        <rect
+          data-future-chart-past
+          x="0"
+          y="0"
+          height="100"
+          fill="var(--colors-surface)"
+          fill-opacity="0.55"
+        />
+        <line
+          data-future-chart-now
+          y1="0"
+          y2="100"
+          stroke="var(--colors-primary)"
+          stroke-width="2"
+          stroke-dasharray="4 4"
+          vector-effect="non-scaling-stroke"
+        />
+      </svg>
+      <span
+        data-future-chart-now-label
+        class="absolute top-0 bg-surface px-1 text-[length:var(--font-chart-time)] font-bold"
+        hidden
+      >
+        Maintenant
+      </span>
+    </div>
+    <div
+      class="relative h-32 min-[1000px]:h-40 text-rain font-bold text-[length:var(--font-chart-time)] tabular-nums"
+      aria-hidden="true"
+    >
+      {[100, 50, 0].map((value) => (
+        <span
+          class="absolute right-0 -translate-y-1/2"
+          style={{top: `${100 - value * 0.8}%`}}
+        >
+          {value} %
+        </span>
+      ))}
+    </div>
+    <div></div>
+    <div
+      data-future-chart-times
+      class="relative mt-2 h-6 text-[length:var(--font-chart-time)] font-bold text-secondary"
+      aria-hidden="true"
+    ></div>
+  </div>
+</div>

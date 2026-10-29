@@ -18,6 +18,11 @@ export function chartGeometry(hours: Hour[]) {
   for (let index = 1; index < hours.length; index++) {
     const before = hours[index - 1];
     const hour = hours[index];
+    if (hour.time - before.time > 3_600_000) {
+      path += ` M${x(hour.time)},${y(hour.temperature)}`;
+      continue;
+    }
+
     const middle = (x(before.time) + x(hour.time)) / 2;
     path += ` C${middle},${y(before.temperature)} ${middle},${y(hour.temperature)} ${x(hour.time)},${y(hour.temperature)}`;
   }
@@ -37,5 +42,5 @@ export function chartGeometry(hours: Hour[]) {
     }
   }
 
-  return {low, high, x, path, rain, peak};
+  return {low, high, x, y, path, rain, peak};
 }

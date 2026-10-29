@@ -1,3 +1,7 @@
+---
+import ForecastDayChart from './ForecastDayChart.astro';
+---
+
 <button
   type="button"
   data-forecast-open
@@ -36,41 +40,60 @@
   ></p>
   <div
     data-future-days
-    class="mt-3 grid grid-cols-2 gap-2 min-[1000px]:grid-cols-7"
+    class="mt-3 flex gap-2 overflow-x-auto pb-2 min-[1000px]:grid min-[1000px]:grid-cols-7"
+    role="group"
     aria-label="Choisir une journée"
   ></div>
   <h3 data-future-heading class="mt-4 text-lg font-bold"></h3>
   <p
-    data-future-coverage
-    class="text-[length:var(--font-weather-detail)] text-secondary"
+    data-future-summary
+    role="status"
+    class="mt-1 text-[length:var(--font-weather-detail)] font-bold"
   ></p>
-  <div
-    class="mt-2 max-h-[24dvh] overflow-auto rounded-xl border border-border"
-    tabindex="0"
-    role="region"
-    aria-label="Prévisions heure par heure"
-  >
-    <table class="w-full text-[length:var(--font-weather-detail)] text-left">
-      <thead>
-        <tr>
-          <th scope="col" class="p-2">
-            Heure
-          </th>
-          <th scope="col" class="p-2">
-            Temp.
-          </th>
-          <th scope="col" class="p-2">
-            Pluie
-          </th>
-          <th scope="col" class="p-2">
-            Conditions
-          </th>
-        </tr>
-      </thead>
-      <tbody data-future-hours></tbody>
-    </table>
-  </div>
-  <p class="mt-3 text-[length:var(--font-weather-detail)]">
+  <p
+    data-future-chart-note
+    class="mt-1 text-[length:var(--font-weather-detail)] text-secondary"
+    hidden
+  ></p>
+  <ForecastDayChart />
+  <details data-future-details class="mt-3">
+    <summary class="cursor-pointer min-h-11 py-2 font-bold text-[length:var(--font-weather-detail)] focus-visible:outline-2 focus-visible:outline-accent">
+      Voir heure par heure
+    </summary>
+    <div data-future-detail-content>
+      <p
+        data-future-coverage
+        class="text-[length:var(--font-weather-detail)] text-secondary"
+      ></p>
+      <div
+        class="mt-2 max-h-[24dvh] overflow-auto rounded-xl border border-border"
+        tabindex="0"
+        role="region"
+        aria-label="Prévisions heure par heure"
+      >
+        <table class="w-full text-[length:var(--font-weather-detail)] text-left">
+          <thead>
+            <tr>
+              <th scope="col" class="p-2">
+                Heure
+              </th>
+              <th scope="col" class="p-2">
+                Temp.
+              </th>
+              <th scope="col" class="p-2">
+                Pluie
+              </th>
+              <th scope="col" class="p-2">
+                Conditions
+              </th>
+            </tr>
+          </thead>
+          <tbody data-future-hours></tbody>
+        </table>
+      </div>
+    </div>
+  </details>
+  <p class="mt-3 text-sm text-secondary">
     <a
       href="https://open-meteo.com/"
       target="_blank"
@@ -93,17 +116,17 @@
   <template data-future-day-template>
     <button
       type="button"
-      class="flex flex-col items-center rounded-xl border border-border p-2 min-h-11 min-w-0 break-words text-center text-[length:var(--font-weather-detail)] hover:bg-elevated aria-pressed:bg-advice aria-pressed:border-accent focus-visible:outline-2 focus-visible:outline-accent"
+      class="relative grid grid-cols-[2.5rem_minmax(0,1fr)] items-center gap-x-1 shrink-0 w-40 min-[1000px]:w-auto rounded-xl border border-border p-2 min-h-11 min-w-0 break-words text-center text-[length:var(--font-weather-detail)] hover:bg-elevated aria-pressed:bg-advice aria-pressed:border-accent focus-visible:outline-2 focus-visible:outline-accent"
     >
-      <span data-future-date class="font-bold"></span>
+      <span data-future-date class="col-span-2 font-bold"></span>
       <span
         data-future-icon
         aria-hidden="true"
-        class="inline-block size-12 shrink-0"
+        class="inline-block size-10 shrink-0"
       ></span>
-      <span data-future-condition class="min-w-0 max-w-full"></span>
+      <span data-future-condition class="sr-only"></span>
       <span data-future-extremes class="font-bold"></span>
-      <span data-future-rain></span>
+      <span data-future-rain class="col-span-2"></span>
     </button>
   </template>
 </dialog>
@@ -111,6 +134,11 @@
   /* Dialog top layer keeps browsing independent of kiosk navigation and mode layout. */
   dialog::backdrop {
     background: #182c35b3;
+  }
+  /* WebKit can count closed details content in the dialog's scroll width.
+     Remove its layout explicitly while preserving the native disclosure. */
+  [data-future-details]:not([open]) > [data-future-detail-content] {
+    display: none;
   }
   [data-future-icon] {
     background-image: var(--dayframe-static-icon);

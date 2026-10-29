@@ -33,7 +33,7 @@ test('live day/night data, accessible graph and 30-minute refresh', async ({
       name: 'Température et probabilité de précipitations',
     }),
   ).toBeVisible();
-  await expect(page.getByText('Maintenant', {exact: true})).toBeVisible();
+  await expect(page.locator('[data-weather-now-label]')).toBeVisible();
   await expect(page.locator('table tbody tr')).toHaveCount(17);
   const rainBars = page.locator('[data-chart-rain] rect');
   await expect(rainBars).toHaveCount(8);
@@ -472,6 +472,7 @@ for (const density of ['standard', 'large']) {
       'horaires indisponibles',
     );
     await expect(dialog.locator('tbody tr')).toHaveCount(0);
+    await expect(dialog.locator('[data-future-chart]')).toBeHidden();
     await dialog.getByRole('button', {name: 'Fermer'}).click();
     await page.locator('[data-dashboard]').dispatchEvent('pointerdown');
     await page.getByRole('button', {name: 'Photos', exact: true}).click();
@@ -903,4 +904,150 @@ test('weather refresh and programmatic focus do not prolong forecast browsing', 
   await page.clock.fastForward(1);
   await expect(dialog).toBeHidden();
   await expect(open).toBeFocused();
+});
+
+test('selected-day graph leads the forecast, with exact hourly details on demand', async ({
+  page,
+}, testInfo) => {
+  await page.emulateMedia({reducedMotion: 'reduce'});
+  let calls = 0;
+  await page.route('https://api.open-meteo.com/**', async (route) => {
+    calls++;
+    await route.fulfill({json: sevenDayFixture()});
+  });
+  await page.goto('/?display=frame');
+  await page.getByRole('button', {name: 'Prévisions sur 7 jours'}).click();
+  const dialog = page.getByRole('dialog');
+  const chart = dialog.locator('[data-future-chart]');
+  await expect(chart).toBeVisible();
+  await expect(dialog.locator('[data-future-chart-now-label]')).toBeVisible();
+  await expect(dialog.locator('[data-future-chart-past]')).not.toHaveAttribute(
+    'width',
+    '0',
+  );
+  await expect(dialog.locator('[data-future-summary]')).toContainText(
+    'À venir',
+  );
+  await expect(dialog.locator('[data-future-details]')).not.toHaveAttribute(
+    'open',
+  );
+  await expect(dialog.getByRole('table')).toBeHidden();
+  await expect(chart.locator('rect title')).toHaveCount(24);
+  const originalPath = await chart.locator('path').first().getAttribute('d');
+  const tomorrow = dialog.locator('[data-future-days] button').nth(1);
+  await tomorrow.focus();
+  await page.keyboard.press('Enter');
+  await expect(tomorrow).toBeFocused();
+  await expect(tomorrow).toBeInViewport();
+  await expect(tomorrow).toHaveAttribute('aria-pressed', 'true');
+  await expect(dialog.locator('[data-future-chart-now-label]')).toBeHidden();
+  await expect(dialog.locator('[data-future-chart-past]')).toHaveAttribute(
+    'width',
+    '0',
+  );
+  await expect(chart.locator('path').first()).not.toHaveAttribute(
+    'd',
+    originalPath!,
+  );
+  await expect(chart).toBeInViewport();
+  const chartBounds = await chart.boundingBox();
+  const dialogBounds = await dialog.boundingBox();
+  expect(chartBounds!.y + chartBounds!.height).toBeLessThanOrEqual(
+    dialogBounds!.y + dialogBounds!.height,
+  );
+  await page.screenshot({
+    path: testInfo.outputPath('forecast-graph.png'),
+    fullPage: false,
+    animations: 'disabled',
+  });
+  await dialog.locator('summary').click();
+  await expect(dialog.getByRole('table')).toBeVisible();
+  await expect(dialog.locator('[data-future-hours] tr')).toHaveCount(24);
+  await dialog.locator('[data-future-days] button').last().click();
+  await expect(dialog.locator('[data-future-details]')).not.toHaveAttribute(
+    'open',
+  );
+  await expect(dialog.getByRole('table')).toBeHidden();
+  await expect(dialog.locator('[data-future-chart]')).toBeVisible();
+  await dialog.getByRole('button', {name: 'Fermer'}).click();
+  await page.getByRole('button', {name: 'Prévisions sur 7 jours'}).click();
+  const today = dialog.locator('[data-future-days] button').first();
+  await expect(today).toBeInViewport();
+  await expect(today).toHaveAttribute('aria-pressed', 'true');
+  await dialog.locator('summary').click();
+  await expect(dialog.getByRole('table')).toBeVisible();
+  await dialog.getByRole('button', {name: 'Fermer'}).click();
+  await page.getByRole('button', {name: 'Prévisions sur 7 jours'}).click();
+  await expect(dialog.getByRole('table')).toBeHidden();
+  await expect(dialog.locator('[data-future-details]')).not.toHaveAttribute(
+    'open',
+  );
+  expect(calls).toBe(1);
+});
+
+test('evening advice describes the next morning and keeps the daily extremes in the overview', async ({
+  page,
+}, testInfo) => {
+  const now = Date.parse('2026-10-16T20:05:00Z');
+  await page.clock.setSystemTime(new Date(now));
+  await page.route('https://api.open-meteo.com/**', async (route) => {
+    const raw = weatherFixture(now);
+    raw.current.temperature_2m = 10;
+    raw.hourly.temperature_2m = raw.hourly.time.map(() => 7);
+    raw.hourly.precipitation_probability = raw.hourly.time.map(() => 0);
+    await route.fulfill({json: raw});
+  });
+  await page.goto('/');
+  await page.getByRole('button', {name: 'Matin', exact: true}).click();
+  await expect(page.locator('[data-summary]')).toHaveText(
+    '10° maintenant, autour de 7° demain matin vers 07h00.',
+  );
+  await expect(page.locator('[data-extremes]')).toContainText(
+    'Max. 19° / Min. 8°',
+  );
+  await page.screenshot({
+    path: testInfo.outputPath('evening-advice.png'),
+    fullPage: true,
+    animations: 'disabled',
+  });
+});
+
+test('partial hourly coverage is labeled without inventing earlier hours', async ({
+  page,
+}) => {
+  await page.route('https://api.open-meteo.com/**', async (route) => {
+    const raw = sevenDayFixture();
+    // A contiguous forecast can begin partway through the first local day.
+    for (const values of Object.values(raw.hourly)) {
+      values.splice(0, 6);
+    }
+
+    await route.fulfill({json: raw});
+  });
+  await page.goto('/');
+  await page.getByRole('button', {name: 'Prévisions sur 7 jours'}).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.locator('[data-future-chart-note]')).toBeVisible();
+  await expect(dialog.locator('[data-future-chart-note]')).toContainText(
+    'partielle',
+  );
+  const path = await dialog
+    .locator('[data-future-chart-curve]')
+    .first()
+    .getAttribute('d');
+  expect(path!.match(/M/gv)).toHaveLength(1);
+  await expect(dialog.locator('[data-future-chart-rain] rect')).toHaveCount(18);
+  await expect(dialog.locator('[data-future-chart-times]')).toContainText(
+    '06h',
+  );
+  await expect(dialog.locator('[data-future-chart-times]')).not.toContainText(
+    '00h',
+  );
+  await dialog.locator('[data-future-days] button').nth(1).click();
+  await expect(dialog.locator('[data-future-chart-note]')).toBeHidden();
+  const fullPath = await dialog
+    .locator('[data-future-chart-curve]')
+    .first()
+    .getAttribute('d');
+  expect(fullPath!.match(/M/gv)).toHaveLength(1);
 });

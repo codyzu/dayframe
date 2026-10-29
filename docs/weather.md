@@ -211,3 +211,34 @@ All release checks passed (163 unit/integration, 424 browser passes/four existin
 skips and 44 navigation checks), followed by independent live-artifact matching
 and anonymous access checks. One timer exists only while the dialog is open;
 weather polling and its request budget are unchanged.
+
+## Time-aware advice and graph-first browsing — 28 October 2026
+
+Local implementation; not deployed. Advice uses hourly forecasts still ahead,
+not the daily maximum as a promise of future warming. Before the forecast peak,
+it can name the expected temperature and time. After that peak it names the
+21h forecast; from 21h it names tomorrow's 07h forecast, using local calendar
+arithmetic across DST/year boundaries. Missing target hours fall back to an
+available remaining hour, or explicitly unavailable guidance. Daily high/low stay
+in the overview. These are forecast values, not claims about observed extrema.
+Rain, cold and hazardous conditions retain priority, considering the rest of today
+and, from 21h, through tomorrow at 07h. Stale data still replaces advice with F01's
+recovery message.
+
+The seven-day dialog now shows a selected-day summary and a temperature/rain
+chart first. Copper uses the °C scale on the left; blue bars use the hourly
+0–100% scale on the right. Daily card percentages remain daily maximum hourly
+probabilities, not accumulated rainfall or whole-day rain probabilities. Today
+has a moving now marker and muted earlier hours; other dates do not. Missing
+hours break the curve and leave gaps between hourly bars; partial coverage is
+labeled. Fewer than two hours cannot produce a chart. Exact hour/timezone,
+conditions and methodology remain in the native **Voir heure par heure**
+disclosure, collapsed when switching days. Compact day cards stay in a horizontal
+strip on phones and a seven-column row on the frame. WebKit needs an explicit
+closed-details layout rule to keep hidden table content out of modal scroll width.
+
+One shared provider response, existing cache format and request budget, existing
+modal focus/close/idle lifecycle, static icons and reduced-motion policy remain.
+Rollback is a web-source revert; no data migration or service/device change.
+Local validation and upstream provenance are recorded in the implementation plan.
+Physical Classic 10/iPhone acceptance and production rollout remain separate.

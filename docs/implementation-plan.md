@@ -2339,3 +2339,38 @@ and its ordering assertion while advancing the test clock is a possible separate
 CI optimization. No complete per-test timing report was retained by the passing
 CI reporter, so the remaining slowdown has not been isolated. No test, security,
 Free-plan or deployment gate was removed to obtain this release.
+
+### Time-aware weather advice and selected-day charts — 28 October 2026
+
+Owner-requested follow-up to F01/F02. Re-read the local weather specification,
+F02 and shared delivery contract. Refreshed upstream default main through GitHub:
+`0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189`; inspected root MIT `LICENSE` and
+`dashboard/js/views/home.js` at that SHA. Retain its glanceable current/coming-weather
+hierarchy as reference. Deliberately use Dayframe's validated real timestamps,
+French deterministic advice, and accessible selected-day graph/disclosure instead
+of upstream's mock hourly cards. No upstream source/assets copied.
+
+Advice now describes a remaining forecast peak with its time, the evening's 21h
+temperature after that peak, or tomorrow at 07h from 21h onward. It never treats a
+daily maximum as a future rise after its forecast time. Daily extrema remain in
+the overview; missing coverage and stale recovery remain explicit. Clothing/rain/
+hazard priorities consider the remaining day and, late in the evening, next morning.
+Seven-day browsing adds a brief selected-day outlook, copper temperature curve,
+hourly blue probability bars with distinct labeled scales, today's now marker and
+muted past hours, and a native hourly-details disclosure. Phones use a horizontal
+compact day strip; the frame retains seven columns. Missing hours break the curve
+and leave bar gaps; partial/insufficient coverage is explained. Explicit closed
+content layout prevents WebKit's hidden-table horizontal overflow. No new request,
+dependency, persistent setting, cache migration, household data or paid service.
+Rollback is a web revert; physical acceptance and production rollout remain separate.
+
+Local validation: `pnpm check`, `pnpm lint` (four existing complexity warnings),
+`pnpm build`, all 173 unit/Worker integration tests and all 100 weather browser
+checks passed. Chromium, Firefox, desktop WebKit and mobile WebKit cover frame
+fit, complete phone chart visibility, keyboard/focus and idle behavior, collapsed
+reopening to today, partial/loading/unavailable/stale data, DST/year boundaries
+and unchanged request counts. Formatting and diff whitespace passed. Reviewed
+[synthetic screenshots](evidence/weather-outlook/README.md) show the frame/phone
+forecast and late-evening advice. This is local web evidence; no physical-device
+acceptance is claimed. The owner authorized commit and deployment on 29 October;
+the main-push release gate and independent live verification follow below.

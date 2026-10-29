@@ -2,6 +2,8 @@ import {dateKey, hourLabel, type Weather} from './adapter.ts';
 import {conditionFor} from './conditions.ts';
 import {staleWeatherLabel, isWeatherStale} from './freshness.ts';
 import {type WeatherState} from './service.ts';
+import {renderFutureChart} from './future-chart.ts';
+import {selectedDaySummary} from './outlook.ts';
 
 // Calendar arithmetic on ISO dates, never 24-hour steps through local DST.
 export function forecastDates(now: number) {
@@ -36,6 +38,7 @@ export function mountFutureWeather(root: HTMLElement) {
   let latest: WeatherState = {failed: false};
   let selected: string | undefined;
   let renderedDay: string | undefined;
+  let renderedMinute: number | undefined;
   let renderedWeather: Weather | undefined;
   let signature = '';
   let idleTimer: ReturnType<typeof setTimeout> | undefined;
@@ -79,19 +82,58 @@ export function mountFutureWeather(root: HTMLElement) {
       );
     }
 
+    const now = Date.now();
+    const hours =
+      weather?.hourly.filter((hour) => dateKey(hour.time) === date) ?? [];
+    const minute = Math.floor(now / 60_000);
+    if (
+      date === renderedDay &&
+      weather === renderedWeather &&
+      minute === renderedMinute
+    ) {
+      return;
+    }
+
+    renderedMinute = minute;
+    renderFutureChart(dialog, hours, now, date);
+    const coverageNote = dialog.querySelector<HTMLElement>(
+      '[data-future-chart-note]',
+    )!;
+    const isPartial =
+      hours.length > 0 &&
+      (hourLabel(hours[0].time) !== '00:00' ||
+        hourLabel(hours.at(-1)!.time) !== '23:00' ||
+        hours.some(
+          (hour, index) =>
+            index > 0 && hour.time - hours[index - 1].time > 3_600_000,
+        ));
+    coverageNote.hidden = !isPartial;
+    coverageNote.textContent =
+      hours.length === 1
+        ? 'Une seule heure disponible : consultez le détail horaire.'
+        : 'Couverture horaire partielle : les périodes manquantes ne sont pas tracées.';
+    text(
+      '[data-future-summary]',
+      hours.length > 0
+        ? selectedDaySummary(hours, now, date)
+        : 'Prévisions horaires indisponibles pour cette date.',
+    );
     if (date === renderedDay && weather === renderedWeather) {
       return;
+    }
+
+    if (date !== renderedDay) {
+      dialog.querySelector<HTMLDetailsElement>('[data-future-details]')!.open =
+        false;
     }
 
     renderedDay = date;
     renderedWeather = weather;
     text('[data-future-heading]', forecastDateLabel(date));
-    const hours =
-      weather?.hourly.filter((hour) => dateKey(hour.time) === date) ?? [];
     text(
       '[data-future-coverage]',
       hours.length > 0
-        ? `Heures disponibles : ${hourLabel(hours[0].time)}–${hourLabel(hours.at(-1)!.time)} (${weather!.timezone}). Pluie : probabilité horaire.`
+        ? `Heures disponibles : ${hourLabel(hours[0].time)}–${hourLabel(hours.at(-1)!.time)} (${weather!.timezone}). Graphique : probabilités horaires. Cartes : maximum horaire de la journée.`
         : 'Prévisions horaires indisponibles pour cette date.',
     );
     const timeFormatter = new Intl.DateTimeFormat('fr-FR', {
@@ -138,7 +180,7 @@ export function mountFutureWeather(root: HTMLElement) {
       weather
         ? isWeatherStale(weather, now, failed)
           ? `Prévisions non actualisées. ${staleWeatherLabel(weather, now)}. Nouvelle tentative automatique.`
-          : `Prévisions pour ${weather.location} · ${weather.timezone}. Pluie : maximum de probabilité de la journée.`
+          : `Prévisions pour ${weather.location}.`
         : failed
           ? 'Prévisions indisponibles. Nouvelle tentative automatique.'
           : 'Chargement des prévisions…',
@@ -206,9 +248,13 @@ export function mountFutureWeather(root: HTMLElement) {
     () => {
       selected = undefined;
       signature = '';
+      dialog.querySelector<HTMLDetailsElement>('[data-future-details]')!.open =
+        false;
       dialog.showModal();
       resetIdleTimer();
       render();
+      days.scrollLeft = 0;
+      dialog.scrollTop = 0;
     },
     options,
   );
@@ -239,6 +285,7 @@ export function mountFutureWeather(root: HTMLElement) {
       }
 
       selected = button.dataset.date;
+      button.scrollIntoView({block: 'nearest', inline: 'nearest'});
       renderDay(latest.weather);
     },
     options,
