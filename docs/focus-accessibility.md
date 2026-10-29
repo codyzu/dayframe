@@ -68,3 +68,8 @@ checks do not establish physical frame/iPhone acceptance.
 Rollback is a web-source revert of the spacing, scroll clearance and dock observer.
 No data migration, cache format, API request, dependency, paid service, authentication
 policy or device setting changes.
+
+Production rollout completed from `31e6cc6` through
+[release 40931936924](https://github.com/codyzu/dayframe/actions/runs/40931936924).
+The complete gate passed 173 unit/Worker tests, 540 browser checks and 44 offline
+navigation checks, followed by independent live-asset matching and access checks.

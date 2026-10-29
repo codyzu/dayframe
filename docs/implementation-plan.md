@@ -2464,3 +2464,28 @@ was corrected as described above and passed in all four projects. Final syntheti
 [images and inventory](evidence/focus-audit/README.md) were reviewed. No physical
 acceptance is claimed. The authorized main-push verification/deployment and live
 artifact comparison follow below.
+
+### Focus audit production rollout completed — 29 October 2026
+
+[Release 40931936924](https://github.com/codyzu/dayframe/actions/runs/40931936924)
+succeeded for `31e6cc6111b9374e9989a77688a5bf8eb6c9d2af`. The complete hosted
+`pnpm verify` passed: types/lint/build, all 173 unit/Worker integration tests,
+540 regular browser passes with four existing intentional skips, and all 44
+offline-navigation checks. This includes the new 16 audit scenarios and the full
+rendered-ring inventory across four browser/layout configurations. Checks took
+16m34s; deployment and live smoke took 29s. Worker version
+`1a3dd174-2e3b-47ec-a0a1-5aaf044b7a1e`; public build
+`357a0b0b-9346-4283-8dbe-3140f110ca28`. The previous public build was independently
+observed as `f8622925-4792-4303-8669-2e404182ab28` before promotion.
+
+Downloaded the exact approved production artifact and independently matched live
+home HTML, every bundled JavaScript/CSS file, `/offline`, `/sw.js` and
+`/version.json`: 17 files, with redirects forbidden. The
+[asset-match record](evidence/focus-audit/live-assets.json) retains the SHA-256
+hashes and release identifiers. Independently re-ran all anonymous smoke checks:
+production health remains healthy, admin routes redirect to Access, and private
+reads/headerless mutations remain denied with no-store responses. No credentials,
+household data, bindings, native settings, paid services or offline retention
+policy changed. Commit, push, deployment and live verification are complete;
+physical frame/iPhone acceptance and previous security/hardware/soak deferrals
+remain separate. Earlier pending notes describe preceding stages.
