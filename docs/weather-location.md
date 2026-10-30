@@ -175,3 +175,15 @@ skips), and 44 offline-navigation cases. Independent anonymous smoke checks and
 release. Real town search/selection/forecast/reset and household clock independence
 also passed in an isolated mobile WebKit context on production. Actual iPhone
 permission/keyboard and frame acceptance remain separate.
+
+Precise-GPS/city-label release completed on 30 October 2026: source `9cc4816`,
+[release 41036425591](https://github.com/codyzu/dayframe/actions/runs/41036425591),
+public build `76a1ca43-826e-424e-bf2c-f39504441b7c`. Full hosted verification
+passed 179 unit/Worker tests, 600 browser cases (four existing intentional skips)
+and 44 offline-navigation cases. Independent smoke checks and
+[17 live-file hashes](evidence/weather-location/gps-city-live-assets.json) matched
+the verified artifact. A real-provider mobile WebKit check on production returned
+“Près d’Annecy” with unchanged example coordinates. Refresh the page and choose
+“Utiliser ma position” again to replace an older rounded preference; the original
+precision cannot be recovered from a previously rounded stored value. No physical
+iPhone permission/keyboard or frame acceptance is claimed.

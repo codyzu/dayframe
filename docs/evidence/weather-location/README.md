@@ -55,3 +55,13 @@ types/lint/build passed. A separate isolated mobile WebKit check used real
 Photon/Open-Meteo responses and a public Annecy point, returning “Près d’Annecy”
 and Europe/Paris without replacing the coordinates. No personal GPS data used.
 Source implementation is locally verified; release evidence follows below.
+
+Production closeout: [release 41036425591](https://github.com/codyzu/dayframe/actions/runs/41036425591)
+deployed source `9cc4816` after 179 unit/Worker tests, 600 browser passes (four
+existing skips) and 44 offline-navigation passes. Independent
+[live-file comparison](gps-city-live-assets.json) matched 17 files to the exact
+verified artifact; repeated anonymous access/no-store smoke checks passed.
+An isolated mobile WebKit context on production used real providers with a public
+Annecy example point, selected “Près d’Annecy”, and retained the original
+coordinates and Europe/Paris timezone. No personal location or session was used.
+Earlier pending/local-only notes describe their preceding stages.

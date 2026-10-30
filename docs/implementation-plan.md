@@ -2717,3 +2717,31 @@ places and resolving Europe/Paris. Browser state was discarded; no personal
 location/session/photo was used. Main-push full verification, deployment and
 independent live-file checks follow the release commit. Physical acceptance
 and prior security/hardware/soak deferrals remain separate.
+
+Production closeout — 30 October 2026 (Europe/Paris): source
+`9cc4816120e6f78eaf4eb599829a1ee3ba8bfd93` deployed successfully through
+[release 41036425591](https://github.com/codyzu/dayframe/actions/runs/41036425591),
+attempt 2. Attempt 1 was canceled when a retry of the older `49bb004` release
+entered the shared concurrency group. Canceled that superseded retry and reran
+the latest main commit, which includes both changes. No checks were bypassed.
+The complete hosted verification passed types/XO/build, all 179 unit/Worker tests,
+600 browser cases with four existing intentional skips, and all 44 enabled
+offline-navigation cases. The existing Free-plan assertion gate, deployment and
+live smoke checks passed. Verification took about 18 minutes; deployment took
+about 30 seconds. Worker version `88ee4162-dea7-4cb7-8cbf-00f306aed4ec`; public
+build `76a1ca43-826e-424e-bf2c-f39504441b7c`. Previous public build independently
+observed before promotion: `d50cd569-899d-4a1c-bb0b-679130aa71b3`.
+
+Downloaded the exact run's verified production artifact and independently matched
+[17 public files](evidence/weather-location/gps-city-live-assets.json): home HTML,
+all JavaScript/CSS bundles, `/offline`, `/sw.js` and `/version.json`, rejecting
+redirects. Independently repeated anonymous smoke checks: health remains healthy,
+admin routes redirect to Access, private reads/headerless mutations remain denied
+and API responses retain no-store. An isolated mobile WebKit context on production
+also completed the real Photon/Open-Meteo picker with public Annecy example
+coordinates, returning “Près d’Annecy” and Europe/Paris while preserving every
+supplied coordinate decimal. Its browser data was discarded. No personal GPS,
+household session or photo was used. Documentation, implementation, source commit,
+push, deployment and independent live verification are complete. No billing,
+bindings, credentials or native configuration changed. Physical iPhone/frame
+acceptance and earlier security/hardware/soak deferrals remain separate.
