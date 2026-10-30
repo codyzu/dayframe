@@ -460,3 +460,26 @@ record dimensions/byte counts only. A synthetic 48.02 MiB input became about
 PNG** is installed on the Mac. The old version and all five test copies are saved
 but hidden from the Share Sheet with owner approval. Confirm iPhone sync and retry
 the previously oversized photo using the current **Dayframe PNG** entry.
+
+### Production closeout — 30 October 2026
+
+Shortcut source `653ead9` is committed. The existing main release also includes
+its retirement-test correction (`3b88551`) and the separately authorized weather
+work at `9cc4816120e6f78eaf4eb599829a1ee3ba8bfd93`. That latest source passed
+[release 41036425591](https://github.com/codyzu/dayframe/actions/runs/41036425591):
+179 unit/Worker tests, 600 browser cases (four existing skips), and all 44 offline
+checks, followed by the existing Free-plan gate, upload and production smoke tests.
+Worker version `88ee4162-dea7-4cb7-8cbf-00f306aed4ec`; public build
+`76a1ca43-826e-424e-bf2c-f39504441b7c`.
+
+The earlier `49bb004` attempt stopped on an intermittent mobile scheduling check
+(575 browser cases passed); ten focused repetitions passed from the newer `9cc4816`
+snapshot. The older retry was cancelled when the latest main release superseded
+it. No scheduling assertion was weakened or scheduling code changed by this slice.
+
+An independent [live comparison](evidence/photo-shortcut-resize/live-assets.json)
+matched 17 public files to the downloaded verified artifact and confirmed anonymous
+photo/session/config reads return 401/no-store. The installed **Dayframe PNG** uses
+the tested resizing actions; the previous version and test copies are retained but
+hidden from the Share Sheet with owner approval. Physical iPhone sync and import
+acceptance remain owner checks; existing hardware/security deferrals remain.

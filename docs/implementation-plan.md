@@ -2581,6 +2581,18 @@ their earlier scope.
 
 ## M3 photo Shortcut resizing — 30 October 2026
 
+**Production closeout:** Shortcut source `653ead9` is installed on the Mac as
+**Dayframe PNG**, with the old/test copies hidden from the Share Sheet after owner
+approval. The enhancement is included in `9cc4816`, which passed
+[release 41036425591](https://github.com/codyzu/dayframe/actions/runs/41036425591):
+179 unit/Worker tests, 600 browser cases (four existing skips), all 44 offline
+checks, the Free-plan gate, deployment and production smoke tests. Independent
+comparison matched 17 live files and anonymous private reads remained 401/no-store.
+[Native and release evidence](photos.md#production-closeout--30-october-2026).
+Physical iPhone sync/import acceptance remains an owner check. Historical attempts
+below retain their earlier status; the later mobile timing failure and successful
+latest-main release are recorded in photo operations.
+
 Owner authorized implementation, documentation, commit and deployment after an
 actual iPhone clipboard photo exceeded the 40 MiB application guard (40.2 MiB).
 The production generator now clamps each shared image to a 1600px longest edge

@@ -167,7 +167,8 @@ After the admin integration is deployed, generate a separate Shortcut with the
 first-party HTTPS `/admin/photos` URL, `--normalize-png --admin-import`, then sign
 it using the existing procedure. This sets `expected=N&variant=png&import=clipboard`
 without photo bytes or credentials. Keep production hostname/signing outputs
-outside Git. No real import Shortcut is installed by the local implementation.
+outside Git. The generator does not install the Shortcut; import the signed file
+in Shortcuts.
 The browser must sign in before Paste; adding to the collection is a separate
 explicit action after preview. The prototype diagnostic names remain separate.
 

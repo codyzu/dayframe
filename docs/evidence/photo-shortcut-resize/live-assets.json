@@ -1,0 +1,110 @@
+{
+  "release": "https://github.com/codyzu/dayframe/actions/runs/41036425591",
+  "sourceCommit": "9cc4816120e6f78eaf4eb599829a1ee3ba8bfd93",
+  "checkedAt": "2026-10-30T10:15:21.974Z",
+  "build": "76a1ca43-826e-424e-bf2c-f39504441b7c",
+  "files": [
+    {
+      "path": "/",
+      "bytes": 34611,
+      "sha256": "5cd56aba4a2aa7e76c8fcc7208ad2612d8ada1b7def177ba77dd5b83b2d973dd"
+    },
+    {
+      "path": "/offline",
+      "bytes": 7854,
+      "sha256": "78904ec2bb387196c267d7df0ece329d0362718f0c664a650900d9d9c4ab6621"
+    },
+    {
+      "path": "/sw.js",
+      "bytes": 2536,
+      "sha256": "8b3d194376bc7edf6f9a5c2da4a9075e494e034b96df839894f763ff65d0b622"
+    },
+    {
+      "path": "/version.json",
+      "bytes": 48,
+      "sha256": "f466356431a37890b203ed1623d1d5052ce3e9e585f72dd59f44a7e4d587936a"
+    },
+    {
+      "path": "/_astro/BaseLayout.BOso_6cI.css",
+      "bytes": 203391,
+      "sha256": "b4bcb8e0717c5215acd3024cc3aa55574dffe51ff7160332b1b6fa748cd282e3"
+    },
+    {
+      "path": "/_astro/client.HcxFdxc0.js",
+      "bytes": 6784,
+      "sha256": "2bf040e2d9587e3ccb0c0f2ee62926e5de00977e0f443cc888ae163e2043c5b0"
+    },
+    {
+      "path": "/_astro/contracts.BNykGCl8.js",
+      "bytes": 1218,
+      "sha256": "2202eb7a1391f86054a098487db4d2afa41a52e824c494ac0a96169577c23916"
+    },
+    {
+      "path": "/_astro/index.WkNpr-9F.css",
+      "bytes": 5881,
+      "sha256": "634ff8a6a41cafa7d9157c9e22fd466ab239a2c89c612ed3cbe14c08ac7ce082"
+    },
+    {
+      "path": "/_astro/index.astro_astro_type_script_index_0_lang.Q-WUyLvB.js",
+      "bytes": 60585,
+      "sha256": "2071e156b9e6f9e1a1ffc7ac9721484c3b7093d86c28f1cb50d244eed2d84bbd"
+    },
+    {
+      "path": "/_astro/photo-paste.astro_astro_type_script_index_0_lang.CI42aHWi.js",
+      "bytes": 4723,
+      "sha256": "cd8693fb4e20da3338e802089baf2bd79e39c7ff383f2413a9ba2256d995e3ed"
+    },
+    {
+      "path": "/_astro/photos.astro_astro_type_script_index_0_lang.8xQuygYc.js",
+      "bytes": 13366,
+      "sha256": "85c83c77c3337c751f73fdbf4b10277c68f208d6bacd943bbe3cd8e44bafa5a7"
+    },
+    {
+      "path": "/_astro/processing.CouALDc_.js",
+      "bytes": 3873,
+      "sha256": "4d9999c97aff644f2a55b74cd82832dc8407e9ba6e6e34018deb0cf56995e965"
+    },
+    {
+      "path": "/_astro/settings.DTP_YmZu.js",
+      "bytes": 6154,
+      "sha256": "53d9f4289f557208bfa69f84954b2efc980c130b8ce757b45d4c42395268f77c"
+    },
+    {
+      "path": "/_astro/settings.astro_astro_type_script_index_0_lang.CT5ZlItF.js",
+      "bytes": 8284,
+      "sha256": "457fda4671fe001869cdfc0e552c7acb77c84a1177960e77d3ee3bc395ddd996"
+    },
+    {
+      "path": "/_astro/setup.astro_astro_type_script_index_0_lang.4ESIHOvW.js",
+      "bytes": 799,
+      "sha256": "d397ad467cf2d9d40c747aeab35ce1fbf161a540354eb8ea193125d9fdbd7c37"
+    },
+    {
+      "path": "/_astro/webp-fallback.BuSKc065.js",
+      "bytes": 714,
+      "sha256": "b42c73a8e8017da66f9aa34eec286ab0a44663680474414b358b9e0559751cd5"
+    },
+    {
+      "path": "/_astro/webp-worker-Bp5tRGUh.js",
+      "bytes": 42250,
+      "sha256": "fd817449ae01ab2bacbc13db71017b6320f12015e68b0cdac56b0fe2dcd792d4"
+    }
+  ],
+  "protectedRoutes": [
+    {
+      "path": "/api/photos",
+      "status": 401,
+      "noStore": true
+    },
+    {
+      "path": "/api/session",
+      "status": 401,
+      "noStore": true
+    },
+    {
+      "path": "/api/config",
+      "status": 401,
+      "noStore": true
+    }
+  ]
+}
