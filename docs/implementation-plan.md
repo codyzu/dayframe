@@ -2618,7 +2618,6 @@ entry. Signed/unsigned release artifacts and synthetic validation data are retai
 under ignored `private/photo-shortcut-resize-20261030/`. Actual iPhone iCloud sync,
 camera/HEIC/HDR/orientation and batch acceptance remain owner checks.
 
-
 Release attempt `653ead9`, [41030645076](https://github.com/codyzu/dayframe/actions/runs/41030645076),
 passed types, lint, 176 unit/Worker tests and 576 browser tests (four existing
 skips). Offline verification passed 43/44; Firefox rejected `registration.update()`
@@ -2631,3 +2630,7 @@ passed. This changes test synchronization only, with no application/Worker chang
 The complete local offline matrix then passed all 44 cases; XO passed with the
 four existing complexity warnings. The correction and sanitized native evidence
 are included in the retry commit; full hosted verification remains required.
+
+Retry `3b88551` / run `41033712447` stopped at XO on one extra blank line in
+this release record, before browser tests or deployment. The blank line was
+removed; the next push retains all verification and deployment gates.
