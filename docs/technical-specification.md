@@ -142,6 +142,12 @@ time, with all warnings and official-source links available in details. No-warni
 unavailable, stale and unsupported-location states must remain distinct. See
 [weather vigilance](weather.md#official-vigilance--21-october-2026).
 
+**Calendar preview update, 30 October 2026:** The morning agenda prioritizes today’s
+remaining appointments and uses spare rows for tomorrow’s earliest new starts,
+separated by a labelled day divider. Preserve the existing six-row space budget,
+large typography and private runtime-only data boundary. Do not duplicate events
+spanning both days or silently skip ahead beyond tomorrow. See [calendar behavior](calendar.md#tomorrow-preview--30-october-2026).
+
 Conditional or later additions: strong winds, freezing conditions, sunrise/sunset,
 short multi-day forecast, and calendar events. Avoid cluttering the primary 10-inch display with humidity, pressure, UV, or long forecasts by default.
 

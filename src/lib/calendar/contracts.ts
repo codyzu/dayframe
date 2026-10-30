@@ -82,3 +82,56 @@ export function remainingAgendaEvents(
         : Number(b.allDay) - Number(a.allDay),
     );
 }
+
+// Tomorrow contains new starts only; ongoing/multi-day events already belong to today.
+// Keep three per source per day before the view applies its shared row budget.
+export function agendaWindowEvents(
+  events: AgendaEvent[],
+  now: number,
+  timezone: string,
+) {
+  const tomorrowStart = dayEnd(now, timezone);
+  return [
+    ...remainingAgendaEvents(events, now, timezone),
+    ...tomorrowAgendaEvents(events, tomorrowStart, timezone),
+  ];
+}
+
+function tomorrowAgendaEvents(
+  events: AgendaEvent[],
+  tomorrowStart: number,
+  timezone: string,
+) {
+  const tomorrow = localDate(tomorrowStart, timezone);
+  const startsTomorrow = events.filter(
+    (event) =>
+      (event.allDay
+        ? event.start
+        : localDate(Date.parse(event.start), timezone)) === tomorrow,
+  );
+  return remainingAgendaEvents(startsTomorrow, tomorrowStart, timezone);
+}
+
+export function agendaPreview(
+  events: AgendaEvent[],
+  now: number,
+  timezone: string,
+) {
+  const today = remainingAgendaEvents(events, now, timezone);
+  const tomorrowStart = dayEnd(now, timezone);
+  // The day divider occupies one of the existing six rows. Leave room for an event
+  // (or the explicit empty message) rather than showing a divider on its own.
+  // An empty today uses one row for its status, leaving four preview appointments.
+  const shouldShowTomorrow = today.length <= 4;
+  return {
+    today,
+    tomorrow: shouldShowTomorrow
+      ? tomorrowAgendaEvents(events, tomorrowStart, timezone).slice(
+          0,
+          5 - Math.max(1, today.length),
+        )
+      : [],
+    shouldShowTomorrow,
+    tomorrowStart,
+  };
+}

@@ -27,6 +27,7 @@ let isTokenError = false;
 let isOmitScope = false;
 let eventPages = 0;
 let eventsPerCalendar = 1;
+let shouldIncludeTomorrow = false;
 // eslint-disable-next-line max-params -- Named synthetic request inputs keep the authorization matrix compact.
 async function request(
   path: string,
@@ -102,6 +103,7 @@ beforeEach(async () => {
   isOmitScope = false;
   eventPages = 0;
   eventsPerCalendar = 1;
+  shouldIncludeTomorrow = false;
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -146,16 +148,40 @@ beforeEach(async () => {
         expect(url.pathname).toMatch(/shared%40example.test|other/v);
         expect(url.searchParams.get('singleEvents')).toBe('true');
         expect(url.searchParams.get('timeZone')).toBe('Europe/Paris');
+        expect(url.searchParams.get('timeMax')).toBe(
+          new Date(
+            dayEnd(dayEnd(Date.now(), 'Europe/Paris'), 'Europe/Paris'),
+          ).toISOString(),
+        );
         const start = new Date(Date.now() + 60_000).toISOString();
         const end = new Date(Date.now() + 120_000).toISOString();
         return Response.json({
-          items: Array.from({length: eventsPerCalendar}, () => ({
-            summary: '<script>Private title</script>',
-            start: {dateTime: start},
-            end: {dateTime: end},
-            description: 'not returned',
-            location: 'not returned',
-          })),
+          items: [
+            ...Array.from({length: eventsPerCalendar}, () => ({
+              summary: '<script>Private title</script>',
+              start: {dateTime: start},
+              end: {dateTime: end},
+              description: 'not returned',
+              location: 'not returned',
+            })),
+            ...(shouldIncludeTomorrow
+              ? Array.from({length: 4}, (_, index) => ({
+                  summary: `Tomorrow ${index}`,
+                  start: {
+                    dateTime: new Date(
+                      dayEnd(Date.now(), 'Europe/Paris') +
+                        (index + 8) * 3_600_000,
+                    ).toISOString(),
+                  },
+                  end: {
+                    dateTime: new Date(
+                      dayEnd(Date.now(), 'Europe/Paris') +
+                        (index + 9) * 3_600_000,
+                    ).toISOString(),
+                  },
+                }))
+              : []),
+          ],
         });
       }
 
@@ -377,7 +403,7 @@ it('uses Paris dates, exclusive all-day ends, ongoing events and DST boundaries'
   ];
   expect(
     normalizeEvents(items, now, 'Europe/Paris').map((event) => event.title),
-  ).toEqual(['All day', 'Ongoing']);
+  ).toEqual(['All day', 'Ongoing', 'Tomorrow']);
 });
 
 it('verifies both calendars, bounds each independently and invalidates both caches on selection changes', async () => {
@@ -423,4 +449,33 @@ it('verifies both calendars, bounds each independently and invalidates both cach
   const next = await request('/api/calendar/events', 'GET', display);
   expect(((await next.json()) as {events: unknown[]}).events).toHaveLength(3);
   expect(eventPages).toBe(3);
+});
+
+it('fetches and caches both days with independent per-day source limits', async () => {
+  shouldIncludeTomorrow = true;
+  eventsPerCalendar = 4;
+  await finish();
+  await request('/api/calendar', 'PATCH', admin, {
+    id: 'shared@example.test',
+    massageId: 'other',
+  });
+  const first = await request('/api/calendar/events', 'GET', display);
+  const body = (await first.json()) as {events: Array<{title: string}>};
+  expect(body.events).toHaveLength(12);
+  expect(
+    body.events.filter((event) => event.title.startsWith('Tomorrow')),
+  ).toHaveLength(6);
+  await request('/api/calendar/events', 'GET', display);
+  expect(eventPages).toBe(2);
+  // A pre-release today-only cache must trigger an immediate two-day refetch.
+  const state = (await (
+    await administration(platform.binding, '/calendar-state', undefined, 'GET')
+  ).json()) as {revision: string; cache: {days?: number}};
+  delete state.cache.days;
+  await administration(platform.binding, '/calendar-state', {
+    expected: state.revision,
+    value: {...state, revision: crypto.randomUUID()},
+  });
+  await request('/api/calendar/events', 'GET', display);
+  expect(eventPages).toBe(4);
 });

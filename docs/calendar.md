@@ -17,7 +17,7 @@ Google's verified calendar ID. Both existing administrators can manage the conne
 neither administrator needs to sign in on the frame. A normal Dayframe/Cloudflare
 Access sign-in is separate from Google Calendar consent.
 
-Morning shows up to three remaining events **per calendar** today in the household's configured timezone:
+Morning prioritizes up to three remaining events **per calendar** today in the household's configured timezone:
 all-day entries first, then timed entries in start order, including ongoing/multi-day
 events. All-day end dates are exclusive. Google expands recurring appointments and
 exceptions (`singleEvents=true`); cancelled and self-declined entries are omitted.
@@ -92,7 +92,7 @@ callback, token refresh or event request overwriting a newer disconnect/selectio
 No generic server fetch endpoint or caller-selected provider URL exists.
 
 Successful event responses are cached centrally for up to four minutes, including empty
-results. The private Durable Object stores only the bounded displayed events and their
+results. The private Durable Object stores only the bounded today/tomorrow candidate events and their
 fetch time/timezone; the latest cache remains in private storage until replaced or
 removed by selection/disconnect. Provider requests have timeouts, fixed Google origins,
 redirect rejection, bounded response bodies and at most ten sequential pages. Reads use
@@ -151,3 +151,33 @@ cache atomically. Both calendars share the existing encrypted connection, revisi
 checks and five-minute browser privacy lease. Failure reading either calendar clears
 the full agenda; no stale or misleading partial success is shown. Fetch pagination is
 bounded to ten pages per selected calendar. No new permissions, package or service.
+
+## Tomorrow preview — 30 October 2026
+
+Morning’s **À venir** card keeps today’s remaining events first. A thin horizontal
+rule labelled **Demain · weekday** introduces tomorrow’s earliest new appointments
+when at least two of the six existing row slots remain. The divider consumes one
+slot; five or six events today suppress the preview. With no remaining events today,
+the explicit today-empty status consumes another slot, leaving up to four tomorrow
+appointments. Font sizes, calendar colours/source labels and static presentation
+are retained. An empty tomorrow is labelled explicitly whenever its section fits;
+the preview never skips ahead to another day. All-day events precede timed entries.
+Events spanning both days appear under today only, then become today’s entries
+after midnight revalidation.
+
+The same authorized reader now queries through the end of tomorrow in the household
+timezone, using local date boundaries across 23/25-hour days rather than adding
+24 hours. It retains at most three events per calendar per day (twelve candidates
+across two calendars). The browser receives those candidates and applies the shared
+row budget so finished events can free preview space between refreshes. A two-day
+cache marker invalidates older today-only caches immediately on their next read.
+The four-minute server refresh, five-minute browser privacy lease, midnight/hiding/
+access-denial clearing, no-store responses and read-only OAuth scopes remain.
+There is no extra periodic request or new service, dependency or recurring cost.
+The public calendar privacy page describes the expanded candidate bound.
+
+Re-reviewed upstream main at `0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189`, including
+root MIT `LICENSE` and `dashboard/js/views/{home,calendar}.js`. Its short remaining
+lists and next-morning hint are useful ideas; this bounded two-day French agenda
+and private timezone-aware reader are independently authored. No upstream code or
+assets copied. Local/release verification is recorded in the implementation plan.

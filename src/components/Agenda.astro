@@ -7,7 +7,7 @@
     id="agenda-title"
     class="text-[length:var(--font-weather-heading)] font-bold leading-tight"
   >
-    La suite de la journée
+    À venir
   </h2>
   <p
     data-day-observance
@@ -16,11 +16,26 @@
   ></p>
   <p
     data-agenda-status
-    class="mt-2 text-[length:var(--font-weather-detail)] text-secondary leading-snug"
+    class="mt-1 text-[length:var(--font-weather-detail)] text-secondary leading-snug"
   >
     Aucun agenda connecté.
   </p>
-  <ul data-agenda-events hidden class="mt-2 grid gap-0.75"></ul>
+  <ul data-agenda-events hidden class="mt-1 grid gap-0.75"></ul>
+  <section data-agenda-tomorrow hidden aria-labelledby="agenda-tomorrow-title">
+    <h3
+      id="agenda-tomorrow-title"
+      data-agenda-tomorrow-title
+      class="mt-0.75 border-t border-border px-2 text-secondary text-[length:var(--font-weather-detail)] font-bold leading-tight"
+    ></h3>
+    <ul data-agenda-tomorrow-events hidden class="mt-0.75 grid gap-0.75"></ul>
+    <p
+      data-agenda-tomorrow-empty
+      hidden
+      class="px-2 text-secondary text-[length:var(--font-weather-detail)] leading-tight"
+    >
+      Aucun événement prévu.
+    </p>
+  </section>
   <template data-agenda-template>
     <li class="flex items-baseline gap-3 min-w-0 rounded-md px-2 text-primary text-[length:var(--font-weather-detail)] leading-tight data-[event-calendar=family]:bg-[#f5dadd] data-[event-calendar=massages]:bg-[#e8def5]">
       <span

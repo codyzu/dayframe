@@ -2,8 +2,7 @@
 import {CompactEncrypt, compactDecrypt, base64url} from 'jose';
 import {
   dayEnd,
-  remainingEvents,
-  remainingAgendaEvents,
+  agendaWindowEvents,
   type AgendaEvent,
 } from '../src/lib/calendar/contracts.ts';
 import {validateSettings} from '../src/lib/dashboard/settings.ts';
@@ -36,7 +35,12 @@ type RecordState = {
   revision: string;
   pending?: Pending;
   connection?: Connection;
-  cache?: {events: AgendaEvent[]; fetchedAt: number; timezone: string};
+  cache?: {
+    events: AgendaEvent[];
+    fetchedAt: number;
+    timezone: string;
+    days?: 2;
+  };
 };
 type Tokens = {access: string; refresh: string; expires: number};
 type GoogleEvent = {
@@ -287,7 +291,7 @@ export function normalizeEvents(
     });
   }
 
-  return remainingEvents(
+  return agendaWindowEvents(
     events.toSorted((a, b) =>
       a.allDay === b.allDay
         ? Date.parse(a.start) - Date.parse(b.start)
@@ -307,9 +311,10 @@ async function calendarEvents(
   const url = new URL(
     `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(id)}/events`,
   );
+  const tomorrowEnd = dayEnd(dayEnd(now, timezone), timezone);
   url.search = new URLSearchParams({
     timeMin: new Date(now).toISOString(),
-    timeMax: new Date(dayEnd(now, timezone)).toISOString(),
+    timeMax: new Date(tomorrowEnd).toISOString(),
     timeZone: timezone,
     singleEvents: 'true',
     orderBy: 'startTime',
@@ -366,7 +371,8 @@ async function agenda(env: CalendarEnv, state: RecordState) {
 
   let {cache} = state;
   if (
-    cache?.timezone !== timezone ||
+    cache?.days !== 2 ||
+    cache.timezone !== timezone ||
     now - cache.fetchedAt >= 240_000 ||
     now < cache.fetchedAt ||
     dayEnd(cache.fetchedAt, timezone) <= now
@@ -392,6 +398,7 @@ async function agenda(env: CalendarEnv, state: RecordState) {
     }
 
     cache = {
+      days: 2,
       events,
       fetchedAt: now,
       timezone,
@@ -404,7 +411,7 @@ async function agenda(env: CalendarEnv, state: RecordState) {
     connected: true,
     ...cache,
     massageConnected: Boolean(state.connection.massageCalendar),
-    events: remainingAgendaEvents(cache.events, now, timezone),
+    events: agendaWindowEvents(cache.events, now, timezone),
   });
 }
 

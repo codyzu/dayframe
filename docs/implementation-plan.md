@@ -2757,3 +2757,49 @@ household session or photo was used. Documentation, implementation, source commi
 push, deployment and independent live verification are complete. No billing,
 bindings, credentials or native configuration changed. Physical iPhone/frame
 acceptance and earlier security/hardware/soak deferrals remain separate.
+
+### M7 morning tomorrow preview — 30 October 2026
+
+Owner approved the bounded tomorrow preview and explicitly requested implementation,
+testing, commit, push and deployment. The morning card now says **À venir**: today’s
+remaining appointments retain priority, and spare rows show a horizontal divider
+labelled **Demain · weekday**, followed by tomorrow’s earliest new starts. Five/six
+events today suppress the preview. The existing six-row space budget includes the
+divider and any empty-today status; an empty tomorrow remains explicit whenever
+its section fits. Multi-day entries stay under today only. Typography and calendar
+source colours/labels remain; tighter list-heading spacing also fixes a 2–3px
+Firefox overflow with simultaneous vigilance and holiday information.
+
+The authorized Google read now ends at tomorrow’s local midnight, preserving DST
+boundaries and three candidates per calendar per day (twelve maximum). An explicit
+two-day cache marker invalidates older today-only caches. The browser selects spare
+rows as today’s events finish, with the existing four-minute server refresh and
+five-minute privacy lease, midnight/hiding/access-denial clearing and no persistent
+browser event storage. Updated the public calendar privacy page and
+[calendar operations](calendar.md#tomorrow-preview--30-october-2026). No new scope,
+service, dependency, billing or device change.
+
+Refreshed upstream main through GitHub at
+`0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189`; read root MIT `LICENSE` and
+`dashboard/js/views/{home,calendar}.js`. Retain short remaining lists and the
+next-morning hint as ideas. The private two-day reader, French labelled divider
+and row budgeting are independently authored; no upstream code/assets copied.
+
+Local validation: types, XO (four existing complexity warnings), build and all
+183 unit/Worker tests passed, including added DST/year rollover, all-day and
+multi-day handling, per-source/per-day bounds and old-cache invalidation coverage.
+Browser closeout, screenshots and hosted release evidence follow below. Physical
+frame/iPhone acceptance remains separate.
+
+Local browser closeout: all 51 enabled calendar/morning/day-planning cases passed
+across Chromium, Firefox, WebKit and mobile WebKit, with one existing intentional
+mobile skip. Coverage includes spare/empty/full cards, escaped titles, source
+labels, midnight reclassification, no persistent event storage, access-denial
+clearing and warning/holiday geometry. Reviewed synthetic
+[frame](evidence/calendar-preview/frame.png),
+[warning and holiday](evidence/calendar-preview/warning-holiday.png) and
+[phone](evidence/calendar-preview/mobile.png) captures. The initial midnight test
+needed to reveal the normally hidden Night navigation before returning to Morning;
+its final version exercises that actual interaction. Initial Firefox geometry
+checks caught the small overflow described above; no fit assertion was relaxed.
+Hosted full verification and release monitoring proceed with the source push.

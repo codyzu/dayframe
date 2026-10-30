@@ -1,5 +1,10 @@
 import {photoRequest} from '../photos/client.ts';
-import {localDate, remainingAgendaEvents, type Agenda} from './contracts.ts';
+import {
+  localDate,
+  agendaPreview,
+  type Agenda,
+  type AgendaEvent,
+} from './contracts.ts';
 
 // No persistent event cache: privacy expires after five minutes, including offline.
 export function mountAgenda(root: HTMLElement) {
@@ -7,6 +12,16 @@ export function mountAgenda(root: HTMLElement) {
   const list = root.querySelector<HTMLElement>('[data-agenda-events]')!;
   const template = root.querySelector<HTMLTemplateElement>(
     '[data-agenda-template]',
+  )!;
+  const tomorrow = root.querySelector<HTMLElement>('[data-agenda-tomorrow]')!;
+  const tomorrowTitle = root.querySelector<HTMLElement>(
+    '[data-agenda-tomorrow-title]',
+  )!;
+  const tomorrowList = root.querySelector<HTMLElement>(
+    '[data-agenda-tomorrow-events]',
+  )!;
+  const tomorrowEmpty = root.querySelector<HTMLElement>(
+    '[data-agenda-tomorrow-empty]',
   )!;
   let pending: AbortController | undefined;
   let nextRefresh = 0;
@@ -20,6 +35,9 @@ export function mountAgenda(root: HTMLElement) {
     data = undefined;
     previous = '';
     list.replaceChildren();
+    tomorrowList.replaceChildren();
+    tomorrowTitle.textContent = '';
+    tomorrow.hidden = true;
     list.hidden = true;
     status.hidden = false;
     status.textContent = message;
@@ -31,13 +49,15 @@ export function mountAgenda(root: HTMLElement) {
     }
 
     const now = Date.now();
-    const events = remainingAgendaEvents(data.events, now, data.timezone);
-    const signature = JSON.stringify(
-      events.map((event) => ({
+    const preview = agendaPreview(data.events, now, data.timezone);
+    const events = [...preview.today, ...preview.tomorrow];
+    const signature = JSON.stringify({
+      preview,
+      events: events.map((event) => ({
         ...event,
         ongoing: Date.parse(event.start) <= now,
       })),
-    );
+    });
     if (signature === previous) {
       return;
     }
@@ -48,8 +68,8 @@ export function mountAgenda(root: HTMLElement) {
       hour: '2-digit',
       minute: '2-digit',
     });
-    list.replaceChildren(
-      ...events.map((event) => {
+    const rows = (entries: AgendaEvent[]) =>
+      entries.map((event) => {
         const row = template.content.firstElementChild!.cloneNode(
           true,
         ) as HTMLElement;
@@ -66,10 +86,15 @@ export function mountAgenda(root: HTMLElement) {
         row.querySelector('[data-event-source]')!.textContent = label;
         row.title = `${label} · ${event.title}`;
         return row;
-      }),
-    );
-    list.hidden = events.length === 0;
-    status.hidden = events.length > 0;
+      });
+    list.replaceChildren(...rows(preview.today));
+    tomorrowList.replaceChildren(...rows(preview.tomorrow));
+    tomorrowTitle.textContent = `Demain · ${new Intl.DateTimeFormat('fr-FR', {timeZone: data.timezone, weekday: 'long'}).format(preview.tomorrowStart)}`;
+    tomorrow.hidden = !preview.shouldShowTomorrow;
+    tomorrowList.hidden = preview.tomorrow.length === 0;
+    tomorrowEmpty.hidden = preview.tomorrow.length > 0;
+    list.hidden = preview.today.length === 0;
+    status.hidden = preview.today.length > 0;
     status.textContent = 'Aucun autre événement aujourd’hui.';
   }
 
@@ -95,7 +120,7 @@ export function mountAgenda(root: HTMLElement) {
 
       if (
         !Array.isArray(body.events) ||
-        body.events.length > 6 ||
+        body.events.length > 12 ||
         typeof body.connected !== 'boolean' ||
         typeof body.fetchedAt !== 'number' ||
         body.fetchedAt > Date.now() + 5000 ||
