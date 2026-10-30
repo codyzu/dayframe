@@ -345,7 +345,19 @@ test('replacement retirement worker unregisters and removes only fallback caches
   await control(request, {retired: true});
   await page.evaluate(async () => {
     const registration = await navigator.serviceWorker.getRegistration();
-    await registration!.update();
+    if (!registration) {
+      return;
+    }
+
+    try {
+      await registration.update();
+    } catch (error) {
+      // Firefox can finish retirement before the scheduled update resolves.
+      // Accept only that completed outcome; a live registration must not fail.
+      if (await navigator.serviceWorker.getRegistration(registration.scope)) {
+        throw error;
+      }
+    }
   });
   await expect
     .poll(async () =>

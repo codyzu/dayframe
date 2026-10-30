@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-30",
+  "runtime": "macOS Shortcuts; synthetic inputs only",
+  "flow": "production per-image actions; clipboard and URL replaced with Stop and Output",
+  "cases": [
+    {
+      "input": {
+        "dimensions": [800, 600],
+        "bytes": 2789
+      },
+      "output": {
+        "dimensions": [800, 600],
+        "bytes": 10156
+      }
+    },
+    {
+      "input": {
+        "dimensions": [2400, 3600],
+        "bytes": 33104
+      },
+      "output": {
+        "dimensions": [1067, 1600],
+        "bytes": 34257
+      }
+    },
+    {
+      "input": {
+        "dimensions": [4000, 2000],
+        "bytes": 28213
+      },
+      "output": {
+        "dimensions": [1600, 800],
+        "bytes": 24624
+      }
+    },
+    {
+      "input": {
+        "dimensions": [4096, 4096],
+        "bytes": 50351162
+      },
+      "output": {
+        "dimensions": [1600, 1600],
+        "bytes": 7944922
+      }
+    }
+  ],
+  "batchOutputCount": 3,
+  "iphoneAcceptance": "pending"
+}

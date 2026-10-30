@@ -2600,3 +2600,34 @@ Stop and Output; no production upload occurs. Actual macOS Shortcuts runs return
 Outputs were independently inspected with `sips`. Native min/max expressions
 failed, so the implementation uses equivalent abs-based arithmetic instead.
 Full hosted checks and the existing Free-plan deployment gate follow the main push.
+
+Extended native validation: a deterministic synthetic 4096 × 4096 PNG of 48.02 MiB
+(over the input guard) became 1600 × 1600 / approximately 7.6 MiB. A three-image
+native batch returned three distinct PNG files with the expected dimensions.
+Historical diagnostic/comparison generator modes still omit resizing. No private
+photo was read, pasted or uploaded during validation.
+
+The signed production Shortcut is installed as **Dayframe PNG** and its native
+editor bindings were verified, including Repeat Item → resize → PNG → Repeat
+Results clipboard and the original count/admin URL. Shortcuts retained the older
+copy during import; it is now named **Dayframe PNG — previous**. After explicit
+owner approval, the old copy and all five task-created Resize test copies were
+hidden from the Share Sheet (one draft was already hidden). They remain saved;
+no Shortcut was deleted. The Share Sheet view confirms only the current Dayframe
+entry. Signed/unsigned release artifacts and synthetic validation data are retained
+under ignored `private/photo-shortcut-resize-20261030/`. Actual iPhone iCloud sync,
+camera/HEIC/HDR/orientation and batch acceptance remain owner checks.
+
+
+Release attempt `653ead9`, [41030645076](https://github.com/codyzu/dayframe/actions/runs/41030645076),
+passed types, lint, 176 unit/Worker tests and 576 browser tests (four existing
+skips). Offline verification passed 43/44; Firefox rejected `registration.update()`
+because the retirement worker had already unregistered. No deployment occurred.
+The test now accepts that update race only when its registration is already gone;
+a live-registration error still fails. The final zero-registration and exact
+unrelated-cache assertions are unchanged. Ten consecutive focused Firefox runs
+passed. This changes test synchronization only, with no application/Worker change.
+
+The complete local offline matrix then passed all 44 cases; XO passed with the
+four existing complexity warnings. The correction and sanitized native evidence
+are included in the retry commit; full hosted verification remains required.

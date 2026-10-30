@@ -239,6 +239,15 @@ browser, before browser resizing/WebP encoding, rather than the photo-library
 original. Byte identity across picker and Shortcut routes is not promised;
 perceptual matching retains human review. No server image conversion is added.
 
+**Shortcut resizing, 30 October 2026:** The authenticated PNG Shortcut reduces
+each shared copy to at most a 1600px longest edge, preserving proportions and
+avoiding upscaling, before PNG conversion/clipboard handoff. SHA-256 identifies
+those delivered resized PNG bytes. Library originals are unchanged. Resizing
+discards detail; PNG adds no lossy compression after the resize. Final browser
+WebP encoding, metadata stripping, explicit preview/Add and all input/upload
+limits remain. See [photo operations](photos.md#shortcut-resizing--30-october-2026)
+for native validation and separate physical-iPhone acceptance.
+
 ### 6.3 Duplicate detection
 
 - SHA-256 detects exact source-file duplicates.

@@ -453,3 +453,10 @@ Upstream review refreshed at `0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189`:
 Its slideshow uses generated image URLs and supplies no corresponding native
 Shortcut resizing flow. This enhancement is independently authored; no upstream
 code/assets copied. Dayframe retains its protected browser upload pipeline.
+
+[Sanitized native validation results](evidence/photo-shortcut-resize/native-validation.json)
+record dimensions/byte counts only. A synthetic 48.02 MiB input became about
+7.6 MiB; a three-image batch preserved all three outputs. The updated **Dayframe
+PNG** is installed on the Mac. The old version and all five test copies are saved
+but hidden from the Share Sheet with owner approval. Confirm iPhone sync and retry
+the previously oversized photo using the current **Dayframe PNG** entry.
