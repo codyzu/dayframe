@@ -2803,3 +2803,25 @@ needed to reveal the normally hidden Night navigation before returning to Mornin
 its final version exercises that actual interaction. Initial Firefox geometry
 checks caught the small overflow described above; no fit assertion was relaxed.
 Hosted full verification and release monitoring proceed with the source push.
+
+Production closeout — 31 October 2026 (Europe/Paris): source
+`9ef8f61c98a96ea9668894d74b0beaa9b483e3cb` deployed through
+[release 41141299301](https://github.com/codyzu/dayframe/actions/runs/41141299301).
+The complete hosted verification passed types/XO/build, all 183 unit/Worker tests,
+620 browser cases with four existing intentional skips, and all 44 enabled
+offline-navigation cases. The existing Free-plan assertion, deployment and live
+smoke checks passed. Verification took 15 minutes; deployment took 37 seconds.
+Worker version `74eb10a2-1f5c-4f80-b97b-624cb584e653`; public build
+`f59fbb93-a0e7-445b-9eb1-2a5ad95d8c8f`. The prior public build independently
+observed before promotion was `76a1ca43-826e-424e-bf2c-f39504441b7c`.
+
+Downloaded the exact run’s verified production artifact and independently matched
+[18 public files](evidence/calendar-preview/live-assets.json): home HTML, calendar
+privacy HTML, all JavaScript/CSS bundles, `/offline`, `/sw.js` and `/version.json`,
+rejecting redirects. Repeated anonymous checks confirmed healthy/no-store health,
+denied calendar/photo reads, and the administrator Access redirect. No household
+session, appointment or photo was read for these checks. Implementation, testing,
+source commit/push, deployment and independent live verification are complete.
+This documentation-only evidence follow-up uses `[skip ci]`; the deployed source
+and all release gates above are unchanged. Physical frame/iPhone acceptance and
+prior security/hardware/soak deferrals remain separate.
