@@ -170,3 +170,21 @@ without photo bytes or credentials. Keep production hostname/signing outputs
 outside Git. No real import Shortcut is installed by the local implementation.
 The browser must sign in before Paste; adding to the collection is a separate
 explicit action after preview. The prototype diagnostic names remain separate.
+
+### Production resizing update — 30 October 2026
+
+`--normalize-png --admin-import` now reads width/height per image and resizes to
+`min(1600,max(width,height))` with native Longest Edge before PNG conversion.
+Smaller images keep their dimensions. Diagnostic PNG mode without `--admin-import`
+keeps its original full-resolution behavior for historical comparisons.
+
+Generate/sign with the existing commands, naming the production artifact
+**Dayframe PNG.shortcut**, then replace **Dayframe PNG** in Shortcuts. Close old
+editor windows before replacement and reopen the installed shortcut to verify
+bindings. Mac installation can sync through iCloud, but confirm the new actions
+on iPhone before considering physical rollout accepted. The website does not
+serve or automatically update the Shortcut. Never commit signed artifacts.
+
+PNG adds no lossy compression after the resize; downsizing does discard detail.
+Library originals are unchanged. See [photo operations](../../docs/photos.md#shortcut-resizing--30-october-2026)
+for limits, duplicate identity, provenance and acceptance boundaries.

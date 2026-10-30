@@ -69,7 +69,9 @@ def main():
         WFCommentActionText=(
             "Clipboard mode copies shared images locally and opens the configured HTTPS page. "
             "It replaces clipboard contents. "
-            + ("Original photos remain in your photo library. " if args.admin_import
+            + ("Original photos remain in your photo library. Shared copies are resized "
+               "to at most 1600 pixels on the longest edge, without upscaling, then "
+               "converted to PNG. " if args.admin_import
                else "Use only synthetic test images. ")
             + 
             "The page reads images only after Paste. "
@@ -89,7 +91,25 @@ def main():
             group = str(uuid.uuid4()).upper()
             action("repeat.each", WFInput=shortcut_input,
                    GroupingIdentifier=group, WFControlFlowMode=0)
-            action("image.convert", WFInput=repeat_item, WFImageFormat="PNG",
+            image_input = repeat_item
+            if args.admin_import:
+                # Clamp the target edge before resizing: small inputs must not grow.
+                dimensions = [action("properties.images", WFInput=repeat_item,
+                                     WFContentItemPropertyName=name)
+                              for name in ["Width", "Height"]]
+                # Shortcuts' expression engine supports abs, but not min/max.
+                longest = action("calculateexpression", Input=text([
+                    "(", dimensions[0], "+", dimensions[1], "+abs(",
+                    dimensions[0], "-", dimensions[1], "))/2",
+                ]))
+                edge = action("calculateexpression", Input=text([
+                    "(1600+", longest, "-abs(1600-", longest, "))/2",
+                ]))
+                resized = action("image.resize", WFImage=repeat_item,
+                                 WFImageResizeKey="Longest Edge",
+                                 WFImageResizeLength=attachment(edge))
+                image_input = attachment(resized)
+            action("image.convert", WFInput=image_input, WFImageFormat="PNG",
                    WFImagePreserveMetadata=False)
             repeated = action("repeat.each", GroupingIdentifier=group,
                               WFControlFlowMode=2)

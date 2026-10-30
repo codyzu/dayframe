@@ -420,3 +420,36 @@ fall back to immediate switching. Forecast-dialog scrolling and native maintenan
 remain separate. Actual frame touch/smoothness acceptance is still pending; no
 native package/settings change is part of F10. Revert the web build to undo F10;
 existing saved photos and configuration require no migration.
+
+## Shortcut resizing — 30 October 2026
+
+The authenticated **Dayframe PNG** generator now resizes each shared image before
+PNG conversion. It reads the current Repeat Item's width and height, calculates
+`min(1600,max(width,height))`, and uses native **Resize Image → Longest Edge**
+with that result. This preserves proportions and avoids upscaling. Conversion
+remains PNG with metadata preservation disabled; Local Only clipboard, original
+selected count, explicit Paste/preview/Add and browser authentication are retained.
+Earlier full-resolution PNG descriptions above document the previous version.
+Existing installed Shortcuts need replacement; deploying the website alone cannot
+update a native Shortcut. Signed files and signing certificates stay outside Git.
+
+PNG compression is lossless after resizing; resizing itself removes detail.
+This moves Dayframe's existing 1600px reduction earlier, avoiding large PNG
+intermediates. Native and browser resampling can differ slightly, and HDR/color/
+metadata preservation is not promised. Library originals remain untouched. The
+browser still encodes WebP at 0.82, strips metadata, and enforces its 40 MiB input,
+100 MB group and 2 MiB optimized-upload limits. SHA-256 now identifies the resized
+PNG representation, so older imports can require advisory perceptual duplicate
+review; cross-route byte identity is not guaranteed.
+
+Native action parameters were checked against a task-owned macOS editor export:
+Calculate Expression uses `Input`, Resize Image uses `WFImage`,
+`WFImageResizeKey=Longest Edge` and `WFImageResizeLength`. Runtime synthetic
+validation and rollout evidence are recorded in the implementation plan. Physical
+iPhone sync, orientation, camera/HEIC/HDR and batch acceptance remain separate.
+
+Upstream review refreshed at `0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189`:
+`dashboard/js/views/photos.js`, `dashboard/js/slideshow.js`, and `LICENSE` (MIT).
+Its slideshow uses generated image URLs and supplies no corresponding native
+Shortcut resizing flow. This enhancement is independently authored; no upstream
+code/assets copied. Dayframe retains its protected browser upload pipeline.

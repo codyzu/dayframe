@@ -2578,3 +2578,25 @@ push, deployment and independent live verification are complete. Physical iPhone
 permission/keyboard and actual-frame acceptance remain separate, with previous
 security/hardware/soak deferrals unchanged. Historical pending notes above retain
 their earlier scope.
+
+## M3 photo Shortcut resizing — 30 October 2026
+
+Owner authorized implementation, documentation, commit and deployment after an
+actual iPhone clipboard photo exceeded the 40 MiB application guard (40.2 MiB).
+The production generator now clamps each shared image to a 1600px longest edge
+without upscaling before lossless PNG compression. Browser limits/authentication,
+explicit preview/Add, Local Only clipboard and selected-count checks are retained.
+This is one narrow Shortcut slice; previous device/security deferrals remain.
+[Behavior, upstream review and operations](photos.md#shortcut-resizing--30-october-2026).
+Native action schema verified through a task-owned editor export. Synthetic
+runtime checks, installation and release closeout follow below; actual iPhone
+sync/format/batch acceptance requires owner observation.
+
+Local validation: Python compilation, Astro/TypeScript checks and XO passed (four
+existing complexity warnings). A signed output-only validation copy uses the
+same generated per-image actions, with clipboard/URL actions replaced by native
+Stop and Output; no production upload occurs. Actual macOS Shortcuts runs returned
+800 × 600 unchanged, 2400 × 3600 → 1067 × 1600, and 4000 × 2000 → 1600 × 800.
+Outputs were independently inspected with `sips`. Native min/max expressions
+failed, so the implementation uses equivalent abs-based arithmetic instead.
+Full hosted checks and the existing Free-plan deployment gate follow the main push.
