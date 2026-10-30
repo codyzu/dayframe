@@ -24,3 +24,10 @@ Weather data in M2: [Open-Meteo](https://open-meteo.com/), [CC BY 4.0](https://c
 ## Optional H6 native recovery trial
 
 `hardware/kiosk/` is independently authored MIT source; no upstream Home HQ code or assets are copied. Its separately built, ignored/private trial APK bundles unmodified Mozilla GeckoView/exoplayer2 143.0.20251003115653 (MPL-2.0), AndroidX/Kotlin and other Apache-2.0 dependencies, and the official GeckoView graph's Google Play services components under their Android SDK terms. The latter are not covered by Dayframe's MIT license. Exact runtime coordinates/hashes, full MIT/MPL/Apache texts, corresponding Mozilla source revision and SDK terms are retained in [`hardware/kiosk/app/src/main/assets/licenses.txt`](hardware/kiosk/app/src/main/assets/licenses.txt) and its adjacent `licenses/` directory. Mozilla's bundled-engine notices inside `omni.ja` are retained. No APK, SDK/JDK binary, credentials or signing material is committed; public binary redistribution is outside this private trial.
+
+Device weather city labels: [Photon](https://photon.komoot.io/) reverse geocoding
+uses © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright),
+[ODbL](https://opendatacommons.org/licenses/odbl/1-0/). Dayframe derives a nearby-city
+label on explicit GPS lookup, saves only the chosen label/position/timezone/source
+in that browser, and ignores provider geometry. Attribution/license links appear
+in the location picker. No Photon/Nominatim server code or database is bundled.

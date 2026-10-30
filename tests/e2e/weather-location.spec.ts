@@ -33,6 +33,22 @@ test.beforeEach(async ({page}) => {
   await page.route('https://geocoding-api.open-meteo.com/**', async (route) =>
     route.fulfill({json: {results: [place]}}),
   );
+  await page.route('https://photon.komoot.io/**', async (route) =>
+    route.fulfill({
+      json: {
+        features: [
+          {
+            properties: {
+              osm_key: 'place',
+              osm_value: 'city',
+              name: 'New York',
+            },
+            geometry: {coordinates: [-74, 40.7]},
+          },
+        ],
+      },
+    }),
+  );
 });
 
 test('search persists only on this device, keeps household time and resets to household', async ({
@@ -232,9 +248,9 @@ test('a late response from the previous location cannot paint or cache over the 
   expect(cached.raw.current.temperature_2m).toBe(24);
 });
 
-test('current location is opt-in, rounded, resolved to its timezone, and permission denial can recover', async ({
+test('current location is opt-in, preserves coordinates, estimates a city, and permission denial can recover', async ({
   page,
-}) => {
+}, info) => {
   await page.addInitScript(() => {
     let calls = 0;
     Object.defineProperty(navigator, 'geolocation', {
@@ -256,8 +272,18 @@ test('current location is opt-in, rounded, resolved to its timezone, and permiss
     });
   });
   const requests: string[] = [];
+  const forecasts: string[] = [];
   page.on('request', (request) => {
-    if (request.url().includes('timezone=auto')) {
+    if (
+      new URL(request.url()).searchParams.get('timezone') === 'America/New_York'
+    ) {
+      forecasts.push(request.url());
+    }
+
+    if (
+      request.url().includes('timezone=auto') ||
+      request.url().startsWith('https://photon.komoot.io/')
+    ) {
       requests.push(request.url());
     }
   });
@@ -269,20 +295,232 @@ test('current location is opt-in, rounded, resolved to its timezone, and permiss
   await page.getByRole('button', {name: 'Utiliser ma position'}).click();
   await page
     .locator('[data-location-results]')
-    .getByRole('button', {name: 'Ma position', exact: true})
+    .getByRole('button', {
+      name: 'Près de New York · ville estimée',
+      exact: true,
+    })
     .click();
   await expect(page.locator('[data-temperature]')).toHaveText('24°');
-  expect(requests).toHaveLength(1);
+  expect(requests).toHaveLength(2);
+  for (const request of requests) {
+    const url = new URL(request);
+    expect(
+      url.searchParams.get('latitude') ?? url.searchParams.get('lat'),
+    ).toBe('40.712345');
+    expect(
+      url.searchParams.get('longitude') ?? url.searchParams.get('lon'),
+    ).toBe('-74.012345');
+  }
+
   const stored = await page.evaluate(
     (key) => JSON.parse(localStorage.getItem(key)!) as unknown,
     locationKey,
   );
   expect(stored).toEqual({
-    location: 'Ma position',
-    latitude: 40.71,
-    longitude: -74.01,
+    location: 'Près de New York',
+    latitude: 40.712345,
+    longitude: -74.012345,
     timezone: 'America/New_York',
+    source: 'geolocation',
   });
+  await page.getByRole('button', {name: 'Fermer', exact: true}).click();
+  await expect(page.locator('[data-location-greeting]')).toHaveText('Bonjour.');
+  await expect(page.locator('[data-location-label]')).toHaveText(
+    'Près de New York',
+  );
+  await expect(
+    page.getByRole('button', {name: 'Changer le lieu météo'}),
+  ).toHaveAccessibleDescription(/Météo · Près de New York.*Sur cet appareil/sv);
+  const header = page.locator('[data-dashboard-header]');
+  const geometry = await header.evaluate((element) => {
+    const brand = element.querySelector('a')!.getBoundingClientRect();
+    const pill = element
+      .querySelector('[data-location-open]')!
+      .getBoundingClientRect();
+    const label = element
+      .querySelector('[data-location-label]')!
+      .getBoundingClientRect();
+    return {
+      gap: pill.left - brand.right,
+      height: pill.height,
+      labelHeight: label.height,
+    };
+  });
+  expect(geometry.gap).toBeGreaterThanOrEqual(8);
+  expect(geometry.height).toBeGreaterThanOrEqual(44);
+  expect(geometry.labelHeight).toBeLessThan(32);
+  await page.screenshot({path: info.outputPath('current-location-header.png')});
+  await page.reload();
+  await expect(page.locator('[data-location-greeting]')).toHaveText('Bonjour.');
+  await expect(page.locator('[data-location-label]')).toHaveText(
+    'Près de New York',
+  );
+  expect(requests).toHaveLength(2);
+  await expect(page.locator('[data-temperature]')).toHaveText('24°');
+  // Reload may use the valid cache. Advance to the scheduled forecast refresh.
+  await page.clock.fastForward(30 * 60_000);
+  await expect.poll(() => forecasts.length).toBeGreaterThanOrEqual(2);
+  expect(requests).toHaveLength(2);
+  for (const request of forecasts) {
+    const url = new URL(request);
+    expect(url.searchParams.get('latitude')).toBe('40.712345');
+    expect(url.searchParams.get('longitude')).toBe('-74.012345');
+  }
+});
+
+for (const failure of [
+  'empty',
+  'malformed',
+  'unavailable',
+  'timeout',
+] as const) {
+  test(`GPS weather survives ${failure} city lookup`, async ({page}) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'geolocation', {
+        value: {
+          getCurrentPosition(success: PositionCallback) {
+            success({
+              coords: {latitude: 40.712345, longitude: -74.012345},
+            } as GeolocationPosition);
+          },
+        },
+      });
+    });
+    await page.route('https://photon.komoot.io/**', async (route) => {
+      if (failure === 'timeout') {
+        await new Promise<void>((resolve) => {
+          setTimeout(resolve, 4500);
+        });
+        await route.abort().catch(() => undefined);
+      } else if (failure === 'unavailable') {
+        await route.fulfill({status: 503});
+      } else {
+        await route.fulfill({
+          json: {
+            features:
+              failure === 'empty'
+                ? []
+                : [
+                    {
+                      properties: {
+                        name: '\u{202E}invalid',
+                        osm_key: 'place',
+                        osm_value: 'city',
+                      },
+                    },
+                  ],
+          },
+        });
+      }
+    });
+    await page.goto('/');
+    await page.getByRole('button', {name: 'Changer le lieu météo'}).click();
+    await page.getByRole('button', {name: 'Utiliser ma position'}).click();
+    await page
+      .getByRole('button', {
+        name: 'Ma position · ville indisponible',
+        exact: true,
+      })
+      .click();
+    await expect(page.locator('[data-temperature]')).toHaveText('24°');
+    expect(
+      await page.evaluate(
+        (key) => JSON.parse(localStorage.getItem(key)!) as unknown,
+        locationKey,
+      ),
+    ).toEqual({
+      location: 'Ma position',
+      latitude: 40.712345,
+      longitude: -74.012345,
+      timezone: 'America/New_York',
+      source: 'geolocation',
+    });
+  });
+}
+
+test('closing the picker discards a late city response and saved legacy GPS stays compatible', async ({
+  page,
+}) => {
+  await page.addInitScript((key) => {
+    localStorage.setItem(
+      key,
+      JSON.stringify({
+        location: 'Ma position',
+        latitude: 40.71,
+        longitude: -74.01,
+        timezone: 'America/New_York',
+      }),
+    );
+    Object.defineProperty(navigator, 'geolocation', {
+      value: {
+        getCurrentPosition(success: PositionCallback) {
+          success({
+            coords: {latitude: 45.899234, longitude: 6.129456},
+          } as GeolocationPosition);
+        },
+      },
+    });
+  }, locationKey);
+  const {promise: gate, resolve: release} = Promise.withResolvers<void>();
+  let isWaiting = false;
+  await page.route('https://photon.komoot.io/**', async (route) => {
+    isWaiting = true;
+    await gate;
+    await route
+      .fulfill({
+        json: {
+          features: [
+            {properties: {name: 'Annecy', osm_key: 'place', osm_value: 'city'}},
+          ],
+        },
+      })
+      .catch(() => undefined);
+  });
+  await page.goto('/');
+  await expect(page.locator('[data-location-greeting]')).toHaveText('Bonjour.');
+  await page.getByRole('button', {name: 'Changer le lieu météo'}).click();
+  await page.getByRole('button', {name: 'Utiliser ma position'}).click();
+  await expect.poll(() => isWaiting).toBe(true);
+  await page.getByRole('button', {name: 'Fermer', exact: true}).click();
+  release();
+  await page.getByRole('button', {name: 'Changer le lieu météo'}).click();
+  await expect(page.locator('[data-location-results] button')).toHaveCount(0);
+  await expect(page.locator('[data-location-label]')).toHaveText('Ma position');
+});
+
+test('a long town name keeps the header on one line at narrow phone widths', async ({
+  page,
+}) => {
+  await page.setViewportSize({width: 320, height: 800});
+  await page.addInitScript((key) => {
+    localStorage.setItem(
+      key,
+      JSON.stringify({
+        location: 'Saint-Rémy-en-Bouzemont-Saint-Genest-et-Isson',
+        latitude: 48.63,
+        longitude: 4.65,
+        timezone: 'Europe/Paris',
+      }),
+    );
+  }, locationKey);
+  await page.goto('/');
+  const label = page.locator('[data-location-label]');
+  await expect(label).toHaveText(
+    'Saint-Rémy-en-Bouzemont-Saint-Genest-et-Isson',
+  );
+  expect(
+    await page.locator('[data-dashboard-header]').evaluate((element) => {
+      const brand = element.querySelector('a')!.getBoundingClientRect();
+      const pill = element
+        .querySelector('[data-location-open]')!
+        .getBoundingClientRect();
+      return (
+        pill.left >= brand.right + 8 &&
+        pill.right <= innerWidth - 8 &&
+        document.documentElement.scrollWidth <= innerWidth
+      );
+    }),
+  ).toBe(true);
 });
 
 test('empty search, provider failure, cancellation and corrupt preference leave weather usable', async ({

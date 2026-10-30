@@ -1,6 +1,11 @@
 # Weather location on each device
 
 The weather location in the dashboard header opens a French location picker.
+The header pill shows just the place name and a chevron, on one line; long names
+truncate while the accessible description and picker retain the full name.
+“Météo” and device scope remain in the accessible description; the picker visibly
+explains “Sur cet appareil”. An unnamed GPS position uses the greeting “Bonjour.”
+instead of “Bonjour, Ma position.” Existing saved GPS choices receive this fix too.
 When vigilance hides the decorative header on the frame, the vigilance details
 also provide a “Changer de lieu météo” button.
 Search for a town or postal code, then choose a result identified by region and
@@ -9,9 +14,12 @@ applies to this browser profile on this origin, including its other tabs; anothe
 phone, browser profile or the frame keeps its own choice or the household default.
 It is available on the public example dashboard as well as signed-in displays.
 
-“Utiliser ma position” requests browser geolocation only after a tap. It rounds
-coordinates to two decimal places before sending them to Open-Meteo, resolves the
-timezone with `timezone=auto`, and offers “Ma position” for selection. No background
+“Utiliser ma position” requests browser geolocation only after a tap. It keeps
+the browser-provided coordinates unchanged, resolves the weather timezone with
+Open-Meteo `timezone=auto`, and asks Photon for a nearby town/city label. The result
+is offered as “Près d’Annecy · ville estimée”, for example. The label never replaces
+the weather point with a city centre or provider grid-cell coordinates. Missing,
+invalid, failed or slow city results offer “Ma position · ville indisponible”. No background
 tracking or automatic permission prompt occurs. HTTPS, browser permission and an
 available geolocation implementation are required. Denial, timeout or provider
 failure leaves town search usable. Position is a snapshot, not travel tracking.
@@ -40,18 +48,25 @@ state. Choosing another town in Haute-Savoie does not silently extend coverage.
 ## Persistence, privacy and recovery
 
 `dayframe.weather-location.v1` in localStorage stores only the validated location
-name, coordinates and IANA timezone. Unknown fields are removed, invalid/outdated
+name, coordinates, IANA timezone and optional `source: geolocation` marker. The
+marker keeps GPS greetings neutral even with a city label. Unknown fields are removed, invalid/outdated
 shapes are ignored, and inaccessible storage falls back to this visit's in-memory
 choice with explanatory status text. Browser data clearing resets the preference.
 The dashboard URL never contains the preference. No household settings, photos or credentials are
 copied into it. Existing location-keyed weather caches and photo retention rules
 remain unchanged. A private browsing session may forget the choice when closed.
 
-Search input or rounded GPS coordinates go directly to Open-Meteo, with omitted
-credentials and referrer, only in response to an explicit action. The picker names
-that provider and attributes Open-Meteo/GeoNames. Town-center coordinates from
-search are public place coordinates. No server geolocation log or new binding is
-introduced. This preference is ordinary browser data, not encrypted storage.
+Search input goes directly to Open-Meteo. Browser-provided GPS coordinates go
+unchanged to Open-Meteo and Photon only after the explicit current-position
+action. Both requests omit credentials and referrer; the picker explains these
+transmissions and local persistence next to the button, and attributes
+Open-Meteo/GeoNames and Photon/OpenStreetMap contributors (ODbL). Town-centre
+coordinates from search are public place coordinates. No Dayframe server
+geolocation log or new binding is introduced. Precise coordinates are stored in
+ordinary browser data, not encrypted storage; weather-cache keys also contain
+that point. Browser/device permissions determine the accuracy supplied. We keep
+the existing low-power geolocation options and five-minute maximum position age.
+No continuous tracking or background permission request is added.
 
 Changing location stops the old weather service before changing its context,
 clears previous readings/icons/checkpoints/charts, then starts a service for the
@@ -73,14 +88,45 @@ No paid endpoint, account, dependency or automatically billed service is added.
 
 Search is explicitly submitted, not requested per keystroke: one request per
 submission, up to eight results. GPS adds one timezone lookup per successful
-position action. Neither operation automatically retries; each request has a
-12-second bound and GPS acquisition has a 10-second bound. At most one location
+position action, plus one optional Photon request in parallel. Search/timezone
+requests have a 12-second bound, Photon a four-second bound, and GPS acquisition
+a 10-second bound. None automatically retries. At most one location
 operation remains active; replacement or closing cancels it. Each distinct chosen
 location can trigger one immediate weather request, followed by the existing
 30-minute refresh and bounded failure backoff. A continuously open browser normally
 uses about 48 forecast requests/day; three browsers about 144, plus manual actions
 and stale-response recovery described in [weather operations](weather.md).
 Rapid manual selections can add requests; this is not a provider-quota guarantee.
+
+### Estimated city implementation — 30 October 2026
+
+After discussion, the owner explicitly chose accuracy over coordinate rounding:
+keep browser coordinates unchanged for both providers, storage and weather-cache
+keys. Photon supplies only a display label; forecasts keep the original position.
+The household clock, weather timezone and unsupported-vigilance rules are unchanged.
+Existing two-decimal GPS preferences still work; we cannot recover their original
+precision or add a city without a new opt-in position action. Reload, tab sync and
+weather refresh reuse the saved choice without geocoding again.
+
+Use the public [Photon demo service](https://github.com/komoot/photon#demo-server)
+at `https://photon.komoot.io/reverse`, with French labels, `layer=city`, `limit=1`
+and a 10km search radius. Parse only one valid place feature (city/town/village/
+hamlet), with a bounded plain-text name. Ignore returned geometry. No town in
+range or unsupported coverage simply leaves the generic label. A nearby place
+is an estimate, not proof of municipal boundaries. The
+[API documentation](https://github.com/komoot/photon/blob/master/docs/api-v1.md)
+and [OpenStreetMap licence](https://www.openstreetmap.org/copyright) were reviewed
+on 30 October 2026. The public service permits reasonable project use, can throttle
+heavy usage and offers no availability guarantee. One user-triggered request per
+position action, no retries, no background refresh and reuse of the saved label
+keep household use modest. Cancellation/replacement ignores late results. No API
+key, account, paid tier, new dependency, server proxy or automatically billed
+service is introduced. Provider URL/parser live together in `weather/position.ts`
+and can be changed through a web release if the service changes.
+
+Nominatim was assessed earlier but is not used. Photon's optional failure does
+not block forecast selection. The implementation preserves the browser's original
+coordinates even when timezone or city responses contain different coordinates.
 
 ## Implementation and provenance
 
@@ -109,7 +155,7 @@ No upstream code/assets copied.
 Unit tests cover malformed preferences/provider results, coordinate/timezone
 validation and blocked storage reads. Browser tests cover search, device isolation,
 reload persistence, configuration refresh/reset, independent household time,
-unsupported vigilance, opt-in rounded GPS, permission denial, empty/error responses,
+unsupported vigilance, opt-in precise GPS, permission denial, empty/error/slow city responses,
 Escape/focus return, blocked writes and clearing old readings on fetch failure.
 Delayed old weather responses cannot overwrite the selected forecast/cache.
 Synthetic desktop and iPhone emulation evidence does not establish physical
@@ -121,7 +167,7 @@ the previous Cloudflare Worker version or a revert through that workflow. Previo
 builds ignore the additive localStorage key; no migration or data deletion is needed.
 The independent minimal offline fallback remains photo/time-only, without a picker.
 
-Production closeout: source `54b9559` deployed through
+Original picker production closeout (before the city-label update): source `54b9559` deployed through
 [release 40968059381](https://github.com/codyzu/dayframe/actions/runs/40968059381).
 Full verification passed: 176 unit/Worker tests, 576 browser cases (four existing
 skips), and 44 offline-navigation cases. Independent anonymous smoke checks and

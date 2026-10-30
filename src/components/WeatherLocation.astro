@@ -4,14 +4,21 @@ const control =
 ---
 
 <!-- Keep the original header flow height; the button extends its touch/focus box. -->
-<span class="relative min-w-0 max-w-[65%] break-words border border-border bg-surface rounded-full px-2 py-1.75 md:px-3 text-base tracking-wide hover:bg-elevated">
-  <span id="weather-location-name" class="pointer-events-none">
-    <span data-location>Météo · Annecy</span>
-    <span aria-hidden="true"> ▾</span>
-    <span data-location-scope class="text-xs text-secondary" hidden>
+<span class="relative inline-flex min-w-0 max-w-[65%] items-center gap-2 border border-border bg-surface rounded-full px-3 py-1.75 text-base hover:bg-elevated">
+  <span id="weather-location-name" class="pointer-events-none min-w-0">
+    <span data-location class="flex min-w-0">
+      <span class="sr-only">Météo · </span>
+      <span data-location-label class="truncate">
+        Annecy
+      </span>
+    </span>
+    <span data-location-scope class="sr-only" hidden>
       {' '}
       · Sur cet appareil
     </span>
+  </span>
+  <span aria-hidden="true" class="pointer-events-none shrink-0 text-secondary">
+    ▾
   </span>
   <button
     type="button"
@@ -76,6 +83,11 @@ const control =
     <button type="button" data-location-geolocate class={control}>
       Utiliser ma position
     </button>
+    <p class="text-sm text-secondary">
+      Votre position est transmise sans arrondi à Open-Meteo pour la météo et à
+      Photon pour estimer la ville. Elle est enregistrée sur cet appareil après
+      votre sélection, sans suivi de vos déplacements.
+    </p>
     <button type="button" data-location-reset class={control}>
       Revenir au lieu de la maison
     </button>
@@ -96,8 +108,16 @@ const control =
     <a class="underline" href="https://www.geonames.org/">
       GeoNames
     </a>
-    . Votre recherche ou votre position est transmise à Open-Meteo uniquement à
-    votre demande.
+    · ville estimée :{' '}
+    <a class="underline" href="https://photon.komoot.io/">
+      Photon
+    </a>
+    / ©{' '}
+    <a class="underline" href="https://www.openstreetmap.org/copyright">
+      OpenStreetMap contributors (ODbL)
+    </a>
+    . Les recherches et la localisation sont effectuées uniquement à votre
+    demande.
   </p>
 </dialog>
 

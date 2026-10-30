@@ -158,6 +158,12 @@ and retain explicit unsupported-vigilance states. Household-wide edits remain in
 authenticated administration. See [device weather location](weather-location.md)
 for persistence, privacy, request bounds and acceptance evidence.
 
+**Accuracy/label update, 30 October 2026:** Opt-in current-position lookup retains
+browser-provided coordinates without rounding for weather, storage and reverse
+geocoding. Photon supplies an optional estimated nearby city label; it must never
+replace the forecast coordinates. Unavailable city naming keeps “Ma position”.
+The picker discloses both providers and precise browser-local persistence.
+
 Use **Open-Meteo** for initial noncommercial weather data. Include its required attribution and comply with its usage terms.
 
 Request the fields needed for:

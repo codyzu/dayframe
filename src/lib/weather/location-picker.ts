@@ -7,6 +7,7 @@ import {
   validateLocation,
   type WeatherLocation,
 } from './location.ts';
+import {resolvePosition} from './position.ts';
 
 export function mountLocationPicker(
   root: HTMLElement,
@@ -180,28 +181,7 @@ export function mountLocationPicker(
             });
           },
         );
-        signal.throwIfAborted();
-        // Weather needs only approximate coordinates; never persist precise GPS.
-        const latitude = Math.round(position.coords.latitude * 100) / 100;
-        const longitude = Math.round(position.coords.longitude * 100) / 100;
-        const url = new URL('https://api.open-meteo.com/v1/forecast');
-        url.search = new URLSearchParams({
-          latitude: String(latitude),
-          longitude: String(longitude),
-          timezone: 'auto',
-          forecast_days: '1',
-          current: 'temperature_2m',
-        }).toString();
-        const data = (await locationRequest(url, signal)) as {
-          timezone?: unknown;
-        };
-        const location = validateLocation({
-          location: 'Ma position',
-          latitude,
-          longitude,
-          timezone: data.timezone,
-        });
-        return [location];
+        return [await resolvePosition(position.coords, signal)];
       });
     });
   globalThis.addEventListener('pagehide', () => {

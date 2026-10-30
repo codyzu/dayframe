@@ -2634,3 +2634,86 @@ are included in the retry commit; full hosted verification remains required.
 Retry `3b88551` / run `41033712447` stopped at XO on one extra blank line in
 this release record, before browser tests or deployment. The blank line was
 removed; the next push retains all verification and deployment gates.
+
+### Current-position header polish and city-label assessment — 30 October 2026
+
+Owner reported the wrapping location badge and “Bonjour, Ma position.” on iPhone.
+This narrow M2 follow-up shows only the place name and chevron in the header,
+keeps long names on one line with ellipsis, and preserves the full weather/device
+context for assistive technology and in the picker. GPS choices now greet with
+“Bonjour.”, including existing saved preferences. Brand, typography, extended
+44px touch area and focus clearance remain. No new provider, request, storage
+schema, service or deployment change.
+
+Re-read local weather/UI requirements and upstream foundation section; inspected
+cached `dashboard/js/views/home.js` and root MIT `LICENSE` at
+`0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189`. Retain the glanceable hierarchy as an
+idea; responsive picker labels remain independently authored in Astro/UnoCSS.
+No upstream code/assets copied; no fresh upstream HEAD claim.
+
+[Estimated-city assessment](weather-location.md#estimated-city-implementation--30-october-2026):
+a small separate reverse-geocoding feature, roughly a few hours including tests,
+subject to a provider decision and its privacy/free-use/attribution requirements.
+Open-Meteo's documented search does not provide coordinate-to-city lookup.
+A failed lookup should retain “Ma position” and GPS weather coordinates. This
+assessment does not enable another provider.
+
+Local types, XO (four existing complexity warnings), build and three location unit
+tests passed. Browser verification and screenshot review follow below. Existing
+unrelated Shortcut documentation edits are preserved. No physical-device acceptance
+or production rollout is claimed.
+
+Final local browser validation: all 76 location/foundation cases passed across
+Chromium, Firefox, WebKit and mobile WebKit, including current-position header
+geometry, saved GPS greeting, full accessible description, 320px long-name fit,
+picker focus audit and prior request/persistence/cancellation behavior. Reviewed
+[phone and desktop captures](evidence/weather-location/README.md#current-position-header-polish--30-october-2026).
+Formatting and diff whitespace passed. UI implementation and city-label assessment
+are complete locally; no commit, deployment or additional provider enabled.
+
+### Precise GPS weather and estimated city labels — 30 October 2026
+
+Owner explicitly authorized implementation, commit, push and deployment after
+choosing accuracy over coordinate rounding. This supersedes the earlier city
+assessment: retain browser-provided coordinates unchanged for both providers,
+saved preferences, forecast requests and cache keys. Photon supplies only a nearby
+place label (“Près d’Annecy”), never replacement coordinates. The source marker
+keeps the greeting “Bonjour.”; legacy “Ma position” preferences remain compatible.
+The earlier one-line header/UI polish is included in this release slice.
+
+Re-read local specification/weather contract and upstream foundation requirements;
+re-inspected cached upstream `dashboard/js/views/home.js` and root MIT `LICENSE`
+at `0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189`. Retain the glanceable hierarchy as
+an idea; GPS preferences and reverse lookup are independently authored. No source
+or assets copied. This is a pinned review, not a fresh HEAD assertion.
+
+Reviewed Photon’s public demo policy/API and OpenStreetMap ODbL attribution.
+Photon allows modest project use, can throttle heavy users and offers no uptime
+guarantee. One request per explicit GPS action, no retries/background geocoding,
+four-second timeout, saved-label reuse and graceful fallback fit household use.
+A public Annecy-point probe returned the town and allowed the Dayframe browser
+origin (CORS). No personal coordinates were sent. Open-Meteo timezone lookup and
+Photon run in parallel; cancellation ignores late results. Naming failures leave
+“Ma position” selectable with precise weather coordinates. Picker text discloses
+both transmissions/local storage and attributes Photon/OpenStreetMap. No paid
+service/account, dependency, Worker binding, private endpoint or native change.
+
+Types, XO (four existing complexity warnings), build and all 179 unit/Worker
+tests passed. Expanded browser checks and reviewed screenshots follow below;
+the existing main-push full-verification/Free-plan deployment gate is retained.
+
+Local closeout: 92 location/foundation browser cases passed on the first run.
+Four added GPS-refresh assertions initially expected a new request immediately
+after reload, but the valid forecast cache correctly avoided that request. The
+test now advances to the scheduled 30-minute refresh and verifies its exact
+coordinates. All four corrected cases plus picker focus and the 16 rendered focus
+audits passed (24 cases), covering 112 distinct browser scenarios in total.
+No product assertion or release gate was weakened. Final types/XO and whitespace
+checks passed. Reviewed updated phone/desktop city-label captures in
+[location evidence](evidence/weather-location/README.md). An isolated mobile
+WebKit context also passed the complete picker with real Photon/Open-Meteo
+responses at a public Annecy example point, preserving all supplied decimal
+places and resolving Europe/Paris. Browser state was discarded; no personal
+location/session/photo was used. Main-push full verification, deployment and
+independent live-file checks follow the release commit. Physical acceptance
+and prior security/hardware/soak deferrals remain separate.

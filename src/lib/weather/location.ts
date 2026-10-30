@@ -3,6 +3,7 @@ export type WeatherLocation = {
   latitude: number;
   longitude: number;
   timezone: string;
+  source?: 'geolocation';
 };
 
 export const locationKey = 'dayframe.weather-location.v1';
@@ -12,12 +13,14 @@ export function validateLocation(value: unknown): WeatherLocation {
     throw new Error('Invalid location');
   }
 
-  const {location, latitude, longitude, timezone} = value as WeatherLocation;
+  const {location, latitude, longitude, timezone, source} =
+    value as WeatherLocation;
   if (
     typeof location !== 'string' ||
     typeof latitude !== 'number' ||
     typeof longitude !== 'number' ||
     typeof timezone !== 'string' ||
+    (source !== undefined && source !== 'geolocation') ||
     location.length > 160 ||
     timezone.length > 100 ||
     location.trim().length === 0 ||
@@ -31,7 +34,13 @@ export function validateLocation(value: unknown): WeatherLocation {
   }
 
   new Intl.DateTimeFormat('fr-FR', {timeZone: timezone}).format(0);
-  return {location: location.trim(), latitude, longitude, timezone};
+  return {
+    location: location.trim(),
+    latitude,
+    longitude,
+    timezone,
+    ...(source === 'geolocation' && {source}),
+  };
 }
 
 export function readLocation(storage?: Pick<Storage, 'getItem'>) {
@@ -68,9 +77,13 @@ export function parseLocations(
   });
 }
 
-export async function locationRequest(url: URL, signal: AbortSignal) {
+export async function locationRequest(
+  url: URL,
+  signal: AbortSignal,
+  timeout = 12_000,
+) {
   const response = await fetch(url, {
-    signal: AbortSignal.any([signal, AbortSignal.timeout(12_000)]),
+    signal: AbortSignal.any([signal, AbortSignal.timeout(timeout)]),
     credentials: 'omit',
     referrerPolicy: 'no-referrer',
     cache: 'no-store',

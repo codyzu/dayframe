@@ -290,9 +290,11 @@ function initializeDashboard(root: HTMLElement) {
       weather.configure(settings.planning, official);
     }
 
-    root.querySelectorAll<HTMLElement>('[data-location]').forEach((element) => {
-      element.textContent = `Météo · ${next.location}`;
-    });
+    root
+      .querySelectorAll<HTMLElement>('[data-location-label]')
+      .forEach((element) => {
+        element.textContent = next.location;
+      });
     root
       .querySelectorAll<HTMLElement>('[data-location-footer]')
       .forEach((element) => {
@@ -301,7 +303,10 @@ function initializeDashboard(root: HTMLElement) {
     root
       .querySelectorAll<HTMLElement>('[data-location-greeting]')
       .forEach((element) => {
-        element.textContent = `Bonjour, ${next.location}.`;
+        element.textContent =
+          next.source === 'geolocation' || next.location === 'Ma position'
+            ? 'Bonjour.'
+            : `Bonjour, ${next.location}.`;
       });
     picker.update();
   }
