@@ -399,7 +399,7 @@ there is no text-size selector. See [readability](display-density.md) and the la
 ## Touch browsing and continuity — F10, 28 October 2026
 
 Deployed 28 October 2026 as `4224129`; full release and independent live verification
-passed. Evidence is tracked in [F10](backlog/F10-touch-navigation.md).
+passed. Release evidence is recorded in the [implementation history](implementation-plan.md#f10-production-rollout-completed--28-october-2026).
 Swipe horizontally between Morning, Photos and Night; the sequence does not wrap.
 Bottom buttons select the same screens. Every manual screen selection uses the
 existing inactivity-based temporary override; it does not edit the schedule or
@@ -415,8 +415,23 @@ No decoded image stays resident while away. Entry revalidates the catalog before
 publishing pixels; authorized local image bytes are reused without a forced image
 download. Network failure can still use the existing valid offline lease. Existing photo expiry/deletion/offline rules apply.
 
-Screen slides occur after release and respect reduced motion; animation failures
-fall back to immediate switching. Forecast-dialog scrolling and native maintenance
+A screen swipe requires at least 60 CSS pixels, at least 1.6 times the vertical
+movement, within one second. Photo taps allow at most 12 pixels of movement and
+less than 500 ms. Buttons, links, inputs, footer navigation and open dialogs are
+excluded; multitouch, cancellation and stationary holds do not browse photos.
+Consumed gestures suppress compatibility clicks. Vertical scrolling, pinch zoom,
+explicit buttons and keyboard alternatives remain available. Background Left/Right
+keys change screens; focus in a departing panel returns to the dashboard.
+
+Screen slides occur after release: 110 ms out, mode commit, then 110 ms in. Photos
+preparation is bounded to 250 ms; slow requests cannot hold the page offscreen
+indefinitely. Reduced motion switches immediately. Failed/missing animation APIs
+or a 400 ms watchdog disable animation for that page. Superseding selections,
+scheduled changes, visibility/page lifecycle and reduced-motion changes cancel
+pending transforms/waits; scheduled changes switch immediately. There are no
+retained screenshots, duplicate private views or extra decoded-photo previews.
+An on-demand gesture hint appears in Morning/Photos until the first screen swipe;
+Night omits it and keeps hover/navigation dark. Forecast-dialog scrolling and native maintenance
 remain separate. Actual frame touch/smoothness acceptance is still pending; no
 native package/settings change is part of F10. Revert the web build to undo F10;
 existing saved photos and configuration require no migration.

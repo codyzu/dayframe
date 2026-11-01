@@ -67,3 +67,21 @@ recurring-cost requirement. Upstream local HTTP, system modifications, broad URL
 accessibility grants and daily reload advice are not automatic adoption decisions. Hardware
 security changes remain deferred at the owner's request. Physical performance, outage and
 extended-stability acceptance remain separate from browser tests and source inspection.
+
+## Follow-up source review — 27–28 October 2026
+
+The feature audit and F10 work reviewed upstream at
+[`0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189`](https://github.com/wesbos/photo-frame-dashboard/tree/0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189):
+root MIT `LICENSE` (copyright 2026 Wes Bos), `dashboard/js/views/photos.js`,
+`dashboard/js/slideshow.js`, `dashboard/js/diag.js`, `dashboard/js/app.js`,
+`docs/dragontouch-classic10.md` and `docs/building-for-the-frame.md` across those reviews.
+The audit also refreshed issue #143, issue #156 and PR #228. This is retained provenance,
+not a fresh upstream review or device acceptance claim.
+
+Large photo tap areas and quiet on-demand controls informed the independently authored
+touch browsing. Dayframe uses bounded ID history/forward retracing, authenticated catalog
+revalidation, existing schedule overrides and cancelable transitions. No upstream source
+or assets were copied. Unbounded slide history, mock photos, continuous motion, broad kiosk
+URL handling and upstream WebView changes were not adopted. Hardware findings concern
+other units/engines and do not prove restore capability for our Classic 10. Future related
+work still needs its own source, asset-rights and actual-unit review.

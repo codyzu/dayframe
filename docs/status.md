@@ -1,5 +1,9 @@
 # Dayframe status and validation register
 
+Dated deployment and acceptance evidence follows. Current remaining work and deferrals are
+tracked in [GitHub Issues](https://github.com/codyzu/dayframe/issues); historical statements
+below retain their recorded scope and do not authorize new device actions.
+
 **28 October mobile/readability correction deployed:** larger dashboard typography
 is now the only default; the selector is removed and old compact preferences are
 ignored. Mode navigation has identical dimensions/position across Morning, Photos
@@ -40,14 +44,6 @@ checks passed, followed by deployment, live smoke and independent artifact match
 Worker `cbfb09be-2bd8-457e-8d12-b04637ed628c`; build
 `35e3e8b3-fa70-473d-a475-c57fbcf80084`. Physical/device and previously deferred
 security acceptance remain separate. Dated local-only records below are historical.
-
-**27 October audit entry point:** [Feature audit and implementation backlog](backlog/README.md)
-contains current source coverage and twenty self-contained follow-up plans. It
-separates missing features from deferred acceptance and optional enhancements.
-Latest recorded import release evidence remains in the final dated entries of the
-[implementation plan](implementation-plan.md). This documentation audit did not
-reverify production/device state or close any validation gap. Older records below
-retain their dates; the backlog includes a dedicated documentation-reconciliation slice.
 
 **23 October M5.O handoff:** kiosk 0.1.5/code 6 is installed. Enabled web build
 `ae262aaf-c44c-4977-97df-23006ca4d373` is live after correcting the fallback's

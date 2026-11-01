@@ -110,7 +110,7 @@ as bottom buttons. Photos adds previous/next tap zones and explicit buttons,
 bounded viewing history and last-photo restoration. Night taps reveal dim controls
 only. Short post-release slides respect reduced motion and fail back to immediate
 switching. This supersedes the earlier two-photo-control layout description;
-privacy, memory and offline limits remain unchanged. See [F10](backlog/F10-touch-navigation.md)
+privacy, memory and offline limits remain unchanged. See [touch browsing](photos.md#touch-browsing-and-continuity--f10-28-october-2026)
 for local/release evidence and separate physical-frame acceptance.
 
 Touching the kiosk reveals minimal mode navigation. The user can manually switch modes; the override is temporary and returns to the scheduled mode after a configurable inactivity timeout. Overrides can be local to each display initially. Navigation fades or hides after inactivity. Admin tools are not exposed on the kiosk navigation.

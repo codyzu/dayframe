@@ -18,8 +18,9 @@ the mobile WebKit iPhone 13 preset. Legacy Standard/Large URLs use the same larg
 type as required by the readability update. Screenshot review verifies layout,
 not physical frame performance, touch precision or native maintenance acceptance.
 
-[F10](../../backlog/F10-touch-navigation.md) records the implementation, tests,
-production rollout and remaining actual-device gate. Preview screenshots are
+The [implementation history](../../implementation-plan.md#f10-production-rollout-completed--28-october-2026)
+records tests and production rollout; [photo behavior](../../photos.md#touch-browsing-and-continuity--f10-28-october-2026)
+describes the implemented interactions and actual-device limits. Preview screenshots are
 documentation artifacts; the app does not retain screenshots or duplicate views
 for its transitions.
 

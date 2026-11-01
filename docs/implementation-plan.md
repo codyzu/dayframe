@@ -1,25 +1,11 @@
-# Dayframe: Implementation Plan
+# Dayframe: Delivery approach and implementation history
 
-**Device weather location, 29 October 2026:** Selected as one M2/M5 feature slice;
-[feature contract and operations](weather-location.md). Implemented and deployed at `54b9559`; successful full verification, production
-smoke tests and independent live checks are tracked in the delivery entry at the end.
-
-**27 October 2026 audit:** [Feature coverage and separate-chat implementation plans](backlog/README.md)
-provide the current backlog entry point. The audit distinguishes missing behavior,
-implemented features awaiting acceptance, and optional enhancements. F01 freshness and F02 future forecast browsing are deployed as of 28 October;
-see the delivery record at the end. F03 quiet display is deployed as of 28 October; its release record is at the end.
-The audit itself changed no product behavior or deployment; existing hardware/security
-deferrals remain in force.
-Historical milestone headers and execution records below retain their dated scope.
-
-**Status:** M1–M2 delivered; M3/M4 production active with deferred live acceptance; M5 and icon timing repair deployed at `ca922ad`; short Classic 10 checks passed; H5 manifest deployed at `3763694`, Rootless trial and standalone layout measured; physical fullscreen return passed; normal-reboot cookie failure recovered with the existing key and Firefox restart persistence passed; cold power reproduced cookie expiry with Firefox-before-clock-correction logs; physical post-cold fullscreen passed but photos needed access; the approved browser preference trial retained the future cookie expiry through another cold cycle; physical fullscreen/private Photos passed without key entry; H5 manual-fullscreen acceptance is complete, with prior skips deferred; full H4/M4/M5/M6 acceptance remains open
-**Date:** 16 October 2026  
-**Requirements:** [Family Dashboard: Technical Specification](technical-specification.md)  
-**Primary upstream:** [Wes Bos — photo-frame-dashboard](https://github.com/wesbos/photo-frame-dashboard)
-
-> **Start here, including implementation agents:** Dayframe is based on Wes Bos's dashboard and photo-frame work. Inspect the relevant upstream implementation and research before starting a related task. Preserve attribution, record reuse and deliberate differences, and verify hardware assumptions on our actual device. The local specification remains the authority for Dayframe's requirements.
-
-**Current handoff (reviewed 18 October 2026):** [Project status, skipped validation and next step](status.md). This dated summary supersedes historical “local only / not pushed” statements below; execution records retain their original context.
+Current work is tracked in [GitHub Issues](https://github.com/codyzu/dayframe/issues).
+This document preserves upstream provenance, delivery principles and dated implementation,
+deployment and device evidence. Historical pending/next-step statements describe their
+recorded revision; they are not a second backlog or fresh authorization for device work.
+See the [specification](technical-specification.md) for requirements and feature runbooks
+for implemented behavior. The initial roadmap and retired task plans remain in Git history.
 
 ## 1. Upstream foundation and provenance
 
@@ -36,36 +22,25 @@ Historical milestone headers and execution records below retain their dated scop
 
 **Review baseline:** The upstream README and device index were reviewed via GitHub on 16 October 2026. The README describes a Vite dashboard using mock data and Cloudflare Workers, plus an Android kiosk wrapper. This is an initial orientation, not a source-code or license audit. No upstream code or assets have been imported. The subsequent M1 source/license audit is recorded at commit `e97c50ba459c49ea8237259f69b95cd28054b628` in [ADR 0001](decisions/0001-upstream-foundation.md); branch links above move over time.
 
-### Required upstream review before implementation
+### Upstream review before related implementation
 
-- [x] M1: Capture an upstream commit SHA; inspect the dashboard source, package manifest, build configuration, styling, and deployment setup at that revision.
-- [x] Record useful source paths, adoption decisions, and any incompatibilities in `docs/decisions/0001-upstream-foundation.md`.
-- [x] Verify license coverage for each code/asset candidate before copying it. If permission is unclear, use the research as reference and implement locally without copying that material.
-- [x] For adapted material, retain required notices and record source permalink, original path, local destination, and modifications. Add a third-party notices file when material is imported.
-- [x] Refresh the relevant upstream review when starting a new feature or device session; record the revision actually used. Do not silently absorb upstream changes.
+Inspect the relevant source, package/build configuration, device documentation and license
+at a recorded commit. Document useful paths and adopt/adapt/differ decisions in the
+appropriate ADR or feature documentation. Retain notices for adapted material and check
+asset rights separately. Refresh that review for the selected feature/device session;
+an earlier review is not permanent approval of upstream changes.
 
 Review upstream first, then decide deliberately. Dayframe keeps Astro/TypeScript/UnoCSS, French weather for Annecy, protected family photos, KV storage, and the strict €0 deployment requirement. An upstream implementation does not override these choices. No automated upstream synchronization or full fork is planned unless the review justifies it.
 
 ## 2. Delivery approach
 
-**F10 selected, 28 October 2026:** [Touch navigation, photo history and screen
-continuity](backlog/F10-touch-navigation.md) now has a web implementation: horizontal
-screen swipes, photo tap history/restoration and bounded live transitions. It uses
-the recommended non-wrapping Morning ↔ Photos ↔ Night order. The delivery record
-at the end tracks verification and rollout; actual-frame touch/performance
-acceptance remains separate.
+Deliver one demonstrable slice at a time using the selected issue's scope and acceptance
+criteria. Keep current task state in GitHub; update repository docs for lasting behavior,
+design and operations. A task is complete only when its required evidence exists. Distinguish
+implementation, deployment, synthetic checks and actual-device acceptance, and preserve
+explicit owner deferrals. The web application must remain usable independently of the frame.
 
-Deliver one demonstrable slice at a time. Keep task IDs in commits/PRs and update this document with validation evidence. M1 is delivered with local and Workers Free acceptance evidence below. M2 is publicly deployed (see its deployment follow-up below). M3 has local acceptance evidence and production authentication/KV activation below; household upload/delete testing and second-admin setup remain pending. M4 is deployed with the explicit live acceptance gaps recorded below. M5 has local synthetic acceptance evidence below and is committed/pushed; the latest deployment state is recorded in the [current handoff](status.md). M6 physical acceptance remains pending. A task is done only when its acceptance evidence exists; a mock or desktop-only test must be labeled as such.
-
-```text
-M1 foundation → M2 weather → M3 protected photos → M4 administration → M5 display behavior
-                                                                            ↓
-                                                          M6 device acceptance → M7 optional work
-```
-
-Non-destructive hardware discovery can happen as soon as the frame is available. Its findings feed browser and authentication decisions throughout the plan; the web application must remain usable if the frame is unsupported.
-
-### Architecture to establish
+### Architecture
 
 - Static Astro pages and locally bundled assets, with small TypeScript modules for clock, scheduling, weather, and slideshow behavior. Add hydration only where needed.
 - A lightweight Worker boundary for private reads, uploads, deletes, and persisted settings. Verify API routes cannot fall through to static asset handling in a way that bypasses authorization.
@@ -75,251 +50,28 @@ Non-destructive hardware discovery can happen as soon as the frame is available.
 
 Use the source layout proposed in specification §15. Keep ADRs in `docs/decisions/` and deployment/recovery instructions in `docs/operations.md` as those capabilities are implemented.
 
-## 3. M1 — Foundation
+## M5 offline extension — 22 October 2026
 
-**Scope:** Repository tooling, source review, a static dashboard shell, and a free-tier deployment path. Use fixtures and non-private images.
-
-| Task | Work                                                                                                                                                                                                                                                                                                                                                                         | Acceptance evidence                                                                                                                        |
-| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| M1.1 | Complete the upstream review and provenance record above; compare reuse against our stack.                                                                                                                                                                                                                                                                                   | ADR with source revision, paths, license findings, and explicit adopt/adapt/defer decisions.                                               |
-| M1.2 | Select compatible versions of Node, package manager, Astro, TypeScript, UnoCSS, Iconify Meteocons, Wrangler, Vitest, Playwright, and lint/format tooling. Verify current official docs and package engine/peer requirements.                                                                                                                                                 | Exact versions recorded in the ADR and manifest, committed lockfile, pinned runtime/package manager, reproducible clean install and build. |
-| M1.3 | Scaffold static pages, layout, dashboard controller, example configuration, and locally bundled icons/fonts/assets with documented rights.                                                                                                                                                                                                                                   | French shell renders at 1280 × 800; admin shell adapts to phone/desktop; no kiosk scrolling; reduced motion supported.                     |
-| M1.4 | Validate the Astro/static-assets/Worker API integration with a non-sensitive health route. Configure local bindings and ignore private configuration.                                                                                                                                                                                                                        | Local preview serves assets and the API; bundles contain no secrets; separate local and production settings documented.                    |
-| M1.5 | Add CI for type checks, lint, unit tests, and build; document deployment with least-privilege CI credentials.                                                                                                                                                                                                                                                                | Required checks pass on a clean checkout; deployment runs only after checks pass.                                                          |
-| M1.6 | Complete: Workers plans dashboard visibly confirmed Free / $0 / Current plan on 16 October 2026, with 100,000 requests/day and 10 ms CPU. OAuth subscription read returned 403, so billing was verified in the authenticated dashboard instead. Deployed only Worker + Static Assets; no paid service, storage product, or subscription change. Public smoke evidence below. |
-
-**Tooling gate:** Exact dependency versions are intentionally unresolved in this document, not implied to have been verified. M1.2 must resolve them before scaffolding; do not invent versions or inherit upstream versions without checking compatibility.
-
-**Exit:** A reproducible shell runs locally and on Workers Free, with CI and documented configuration. A missing deployment account/credential leaves deployment explicitly pending, while local work can proceed.
-
-## 4. M2 — Morning weather
-
-**Follow-up proposed 22 October, implemented locally 27 October 2026:** [weather freshness and recovery](weather-freshness.md)
-as one M2/M5 slice: timestamp-based retry deadlines, bounded recovery for stale
-HTTP 200 responses, and dated stale-weather copy in Photos and Conseil du jour.
-Implementation, request-budget update and local acceptance evidence are recorded
-in the F01/F02 delivery entry below. Production rollout remains separate.
-
-1. **M2.1 — Data adapter:** Define a normalized weather model with timestamped hourly data, location, timezone, units, and fetch time. Fetch only required Open-Meteo fields; validate responses. Use deterministic fixtures for development and tests.
-2. **M2.2 — Icons and descriptions:** Implement exhaustive WMO-to-condition mapping, explicit day/night Meteocons identifiers, French labels, and an unknown fallback. Verify names against the installed collection and keep UnoCSS references literal/extractable.
-3. **M2.3 — UI:** Build clock/date, current and feels-like temperatures, high/low, rain information, and an hourly chart. Start with lightweight SVG, distinct temperature/precipitation encodings, an accessible text equivalent, and a current-time marker. Obtain the approved mockups mentioned in the specification before claiming visual conformity; they are not present in this repository.
-4. **M2.4 — Summary and recovery:** Generate deterministic summaries with thresholds documented in code/tests. Refresh around every 30 minutes, avoid duplicate timers, cache the last valid response, show its age when stale, and retry with bounded backoff.
-5. **M2.5 — Provider compliance:** Verify current usage terms, show required attribution, and document the request budget. Add a proxy only if measured usage or another provider requires one.
-
-**Exit:** Unit coverage proves every required WMO code resolves to an installed icon; browser checks cover day/night, offline/stale, malformed data, and initial failure. The French 1280 × 800 view is readable and does not scroll. Provider failures leave clock/navigation working.
-
-## 5. M3 — Protected photos
-
-### M3.0: Security and storage decision gate
-
-Complete this before publishing any private photo route:
-
-- Evaluate Cloudflare Access for two independent admins, including current free terms, identity verification at the Worker, session expiry, and route coverage. Record the selected mechanism in an auth ADR; do not rely on a hidden admin page or an unverified header.
-- Define admin/display authorization, cookie or token transport, origin/CSRF protections for mutations, and revocation behavior. Anonymous requests must fail closed. Keep incomplete routes disabled on public deployments.
-- Prototype protected image delivery in Firefox and Safari. Prefer a scoped Secure/HttpOnly cookie if it works across the kiosk lifecycle; evaluate authenticated fetch/blob URLs with bounded memory as the fallback. Never put reusable credentials in image URLs.
-- Validate KV binary/metadata layout, pagination, free quotas, and eventual-consistency behavior. Use deterministic IDs derived from the source SHA-256 for retry identity; hashes are deduplication inputs, not proof of trust.
-
-### Implementation tasks
-
-| Task | Work                                                                                                                                                                                                                      | Acceptance evidence                                                                                                                                 |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| M3.1 | Build validated metadata contracts and KV adapter: separate binary records and listable metadata, stable IDs, cursor pagination, and consistent errors.                                                                   | Catalog does not read all binaries; partial writes/deletes and delayed visibility have documented recovery behavior.                                |
-| M3.2 | Add protected catalog/image/upload/delete endpoints with size limits, ID/hash format checks, image header/dimension validation within Worker limits, trusted identity attribution, and authorization-aware cache headers. | Anonymous reads and non-admin mutations fail; malformed/oversized input is rejected; private responses never enter shared caches.                   |
-| M3.3 | Build sequential browser processing: original-byte SHA-256, orientation-aware decode, normalized 64-bit dHash, no-upscale resize to ~1600px, WebP ~0.82, metadata stripping, and per-file feedback.                       | Representative iPhone/browser images render correctly; actual output MIME is checked; unsupported formats/encoders produce actionable errors.       |
-| M3.4 | Add exact duplicate lookup and human review of perceptual matches, configurable thresholds, and safe retry UI.                                                                                                            | Repeated uploads target the same identity; similar photos are not discarded automatically; concurrency limitations remain explicit.                 |
-| M3.5 | Add responsive admin catalog, thumbnails, confirmed deletion, and storage reporting.                                                                                                                                      | Both admins can manage photos; quota errors preserve existing content; usage is labeled approximate if based on eventually consistent metadata.     |
-| M3.6 | Add shuffle slideshow, ~20-second interval, contain/cover, bounded preloading, empty state, periodic catalog refresh, and failure recovery.                                                                               | No immediate repeats when multiple photos exist; new uploads appear; transient errors retain the current image; decoded image memory stays bounded. |
-
-**Quota design gate:** Before calling storage usage authoritative, decide how concurrent writes and deletions affect accounting. Prefer conservative warnings and quota failure handling over a falsely exact counter. Estimate reads/list/writes for the actual polling cadence and photo collection; avoid hot shared counters and repeated full-catalog scans. Any new coordination service needs an ADR and free-cost validation.
-
-**Exit:** Run the specification's M3 upload/privacy/retry checks using synthetic photos first. Basic authentication is complete here; M4 extends provisioning and operations rather than postponing protection.
-
-## 6. M4 — Security and administration
-
-- **M4.1:** Complete independent access and session recovery for both administrators, including expired sessions during uploads.
-- **M4.2:** Implement protected display provisioning, a high-entropy read-only credential, rotation, revocation, and restart persistence. Define credential storage and the maximum revocation delay explicitly; KV eventual consistency cannot provide an unqualified immediate-revocation guarantee.
-- **M4.3:** Enforce privately configured verified home IPv4/IPv6 restrictions for the display role alongside credential checks. Test off-network rejection, address changes, and admin recovery without giving the frame admin access.
-- **M4.4:** Add validated persisted configuration and separate display-safe and admin responses. Settings include timezone, location, schedule, override duration, slideshow interval, and fit preference. Reject invalid/overlapping schedules and define defaults for missing settings.
-- **M4.5:** Document identity recovery, reprovisioning, credential rotation, changing the home IP, and configuration/optimized-photo export. Ensure logout/revocation clears or bounds any local private-photo cache according to the selected offline policy.
-
-**Exit:** Test the admin/display/anonymous authorization matrix across all routes, CSRF/origin handling, secret exclusion, expired credentials, off-network access, and revoked credentials after the documented propagation window. Verify image authentication survives browser restarts; hardware confirmation remains M6.
-
-**Privacy boundary clarified, 17 October 2026:** Keep the dashboard shell public. Protect every private resource at the Worker, including photos, thumbnails/catalog metadata, household configuration and future calendar entries. Verify an authenticated admin can view private content on the ordinary dashboard off-network; a display needs both its credential and the approved home network; anonymous visitors receive only public defaults/placeholders even at home. Public HTML/assets must contain no private data. Dashboard-page gating and widening the `/api` display cookie are not required. See the specification's dashboard access matrix. Calendar implementation remains future work.
-
-**Activation scope clarified, 17 October 2026:** The owner deferred adding the second administrator. Proceed with production activation and live checks using the existing approved administrator; the second identity's independent production acceptance remains pending and must not block that activation slice. Verified home-network configuration, Free-plan validation and live authorization/provisioning checks remain required.
-
-## 7. M5 — Scheduling and offline display
-
-1. Implement a pure mode resolver using the configured IANA timezone and local wall-clock schedule. Define half-open intervals, overnight ranges, DST gaps/repeated hours, and invalid-config fallback. Use injected time in tests.
-2. Add per-display manual overrides and inactivity expiry, hidden touch navigation, Morning/Photos/Home/Night views, and visible recovery controls that do not expose admin tools. Keep Home a placeholder initially.
-3. Recompute scheduled mode on startup, resume, configuration refresh, and time changes. Avoid duplicate timers/listeners across mode transitions.
-4. Implement bounded offline photo caching only after deciding what can remain readable on a compromised/revoked offline frame. The current in-memory/current-image continuity remains the baseline. The owner selected a navigation-only service worker and standalone offline slideshow on 22 October 2026; persistent photos follow the accepted retention and clearing policy in [ADR 0009](decisions/0009-offline-photo-fallback.md). Follow the phased extension below; actual GeckoView support remains a device gate.
-5. Add dimmed Night rendering; record hardware brightness/screen-off as a separate M6 capability rather than assuming CSS controls the backlight.
-
-**Exit:** Tests cover every schedule boundary, DST transitions, overnight intervals, manual override expiry, resume, invalid configuration, and routine outages. Browser flows cover touch, reduced motion, all four modes, mobile admin, and no kiosk scrolling.
-
-### M5 offline extension — 22 October 2026
-
-The owner selected a small web fallback rather than a cached full dashboard. Online
-navigation loads the live application normally; offline startup serves a minimal
-slideshow using automatically retained private photos from authorized reads. Weather, vigilance, appointments
-and the full dashboard are not precached. [ADR 0009](decisions/0009-offline-photo-fallback.md)
-controls the architecture, privacy boundaries, upstream provenance and accepted policies.
-The owner accepted seven-day retention since the last authenticated photo/catalog
-response, a 100-photo/100 MB limit (whichever comes first), and photos at all hours
-while offline. No offline Night screen or saved Night schedule is needed.
-Existing M5 behavior/acceptance remains historical evidence; these phases are additional
-work, not retroactively completed by earlier offline tests.
-
-| Phase                          | Reviewable slice                                                                                                                                                                                                                                                                                                                              | Acceptance gate / status                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| M5.O1 — Contract               | Write ADR 0009, record selected architecture, retention/clearing boundaries, failure states and this sequence.                                                                                                                                                                                                                                | **Complete, including owner policy acceptance on 22 October 2026.** No policy decisions remain before phase 2. Original five-minute baseline is now superseded for authorized Photos browsers; O3/O4 local evidence follows below and O5 remains open.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| M5.O2 — Persistent photos      | Shared IndexedDB module; automatic authorized-browser persistence; bounded gradual downloads; live slideshow reads saved photos during outages and mode changes. Preserve two decoded images, catalog pagination, authorization denial and local invalidation.                                                                                | **Complete locally, 22 October 2026.** Shared store, automatic persistence in authorized browsers, incremental bounded persistence and live outage/mode-return playback. Browser acceptance and limits are recorded in the O2 execution record below. No service worker, cold-start, deployment or device claim.                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| M5.O3 — Standalone fallback    | One self-contained offline HTML document using the same photo store, lease and playback preferences; empty/expired state, photos at all hours offline, manual/automatic reconnection. No external runtime assets or private data embedded in the public artifact.                                                                             | **Complete locally.** Standalone document, shared store/lease, all-hours playback and bounded recovery; 20 four-engine fixture checks and generated CSP inspection are recorded below. No device acceptance.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| M5.O4 — Navigation fallback    | Stable small worker; allowlisted dashboard navigation only; bounded network-first attempt with saved fallback. All other requests retain ordinary handling. Cover partial dashboard startup failure without a new forbidden kiosk URL. Version only the public fallback, with compatible storage and explicit activation/retirement behavior. | **Complete locally, 22 October 2026.** Navigation-only worker, partial-startup guard, build detection and explicit lifecycle/retirement. Local/PR builds default disabled. Owner-authorized enabled production rollout passed online checks on 23 October after native 0.1.5 installation; full device outage/update/storage acceptance remains O5.                                                                                                                                                                                                                                                                                                                                                                                                   |
-| M5.O5 — Classic 10 integration | Refresh upstream device research and actual device identity/browser; teach the kiosk heartbeat/recovery policy to distinguish healthy offline playback and empty/expired retry states from faults. Preserve address/TLS restrictions, clock gate and maintenance paths.                                                                       | **Installed/enabled deployed; online checks passed, 23 October 2026.** Actual Classic private Photos, online restart, worker registration/public fallback cache and initial storage passed. [Rollout and evidence](hardware/m5-offline.md). Owner desk checks subsequently passed physical maintenance, short Wi-Fi disconnect, offline app restart and immediate reconnection without key entry. Update recovery, destructive storage/expiry, measured sustained offline playback and overnight acceptance remain open. Subsequent offline cold-power observation was clock-gated; network-assisted recovery passed in about 45 seconds, with offline cold startup retained as a limitation. Storage is subject to eviction; prior deferrals remain. |
-
-**O4 deployment update detection (implemented locally 22 October; production activation authorized 23 October 2026):**
-Publish a small public `/version.json` with an opaque build ID, shipped with the
-matching application assets; embed that same ID in the running app. Check every
-30 minutes and when connectivity returns, using `cache: 'no-store'` and one
-in-flight check. The navigation worker must leave this request to the network.
-Failed, malformed or unchanged checks leave the current display running and retry
-on the normal interval. A changed ID schedules one controlled dashboard reload:
-at the next slide transition in Photos, or after the current render in other
-display modes. Preserve display preferences and any unexpired manual mode override;
-retain valid photo access and the bounded offline photo store. Admin/setup pages
-must not auto-reload. Weather and settings keep their independent refresh cycles.
-
-O4 acceptance must cover new-version detection, unchanged/failed checks, offline
-playback during checks, reconnection, and coordinated application/fallback updates.
-Confirm the loaded build ID after reload. Persist the attempted target ID before
-reloading; if an older cached page returns, suppress further automatic reloads for
-that target rather than looping. Interrupted updates must preserve a usable
-fallback and compatible photo storage. This adds deployment metadata, not full
-dashboard precaching, private data in public assets, or a new service/billing plan.
-O5 must verify the update/reload path on the actual Classic 10 GeckoView profile,
-including watchdog behavior, valid authorization, preferences, offline continuity
-and recovery without repeated reloads, under its existing hardware authorization
-and readiness gates.
-
-Each phase is one reviewable slice. O2 can deliver disconnect resilience before O3/O4
-add offline navigation. O4 may be prepared and browser-tested before native integration,
-but exposing it to the active frame requires O5 readiness so a valid fallback does not
-trigger the existing dashboard-only watchdog. Hardware tests/changes need their own
-specific authorization. No new billing, native photo bridge, deployment or device
-change is included in O1.
-
-**O1 evidence:** reviewed current photo/privacy implementation, Worker health routing,
-native address policy and heartbeat, earlier ADRs and the specification. Re-inspected
-upstream slideshow/Photos/kiosk docs and MIT license in the saved checkout at
-`f1e0820918c926396e0ccafb4839568825f63edc`; ADR 0009 records adopted ideas and
-deliberate differences. Documentation only; implementation and physical acceptance
-remain pending. Owner policy decisions were explicitly accepted on 22 October 2026
-and are recorded in ADR 0009; O1 is complete. No phase 2 implementation is included.
+The implemented offline architecture uses a bounded private photo store, a self-contained
+fallback document, a navigation-only service worker and coordinated deployment updates.
+[ADR 0009](decisions/0009-offline-photo-fallback.md) defines retention and privacy policy;
+the [offline runbook](hardware/m5-offline.md) records integration and actual-device limits.
+The original O1–O5 task breakdown is historical; remaining acceptance is tracked in issues.
 
 ## 8. M6 — Dragon Touch Classic 10
 
-Read current upstream hardware guidance before this phase. Identify the real model, board, firmware, Android build, RAM, browser/WebView, and recovery options without modifying the device. Keep private identifiers, dumps, keys, and diagnostics out of Git; publish only sanitized observations, clearly separated from assumptions, in the [Classic 10 inventory](hardware/dragon-touch-classic10.md). The [hardware documentation](hardware/README.md) and [H1–H8 stage plan](hardware/implementation-plan.md) provide the detailed M6 breakdown, exact future discovery commands, backup/verification gates, Firefox trial, optional GeckoView shell and security plan.
-
-- Verify browser installation/support, HTTPS, WebP/SVG, timezone behavior, touch, authenticated images, and available memory. The provisional Firefox/GeckoView baseline must be tested rather than assumed.
-- Prefer a working browser kiosk. Evaluate Wes's existing wrapper only if needed and compatible; adopting it requires a recorded decision because native app development is outside the initial product scope.
-- Before any firmware/system modification, establish a verified backup and recovery route and obtain authorization for the specific change. Match device identities exactly; do not apply Modern10 Charm or BIUFRAME scripts by brand similarity.
-- Verify physical access back to Settings and a recovery route before disabling vendor navigation or replacing launch behavior.
-- Test cold boot, kiosk launch/manual fallback, Wi-Fi loss/recovery, sleep/resume, credential persistence, and a proposed minimum 48-hour run. Record crashes, memory growth, image failures, and recovery behavior.
-
-**Planning evidence (16 October 2026):** Owner-supplied Classic 10 diagnostics recorded; upstream reviewed at `e97c50ba459c49ea8237259f69b95cd28054b628`, including Modern10 follow-up and relevant open discussions. Official Firefox APK hash/manifest/ABI verified on the Mac; signature check remains a pre-installation gate. [Research provenance](hardware/sources.md) records adopted ideas, intentional differences, licensing and missing GeckoView source. At initial planning H1 was partial and no device contact occurred. H1 has since completed; see the execution record below. H2 has since been accepted with documented owner exceptions; H3–H8 and M6 acceptance remain pending. The initial H2 planning prerequisites and subsequent results are recorded in the execution records below.
-
-**Exit:** Actual-device evidence supports the M6 criteria. If unsupported, document the blocker and retain the working web application; do not claim desktop emulation establishes frame compatibility.
-
-## 9. M7 — Optional integrations
-
-Start only after the core display is usable. Create a small separate proposal for each addition, with a threat model, authentication transport, outage behavior, compatibility checks, current terms, and €0-cost evidence.
-
-- iOS Shortcut: scoped revocable upload token or authenticated handoff; reuse validation/optimization requirements without assuming browser cookies are available.
-  Start with the [iPhone Share Sheet feasibility plan](ios-share-sheet-feasibility.md)
-  to prove on-device processing and photo handoff before adding authentication or endpoints.
-  The local-only **Dayframe-Photo-Check** diagnostic and synthetic fixtures are
-  prepared for the owner's iPhone 17 / iOS 27.0.1. The owner’s single-JPEG test
-  passed input/report/upright preview on 24 October; reported size differs from
-  source, with cause unestablished. A subsequent three-item report passed with
-  full dimensions, including the large JPEG; the HEIC-source portrait reports
-  PNG, so direct HEIC coverage is unproven. The owner confirmed browsing all three
-  previews and saving fixtures through ChatGPT, a possible conversion step.
-  Full sharing-route acceptance remains pending. No upload or
-  production endpoint has been added.
-  Owner selected testing the Paste compromise on 25 October and keeps helper apps
-  as a last resort. The clipboard diagnostic page/Shortcut are prepared with
-  temporary isolated HTTPS hosting; 16 simulated-clipboard browser checks passed.
-  Actual iPhone manual paste passed for one and three synthetic photos, including
-  local WebP conversion. The owner clarified the button opens the native Paste
-  control; that path retrieved only B (1/3), while manual paste retrieved 3/3.
-  Manual-paste feasibility is established for the tested inputs. Keep native
-  paste as a fallback, with count/preview checks and existing admin auth/upload
-  behavior. Temporary hosting was stopped after
-  the initial test. On owner request, reopened the isolated test for a focused
-  button investigation: visible item/type diagnostics and separately named mixed
-  input versus per-image PNG Shortcuts. Native Mac editor confirms PNG/Repeat
-  Results bindings. Actual iPhone mixed test returned 3 items but only the middle
-  item exposed `image/png`; PNG normalization returned 3 `image/png` items and
-  all 3 converted locally to WebP (owner screenshots 09:44/09:46). The button
-  route is viable for this synthetic batch. Full preview acceptance, representative
-  camera originals, intermediate size/memory, metadata and cross-route duplicate
-  identity remain open before authenticated upload integration. No production
-  upload changes, server-side conversion or helper installation is included.
-- Hue and other LAN devices: prove a secure connectivity path before adding controls; a hosted Worker cannot directly reach a private LAN bridge.
-- Calendar, alerts, or additional widgets: preserve the primary display's hierarchy and minimize private data held on the frame.
-
-### Future weather browsing — recorded 24 October 2026
-
-Owner requested the ability to see future weather beyond the current Morning
-forecast. Add an on-demand way to view upcoming days, keeping the everyday display
-uncluttered and providing a clear return to the current view. This expands the
-specification's later short multi-day forecast idea.
-
-Before implementation, decide the forecast horizon, daily versus hourly detail,
-and how viewers open the forecast on the frame and other browsers. Reuse the
-existing weather provider and cache where practical, preserve the €0 recurring-cost
-requirement, and distinguish stale or unavailable forecasts. Implemented locally on 27 October as F02: a seven-day Morning dialog with daily
-summaries and returned hourly coverage from the shared response. See the delivery
-record below; production and physical acceptance remain separate.
-
-### Deferred UI simplification — recorded 23 October 2026
-
-Owner requested a future review to simplify the everyday display UI, including
-photo synchronization/storage messaging. The persistent « Stockage soumis à
-éviction · synchronisation progressive » notice exposes technical details without
-helping the viewer decide what to do. Review other routine status text and controls
-in the same pass, retaining the controls the household uses.
-
-Proposed acceptance: normal photo playback stays visually quiet; detailed storage
-persistence and synchronization diagnostics remain available in maintenance or
-administration. Show concise French messages on the display when they explain an
-actual interruption or a useful action, including offline playback, unavailable
-photos and retry. Do not imply that storage is permanent or all photos are saved
-unless verified. Review the resulting normal, offline, syncing and failure states
-on the frame. Implemented as the F03 web slice on 28 October; see the delivery
-record below. Physical-frame visual acceptance remains separate.
+The [actual-unit inventory](hardware/dragon-touch-classic10.md),
+[operating guide](hardware/operating-guide.md), [backup/recovery runbook](hardware/backup-and-recovery.md)
+and [hardware stage evidence](hardware/implementation-plan.md) define the device context.
+Retain specific action authorization, verified backups/recovery gates and existing deferrals.
+The dated implementation records below do not establish current or full M6 acceptance.
 
 ## 10. Verification and completion records
 
-CI should run type/lint checks, focused Vitest suites, browser flows, and the production build. Use deterministic fixtures and a local KV environment for normal tests; do not make CI depend on live weather, household photos, or a physical frame. Exercise real deployment and hardware separately with sanitized evidence.
-
-For each milestone record: completed task IDs, checks run and results, screenshots when layout changes, upstream revision/paths consulted, ADRs, deployment state, and remaining limitations. Do not mark a milestone complete until its specification acceptance criteria and the plan's gates pass.
-
-### Decisions to resolve at their gates
-
-| Decision                                                      | Due          | Required outcome                                                                    |
-| ------------------------------------------------------------- | ------------ | ----------------------------------------------------------------------------------- |
-| Upstream revision, reuse scope, and licensing                 | M1.1         | Source review and attribution record.                                               |
-| Exact dependencies and Astro/Worker wiring                    | M1.2–M1.4    | Pinned compatible versions and verified local build/API.                            |
-| Approved visual assets/mockups                                | M2.3         | Available reference and asset rights, or an explicitly recorded provisional design. |
-| Admin authentication and image credential transport           | M3.0         | Working protected-route prototype and auth ADR.                                     |
-| KV schema, accounting, and partial-operation recovery         | M3.0–M3.5    | Measured operation budget and documented consistency limits.                        |
-| Credential revocation bounds and private offline cache policy | M4–M5        | Explicit propagation/retention guarantees and tests.                                |
-| Classic 10 compatibility, kiosk, brightness, startup          | Discovery/M6 | Observations on the actual unit and a recovery path.                                |
-
-**Next implementation slice:** verify the already-triggered M5 deployment result, then review/deploy the local collection-wide SVG timing repair recorded below. The repair restores the animated current icon; hourly icons remain static. Follow with a short actual-frame M5 check on the exact deployed revision before fullscreen/startup work or a later 48-hour run. Keep skipped/deferred checks explicit in the [validation register](status.md#validation-register). The owner deferred the second administrator, standalone revocation and other live M4 gaps recorded below. This document authorizes no hardware changes or paid infrastructure.
+CI uses deterministic fixtures and local storage for ordinary checks; real deployment and
+hardware acceptance are separate. Record source revisions, checks/results, useful screenshots,
+upstream provenance, rollback and material operational limits. Preserve dated evidence without
+turning old pending/next-step statements into today's work queue.
 
 ## M1 implementation record — 16 October 2026
 
@@ -1912,7 +1664,7 @@ error remains pending; the reported event's exact cause is still unconfirmed.
 ## Feature audit and implementation handoffs — 27 October 2026
 
 Audited source at `6bca9694bfd629de315a20b2459cb36ceaa68df7` against the specification,
-milestone/feature records, current code and test inventory. The [audit index](backlog/README.md)
+milestone/feature records, current code and test inventory. The [audit index](https://github.com/codyzu/dayframe/blob/784cb36e03df59de3059f708fa2f91b468e2ab9d/docs/backlog/README.md)
 records requirement coverage, priorities, dependencies and upstream review at
 `0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189`. Twenty individual plans supply code entry
 points, implementation/validation stages, acceptance and rollback requirements,
@@ -2243,7 +1995,7 @@ acceptance deferrals retain their scope. The local-pending notes above are histo
 
 ## F10 touch navigation and photo continuity — 28 October 2026
 
-Owner selected [F10](backlog/F10-touch-navigation.md) for implementation and asked
+Owner selected [F10](photos.md#touch-browsing-and-continuity--f10-28-october-2026) for implementation and asked
 for commit/deployment. Implemented bounded 30-ID viewing history, previous/forward
 retracing and last-photo restoration before gesture/animation work. Mode exit
 still releases decoded images; validated queue/catalog IDs survive only within
