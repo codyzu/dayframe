@@ -121,7 +121,15 @@ const server = createServer(
       if (url.pathname === '/__test/reset') {
         const page = await env.PHOTOS!.list({prefix: 'photo:', limit: 1000});
         await Promise.all(
-          page.keys.map(async ({name}) => env.PHOTOS!.delete(name)),
+          page.keys.map(async ({name}) => {
+            await administration(
+              env.ADMINISTRATION!,
+              `/photo-places/${name.slice('photo:'.length)}`,
+              undefined,
+              'DELETE',
+            );
+            await env.PHOTOS!.delete(name);
+          }),
         );
         await administration(
           env.ADMINISTRATION!,

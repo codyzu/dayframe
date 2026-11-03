@@ -381,6 +381,97 @@ describe('protected photo API with real local KV', () => {
     expect((await request(photoPath, 'DELETE')).status).toBe(200);
     expect((await request(photoPath)).status).toBe(404);
   });
+  it('edits private places without rewriting image bytes and rejects stale or unauthorized edits', async () => {
+    const id = '6'.repeat(64);
+    const created = await request('/api/photos', 'POST', admin, image(), {
+      'X-Photo-Sha256': id,
+    });
+    const {photo} = (await created.json()) as {photo: PhotoMetadata};
+    const path = `/api/photos/${id}/place`;
+    const bytes = (value: unknown) =>
+      new TextEncoder().encode(JSON.stringify(value)).buffer;
+    const update = {
+      expectedRevision: photo.placeRevision,
+      place: {label: 'Annecy', source: 'estimated'},
+    };
+    const headers = {'Content-Type': 'application/json'};
+    const put = vi.spyOn(env.PHOTOS!, 'put');
+    expect(
+      (
+        await request(
+          path,
+          'PATCH',
+          `__Secure-dayframe_display=${display}`,
+          bytes(update),
+          headers,
+        )
+      ).status,
+    ).toBe(403);
+    expect(
+      (await request(path, 'PATCH', '', bytes(update), headers)).status,
+    ).toBe(401);
+    const edits = await Promise.all(
+      ['Annecy', 'Paris'].map(async (label) =>
+        request(
+          path,
+          'PATCH',
+          admin,
+          bytes({...update, place: {label, source: 'manual'}}),
+          headers,
+        ),
+      ),
+    );
+    expect(edits.map(({status}) => status).toSorted((a, b) => a - b)).toEqual([
+      200, 409,
+    ]);
+    expect(put).not.toHaveBeenCalled();
+    put.mockRestore();
+    const catalog = (await (await request()).json()) as {
+      photos: PhotoMetadata[];
+    };
+    const record = catalog.photos.find((item) => item.id === id)!;
+    expect(['Annecy', 'Paris']).toContain(record.place?.label);
+    expect(await (await request(`/api/photos/${id}`)).arrayBuffer()).toEqual(
+      image(),
+    );
+    for (const place of [
+      {label: '<img>', source: 'manual'},
+      {label: 'a', source: 'manual', latitude: 45},
+    ]) {
+      expect(
+        (
+          await request(
+            path,
+            'PATCH',
+            admin,
+            bytes({expectedRevision: record.placeRevision, place}),
+            headers,
+          )
+        ).status,
+      ).toBe(400);
+    }
+
+    const readOnly = (await (
+      await request(
+        '/api/photos',
+        'GET',
+        `__Secure-dayframe_display=${display}`,
+      )
+    ).json()) as unknown;
+    expect(JSON.stringify(readOnly)).toContain(record.place!.label);
+    expect(JSON.stringify(readOnly)).not.toContain('placeRevision');
+    await request(`/api/photos/${id}`, 'DELETE');
+    const late = await administration(
+      env.ADMINISTRATION!,
+      `/photo-places/${id}`,
+      {expectedRevision: record.placeRevision, place: update.place},
+      'PATCH',
+    );
+    expect(late.status).toBe(409);
+    expect(
+      (await request(path, 'PATCH', admin, bytes(update), headers)).status,
+    ).toBe(404);
+  });
   it('preserves existing content on quota failures and handles invalid catalog/cursors', async () => {
     const put = vi
       .spyOn(env.PHOTOS!, 'put')

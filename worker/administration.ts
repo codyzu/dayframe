@@ -4,6 +4,7 @@ import {
   type Settings,
 } from '../src/lib/dashboard/settings.ts';
 import {sha256} from '../src/lib/photos/contracts.ts';
+import {photoPlaces} from './photo-places.ts';
 
 export type AdminStub = {fetch(request: Request): Promise<Response>};
 export type AdministrationBinding = {
@@ -45,6 +46,10 @@ export class Administration {
         ? undefined
         : await request.json().catch(() => undefined);
     return this.state.storage.transaction(async (storage) => {
+      if (path.startsWith('/photo-places/')) {
+        return photoPlaces(request, storage, body);
+      }
+
       // Internal-only compare-and-swap record. Google requests happen outside storage
       // transactions; revision checks prevent a late refresh/callback undoing disconnect.
       if (path === '/calendar-state') {

@@ -67,9 +67,31 @@ async function login(page: Page, admin = 'one') {
   await expect(
     page.getByRole('button', {name: 'Choisir des photos'}),
   ).toBeEnabled();
+  // Existing scenarios exercise explicit review; default automatic intake has its own tests.
+  await page.locator('[data-import-review]').check();
+  await page.locator('[data-photo-location-consent]').uncheck();
 }
 
 test.beforeEach(async ({page}) => {
+  // These regression cases explicitly exercise optional preview/review, including
+  // fresh navigations to Shortcut URLs. Automatic intake is tested separately.
+  await page.addInitScript(() => {
+    globalThis.document.addEventListener('DOMContentLoaded', () => {
+      const review = globalThis.document.querySelector<HTMLInputElement>(
+        '[data-import-review]',
+      );
+      const location = globalThis.document.querySelector<HTMLInputElement>(
+        '[data-photo-location-consent]',
+      );
+      if (review) {
+        review.checked = true;
+      }
+
+      if (location) {
+        location.checked = false;
+      }
+    });
+  });
   await page.clock.install({time: fixtureNow});
   await page.request.get('/__test/reset');
   await page.route('https://api.open-meteo.com/**', async (route) =>

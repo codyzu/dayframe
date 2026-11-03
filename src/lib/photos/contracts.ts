@@ -1,4 +1,6 @@
 /* eslint-disable no-bitwise -- dHash is a defined 64-bit bit comparison. */
+import {isPhotoPlace, type PhotoPlace} from './place.ts';
+
 export const maxPhotoBytes = 2 * 1024 * 1024;
 export const maxPhotoEdge = 1600;
 export const photoPageSize = 1000;
@@ -7,6 +9,8 @@ export const shaPattern = /^[0-9a-f]{64}$/v;
 export const hashPattern = /^[0-9a-f]{16}$/v;
 
 export type PhotoMetadata = {
+  place?: PhotoPlace;
+  placeRevision?: string;
   id: string;
   sha256: string;
   perceptualHash: string;
@@ -25,6 +29,9 @@ export function isPhotoMetadata(value: unknown): value is PhotoMetadata {
 
   const p = value as PhotoMetadata;
   return (
+    (p.place === undefined || isPhotoPlace(p.place)) &&
+    (p.placeRevision === undefined ||
+      (typeof p.placeRevision === 'string' && p.placeRevision.length <= 36)) &&
     typeof p.id === 'string' &&
     shaPattern.test(p.id) &&
     p.sha256 === p.id &&

@@ -1,6 +1,13 @@
 /* eslint-disable @typescript-eslint/no-loop-func -- Each card captures its own immutable photo; shared catalog updates are serialized by isBusy. */
 /* eslint-disable no-alert -- Native confirmation is required before permanent deletion. */
 import {
+  placeFromInput,
+  isPhotoPlace,
+  type PhotoPlace,
+  type PhotoImport,
+  type PlaceRecord,
+} from './place.ts';
+import {
   onOfflineInvalidation,
   offlinePersistence,
   savedPhotos,
@@ -10,6 +17,7 @@ import {
   hammingDistance,
   isPhotoMetadata,
   storageWarningBytes,
+  sha256,
   type PhotoMetadata,
 } from './contracts.ts';
 import {mountClipboardImport} from './clipboard-import.ts';
@@ -82,9 +90,16 @@ function mountAdmin(root: HTMLElement) {
     }
   }
 
+  const recovery = root.querySelector<HTMLInputElement>(
+    '[data-recover-locations]',
+  )!;
+  const recoveryDialog = root.querySelector<HTMLDialogElement>(
+    '[data-recovery-dialog]',
+  )!;
   const pending = new Map<string, PhotoMetadata>();
   const deleted = new Set<string>();
   let catalog: PhotoMetadata[] = [];
+  let isPlacesAvailable = true;
   let isBusy = false;
   let isUploading = false;
   let isAuthorized = false;
@@ -94,7 +109,10 @@ function mountAdmin(root: HTMLElement) {
     showError(new ApiError('Accès privé à vérifier. Reconnectez-vous.', 401));
   });
   let privacyDeadline = Date.now() + 300_000;
-  const intake = mountClipboardImport(root, uploadFiles);
+  const intake = mountClipboardImport(root, uploadFiles, async (file) => {
+    const hash = await sha256(await file.arrayBuffer());
+    return catalog.find(({id}) => id === hash)?.place;
+  });
   const accessMessage = root.querySelector<HTMLElement>(
     '[data-access-message]',
   )!;
@@ -105,7 +123,14 @@ function mountAdmin(root: HTMLElement) {
   const setBusy = (isBusyValue: boolean) => {
     isBusy = isBusyValue || isUploading;
     choose.disabled = isBusy || !isAuthorized;
-    intake.setAllowed(!isBusy && isAuthorized);
+    recovery.disabled = isBusy || !isAuthorized;
+    for (const control of gallery.querySelectorAll<
+      HTMLInputElement | HTMLButtonElement
+    >(':scope [data-place-form] input, :scope [data-place-form] button')) {
+      control.disabled = isBusy || !isAuthorized || !isPlacesAvailable;
+    }
+
+    intake.setAllowed(!isBusy && isAuthorized, !isAuthorized);
     refreshButton.disabled = isBusy;
   };
 
@@ -140,6 +165,9 @@ function mountAdmin(root: HTMLElement) {
         dialog.close('skip');
       }
 
+      recoveryDialog.close('skip');
+      recoveryDialog.querySelector('[data-recovery-images]')!.replaceChildren();
+
       dialog.querySelector('[data-similar-images]')!.replaceChildren();
       render();
     }
@@ -165,6 +193,42 @@ function mountAdmin(root: HTMLElement) {
       download.download = `${photo.id}.webp`;
       card.querySelector<HTMLElement>('[data-photo-details]')!.textContent =
         `${photo.width} × ${photo.height} · ${Math.round(photo.size / 1024)} Kio · ${new Date(photo.uploadedAt).toLocaleDateString('fr-FR')}`;
+      const placeInput =
+        card.querySelector<HTMLInputElement>('[data-place-input]')!;
+      placeInput.value = photo.place?.label ?? '';
+      placeInput.disabled = isBusy || !isAuthorized || !isPlacesAvailable;
+      card.querySelector<HTMLButtonElement>('button[type=submit]')!.disabled =
+        isBusy || !isAuthorized || !isPlacesAvailable;
+      const placeStatus = card.querySelector<HTMLElement>(
+        '[data-place-status]',
+      )!;
+      placeStatus.textContent = isPlacesAvailable
+        ? ''
+        : 'Lieux indisponibles. Actualisez pour les modifier.';
+      card.querySelector('form')!.addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (isBusy || !isAuthorized) {
+          return;
+        }
+
+        setBusy(true);
+        const run = accessGeneration;
+        void (async () => {
+          try {
+            await savePlace(photo, placeFromInput(placeInput.value), run);
+            status.textContent = 'Lieu enregistré.';
+            accessMessage.hidden = false;
+          } catch (error) {
+            placeStatus.textContent =
+              error instanceof Error
+                ? error.message
+                : 'Enregistrement impossible.';
+            showError(error);
+          } finally {
+            setBusy(false);
+          }
+        })();
+      });
       const button = card.querySelector<HTMLButtonElement>('[data-delete]')!;
       listen(button, 'click', async () => {
         if (
@@ -205,11 +269,13 @@ function mountAdmin(root: HTMLElement) {
 
   async function refresh() {
     const run = accessGeneration;
-    const {photos} = await fetchCatalog(true);
+    const result = await fetchCatalog(true);
+    const {photos} = result;
     if (run !== accessGeneration) {
       throw new ApiError('Accès privé à vérifier. Reconnectez-vous.', 401);
     }
 
+    isPlacesAvailable = result.placesAvailable;
     for (const photo of photos) {
       if (pending.has(photo.id)) {
         pending.delete(photo.id);
@@ -256,7 +322,136 @@ function mountAdmin(root: HTMLElement) {
     return dialog.returnValue === 'keep';
   }
 
-  async function upload(file: File, row: HTMLLIElement) {
+  async function savePlace(
+    photo: PhotoMetadata,
+    place: PhotoPlace | undefined,
+    run: number,
+  ) {
+    verifyGeneration(run);
+    const response = await photoRequest(`/api/photos/${photo.id}/place`, {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        expectedRevision: photo.placeRevision ?? '',
+        place: place ?? null,
+      }),
+    });
+    const record = (await response.json()) as PlaceRecord;
+    verifyGeneration(run);
+    if (
+      typeof record.revision !== 'string' ||
+      (record.place !== undefined && !isPhotoPlace(record.place))
+    ) {
+      throw new Error('Réponse du lieu invalide. Actualisez.');
+    }
+
+    const updated = {
+      ...photo,
+      place: record.place,
+      placeRevision: record.revision,
+    };
+    pending.set(photo.id, updated);
+    catalog = catalog.map((item) => (item.id === photo.id ? updated : item));
+    render();
+  }
+
+  async function hasRecoveredPlace(
+    photo: Awaited<ReturnType<typeof processPhoto>>,
+    place: PhotoPlace | undefined,
+    run: number,
+  ) {
+    if (!place) {
+      throw new Error(
+        'Saisissez ou recherchez le lieu avant de confirmer la récupération.',
+      );
+    }
+
+    const exact = catalog.find(({id}) => id === photo.sha256);
+    const candidates = exact
+      ? [exact]
+      : catalog
+          .filter(
+            (item) =>
+              hammingDistance(item.perceptualHash, photo.perceptualHash) <= 6,
+          )
+          .toSorted(
+            (a, b) =>
+              hammingDistance(a.perceptualHash, photo.perceptualHash) -
+              hammingDistance(b.perceptualHash, photo.perceptualHash),
+          )
+          .slice(0, 5);
+    if (candidates.length === 0) {
+      throw new Error(
+        'Aucune photo correspondante. Aucun ajout effectué ; vous pouvez saisir le lieu dans la collection.',
+      );
+    }
+
+    const images = recoveryDialog.querySelector<HTMLElement>(
+      '[data-recovery-images]',
+    )!;
+    images.replaceChildren();
+    const url = URL.createObjectURL(photo.blob);
+    const original = document.createElement('img');
+    original.src = url;
+    original.alt = 'Original sélectionné pour retrouver le lieu';
+    original.className = 'w-full object-contain';
+    images.append(original);
+    for (const candidate of candidates) {
+      const label = document.createElement('label');
+      label.className = 'block rounded-lg border border-border p-2';
+      const image = document.createElement('img');
+      image.src = `/api/photos/${candidate.id}`;
+      image.alt = 'Photo existante à comparer';
+      image.className = 'w-full object-contain';
+      const radio = document.createElement('input');
+      radio.type = 'radio';
+      radio.name = 'existing-photo';
+      radio.value = candidate.id;
+      radio.required = true;
+      label.append(
+        image,
+        radio,
+        document.createTextNode(' Choisir cette photo'),
+      );
+      images.append(label);
+    }
+
+    recoveryDialog.querySelector('[data-recovery-place]')!.textContent =
+      place.label;
+    recoveryDialog.returnValue = 'skip';
+    recoveryDialog.showModal();
+    try {
+      await new Promise<void>((resolve) => {
+        recoveryDialog.addEventListener(
+          'close',
+          () => {
+            resolve();
+          },
+          {once: true},
+        );
+      });
+      verifyGeneration(run);
+      const selected = images.querySelector<HTMLInputElement>('input:checked');
+      const target = candidates.find(({id}) => id === selected?.value);
+      if (target && recoveryDialog.returnValue === 'save') {
+        await savePlace(target, place, run);
+        return true;
+      }
+
+      return false;
+    } finally {
+      URL.revokeObjectURL(url);
+      images.replaceChildren();
+      recoveryDialog.querySelector('[data-recovery-place]')!.textContent = '';
+    }
+  }
+
+  async function upload(
+    entry: PhotoImport,
+    row: HTMLLIElement,
+    isRecovering: boolean,
+  ) {
+    const {file, place} = entry;
     const run = accessGeneration;
     setBusy(true);
     const text = row.querySelector<HTMLElement>('[data-upload-message]')!;
@@ -268,7 +463,25 @@ function mountAdmin(root: HTMLElement) {
     try {
       const photo = await processPhoto(file);
       verifyGeneration(run);
-      if (catalog.some(({id}) => id === photo.sha256)) {
+      if (isRecovering) {
+        const isSaved = await hasRecoveredPlace(photo, place, run);
+        row.dataset.outcome = isSaved ? 'located' : 'skipped';
+        text.textContent = isSaved
+          ? 'Lieu enregistré sur la photo existante.'
+          : 'Photo passée ; aucun ajout.';
+        return 'complete' as const;
+      }
+
+      const existing = catalog.find(({id}) => id === photo.sha256);
+      if (existing) {
+        if (
+          place &&
+          (existing.place?.label !== place.label ||
+            existing.place.source !== place.source)
+        ) {
+          await savePlace(existing, place, run);
+        }
+
         row.dataset.outcome = 'duplicate';
         text.textContent = `${file.name} · doublon exact, déjà présent.`;
         return 'complete' as const;
@@ -282,8 +495,8 @@ function mountAdmin(root: HTMLElement) {
           ? configured
           : 6;
       const similar = catalog.filter(
-        (existing) =>
-          hammingDistance(existing.perceptualHash, photo.perceptualHash) <=
+        (candidate) =>
+          hammingDistance(candidate.perceptualHash, photo.perceptualHash) <=
           threshold,
       );
       if (similar.length > 0 && !(await shouldKeepPhoto(photo.blob, similar))) {
@@ -314,6 +527,18 @@ function mountAdmin(root: HTMLElement) {
         throw new Error(
           'Réponse d’envoi invalide. Réessayez pour vérifier le résultat.',
         );
+      }
+
+      if (
+        place &&
+        (!body.duplicate || !body.photo.place || place.source === 'manual')
+      ) {
+        await savePlace(body.photo, place, run);
+        body.photo = {
+          ...body.photo,
+          place,
+          placeRevision: pending.get(body.photo.id)?.placeRevision,
+        };
       }
 
       pending.set(body.photo.id, body.photo);
@@ -372,6 +597,7 @@ function mountAdmin(root: HTMLElement) {
     const count = (outcome: string) =>
       outcomes.filter((value) => value === outcome).length;
     const parts = [
+      count('located') > 0 ? `${count('located')} lieu(x) retrouvé(s)` : '',
       count('added') > 0
         ? `${count('added')} ajoutée${count('added') > 1 ? 's' : ''}`
         : '',
@@ -392,15 +618,17 @@ function mountAdmin(root: HTMLElement) {
       count('processing') > 0 || count('uploading') > 0 || count('error') > 0;
   }
 
-  async function uploadFiles(files: File[]) {
+  async function uploadFiles(files: PhotoImport[]) {
     if (isBusy || !isAuthorized) {
       return;
     }
 
+    const isRecovering = recovery.checked;
     isUploading = true;
     setBusy(true);
     try {
-      for (const file of files) {
+      for (const entry of files) {
+        const {file} = entry;
         const row = document.importNode(
           resultTemplate.content.firstElementChild!,
           true,
@@ -414,13 +642,16 @@ function mountAdmin(root: HTMLElement) {
           }
 
           await initialize();
-          if (isAuthorized && (await upload(file, row)) === 'complete') {
+          if (
+            isAuthorized &&
+            (await upload(entry, row, isRecovering)) === 'complete'
+          ) {
             forgetRetry();
           }
         });
         results.append(row);
         if (isAuthorized) {
-          if ((await upload(file, row)) === 'complete') {
+          if ((await upload(entry, row, isRecovering)) === 'complete') {
             // Successful rows must not retain large source PNGs through a retry listener.
             forgetRetry();
           }
@@ -481,6 +712,7 @@ function mountAdmin(root: HTMLElement) {
   globalThis.addEventListener('pagehide', () => {
     clearInterval(privacyCheck);
     gallery.replaceChildren();
+    recoveryDialog.close('skip');
     if (dialog.open) {
       dialog.close('skip');
     }

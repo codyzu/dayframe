@@ -498,3 +498,45 @@ photo/session/config reads return 401/no-store. The installed **Dayframe PNG** u
 the tested resizing actions; the previous version and test copies are retained but
 hidden from the Share Sheet with owner approval. Physical iPhone sync and import
 acceptance remain owner checks; existing hardware/security deferrals remain.
+
+## Photo place labels — 3 November 2026
+
+Implemented and verified locally. This section describes the candidate; production
+rollout and household backfill remain separate. [ADR 0010](decisions/0010-photo-place-labels.md)
+records storage, privacy, cost, provenance and rollback. Current delivery evidence
+and remaining acceptance belong to [#22](https://github.com/codyzu/dayframe/issues/22).
+
+Pasting or choosing images now starts ordinary imports automatically with a place
+when JPEG/PNG capture GPS is readable. The checked automatic-location option explains
+that coordinates go directly to Photon without the photo or credentials; it can be
+disabled before selection. Missing GPS or provider failure leaves the place empty
+and does not block upload. The UI never substitutes the uploader's current position.
+“Personnaliser les lieux avant l’ajout” restores preview/Add with an editable place
+for each image. Every gallery card also supports later correction/removal. The
+saved value is a bounded plain label and manual/estimated provenance, never raw GPS.
+
+Use **manual paste** with the metadata-preserving Shortcut. Shortcut links open
+the manual paste zone directly when automatic location is enabled; the Paste
+button opens the same zone from ordinary administration. The asynchronous clipboard read
+path lost GPS in the owner-observed iPhone experiment. Intermediate PNGs retain
+metadata, including potentially more than GPS, but final WebPs still strip it.
+The production generator's admin-import mode preserves metadata; historical test
+modes retain their previous settings. A signed native replacement and iPhone sync
+need separate verification; a web release cannot change an installed Shortcut.
+The prior Shortcut preserves its previous behavior for rollback.
+
+Recovery mode takes reselected originals/shared copies and proposes existing matches
+using exact source SHA or bounded dHash similarity. The owner chooses the existing
+photo and confirms the place; no new image is uploaded or replaced. An ambiguous
+match is never silently applied. If originals/GPS/matches are unavailable, edit the
+place manually in the gallery. The actual Apple Photos library recovery is deferred
+until the owner provides access; no library permission/search has been requested.
+
+The Photos pin control enables labels on this browser (hidden by default); the
+preference stores only a boolean. Labels are absent from offline image records and
+the standalone fallback. Existing photos need no migration or frame reset. The API
+joins KV image metadata with transactional place records in the existing
+administration object. Label edits do not rewrite KV image bytes. Concurrent stale
+edits return a refresh-required conflict. Authorized photo reads continue without
+labels if the annotation store is unavailable; editing then requires a successful
+refresh. Never use a KV-only backup as proof that labels have been exported.

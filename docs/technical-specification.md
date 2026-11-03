@@ -258,7 +258,9 @@ those delivered resized PNG bytes. Library originals are unchanged. Resizing
 discards detail; PNG adds no lossy compression after the resize. Final browser
 WebP encoding, metadata stripping, explicit preview/Add and all input/upload
 limits remain. See [photo operations](photos.md#shortcut-resizing--30-october-2026)
-for native validation and separate physical-iPhone acceptance.
+for native validation and separate physical-iPhone acceptance. The 3 November
+[place-label refinement](#photo-place-labels-refinement--3-november-2026) supersedes
+mandatory preview/Add for ordinary imports.
 
 ### 6.3 Duplicate detection
 
@@ -603,3 +605,15 @@ Use available bottom space by floating desktop navigation on demand. Keep attrib
 and forecast-methodology links in smaller secondary text. Preserve private access,
 short-lived in-memory display data, and read-only Google scopes. This refines the
 existing owner-requested M7 calendar slice; it does not change hardware acceptance.
+
+## Photo place labels refinement — 3 November 2026
+
+Owner selects automatic city/area labels from capture GPS during future uploads,
+using the verified iPhone Shortcut/manual-paste path. Ordinary paste/selection
+starts upload without a location confirmation; optional pre-upload customization
+and later admin correction/removal remain available. No-GPS/lookup failure does
+not block upload. Store only private place text/provenance, never raw capture GPS
+or EXIF in optimized photos; labels remain online-only. Existing-photo recovery
+uses explicitly chosen matches and metadata-only edits. Actual household backfill
+and Apple Photos access are deferred by the owner. [ADR 0010](decisions/0010-photo-place-labels.md)
+defines storage/concurrency, compatibility, provider/cost and rollback.

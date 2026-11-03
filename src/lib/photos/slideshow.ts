@@ -70,6 +70,43 @@ export function mountSlideshow(
   const empty = root.querySelector<HTMLElement>('[data-photo-empty]')!;
   const fit =
     controlsRoot.querySelector<HTMLButtonElement>('[data-photo-fit]')!;
+  const placeCaption = root.querySelector<HTMLElement>('[data-photo-place]');
+  const placeToggle = controlsRoot.querySelector<HTMLButtonElement>(
+    '[data-photo-place-toggle]',
+  );
+  const placeKey = 'dayframe.photo-place-visible.v1';
+  let isShowPlaces = false;
+  try {
+    isShowPlaces = localStorage.getItem(placeKey) === 'true';
+  } catch {
+    // The display choice still works for this page with storage disabled.
+  }
+
+  function updatePlace() {
+    if (!placeCaption) {
+      return;
+    }
+
+    const place =
+      isActive && !isStoredPlayback && !hasFailed && current && navigator.onLine
+        ? catalog.find(({id}) => id === current?.id)?.place
+        : undefined;
+    placeCaption.textContent = isShowPlaces ? (place?.label ?? '') : '';
+    placeCaption.hidden = placeCaption.textContent === '';
+    placeToggle?.setAttribute('aria-pressed', String(isShowPlaces));
+  }
+
+  globalThis.addEventListener('offline', updatePlace);
+  placeToggle?.addEventListener('click', () => {
+    isShowPlaces = !isShowPlaces;
+    try {
+      localStorage.setItem(placeKey, String(isShowPlaces));
+    } catch {
+      // No private place text enters localStorage.
+    }
+
+    updatePlace();
+  });
   const fitKey = 'dayframe.photo-fit.v1';
   let preferredFit: Settings['fit'] | undefined;
   try {
@@ -140,6 +177,7 @@ export function mountSlideshow(
     queue = [];
     empty.hidden = false;
     controls.hidden = true;
+    updatePlace();
   };
 
   function expirePrivacy() {
@@ -371,6 +409,7 @@ export function mountSlideshow(
 
     isStoredPlayback = false;
     catalog = result.display;
+    updatePlace();
     if (token !== undefined) {
       try {
         await reconcileSavedPhotos(catalog, token);
@@ -515,6 +554,7 @@ export function mountSlideshow(
     history.visit(loaded.id, direction);
     stage.replaceChildren(loaded.image);
     stage.dataset.photoId = loaded.id;
+    updatePlace();
     globalThis.dispatchEvent(new Event('dayframe:slide'));
     release(old);
   }
@@ -616,12 +656,14 @@ export function mountSlideshow(
         : '';
       await preload(run, signal);
       hasFailed = isStoredPlayback;
+      updatePlace();
     } catch (error) {
       if (run !== generation) {
         return;
       }
 
       hasFailed = true;
+      updatePlace();
       if (error instanceof ApiError && [401, 403].includes(error.status)) {
         clear();
         status.textContent = 'Accès privé requis. Reconnectez cet affichage.';
@@ -672,6 +714,7 @@ export function mountSlideshow(
       delete stage.dataset.photoId;
       empty.hidden = false;
       controls.hidden = true;
+      updatePlace();
       // Re-entry preserves the previous access-verification boundary: revalidate
       // the catalog before publishing saved pixels, while retaining viewing IDs.
       refreshAt = 0;

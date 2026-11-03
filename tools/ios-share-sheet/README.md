@@ -189,3 +189,18 @@ serve or automatically update the Shortcut. Never commit signed artifacts.
 PNG adds no lossy compression after the resize; downsizing does discard detail.
 Library originals are unchanged. See [photo operations](../../docs/photos.md#shortcut-resizing--30-october-2026)
 for limits, duplicate identity, provenance and acceptance boundaries.
+
+## Location-preserving candidate — 3 November 2026
+
+Admin-import generation now preserves metadata in resized intermediate PNGs. Use
+manual/native Paste on iPhone: the owner-observed synthetic single/batch experiment
+retained A/B GPS and correctly omitted C GPS, while the async button lost all GPS.
+The updated website defaults to automatic import/location extraction after paste;
+optional review allows customizing labels before Add, and administration supports
+later correction/removal. Final stored WebPs still have no EXIF/GPS.
+
+Historical diagnostic modes retain metadata preservation disabled. This change to
+the generator does not replace an installed Shortcut. Sign a separate candidate,
+retain the previous copy, and verify the owner’s iPhone sync/manual-paste path when
+rolling out. Signed artifacts remain private/ignored. See
+[ADR 0010](../../docs/decisions/0010-photo-place-labels.md) for privacy and rollback.

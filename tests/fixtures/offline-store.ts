@@ -17,7 +17,7 @@ export async function seedOfflinePhotos(
   fit = 'contain',
   interval = 5,
 ) {
-  for (const name of ['offline', 'contracts']) {
+  for (const name of ['offline', 'contracts', 'place']) {
     const source = await readFile(`src/lib/photos/${name}.ts`, 'utf8');
     const code = ts
       .transpileModule(source, {
@@ -26,7 +26,8 @@ export async function seedOfflinePhotos(
           module: ts.ModuleKind.ESNext,
         },
       })
-      .outputText.replace('./contracts.ts', '/__test/contracts.js');
+      .outputText.replace('./contracts.ts', '/__test/contracts.js')
+      .replace('./place.ts', '/__test/place.js');
     await page.route(`**/__test/${name}.js`, async (route) =>
       route.fulfill({contentType: 'text/javascript', body: code}),
     );

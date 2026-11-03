@@ -1,3 +1,4 @@
+import {isPhotoPlace} from './place.ts';
 import {invalidateOfflinePhotos} from './offline.ts';
 import {
   hasPhotoSize,
@@ -64,11 +65,12 @@ export async function photoRequest(path: string, options: RequestInit = {}) {
 
 export type DisplayPhoto = Pick<
   PhotoMetadata,
-  'id' | 'width' | 'height' | 'size' | 'contentType'
+  'id' | 'width' | 'height' | 'size' | 'contentType' | 'place'
 >;
 export async function fetchCatalog(isAdmin = false, signal?: AbortSignal) {
   const photos: PhotoMetadata[] = [];
   const display: DisplayPhoto[] = [];
+  let isPlacesAvailable = true;
   let cursor: string | undefined;
   const seen = new Set<string>();
   do {
@@ -78,6 +80,7 @@ export async function fetchCatalog(isAdmin = false, signal?: AbortSignal) {
     );
     const body = (await response.json()) as {
       photos: unknown[];
+      placesAvailable?: boolean;
       cursor: string | undefined;
     };
     if (
@@ -88,6 +91,7 @@ export async function fetchCatalog(isAdmin = false, signal?: AbortSignal) {
       throw new Error('Catalogue invalide.');
     }
 
+    isPlacesAvailable &&= body.placesAvailable !== false;
     for (const value of body.photos) {
       if (isAdmin && !isPhotoMetadata(value)) {
         throw new Error('Catalogue invalide.');
@@ -97,6 +101,7 @@ export async function fetchCatalog(isAdmin = false, signal?: AbortSignal) {
       if (
         typeof value !== 'object' ||
         value === null ||
+        (photo.place !== undefined && !isPhotoPlace(photo.place)) ||
         typeof photo.id !== 'string' ||
         !shaPattern.test(photo.id) ||
         !hasPhotoSize(photo) ||
@@ -123,6 +128,7 @@ export async function fetchCatalog(isAdmin = false, signal?: AbortSignal) {
 
   return {
     photos,
+    placesAvailable: isPlacesAvailable,
     display: [...new Map(display.map((photo) => [photo.id, photo])).values()],
   };
 }

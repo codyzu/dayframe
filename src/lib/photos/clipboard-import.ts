@@ -1,7 +1,11 @@
+import {createPlaceLookup} from './place-lookup.ts';
+import {placeFromInput, type PhotoImport, type PhotoPlace} from './place.ts';
 // Clipboard contents are read only after an explicit user gesture; never parse HTML.
 export function mountClipboardImport(
   root: HTMLElement,
-  importFiles: (files: File[]) => Promise<void>,
+  importFiles: (files: PhotoImport[]) => Promise<void>,
+  knownPlace: (file: File) => Promise<PhotoPlace | undefined> = async () =>
+    undefined,
 ) {
   const paste = root.querySelector<HTMLButtonElement>('[data-import-paste]')!;
   const choose = root.querySelector<HTMLButtonElement>('[data-choose-files]')!;
@@ -16,7 +20,24 @@ export function mountClipboardImport(
   const expected = root.querySelector<HTMLInputElement>(
     '[data-import-expected]',
   )!;
-  const queryCount = new URL(location.href).searchParams.get('expected');
+  const consent = root.querySelector<HTMLInputElement>(
+    '[data-photo-location-consent]',
+  )!;
+  const review = root.querySelector<HTMLInputElement>('[data-import-review]')!;
+  const recovery = root.querySelector<HTMLInputElement>(
+    '[data-recover-locations]',
+  )!;
+  const lookup = createPlaceLookup();
+  let locationController = new AbortController();
+  let staged: Array<{
+    entry: PhotoImport;
+    input: HTMLInputElement;
+    original: string;
+  }> = [];
+  const query = new URL(location.href).searchParams;
+  const queryCount = query.get('expected');
+  const isShortcut = query.get('import') === 'clipboard';
+  const pasteSummary = fallback.querySelector('summary')!;
   if (queryCount !== null) {
     expected.readOnly = true;
     expected.value =
@@ -62,8 +83,24 @@ export function mountClipboardImport(
 
   function update() {
     const hasStaged = files.length > 0;
+    pasteSummary.textContent = consent.checked
+      ? 'Collage manuel avec le lieu'
+      : 'Le collage ne fonctionne pas ?';
+    if (
+      isShortcut &&
+      isEnabled &&
+      isClipboard &&
+      !hasStaged &&
+      consent.checked
+    ) {
+      fallback.hidden = false;
+      fallback.open = true;
+    }
+
     const isContinuing = sourceCount > 0 && batchStart < sourceCount;
     paste.disabled = !isEnabled || isReading || isPreviewing;
+    consent.disabled = !isEnabled || isReading || isPreviewing;
+    review.disabled = !isEnabled || isReading || isPreviewing;
     paste.hidden = hasStaged;
     paste.textContent =
       isContinuing && batchStart > 0
@@ -74,8 +111,8 @@ export function mountClipboardImport(
     choose.hidden = hasStaged || (isContinuing && batchStart > 0);
     choose.disabled = !isEnabled || isReading || isPreviewing;
     clear.hidden = !hasStaged && !isContinuing;
-    clear.disabled = !isEnabled || isReading || isPreviewing;
-    add.hidden = !hasStaged;
+    clear.disabled = !isEnabled || isReading;
+    add.hidden = !hasStaged || (!review.checked && !recovery.checked);
     add.disabled = !isEnabled || isReading || isPreviewing || !complete();
     zone.contentEditable = String(isEnabled && !isReading && !isPreviewing);
     status.hidden = (status.textContent ?? '').trim() === '';
@@ -89,6 +126,9 @@ export function mountClipboardImport(
 
   function reset() {
     generation++;
+    locationController.abort();
+    locationController = new AbortController();
+    staged = [];
     files = [];
     batchEnd = batchStart;
     hasValidPreviews = false;
@@ -100,6 +140,7 @@ export function mountClipboardImport(
 
   async function showPreviews() {
     releasePreviews();
+    staged = [];
     hasValidPreviews = false;
     if (!isEnabled || files.length === 0) {
       update();
@@ -107,6 +148,7 @@ export function mountClipboardImport(
     }
 
     const run = generation;
+    const {signal} = locationController;
     const batch = files;
     isPreviewing = true;
     status.textContent = 'Préparation des aperçus…';
@@ -155,7 +197,47 @@ export function mountClipboardImport(
           image.alt = `Photo à importer ${batchStart + index + 1}`;
           image.className =
             'h-32 w-full object-contain rounded-lg bg-background';
-          previews.append(image);
+          const card = document.createElement('div');
+          card.className = 'min-w-0 space-y-2';
+          const label = document.createElement('label');
+          label.className = 'block text-sm';
+          label.textContent = `Lieu de la photo ${batchStart + index + 1}`;
+          const field = document.createElement('input');
+          field.type = 'text';
+          field.maxLength = 160;
+          field.className =
+            'mt-1 min-h-11 w-full rounded-lg border border-border bg-elevated px-2';
+          label.append(field);
+          const message = document.createElement('p');
+          message.className = 'text-sm';
+          card.append(image, label, message);
+          previews.append(card);
+          const entry: PhotoImport = {file};
+          const item = {entry, input: field, original: ''};
+          staged.push(item);
+          if (consent.checked) {
+            message.textContent = 'Recherche du lieu…';
+            const known = await knownPlace(file);
+            signal.throwIfAborted();
+            const result = known
+              ? {
+                  place: known,
+                  message: 'Lieu déjà enregistré, réutilisé sans recherche.',
+                }
+              : await lookup.lookup(file, signal);
+            if (run !== generation || !isEnabled) {
+              return;
+            }
+
+            entry.place = result.place;
+            field.value = result.place?.label ?? '';
+            item.original = field.value;
+            message.textContent = result.message;
+          } else {
+            message.textContent =
+              'Lieu facultatif, à saisir ou à laisser vide.';
+          }
+
           status.textContent = `Aperçu ${index + 1} sur ${batch.length}…`;
         } finally {
           URL.revokeObjectURL(sourceUrl);
@@ -176,6 +258,9 @@ export function mountClipboardImport(
       if (run === generation) {
         isPreviewing = false;
         update();
+        if (complete() && !review.checked && !recovery.checked) {
+          submitBatch();
+        }
       }
     }
   }
@@ -280,6 +365,16 @@ export function mountClipboardImport(
     }
 
     reset();
+    if (consent.checked) {
+      fallback.hidden = false;
+      fallback.open = true;
+      zone.focus();
+      explain(
+        'Maintenez le doigt dans la zone puis choisissez Coller : ce collage conserve les lieux.',
+      );
+      return;
+    }
+
     if (typeof navigator.clipboard?.read !== 'function') {
       explain('Utilisez la zone de collage ci-dessous.');
       fallback.open = true;
@@ -416,12 +511,23 @@ export function mountClipboardImport(
     startSelection();
     describe();
   });
-  add.addEventListener('click', () => {
+  function submitBatch() {
     if (!isEnabled || isReading || isPreviewing || !complete()) {
       return;
     }
 
-    const batch = files;
+    let batch: PhotoImport[];
+    try {
+      batch = staged.map(({entry, input, original}) => ({
+        ...entry,
+        place:
+          input.value === original ? entry.place : placeFromInput(input.value),
+      }));
+    } catch (error) {
+      explain(error instanceof Error ? error.message : 'Lieu invalide.');
+      return;
+    }
+
     batchStart += batch.length;
     reset();
     status.textContent = 'Ajout en cours…';
@@ -436,12 +542,49 @@ export function mountClipboardImport(
       }
 
       update();
+      if (
+        !isClipboard &&
+        batchStart < sourceCount &&
+        !review.checked &&
+        !recovery.checked
+      ) {
+        stageSelected();
+      }
     });
+  }
+
+  add.addEventListener('click', submitBatch);
+  consent.addEventListener('change', () => {
+    generation++;
+    locationController.abort();
+    locationController = new AbortController();
+    isPreviewing = false;
+    if (!consent.checked) {
+      lookup.clear();
+    }
+
+    void showPreviews();
   });
-  globalThis.addEventListener('pagehide', startSelection);
-  const setAllowed = (isAllowed: boolean) => {
+  globalThis.addEventListener('pagehide', () => {
+    lookup.clear();
+    startSelection();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      return;
+    }
+
+    lookup.clear();
+    startSelection();
+  });
+  const setAllowed = (isAllowed: boolean, isAccessLost = false) => {
+    if (isAccessLost) {
+      lookup.clear();
+    }
+
     if (!isAllowed && isEnabled) {
       generation++;
+      locationController.abort();
       isPreviewing = false;
       hasValidPreviews = false;
       releasePreviews();

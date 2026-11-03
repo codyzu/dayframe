@@ -75,7 +75,9 @@ def main():
                else "Use only synthetic test images. ")
             + 
             "The page reads images only after Paste. "
-            + ("Review previews and confirm Add to collection to upload using browser sign-in. "
+            + ("Preserve location in the intermediate PNG. Use manual Paste in the website to retain GPS. "
+               "Manual Paste starts the import automatically after browser sign-in. "
+               "Optional review allows customizing places before adding; places can also be edited later. "
                if args.admin_import else "The diagnostic page never uploads them. ")
             if args.clipboard_url else
             "Dayframe diagnostic v1. Local inspection only: no network, no upload, "
@@ -110,7 +112,7 @@ def main():
                                  WFImageResizeLength=attachment(edge))
                 image_input = attachment(resized)
             action("image.convert", WFInput=image_input, WFImageFormat="PNG",
-                   WFImagePreserveMetadata=False)
+                   WFImagePreserveMetadata=args.admin_import)
             repeated = action("repeat.each", GroupingIdentifier=group,
                               WFControlFlowMode=2)
             clipboard_input = attachment(repeated)

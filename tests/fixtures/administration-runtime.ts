@@ -8,6 +8,8 @@ import type {AdministrationBinding} from '../../worker/administration.ts';
 export async function administrationRuntime(persistence?: string) {
   const files = [
     'worker/administration.ts',
+    'worker/photo-places.ts',
+    'src/lib/photos/place.ts',
     'src/lib/dashboard/settings.ts',
     'src/lib/dashboard/day-planning.ts',
     'src/lib/dashboard/config.ts',

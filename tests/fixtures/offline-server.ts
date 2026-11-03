@@ -56,7 +56,11 @@ const server = createServer(async (request, response) => {
     return;
   }
 
-  if (['/__test/offline.js', '/__test/contracts.js'].includes(url.pathname)) {
+  if (
+    ['/__test/offline.js', '/__test/contracts.js', '/__test/place.js'].includes(
+      url.pathname,
+    )
+  ) {
     const name = path.basename(url.pathname, '.js');
     const source = await readFile(`src/lib/photos/${name}.ts`, 'utf8');
     const code = ts
@@ -66,7 +70,8 @@ const server = createServer(async (request, response) => {
           module: ts.ModuleKind.ESNext,
         },
       })
-      .outputText.replace('./contracts.ts', '/__test/contracts.js');
+      .outputText.replace('./contracts.ts', '/__test/contracts.js')
+      .replace('./place.ts', '/__test/place.js');
     response.setHeader('Content-Type', 'text/javascript');
     response.end(code);
     return;

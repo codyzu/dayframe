@@ -1,9 +1,11 @@
+import {type PlaceRecord} from '../src/lib/photos/place.ts';
 import {
   hashPattern,
   isPhotoMetadata,
   shaPattern,
   type PhotoMetadata,
 } from '../src/lib/photos/contracts.ts';
+import {administration, type AdministrationBinding} from './administration.ts';
 import {schoolCalendarApi} from './school-calendar.ts';
 import {adminApi} from './admin-api.ts';
 import {calendarApi, type CalendarEnv} from './calendar.ts';
@@ -109,7 +111,12 @@ export async function photoApi(
       '/api/display',
     ].includes(path)
       ? adminApi(request, env, identity)
-      : routePhotos(request, env.PHOTOS, identity, url));
+      : routePhotos(
+          request,
+          {kv: env.PHOTOS, binding: env.ADMINISTRATION},
+          identity,
+          url,
+        ));
   } catch (error) {
     return error instanceof PhotoError
       ? failure(error.status, error.code, error.message)
@@ -123,10 +130,11 @@ export async function photoApi(
 
 async function routePhotos(
   request: Request,
-  kv: PhotoKV,
+  context: {kv: PhotoKV; binding: AdministrationBinding},
   identity: Identity,
   url: URL,
 ): Promise<Response> {
+  const {kv, binding} = context;
   const path = url.pathname;
   if (path === '/api/photos' && request.method === 'GET') {
     const cursor = url.searchParams.get('cursor') ?? undefined;
@@ -138,23 +146,78 @@ async function routePhotos(
     }
 
     const page = await listPhotos(kv, cursor);
+    const records = await readPlaceRecords(
+      binding,
+      page.photos.map(({id}) => id),
+    );
+    page.photos = page.photos.map((photo) => ({
+      ...photo,
+      ...(records && {placeRevision: records[photo.id]?.revision ?? ''}),
+      ...(!records?.[photo.id]?.deleted &&
+        records?.[photo.id]?.place && {place: records[photo.id].place}),
+    }));
     return privateJson({
       ...page,
+      placesAvailable: records !== undefined,
       photos:
         identity.role === 'admin'
           ? page.photos
-          : page.photos.map(({id, width, height, size, contentType}) => ({
-              id,
-              width,
-              height,
-              size,
-              contentType,
-            })),
+          : page.photos.map(
+              ({id, width, height, size, contentType, place}) => ({
+                id,
+                width,
+                height,
+                size,
+                contentType,
+                ...(place && {place}),
+              }),
+            ),
     });
   }
 
   if (path === '/api/photos' && request.method === 'POST') {
-    return uploadPhoto(request, kv, identity.subject);
+    return uploadPhoto(request, kv, identity.subject, binding);
+  }
+
+  const placeMatch = /^\/api\/photos\/(?<id>[0-9a-f]{64})\/place$/v.exec(path);
+  if (placeMatch && request.method === 'PATCH') {
+    if (request.headers.get('Content-Type') !== 'application/json') {
+      return failure(415, 'INVALID_TYPE', 'Un lieu JSON est attendu.');
+    }
+
+    const {id} = placeMatch.groups!;
+    const existing = await kv.getWithMetadata<PhotoMetadata>(
+      `photo:${id}`,
+      'arrayBuffer',
+    );
+    if (!existing.value || !isPhotoMetadata(existing.metadata)) {
+      return failure(404, 'PHOTO_NOT_FOUND', 'Photo introuvable.');
+    }
+
+    let update: unknown;
+    try {
+      update = JSON.parse(
+        new TextDecoder().decode(await readBounded(request, 2048)),
+      );
+    } catch {
+      return failure(400, 'INVALID_PLACE', 'Lieu invalide.');
+    }
+
+    const response = await administration(
+      binding,
+      `/photo-places/${id}`,
+      update,
+      'PATCH',
+    );
+    return response.ok
+      ? privateJson(await response.json())
+      : failure(
+          response.status,
+          'PLACE_CONFLICT',
+          response.status === 409
+            ? 'Cette photo a changé. Actualisez avant de réessayer.'
+            : 'Lieu invalide.',
+        );
   }
 
   const match = /^\/api\/photos\/(?<id>[0-9a-f]{64})$/v.exec(path);
@@ -164,6 +227,20 @@ async function routePhotos(
     }
 
     if (request.method === 'DELETE') {
+      const cleared = await administration(
+        binding,
+        `/photo-places/${match.groups!.id}`,
+        undefined,
+        'DELETE',
+      );
+      if (!cleared.ok) {
+        throw new PhotoError(
+          503,
+          'PLACES_UNAVAILABLE',
+          'Suppression indisponible. Réessayez.',
+        );
+      }
+
       await kv.delete(`photo:${match.groups!.id}`);
       return privateJson({ok: true});
     }
@@ -176,6 +253,7 @@ async function uploadPhoto(
   request: Request,
   kv: PhotoKV,
   subject: string,
+  binding: AdministrationBinding,
 ): Promise<Response> {
   if (request.headers.get('Content-Type') !== 'image/webp') {
     return failure(415, 'INVALID_TYPE', 'Seul le format WebP est accepté.');
@@ -204,7 +282,18 @@ async function uploadPhoto(
       );
     }
 
-    return privateJson({photo: existing.metadata, duplicate: true});
+    const records = await readPlaceRecords(binding, [id]);
+    return privateJson({
+      photo: {
+        ...existing.metadata,
+        ...(records && {
+          placeRevision: records[id]?.revision ?? '',
+          ...(records[id]?.place &&
+            !records[id]?.deleted && {place: records[id].place}),
+        }),
+      },
+      duplicate: true,
+    });
   }
 
   const metadata: PhotoMetadata = {
@@ -220,14 +309,30 @@ async function uploadPhoto(
   // A single record atomically couples bytes and listable key metadata.
   // Concurrent cross-location writes still use KV's last-write-wins semantics.
   await kv.put(key, body, {metadata});
+  const activated = await administration(
+    binding,
+    `/photo-places/${id}/activate`,
+    {},
+  );
+  if (!activated.ok) {
+    throw new PhotoError(
+      503,
+      'PLACES_UNAVAILABLE',
+      'Photo ajoutée ; actualisez pour vérifier son lieu.',
+    );
+  }
+
+  const record = (await activated.json()) as PlaceRecord;
+  metadata.placeRevision = record.revision;
   return privateJson({photo: metadata, duplicate: false}, 201);
 }
 
 function hasPhotoConfiguration(
   env: PhotoEnv,
-): env is PhotoEnv & {PHOTOS: PhotoKV} {
+): env is PhotoEnv & {PHOTOS: PhotoKV; ADMINISTRATION: AdministrationBinding} {
   return !(
     env.PHOTOS_ENABLED !== 'true' ||
+    !env.ADMINISTRATION ||
     !env.PHOTOS ||
     (env.ACCESS_TEAM_DOMAIN ?? '').length === 0 ||
     (env.ACCESS_AUD ?? '').length === 0 ||
@@ -276,4 +381,16 @@ function hasMutationOrigin(request: Request, url: URL) {
     request.headers.get('X-Dayframe-Request') === '1' &&
     request.headers.get('Sec-Fetch-Site') !== 'cross-site'
   );
+}
+
+async function readPlaceRecords(binding: AdministrationBinding, ids: string[]) {
+  try {
+    const response = await administration(binding, '/photo-places/read', ids);
+    return response.ok
+      ? ((await response.json()) as Record<string, PlaceRecord>)
+      : undefined;
+  } catch {
+    // Optional annotations must not make otherwise authorized photo reads fail.
+    return undefined;
+  }
 }
