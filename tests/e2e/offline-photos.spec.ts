@@ -1,7 +1,6 @@
-import {readFile} from 'node:fs/promises';
 import {Buffer} from 'node:buffer';
-import ts from 'typescript';
 import {type Page} from '@playwright/test';
+import {routeOfflineStore as routeStore} from '../fixtures/offline-store.ts';
 import type * as StoreModule from '../../src/lib/photos/offline.ts';
 import {test, expect} from '../fixtures/browser.ts';
 import {defaultSettings} from '../../src/lib/dashboard/settings.ts';
@@ -16,24 +15,6 @@ const webpBytes = [
   ),
 ];
 const ids = ['a'.repeat(64), 'b'.repeat(64), 'c'.repeat(64)];
-
-// Compile the real shared module into a test-only route, never a production hook.
-async function routeStore(page: Page) {
-  for (const name of ['offline', 'contracts']) {
-    const source = await readFile(`src/lib/photos/${name}.ts`, 'utf8');
-    const code = ts
-      .transpileModule(source, {
-        compilerOptions: {
-          target: ts.ScriptTarget.ES2022,
-          module: ts.ModuleKind.ESNext,
-        },
-      })
-      .outputText.replace('./contracts.ts', '/__test/contracts.js');
-    await page.route(`**/__test/${name}.js`, async (route) =>
-      route.fulfill({contentType: 'text/javascript', body: code}),
-    );
-  }
-}
 
 async function storedCount(page: Page) {
   return page.evaluate(async (path) => {

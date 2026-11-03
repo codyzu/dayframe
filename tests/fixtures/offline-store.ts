@@ -12,11 +12,7 @@ const bytes = [
   ),
 ];
 
-export async function seedOfflinePhotos(
-  page: Page,
-  fit = 'contain',
-  interval = 5,
-) {
+export async function routeOfflineStore(page: Page) {
   for (const name of ['offline', 'contracts', 'place']) {
     const source = await readFile(`src/lib/photos/${name}.ts`, 'utf8');
     const code = ts
@@ -32,7 +28,14 @@ export async function seedOfflinePhotos(
       route.fulfill({contentType: 'text/javascript', body: code}),
     );
   }
+}
 
+export async function seedOfflinePhotos(
+  page: Page,
+  fit = 'contain',
+  interval = 5,
+) {
+  await routeOfflineStore(page);
   await page.goto(
     page.url().startsWith('http')
       ? new URL('/calendar-privacy', page.url()).href

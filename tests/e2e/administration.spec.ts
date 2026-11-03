@@ -99,6 +99,7 @@ test('frame provisioning persists across browser contexts, rejects off-network r
     context.fillRect(0, 0, 64, 32);
     return canvas.toDataURL('image/png').split(',', 2)[1];
   });
+  await page.locator('[data-import-review]').check();
   await page.locator('[data-photo-files]').setInputFiles({
     name: 'restart.png',
     mimeType: 'image/png',
