@@ -24,7 +24,12 @@ async function fixture(page: Page, latitude = 45.8992, longitude = 6.1294) {
     name: 'synthetic-gps.png',
     mimeType: 'image/png',
     buffer: Buffer.from(
-      gpsPng(Buffer.from(data, 'base64'), latitude, longitude),
+      gpsPng(
+        Buffer.from(data, 'base64'),
+        latitude,
+        longitude,
+        '2024:03:01 00:05:06',
+      ),
     ),
   };
 }
@@ -90,6 +95,7 @@ test('manual paste automatically saves its place; optional review and later edit
   await expect(page.locator('[data-storage]')).toContainText('1 photo');
   let record = (await catalog(page)).photos[0];
   expect(record.place).toEqual({label: 'Annecy', source: 'estimated'});
+  expect(record.capturedAt).toBe('2024-03-01T00:05:06+02:00');
   expect(lookups).toBe(1);
   const original = await (
     await page.request.get(`/api/photos/${record.id}`)
@@ -99,6 +105,9 @@ test('manual paste automatically saves its place; optional review and later edit
   await expect(
     page.getByLabel('Lieu de la photo 1', {exact: true}),
   ).toHaveValue('Annecy');
+  await expect(
+    page.getByLabel('Date de prise de vue de la photo 1'),
+  ).toHaveValue('2024-03-01');
   expect(lookups).toBe(1);
   await page
     .getByLabel('Lieu de la photo 1', {exact: true})
@@ -118,6 +127,14 @@ test('manual paste automatically saves its place; optional review and later edit
   expect(
     await (await page.request.get(`/api/photos/${record.id}`)).body(),
   ).toEqual(original);
+  await page.locator('[data-capture-date]').fill('2024-02-29');
+  await page.getByRole('button', {name: 'Enregistrer le lieu'}).click();
+  await expect(page.locator('[data-admin-status]')).toHaveText(
+    'Date enregistrée.',
+  );
+  expect((await catalog(page)).photos[0].capturedAt).toBe(
+    '2024-02-29T00:05:06+02:00',
+  );
   await page.screenshot({
     path: info.outputPath('admin-place.png'),
     fullPage: true,
@@ -125,12 +142,13 @@ test('manual paste automatically saves its place; optional review and later edit
   await page.goto('/');
   await page.getByRole('button', {name: 'Photos', exact: true}).click();
   await expect(page.locator('[data-photo-stage] img')).toBeVisible();
-  await expect(page.locator('[data-photo-place]')).toBeHidden();
+  await expect(page.locator('[data-photo-caption]')).toBeHidden();
   await page
     .getByRole('button', {name: 'Afficher le lieu', exact: true})
     .click();
   await expect(page.locator('[data-photo-place]')).toHaveText('Vieille ville');
-  const caption = (await page.locator('[data-photo-place]').boundingBox())!;
+  await expect(page.locator('[data-photo-date]')).toHaveText('février 2024');
+  const caption = (await page.locator('[data-photo-caption]').boundingBox())!;
   for (const selector of [
     '[data-display-retry]',
     '[data-touch-hint]',
@@ -148,6 +166,32 @@ test('manual paste automatically saves its place; optional review and later edit
   }
 
   await page.screenshot({path: info.outputPath('photo-place.png')});
+  if (info.project.name === 'chromium') {
+    const backdrop = page.locator('[data-photo-stage] img').first();
+    for (const variant of ['bright', 'busy']) {
+      await backdrop.evaluate(async (image: HTMLImageElement, pattern) => {
+        const canvas = globalThis.document.createElement('canvas');
+        canvas.width = 1280;
+        canvas.height = 800;
+        const context = canvas.getContext('2d')!;
+        context.fillStyle = '#fff8ec';
+        context.fillRect(0, 0, 1280, 800);
+        if (pattern === 'busy') {
+          for (let i = 0; i < 160; i++) {
+            context.fillStyle = `hsl(${i * 23} 75% ${40 + (i % 4) * 15}%)`;
+            context.fillRect((i * 109) % 1280, (i * 47) % 800, 95, 70);
+          }
+        }
+
+        image.src = canvas.toDataURL();
+        await image.decode();
+      }, variant);
+      await page.screenshot({
+        path: info.outputPath(`photo-caption-${variant}.png`),
+      });
+    }
+  }
+
   const stored = await page.evaluate(
     async () =>
       new Promise<unknown[]>((resolve, reject) => {
@@ -178,6 +222,7 @@ test('manual paste automatically saves its place; optional review and later edit
   );
   expect(stored).toHaveLength(1);
   expect(JSON.stringify(stored)).not.toContain('Vieille ville');
+  expect(JSON.stringify(stored)).not.toContain('2024-02-29');
   await page.route('**/api/photos?*', async (route) =>
     route.fulfill({status: 401, json: {error: {message: 'Accès requis'}}}),
   );
@@ -187,6 +232,21 @@ test('manual paste automatically saves its place; optional review and later edit
   await page.evaluate(() => globalThis.dispatchEvent(new Event('online')));
   await expect(page.locator('[data-photo-place]')).toBeHidden();
 });
+test('optional import review can override the extracted capture date', async ({
+  page,
+}) => {
+  await page.locator('[data-import-review]').check();
+  await page.locator('[data-photo-files]').setInputFiles(await fixture(page));
+  const input = page.getByLabel('Date de prise de vue de la photo 1');
+  await expect(input).toHaveValue('2024-03-01');
+  await input.fill('2024-03-02');
+  await page.locator('[data-import-add]').click();
+  await expect(page.locator('[data-capture-date]')).toHaveValue('2024-03-02');
+  expect((await catalog(page)).photos[0].capturedAt).toBe(
+    '2024-03-02T00:05:06+02:00',
+  );
+});
+
 test('recovery requires a chosen matching photo and updates its place without uploading another image', async ({
   page,
 }) => {

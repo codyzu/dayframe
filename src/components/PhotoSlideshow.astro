@@ -41,11 +41,18 @@
       hidden
     ></time>
   </div>
-  <p
-    data-photo-place
+  <div
+    data-photo-caption
     hidden
-    class="pointer-events-none fixed left-5 bottom-56 landscape:bottom-32 z-2 max-w-[calc(100vw-7rem)] landscape:max-w-[max(8rem,calc((100vw-24rem)/2-2.5rem))] rounded-xl bg-black/85 px-4 py-3 text-left text-xl md:text-3xl leading-snug text-white line-clamp-2"
-  ></p>
+    class="pointer-events-none fixed left-5 bottom-56 landscape:bottom-32 z-2 max-w-[calc(100vw-7rem)] landscape:max-w-[max(8rem,calc((100vw-24rem)/2-2.5rem))] rounded-xl bg-black/70 px-3 py-2 text-left text-xl md:text-3xl leading-tight text-white"
+  >
+    <p data-photo-place class="font-semibold wrap-break-word" hidden></p>
+    <time
+      data-photo-date
+      class="text-lg md:text-2xl font-normal text-white/95 data-[primary=true]:text-xl md:data-[primary=true]:text-3xl data-[primary=true]:font-semibold data-[primary=true]:text-white"
+      hidden
+    ></time>
+  </div>
   <div
     data-photo-empty
     class="relative z-1 mx-4 max-w-[650px] px-5 py-7 text-white"

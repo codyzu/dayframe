@@ -617,3 +617,13 @@ or EXIF in optimized photos; labels remain online-only. Existing-photo recovery
 uses explicitly chosen matches and metadata-only edits. Actual household backfill
 and Apple Photos access are deferred by the owner. [ADR 0010](decisions/0010-photo-place-labels.md)
 defines storage/concurrency, compatibility, provider/cost and rollback.
+
+
+### Photo capture dates
+
+Photo imports read JPEG or PNG EXIF capture timestamps when present. Dayframe
+preserves camera-local time and its UTC offset when known. Partial records may
+store a date alone. Admins can edit or clear the date and time during optional
+import review or from the catalog. The frame shows the French month and year
+under the location when photo captions are enabled and the live catalog is
+available. See [photo operations](photos.md#capture-dates).

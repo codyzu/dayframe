@@ -540,3 +540,31 @@ administration object. Label edits do not rewrite KV image bytes. Concurrent sta
 edits return a refresh-required conflict. Authorized photo reads continue without
 labels if the annotation store is unavailable; editing then requires a successful
 refresh. Never use a KV-only backup as proof that labels have been exported.
+
+## Capture dates
+
+Dayframe stores an optional camera-local capture timestamp in the same
+Administration Durable Object record as the place. The timestamp retains its UTC offset and fractional seconds when supplied.
+Date-only and offset-free values retain their original precision. The frame
+uses the stored calendar day to preserve the capture month.
+The upload date stays separate. Date and place edits share the same revision
+check, and old records without a capture date remain valid.
+
+JPEG APP1 and PNG eXIf sources can supply EXIF `DateTimeOriginal` before browser
+conversion. A missing or invalid date leaves the field blank. The browser
+uses the metadata actually delivered by the picker or clipboard. Admins can
+change or clear the date during import review or from the catalog. The frame
+renders the French month and year under the place with the existing caption preference. Dates
+remain private and outside the offline photo cache. No new services are used.
+
+For a backfill, match originals before editing and use the trusted capture timestamp at its
+original precision. Save through the authorized photo metadata
+route with the current revision. Skip unverifiable dates. Before rolling back
+to a build that predates capture dates, preserve the date mapping privately.
+An older Worker can read the record but can drop the date when editing a place.
+Turning off photo captions hides both fields on the frame.
+
+Upstream review at `34c91641e3cdd159756e3f1dcc15914148b2beff` examined
+`dashboard/js/views/home.js` and its photo caption hierarchy. Dayframe uses its
+own private metadata, caption preference, and plain-text month and year below
+the place. No upstream code or assets were copied.

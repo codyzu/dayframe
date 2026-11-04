@@ -1,4 +1,8 @@
-import {isPhotoPlace, type PlaceRecord} from '../src/lib/photos/place.ts';
+import {
+  isCaptureTimestamp,
+  isPhotoPlace,
+  type PlaceRecord,
+} from '../src/lib/photos/place.ts';
 import {shaPattern} from '../src/lib/photos/contracts.ts';
 import {type AdministrationStorage} from './administration.ts';
 
@@ -53,12 +57,21 @@ export async function photoPlaces(
   }
 
   const update = body as
-    {expectedRevision?: unknown; place?: unknown} | undefined;
+    | {expectedRevision?: unknown; place?: unknown; capturedAt?: unknown}
+    | undefined;
   if (
     !update ||
-    Object.keys(update).toSorted().join(',') !== 'expectedRevision,place' ||
+    Object.keys(update).some(
+      (field) => !['expectedRevision', 'place', 'capturedAt'].includes(field),
+    ) ||
+    (update.place === undefined && update.capturedAt === undefined) ||
     typeof update.expectedRevision !== 'string' ||
-    !(update.place === null || isPhotoPlace(update.place))
+    (update.place !== undefined &&
+      update.place !== null &&
+      !isPhotoPlace(update.place)) ||
+    (update.capturedAt !== undefined &&
+      update.capturedAt !== null &&
+      !isCaptureTimestamp(update.capturedAt))
   ) {
     return new Response(null, {status: 400});
   }
@@ -72,7 +85,12 @@ export async function photoPlaces(
 
   const record: PlaceRecord = {
     revision: crypto.randomUUID(),
-    ...(update.place !== null && {place: update.place}),
+    place:
+      update.place === undefined ? current.place : (update.place ?? undefined),
+    capturedAt:
+      update.capturedAt === undefined
+        ? current.capturedAt
+        : (update.capturedAt ?? undefined),
   };
   await storage.put(key, record);
   return Response.json(record);

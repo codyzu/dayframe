@@ -152,6 +152,9 @@ async function routePhotos(
     );
     page.photos = page.photos.map((photo) => ({
       ...photo,
+      capturedAt: records?.[photo.id]?.deleted
+        ? undefined
+        : records?.[photo.id]?.capturedAt,
       ...(records && {placeRevision: records[photo.id]?.revision ?? ''}),
       ...(!records?.[photo.id]?.deleted &&
         records?.[photo.id]?.place && {place: records[photo.id].place}),
@@ -163,13 +166,14 @@ async function routePhotos(
         identity.role === 'admin'
           ? page.photos
           : page.photos.map(
-              ({id, width, height, size, contentType, place}) => ({
+              ({id, width, height, size, contentType, place, capturedAt}) => ({
                 id,
                 width,
                 height,
                 size,
                 contentType,
                 ...(place && {place}),
+                ...(capturedAt !== undefined && {capturedAt}),
               }),
             ),
     });
@@ -288,6 +292,9 @@ async function uploadPhoto(
         ...existing.metadata,
         ...(records && {
           placeRevision: records[id]?.revision ?? '',
+          capturedAt: records[id]?.deleted
+            ? undefined
+            : records[id]?.capturedAt,
           ...(records[id]?.place &&
             !records[id]?.deleted && {place: records[id].place}),
         }),

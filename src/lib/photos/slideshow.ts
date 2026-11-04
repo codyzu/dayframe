@@ -70,10 +70,17 @@ export function mountSlideshow(
   const empty = root.querySelector<HTMLElement>('[data-photo-empty]')!;
   const fit =
     controlsRoot.querySelector<HTMLButtonElement>('[data-photo-fit]')!;
+  const caption = root.querySelector<HTMLElement>('[data-photo-caption]');
+  const dateCaption = root.querySelector<HTMLTimeElement>('[data-photo-date]');
   const placeCaption = root.querySelector<HTMLElement>('[data-photo-place]');
   const placeToggle = controlsRoot.querySelector<HTMLButtonElement>(
     '[data-photo-place-toggle]',
   );
+  const captionMonth = new Intl.DateTimeFormat('fr-FR', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
   const placeKey = 'dayframe.photo-place-visible.v1';
   let isShowPlaces = false;
   try {
@@ -87,12 +94,32 @@ export function mountSlideshow(
       return;
     }
 
-    const place =
-      isActive && !isStoredPlayback && !hasFailed && current && navigator.onLine
-        ? catalog.find(({id}) => id === current?.id)?.place
+    const photo =
+      isShowPlaces &&
+      isActive &&
+      !isStoredPlayback &&
+      !hasFailed &&
+      current &&
+      navigator.onLine
+        ? catalog.find(({id}) => id === current?.id)
         : undefined;
-    placeCaption.textContent = isShowPlaces ? (place?.label ?? '') : '';
+    placeCaption.textContent = photo?.place?.label ?? '';
     placeCaption.hidden = placeCaption.textContent === '';
+    const date = photo?.capturedAt;
+    if (dateCaption) {
+      dateCaption.dateTime = date ?? '';
+      dateCaption.textContent =
+        date === undefined
+          ? ''
+          : captionMonth.format(new Date(date.slice(0, 10)));
+      dateCaption.hidden = date === undefined;
+      dateCaption.dataset.primary = String(placeCaption.hidden);
+    }
+
+    if (caption) {
+      caption.hidden = placeCaption.hidden && date === undefined;
+    }
+
     placeToggle?.setAttribute('aria-pressed', String(isShowPlaces));
   }
 

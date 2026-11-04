@@ -431,6 +431,23 @@ describe('protected photo API with real local KV', () => {
     };
     const record = catalog.photos.find((item) => item.id === id)!;
     expect(['Annecy', 'Paris']).toContain(record.place?.label);
+    const dateEdit = async (capturedAt: unknown) =>
+      request(
+        path,
+        'PATCH',
+        admin,
+        bytes({expectedRevision: record.placeRevision, capturedAt}),
+        headers,
+      );
+    expect((await dateEdit('2026-02-30')).status).toBe(400);
+    const dateResponse = await dateEdit('2024-02-29');
+    expect(dateResponse.status).toBe(200);
+    expect(await dateResponse.json()).toMatchObject({
+      place: record.place,
+      capturedAt: '2024-02-29',
+    });
+    expect((await dateEdit(null)).status).toBe(409);
+
     expect(await (await request(`/api/photos/${id}`)).arrayBuffer()).toEqual(
       image(),
     );
@@ -460,6 +477,7 @@ describe('protected photo API with real local KV', () => {
     ).json()) as unknown;
     expect(JSON.stringify(readOnly)).toContain(record.place!.label);
     expect(JSON.stringify(readOnly)).not.toContain('placeRevision');
+    expect(JSON.stringify(readOnly)).toContain('2024-02-29');
     await request(`/api/photos/${id}`, 'DELETE');
     const late = await administration(
       env.ADMINISTRATION!,

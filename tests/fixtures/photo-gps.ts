@@ -3,8 +3,9 @@ export function gpsTiff(
   latitude = 45.8992,
   longitude = 6.1294,
   isLittle = true,
+  timestamp?: string,
 ) {
-  const bytes = new Uint8Array(128);
+  const bytes = new Uint8Array(timestamp === undefined ? 128 : 215);
   const view = new DataView(bytes.buffer);
   const u16 = (offset: number, value: number) => {
     view.setUint16(offset, value, isLittle);
@@ -16,7 +17,29 @@ export function gpsTiff(
 
   bytes.set(isLittle ? [73, 73] : [77, 77]);
   u16(2, 42);
-  u32(4, 8);
+  u32(4, timestamp === undefined ? 8 : 128);
+  if (timestamp !== undefined) {
+    u16(128, 2);
+    u16(130, 0x88_25);
+    u16(132, 4);
+    u32(134, 1);
+    u32(138, 26);
+    u16(142, 0x87_69);
+    u16(144, 4);
+    u32(146, 1);
+    u32(150, 158);
+    u16(158, 2);
+    u16(160, 0x90_03);
+    u16(162, 2);
+    u32(164, 20);
+    // Put the timestamp after the directory.
+    u32(168, 188);
+    u16(172, 0x90_11);
+    u16(174, 2);
+    u32(176, 7);
+    u32(180, 208);
+  }
+
   u16(8, 1);
   u16(10, 0x88_25);
   u16(12, 4);
@@ -58,6 +81,11 @@ export function gpsTiff(
     }
   }
 
+  if (timestamp !== undefined) {
+    bytes.set(new TextEncoder().encode(timestamp), 188);
+    bytes.set(new TextEncoder().encode('+02:00'), 208);
+  }
+
   return bytes;
 }
 
@@ -79,8 +107,9 @@ export function gpsPng(
   image: Uint8Array,
   latitude?: number,
   longitude?: number,
+  timestamp?: string,
 ) {
-  const tiff = gpsTiff(latitude, longitude);
+  const tiff = gpsTiff(latitude, longitude, true, timestamp);
   const chunk = new Uint8Array(tiff.length + 12);
   const view = new DataView(chunk.buffer);
   view.setUint32(0, tiff.length);

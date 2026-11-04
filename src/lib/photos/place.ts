@@ -1,7 +1,8 @@
 export type PhotoPlace = {label: string; source: 'manual' | 'estimated'};
-export type PhotoImport = {file: File; place?: PhotoPlace};
+export type PhotoImport = {file: File; place?: PhotoPlace; capturedAt?: string};
 export type PlaceRecord = {
   revision: string;
+  capturedAt?: string;
   place?: PhotoPlace;
   deleted?: boolean;
 };
@@ -34,4 +35,32 @@ export function placeFromInput(label: string): PhotoPlace | undefined {
   }
 
   return place;
+}
+
+const captureTimestampPattern =
+  /^[1-9]\d{3}-\d{2}-\d{2}(?:T(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d{1,9})?)?(?:Z|[+\-](?:[01]\d|2[0-3]):[0-5]\d)?)?$/v;
+
+export function isCaptureTimestamp(value: unknown): value is string {
+  if (typeof value !== 'string' || !captureTimestampPattern.test(value)) {
+    return false;
+  }
+
+  const day = value.slice(0, 10);
+  const date = new Date(day);
+  return (
+    Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === day
+  );
+}
+
+export function captureTimestampFromInputs(day: string, time: string) {
+  const value = time.trim() === '' ? day : `${day}T${time.trim()}`;
+  if (value === '') {
+    return undefined;
+  }
+
+  if (!isCaptureTimestamp(value)) {
+    throw new Error('Date ou heure de prise de vue invalide.');
+  }
+
+  return value;
 }

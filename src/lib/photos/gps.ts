@@ -1,3 +1,5 @@
+import {isCaptureTimestamp} from './place.ts';
+
 export type PhotoCoordinates = {latitude: number; longitude: number};
 
 // Read only bounded JPEG APP1 / PNG eXIf metadata. No full image decoding or
@@ -5,6 +7,54 @@ export type PhotoCoordinates = {latitude: number; longitude: number};
 export function photoCoordinates(
   buffer: ArrayBuffer,
 ): PhotoCoordinates | undefined {
+  return readExif(buffer, tiffCoordinates);
+}
+
+export function photoCaptureTimestamp(buffer: ArrayBuffer): string | undefined {
+  return readExif(buffer, (bytes) => {
+    const {directory, root, u32} = tiffDirectories(bytes);
+    const pointer = root.get(0x87_69);
+    if (pointer?.type !== 4 || pointer.count !== 1) {
+      return undefined;
+    }
+
+    const exif = directory(u32(pointer.offset));
+    function readAscii(tag: number, maximum: number) {
+      const field = exif.get(tag);
+      if (field?.type !== 2 || field.count < 2 || field.count > maximum) {
+        return '';
+      }
+
+      const offset = field.count <= 4 ? field.offset : u32(field.offset);
+      const value = bytes.subarray(offset, offset + field.count);
+      return value.length === field.count && value.at(-1) === 0
+        ? new TextDecoder().decode(value.subarray(0, -1))
+        : '';
+    }
+
+    const original = readAscii(0x90_03, 20);
+    if (!/^\d{4}:\d{2}:\d{2} \d{2}:\d{2}:\d{2}$/v.test(original)) {
+      return undefined;
+    }
+
+    const day = original.slice(0, 10).replaceAll(':', '-');
+    const local = `${day}T${original.slice(11)}`;
+    const fraction = readAscii(0x92_91, 10);
+    const offset = readAscii(0x90_11, 7);
+    const detailed = `${local}${/^\d{1,9}$/v.test(fraction) ? `.${fraction}` : ''}`;
+    const zoned = detailed + offset;
+    if (isCaptureTimestamp(zoned)) {
+      return zoned;
+    }
+
+    return isCaptureTimestamp(detailed) ? detailed : undefined;
+  });
+}
+
+function readExif<T>(
+  buffer: ArrayBuffer,
+  read: (tiff: Uint8Array) => T,
+): T | undefined {
   try {
     const bytes = new Uint8Array(buffer);
     const view = new DataView(buffer);
@@ -45,22 +95,22 @@ export function photoCoordinates(
       }
     }
 
-    return tiff === undefined ? undefined : tiffCoordinates(tiff);
+    return tiff === undefined ? undefined : read(tiff);
   } catch {
     return undefined;
   }
 }
 
-function tiffCoordinates(bytes: Uint8Array): PhotoCoordinates | undefined {
+function tiffDirectories(bytes: Uint8Array) {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   if (![0x49_49, 0x4d_4d].includes(view.getUint16(0))) {
-    return undefined;
+    throw new Error('Invalid TIFF byte order');
   }
 
   const isLittle = view.getUint16(0) === 0x49_49;
   const u16 = (offset: number) => view.getUint16(offset, isLittle);
   if (u16(2) !== 42) {
-    return undefined;
+    throw new Error('Invalid TIFF header');
   }
 
   const u32 = (offset: number) => view.getUint32(offset, isLittle);
@@ -86,7 +136,12 @@ function tiffCoordinates(bytes: Uint8Array): PhotoCoordinates | undefined {
     return entries;
   }
 
-  const pointer = directory(u32(4)).get(0x88_25);
+  return {view, u32, directory, root: directory(u32(4))};
+}
+
+function tiffCoordinates(bytes: Uint8Array): PhotoCoordinates | undefined {
+  const {view, u32, directory, root} = tiffDirectories(bytes);
+  const pointer = root.get(0x88_25);
   if (pointer?.type !== 4 || pointer.count !== 1) {
     return undefined;
   }

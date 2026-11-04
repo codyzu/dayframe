@@ -92,7 +92,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       </p>
       <label class="mt-4 flex items-center gap-3 text-sm">
         <input data-import-review type="checkbox" class="size-5" />
-        Personnaliser les lieux avant l’ajout
+        Personnaliser les lieux et dates avant l’ajout
       </label>
       <p class="mt-2 text-sm text-slate-600">
         Par défaut, coller ou choisir des photos lance leur ajout avec le lieu
@@ -281,8 +281,26 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 class="mt-1 min-h-11 w-full rounded-lg border border-border bg-elevated px-2"
               />
             </label>
+            <label class="block text-sm">
+              Date de prise de vue (facultative)
+              <input
+                data-capture-date
+                type="date"
+                class="mt-1 min-h-11 w-full rounded-lg border border-border bg-elevated px-2"
+              />
+            </label>
+            <label class="block text-sm">
+              Heure locale et décalage UTC (facultatifs)
+              <input
+                data-capture-time
+                type="text"
+                maxlength="24"
+                placeholder="14:30:00+02:00"
+                class="mt-1 min-h-11 w-full rounded-lg border border-border bg-elevated px-2"
+              />
+            </label>
             <button type="submit" class="min-h-11 underline text-sm">
-              Enregistrer le lieu
+              Enregistrer le lieu et la date
             </button>
             <p data-place-status role="status" class="text-sm"></p>
           </form>

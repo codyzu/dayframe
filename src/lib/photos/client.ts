@@ -1,4 +1,4 @@
-import {isPhotoPlace} from './place.ts';
+import {isCaptureTimestamp, isPhotoPlace} from './place.ts';
 import {invalidateOfflinePhotos} from './offline.ts';
 import {
   hasPhotoSize,
@@ -65,7 +65,7 @@ export async function photoRequest(path: string, options: RequestInit = {}) {
 
 export type DisplayPhoto = Pick<
   PhotoMetadata,
-  'id' | 'width' | 'height' | 'size' | 'contentType' | 'place'
+  'id' | 'width' | 'height' | 'size' | 'contentType' | 'place' | 'capturedAt'
 >;
 export async function fetchCatalog(isAdmin = false, signal?: AbortSignal) {
   const photos: PhotoMetadata[] = [];
@@ -101,6 +101,8 @@ export async function fetchCatalog(isAdmin = false, signal?: AbortSignal) {
       if (
         typeof value !== 'object' ||
         value === null ||
+        (photo.capturedAt !== undefined &&
+          !isCaptureTimestamp(photo.capturedAt)) ||
         (photo.place !== undefined && !isPhotoPlace(photo.place)) ||
         typeof photo.id !== 'string' ||
         !shaPattern.test(photo.id) ||

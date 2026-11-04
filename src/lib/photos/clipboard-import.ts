@@ -1,5 +1,11 @@
+import {photoCaptureTimestamp} from './gps.ts';
 import {createPlaceLookup} from './place-lookup.ts';
-import {placeFromInput, type PhotoImport, type PhotoPlace} from './place.ts';
+import {
+  captureTimestampFromInputs,
+  placeFromInput,
+  type PhotoImport,
+  type PhotoPlace,
+} from './place.ts';
 // Clipboard contents are read only after an explicit user gesture; never parse HTML.
 export function mountClipboardImport(
   root: HTMLElement,
@@ -33,6 +39,8 @@ export function mountClipboardImport(
     entry: PhotoImport;
     input: HTMLInputElement;
     original: string;
+    dateInput: HTMLInputElement;
+    timeInput: HTMLInputElement;
   }> = [];
   const query = new URL(location.href).searchParams;
   const queryCount = query.get('expected');
@@ -210,10 +218,43 @@ export function mountClipboardImport(
           label.append(field);
           const message = document.createElement('p');
           message.className = 'text-sm';
-          card.append(image, label, message);
+          const dateLabel = document.createElement('label');
+          dateLabel.className = 'block text-sm';
+          dateLabel.textContent = `Date de prise de vue de la photo ${batchStart + index + 1}`;
+          const dateInput = document.createElement('input');
+          dateInput.type = 'date';
+          dateInput.className = field.className;
+          dateLabel.hidden = recovery.checked;
+          dateLabel.append(dateInput);
+          const timeLabel = document.createElement('label');
+          timeLabel.className = 'block text-sm';
+          timeLabel.textContent = `Heure de prise de vue de la photo ${batchStart + index + 1}`;
+          timeLabel.hidden = recovery.checked;
+          const timeInput = document.createElement('input');
+          timeInput.type = 'text';
+          timeInput.maxLength = 24;
+          timeInput.placeholder = '14:30:00+02:00';
+          timeInput.className = field.className;
+          timeLabel.append(timeInput);
+          card.append(image, label, message, dateLabel, timeLabel);
           previews.append(card);
           const entry: PhotoImport = {file};
-          const item = {entry, input: field, original: ''};
+          if (!recovery.checked) {
+            const timestamp = photoCaptureTimestamp(await file.arrayBuffer());
+            dateInput.value = timestamp?.slice(0, 10) ?? '';
+            timeInput.value = timestamp?.slice(11) ?? '';
+            if (run !== generation || !isEnabled) {
+              return;
+            }
+          }
+
+          const item = {
+            entry,
+            input: field,
+            original: '',
+            dateInput,
+            timeInput,
+          };
           staged.push(item);
           if (consent.checked) {
             message.textContent = 'Recherche du lieu…';
@@ -518,8 +559,12 @@ export function mountClipboardImport(
 
     let batch: PhotoImport[];
     try {
-      batch = staged.map(({entry, input, original}) => ({
+      batch = staged.map(({entry, input, original, dateInput, timeInput}) => ({
         ...entry,
+        capturedAt: captureTimestampFromInputs(
+          dateInput.value,
+          timeInput.value,
+        ),
         place:
           input.value === original ? entry.place : placeFromInput(input.value),
       }));

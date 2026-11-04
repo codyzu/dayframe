@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-loop-func -- Each card captures its own immutable photo; shared catalog updates are serialized by isBusy. */
 /* eslint-disable no-alert -- Native confirmation is required before permanent deletion. */
 import {
+  captureTimestampFromInputs,
+  isCaptureTimestamp,
   placeFromInput,
   isPhotoPlace,
   type PhotoPlace,
@@ -195,6 +197,16 @@ function mountAdmin(root: HTMLElement) {
         `${photo.width} × ${photo.height} · ${Math.round(photo.size / 1024)} Kio · ${new Date(photo.uploadedAt).toLocaleDateString('fr-FR')}`;
       const placeInput =
         card.querySelector<HTMLInputElement>('[data-place-input]')!;
+      const dateInput = card.querySelector<HTMLInputElement>(
+        '[data-capture-date]',
+      )!;
+      const timeInput = card.querySelector<HTMLInputElement>(
+        '[data-capture-time]',
+      )!;
+      dateInput.value = photo.capturedAt?.slice(0, 10) ?? '';
+      timeInput.value = photo.capturedAt?.slice(11) ?? '';
+      timeInput.disabled = isBusy || !isAuthorized || !isPlacesAvailable;
+      dateInput.disabled = isBusy || !isAuthorized || !isPlacesAvailable;
       placeInput.value = photo.place?.label ?? '';
       placeInput.disabled = isBusy || !isAuthorized || !isPlacesAvailable;
       card.querySelector<HTMLButtonElement>('button[type=submit]')!.disabled =
@@ -215,8 +227,26 @@ function mountAdmin(root: HTMLElement) {
         const run = accessGeneration;
         void (async () => {
           try {
-            await savePlace(photo, placeFromInput(placeInput.value), run);
-            status.textContent = 'Lieu enregistré.';
+            const date = captureTimestampFromInputs(
+              dateInput.value,
+              timeInput.value,
+            );
+
+            const label = placeInput.value.trim();
+            const place =
+              label === photo.place?.label
+                ? photo.place
+                : placeFromInput(label);
+            await savePlace(
+              photo,
+              place,
+              run,
+              date === photo.capturedAt ? undefined : (date ?? null),
+            );
+            status.textContent =
+              date === photo.capturedAt
+                ? 'Lieu enregistré.'
+                : 'Date enregistrée.';
             accessMessage.hidden = false;
           } catch (error) {
             placeStatus.textContent =
@@ -326,6 +356,9 @@ function mountAdmin(root: HTMLElement) {
     photo: PhotoMetadata,
     place: PhotoPlace | undefined,
     run: number,
+    // Null explicitly clears the stored value in the PATCH contract.
+    // eslint-disable-next-line @typescript-eslint/no-restricted-types
+    capturedAt?: string | null,
   ) {
     verifyGeneration(run);
     const response = await photoRequest(`/api/photos/${photo.id}/place`, {
@@ -334,12 +367,15 @@ function mountAdmin(root: HTMLElement) {
       body: JSON.stringify({
         expectedRevision: photo.placeRevision ?? '',
         place: place ?? null,
+        capturedAt,
       }),
     });
     const record = (await response.json()) as PlaceRecord;
     verifyGeneration(run);
     if (
       typeof record.revision !== 'string' ||
+      (record.capturedAt !== undefined &&
+        !isCaptureTimestamp(record.capturedAt)) ||
       (record.place !== undefined && !isPhotoPlace(record.place))
     ) {
       throw new Error('Réponse du lieu invalide. Actualisez.');
@@ -348,6 +384,7 @@ function mountAdmin(root: HTMLElement) {
     const updated = {
       ...photo,
       place: record.place,
+      capturedAt: record.capturedAt,
       placeRevision: record.revision,
     };
     pending.set(photo.id, updated);
@@ -451,7 +488,7 @@ function mountAdmin(root: HTMLElement) {
     row: HTMLLIElement,
     isRecovering: boolean,
   ) {
-    const {file, place} = entry;
+    const {file, place, capturedAt} = entry;
     const run = accessGeneration;
     setBusy(true);
     const text = row.querySelector<HTMLElement>('[data-upload-message]')!;
@@ -479,7 +516,17 @@ function mountAdmin(root: HTMLElement) {
           (existing.place?.label !== place.label ||
             existing.place.source !== place.source)
         ) {
-          await savePlace(existing, place, run);
+          await savePlace(
+            existing,
+            place,
+            run,
+            existing.capturedAt === undefined ? capturedAt : undefined,
+          );
+        } else if (
+          capturedAt !== undefined &&
+          existing.capturedAt === undefined
+        ) {
+          await savePlace(existing, existing.place, run, capturedAt);
         }
 
         row.dataset.outcome = 'duplicate';
@@ -529,16 +576,16 @@ function mountAdmin(root: HTMLElement) {
         );
       }
 
-      if (
+      const nextPlace =
         place &&
         (!body.duplicate || !body.photo.place || place.source === 'manual')
-      ) {
-        await savePlace(body.photo, place, run);
-        body.photo = {
-          ...body.photo,
-          place,
-          placeRevision: pending.get(body.photo.id)?.placeRevision,
-        };
+          ? place
+          : body.photo.place;
+      const nextDate =
+        body.photo.capturedAt === undefined ? capturedAt : undefined;
+      if (nextDate !== undefined || nextPlace !== body.photo.place) {
+        await savePlace(body.photo, nextPlace, run, nextDate);
+        body.photo = pending.get(body.photo.id) ?? body.photo;
       }
 
       pending.set(body.photo.id, body.photo);
