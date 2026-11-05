@@ -30,6 +30,14 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium firefox webkit
       - name: Check types, lint, tests, and production build
         run: pnpm verify
+      - name: Preserve browser timings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-timings
+          path: test-results/*/results.json
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Preserve verified production assets
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4

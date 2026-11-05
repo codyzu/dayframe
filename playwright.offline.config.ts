@@ -3,6 +3,11 @@ import base from './playwright.config.ts';
 
 export default defineConfig({
   ...base,
+  outputDir: 'test-results/navigation',
+  reporter: [
+    ['dot'],
+    ['json', {outputFile: 'test-results/navigation/results.json'}],
+  ],
   testMatch: '**/navigation-fallback.spec.ts',
   testIgnore: [],
   use: {...base.use, baseURL: 'http://127.0.0.1:8790'},

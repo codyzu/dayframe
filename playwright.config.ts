@@ -4,6 +4,11 @@ export default defineConfig({
   testDir: './tests/e2e',
   testIgnore: '**/navigation-fallback.spec.ts',
   workers: 1,
+  outputDir: 'test-results/regular',
+  reporter: [
+    ['dot'],
+    ['json', {outputFile: 'test-results/regular/results.json'}],
+  ],
   use: {baseURL: 'http://127.0.0.1:8788', screenshot: 'only-on-failure'},
   webServer: [
     {
