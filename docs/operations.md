@@ -15,6 +15,9 @@ Open `http://127.0.0.1:8787` for the actual Worker + static assets integration; 
 
 `pnpm check` checks Astro/TypeScript; `pnpm lint` runs XO with built-in Prettier and Astro support; `pnpm lint:fix` fixes code and formatting. `pnpm format` is an optional bulk formatter. Prefer UnoCSS Wind4 utilities and reset, with scoped CSS for justified exceptions (see AGENTS.md). No client framework or SSR is used.
 
+[Verification coverage](testing.md) defines the shared browser matrix, scenario
+tags, timing reports and fixture isolation requirements.
+
 `wrangler.jsonc` binds `dist/` as `ASSETS`. Both `/api` and `/api/*` always invoke the Worker, including browser document navigations. Health supports GET/HEAD only; all other API paths return JSON 404/no-store without consulting assets. This prevents incomplete private routes from exposing static content. `/admin/photos` is a public, fixture-only placeholder; it has no upload capability. Never store private files in `public/`, `src/`, or `dist/`.
 
 M1 needs no KV or secret binding. Future local bindings must be local emulations by default, without `remote: true`. `.dev.vars.example` documents the empty secret surface; local secrets belong in ignored `.dev.vars`. Public defaults are in `src/lib/dashboard/config.ts`; they are examples, not persisted household settings. Production uses `DEPLOYMENT_STAGE=production`; local preview uses `local`. Secrets belong in Wrangler secrets/GitHub environment secrets, never `PUBLIC_*` or build-time browser imports. No service worker or private cache exists in M1.

@@ -12,7 +12,7 @@ test.beforeEach(async ({page}) => {
     route.fulfill({json: defaultSettings}),
   );
 });
-test('Morning shows escaped, bounded events, stays within the frame and clears denied/offline data', async ({
+test('Morning shows escaped, bounded events, stays within the frame and clears denied/offline data @mobile', async ({
   page,
 }, info) => {
   let isDenied = false;
@@ -113,7 +113,7 @@ test('Morning shows escaped, bounded events, stays within the frame and clears d
   await expect(page.locator('[data-agenda-events] li')).toHaveCount(0);
 });
 
-test('admin selects the shared calendar, disconnects and starts Google authorization', async ({
+test('admin selects the shared calendar, disconnects and starts Google authorization @mobile', async ({
   page,
 }) => {
   await page.route('**/api/session', async (route) =>
@@ -197,8 +197,9 @@ test('admin selects the shared calendar, disconnects and starts Google authoriza
   );
 });
 
-for (const count of [0, 2, 4, 6]) {
-  test(`Morning previews tomorrow within spare rows after ${count} events today`, async ({
+// Vitest covers every row count. Render empty, constrained and full cards here.
+for (const count of [0, 4, 6]) {
+  test(`Morning previews tomorrow within spare rows after ${count} events today @mobile`, async ({
     page,
   }, info) => {
     let isDenied = false;
@@ -312,7 +313,7 @@ for (const count of [0, 2, 4, 6]) {
         () => globalThis.document.documentElement.scrollWidth,
       ),
     ).toBeLessThanOrEqual(await page.evaluate(() => globalThis.innerWidth));
-    if (count === 2 || count === 4) {
+    if (count === 4) {
       await page.screenshot({
         path: info.outputPath(`tomorrow-${count}.png`),
         fullPage: true,
@@ -331,7 +332,7 @@ for (const count of [0, 2, 4, 6]) {
   });
 }
 
-test('Morning keeps an empty tomorrow explicit and reclassifies dates at midnight', async ({
+test('Morning keeps an empty tomorrow explicit and reclassifies dates at midnight @mobile', async ({
   page,
 }) => {
   let events: Array<{

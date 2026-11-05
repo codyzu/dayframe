@@ -21,7 +21,7 @@ test.beforeEach(async ({page}) => {
   );
 });
 
-test('dashboard vacation layout, all modes and forecast controls have complete focus rings', async ({
+test('dashboard vacation layout, all modes and forecast controls have complete focus rings @all-browsers', async ({
   page,
 }, info) => {
   await page.request.get('/__test/login');
@@ -166,7 +166,7 @@ test('dashboard vacation layout, all modes and forecast controls have complete f
   expect(failures).toEqual([]);
 });
 
-test('settings buttons including generated rows and calendar actions have complete rings', async ({
+test('settings buttons including generated rows and calendar actions have complete rings @mobile', async ({
   page,
 }, info) => {
   await page.request.get('/__test/login');
@@ -196,7 +196,7 @@ test('settings buttons including generated rows and calendar actions have comple
   ).toEqual([]);
 });
 
-test('setup and clipboard experiment buttons have complete rings', async ({
+test('setup and clipboard experiment buttons have complete rings @mobile', async ({
   page,
 }, info) => {
   await page.goto('/setup/');
@@ -237,7 +237,7 @@ test('setup and clipboard experiment buttons have complete rings', async ({
   expect(failures).toEqual([]);
 });
 
-test('photo administration controls, gallery and import previews have complete rings', async ({
+test('photo administration controls, gallery and import previews have complete rings @mobile', async ({
   page,
 }, info) => {
   await page.request.get('/__test/login');

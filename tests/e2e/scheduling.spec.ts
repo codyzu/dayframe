@@ -12,7 +12,7 @@ test.beforeEach(async ({page}) => {
   );
 });
 
-test('schedule, inactivity, touch reveal, clock corrections and resume', async ({
+test('schedule, inactivity, touch reveal, clock corrections and resume @mobile', async ({
   page,
 }, info) => {
   await page.emulateMedia({reducedMotion: 'reduce'});

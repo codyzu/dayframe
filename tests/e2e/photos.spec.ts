@@ -99,7 +99,7 @@ test.beforeEach(async ({page}) => {
   );
 });
 
-test('two admins upload WebP, review duplicates, see protected thumbnails and confirm deletion', async ({
+test('two admins upload WebP, review duplicates, see protected thumbnails and confirm deletion @all-browsers', async ({
   page,
 }, info) => {
   await login(page);
@@ -158,7 +158,7 @@ test('two admins upload WebP, review duplicates, see protected thumbnails and co
   await expect(page.locator('[data-photo-gallery] article')).toHaveCount(1);
 });
 
-test('photo framing survives navigation, reload and settings refreshes', async ({
+test('photo framing survives navigation, reload and settings refreshes @mobile', async ({
   page,
 }) => {
   await login(page);
@@ -172,7 +172,10 @@ test('photo framing survives navigation, reload and settings refreshes', async (
     await route.fulfill({json: settings});
   });
   await page.goto('/');
-  const fit = page.getByRole('button', {name: 'Remplir l’écran', exact: true});
+  const fit = page.getByRole('button', {
+    name: 'Remplir l’écran',
+    exact: true,
+  });
   const stage = page.locator('[data-photo-stage]');
   await expect(stage).toHaveAttribute('data-fit', 'contain');
   await page.getByRole('button', {name: 'Photos', exact: true}).click();
@@ -198,7 +201,7 @@ test('photo framing survives navigation, reload and settings refreshes', async (
   await expect(stage).toHaveAttribute('data-fit', 'contain');
 });
 
-test('read-only cookie delivers images, slideshow refreshes, outages retain current photo and leaving clears blobs', async ({
+test('read-only cookie delivers images, slideshow refreshes, outages retain current photo and leaving clears blobs @chromium @mobile', async ({
   page,
   context,
 }, info) => {
@@ -267,7 +270,7 @@ test('read-only cookie delivers images, slideshow refreshes, outages retain curr
   await expect(image).toHaveCount(0);
 });
 
-test('photo access failures keep retry available when configuration and weather succeed', async ({
+test('photo access failures keep retry available when configuration and weather succeed @mobile', async ({
   page,
   context,
 }) => {
@@ -297,7 +300,9 @@ test('photo access failures keep retry available when configuration and weather 
     'Accès privé requis',
   );
   await expect(retry).toBeVisible();
-  const navigation = page.getByRole('navigation', {name: 'Modes d’affichage'});
+  const navigation = page.getByRole('navigation', {
+    name: 'Modes d’affichage',
+  });
   const before = await navigation.boundingBox();
   // Keep configuration healthy during recovery; it must not hide photo errors.
   await page.unroute('**/api/photos');
@@ -309,7 +314,7 @@ test('photo access failures keep retry available when configuration and weather 
   expect(after!.y).toBeCloseTo(before!.y, 1);
 });
 
-test('unsupported picker formats cannot be added and explain how to choose a readable photo', async ({
+test('unsupported picker formats cannot be added and explain how to choose a readable photo @mobile', async ({
   page,
 }) => {
   await login(page);
@@ -327,7 +332,7 @@ test('unsupported picker formats cannot be added and explain how to choose a rea
   await expect(page.locator('[data-storage]')).toContainText('0 photos');
 });
 
-test('orientation is applied without upscaling and metadata is removed', async ({
+test('orientation is applied without upscaling and metadata is removed @chromium @mobile', async ({
   page,
 }) => {
   await login(page);
@@ -395,7 +400,7 @@ test('orientation is applied without upscaling and metadata is removed', async (
   expect(pixels.bottom[2]).toBeGreaterThan(200);
 });
 
-test('failed uploads retry with the same identity and expired sessions clear private previews', async ({
+test('failed uploads retry with the same identity and expired sessions clear private previews @mobile', async ({
   page,
 }) => {
   await login(page);
@@ -535,7 +540,7 @@ test('slideshow polls for additions and keeps at most two image URLs', async ({
   }
 });
 
-test('expired upload sessions retain the whole selected batch for recovery in the same tab', async ({
+test('expired upload sessions retain the whole selected batch for recovery in the same tab @mobile', async ({
   page,
 }) => {
   await login(page);
@@ -557,7 +562,9 @@ test('expired upload sessions retain the whole selected batch for recovery in th
       await route.fulfill({
         status: 401,
         json: {
-          error: {message: 'Session expirée. Reconnectez-vous puis réessayez.'},
+          error: {
+            message: 'Session expirée. Reconnectez-vous puis réessayez.',
+          },
         },
       });
     } else {
@@ -588,7 +595,7 @@ test('expired upload sessions retain the whole selected batch for recovery in th
   await expect(page.locator('[data-storage]')).toContainText('2 photos');
 });
 
-test('backward clocks clear private slideshow pixels and online verification restores them', async ({
+test('backward clocks clear private slideshow pixels and online verification restores them @chromium @mobile', async ({
   page,
   context,
 }) => {
@@ -637,7 +644,7 @@ test('backward clocks clear private slideshow pixels and online verification res
   ).toBe(0);
 });
 
-test('a signed-in admin automatically caches ordinary Photos visits for offline mode return', async ({
+test('a signed-in admin automatically caches ordinary Photos visits for offline mode return @chromium @mobile', async ({
   page,
   context,
 }) => {
@@ -713,7 +720,7 @@ async function mockPhotoClipboard(
   );
 }
 
-test('clipboard import previews the full batch before explicit authenticated upload and duplicate review', async ({
+test('clipboard import previews the full batch before explicit authenticated upload and duplicate review @chromium @mobile', async ({
   page,
 }, info) => {
   await login(page);
@@ -763,7 +770,7 @@ test('clipboard import previews the full batch before explicit authenticated upl
   expect(posts).toBe(3);
 });
 
-test('clipboard mismatches cannot upload and native paste ignores HTML', async ({
+test('clipboard mismatches cannot upload and native paste ignores HTML @mobile', async ({
   page,
 }) => {
   await login(page);
@@ -794,7 +801,7 @@ test('clipboard mismatches cannot upload and native paste ignores HTML', async (
   await expect(page.locator('[data-storage]')).toContainText('0 photos');
 });
 
-test('staged clipboard photos survive session recovery in the same tab and clear on page exit', async ({
+test('staged clipboard photos survive session recovery in the same tab and clear on page exit @mobile', async ({
   page,
 }) => {
   await login(page);
@@ -855,7 +862,7 @@ async function mockSizedClipboard(
   );
 }
 
-test('oversized clipboard batch fills recovery groups by bytes without repeating the share', async ({
+test('oversized clipboard batch fills recovery groups by bytes without repeating the share @mobile-only', async ({
   page,
 }) => {
   await login(page);
@@ -895,7 +902,7 @@ test('oversized clipboard batch fills recovery groups by bytes without repeating
   });
 });
 
-test('more than ten shared photos automatically stages ten and detects clipboard replacement', async ({
+test('more than ten shared photos automatically stages ten and detects clipboard replacement @mobile-only', async ({
   page,
 }) => {
   await login(page);
@@ -927,7 +934,7 @@ test('more than ten shared photos automatically stages ten and detects clipboard
   await expect(page.locator('[data-import-add]')).toBeDisabled();
 });
 
-test('individual oversized photo identifies the 40 MiB limit rather than the batch limit', async ({
+test('individual oversized photo identifies the 40 MiB limit rather than the batch limit @mobile-only', async ({
   page,
 }) => {
   await login(page);
@@ -946,7 +953,7 @@ test('individual oversized photo identifies the 40 MiB limit rather than the bat
   await expect(page.locator('[data-import-add]')).toBeDisabled();
 });
 
-test('adaptive clipboard groups accept exactly 100 MB and native paste uses the same boundary', async ({
+test('adaptive clipboard groups accept exactly 100 MB and native paste uses the same boundary @mobile-only', async ({
   page,
 }) => {
   await login(page);
@@ -983,7 +990,7 @@ test('adaptive clipboard groups accept exactly 100 MB and native paste uses the 
   await expect(page.locator('[data-storage]')).toContainText('0 photos');
 });
 
-test('adaptive groups preserve order with uneven photo sizes and defer an individually oversized photo', async ({
+test('adaptive groups preserve order with uneven photo sizes and defer an individually oversized photo @mobile-only', async ({
   page,
 }) => {
   await login(page);
@@ -1009,7 +1016,7 @@ test('adaptive groups preserve order with uneven photo sizes and defer an indivi
   await expect(page.locator('[data-upload-results] li')).toHaveCount(1);
 });
 
-test('picker and paste share a quiet preview flow, with conversion feedback and a compact result', async ({
+test('picker and paste share a quiet preview flow, with conversion feedback and a compact result @mobile', async ({
   page,
 }) => {
   await login(page);
@@ -1059,7 +1066,7 @@ test('picker and paste share a quiet preview flow, with conversion feedback and 
   });
 });
 
-test('failed paste reveals manual fallback and cancelling restores the two choices', async ({
+test('failed paste reveals manual fallback and cancelling restores the two choices @mobile', async ({
   page,
 }) => {
   await login(page);
@@ -1091,7 +1098,7 @@ test('failed paste reveals manual fallback and cancelling restores the two choic
   await expect(page.locator('[data-storage]')).toContainText('0 photos');
 });
 
-test('picker retains remaining files for the next group without reopening the chooser', async ({
+test('picker retains remaining files for the next group without reopening the chooser @mobile-only', async ({
   page,
 }) => {
   await login(page);
@@ -1120,7 +1127,7 @@ test('picker retains remaining files for the next group without reopening the ch
   await expect(page.locator('[data-import-status]')).toBeHidden();
 });
 
-test('manual paste recovers four remaining photos after a size error without restarting six-photo import', async ({
+test('manual paste recovers four remaining photos after a size error without restarting six-photo import @mobile-only', async ({
   page,
 }) => {
   await login(page);

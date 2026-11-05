@@ -47,7 +47,7 @@ async function standalone(page: Page) {
   );
 }
 
-test('self-contained CSP document rotates overnight, honors preferences and retains only current/next', async ({
+test('self-contained CSP document rotates overnight, honors preferences and retains only current/next @chromium @mobile', async ({
   page,
 }) => {
   await page.clock.install({time: new Date('2026-10-22T21:59:00Z')});
@@ -131,14 +131,18 @@ test('self-contained CSP document rotates overnight, honors preferences and reta
   });
 });
 
-test('missing, expired and corrupt storage fail closed', async ({page}) => {
+test('missing, expired and corrupt storage fail closed @chromium @mobile', async ({
+  page,
+}) => {
   await page.clock.install();
   await seed(page);
   await page.clock.runFor(7 * 86_400_000 + 1000);
   await standalone(page);
   await expect(page.locator('main img')).toHaveCount(0);
   await expect(page.locator('[data-status]')).toContainText('Aucune photo');
-  await page.screenshot({path: test.info().outputPath('expired-fallback.png')});
+  await page.screenshot({
+    path: test.info().outputPath('expired-fallback.png'),
+  });
   await page.clock.runFor(5000);
   await expect(page.locator('html')).toHaveAttribute(
     'data-native-ready',
@@ -146,7 +150,9 @@ test('missing, expired and corrupt storage fail closed', async ({page}) => {
   );
 });
 
-test('storage absence and corruption leave useful retry', async ({page}) => {
+test('storage absence and corruption leave useful retry @chromium @mobile', async ({
+  page,
+}) => {
   await page.addInitScript(() => {
     Object.defineProperty(globalThis, 'indexedDB', {
       get() {
@@ -163,7 +169,7 @@ test('storage absence and corruption leave useful retry', async ({page}) => {
   );
 });
 
-test('corrupt image is skipped and lease denial clears loaded photos across tabs', async ({
+test('corrupt image is skipped and lease denial clears loaded photos across tabs @chromium @mobile', async ({
   page,
   context,
 }) => {
@@ -229,7 +235,7 @@ test('corrupt image is skipped and lease denial clears loaded photos across tabs
   );
 });
 
-test('recovery validates health, backs off and limits partial-startup returns', async ({
+test('recovery validates health, backs off and limits partial-startup returns @chromium @mobile', async ({
   page,
 }) => {
   await page.clock.install();
@@ -271,7 +277,7 @@ test('recovery validates health, backs off and limits partial-startup returns', 
   expect(navigations).toEqual([]);
 });
 
-test('denied session storage allows manual healthy recovery without automatic navigation loops', async ({
+test('denied session storage allows manual healthy recovery without automatic navigation loops @chromium @mobile', async ({
   page,
 }) => {
   await page.clock.install();
@@ -303,7 +309,7 @@ test('denied session storage allows manual healthy recovery without automatic na
   expect(navigations).toHaveLength(1);
 });
 
-test('rapid visibility changes cancel pending decodes without dropping valid photos or exceeding two URLs', async ({
+test('rapid visibility changes cancel pending decodes without dropping valid photos or exceeding two URLs @chromium @mobile', async ({
   page,
 }) => {
   await page.clock.install();

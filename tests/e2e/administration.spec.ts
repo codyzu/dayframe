@@ -12,7 +12,7 @@ test.beforeEach(async ({page}) => {
   );
 });
 
-test('both administrators persist settings, export, validate schedules and recover access', async ({
+test('both administrators persist settings, export, validate schedules and recover access @mobile', async ({
   page,
 }, info) => {
   await page.request.get('/__test/login');
@@ -83,7 +83,7 @@ test('both administrators persist settings, export, validate schedules and recov
   await expect(page.getByLabel('Lieu', {exact: true})).toBeEnabled();
 });
 
-test('frame provisioning persists across browser contexts, rejects off-network reads and revokes the old key', async ({
+test('frame provisioning persists across browser contexts, rejects off-network reads and revokes the old key @chromium @mobile', async ({
   page,
   browser,
 }, info) => {

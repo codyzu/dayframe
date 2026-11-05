@@ -13,7 +13,7 @@ test.beforeEach(async ({page}) => {
   );
 });
 
-test('official warnings have severity, departmental coverage and periods; cards fill the frame with six appointments', async ({
+test('official warnings have severity, departmental coverage and periods; cards fill the frame with six appointments @mobile', async ({
   page,
 }, info) => {
   await page.route('**/api/weather-alerts', async (route) =>
@@ -110,7 +110,7 @@ test('clear feed hides the banner; failures, stale feeds and expiry never imply 
   await expect(banner).toContainText('Vigilance indisponible');
 });
 
-test('larger Photos overlay fits long conditions and Night has no technical copy', async ({
+test('larger Photos overlay fits long conditions and Night has no technical copy @mobile', async ({
   page,
 }, info) => {
   const fixture = weatherFixture();
@@ -119,7 +119,10 @@ test('larger Photos overlay fits long conditions and Night has no technical copy
     route.fulfill({json: fixture}),
   );
   await page.route('**/api/weather-alerts', async (route) =>
-    route.fulfill({contentType: 'application/atom+xml', body: alertsFixture()}),
+    route.fulfill({
+      contentType: 'application/atom+xml',
+      body: alertsFixture(),
+    }),
   );
   await page.goto('/');
   await page.getByRole('button', {name: 'Photos', exact: true}).click();

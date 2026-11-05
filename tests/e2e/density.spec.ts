@@ -49,83 +49,81 @@ test('large readable type works without browser storage', async ({page}) => {
   await expect(page.getByLabel('Taille du texte')).toHaveCount(0);
 });
 
-for (const density of ['standard', 'large']) {
-  test(`${density} layout, readable labels and animated icons`, async ({
-    page,
-  }, testInfo) => {
-    await page.goto(`/?density=${density}`);
-    await expect(page.locator('[data-temperature]')).toHaveText('12°');
-    await expect(page.locator('[data-dashboard]')).toHaveAttribute(
-      'data-density',
-      'large',
-    );
+test('large layout, readable labels and animated icons @all-browsers', async ({
+  page,
+}, testInfo) => {
+  await page.goto('/?display=frame');
+  await expect(page.locator('[data-temperature]')).toHaveText('12°');
+  await expect(page.locator('[data-dashboard]')).toHaveAttribute(
+    'data-density',
+    'large',
+  );
+  expect(
+    await page.evaluate(
+      () =>
+        globalThis.document.documentElement.scrollWidth <=
+        globalThis.innerWidth,
+    ),
+  ).toBe(true);
+  if (testInfo.project.name !== 'mobile') {
     expect(
       await page.evaluate(
-        () =>
-          globalThis.document.documentElement.scrollWidth <=
-          globalThis.innerWidth,
+        () => globalThis.document.documentElement.scrollHeight,
       ),
-    ).toBe(true);
-    if (testInfo.project.name !== 'mobile') {
-      expect(
-        await page.evaluate(
-          () => globalThis.document.documentElement.scrollHeight,
-        ),
-      ).toBeLessThanOrEqual(800);
-    }
+    ).toBeLessThanOrEqual(800);
+  }
 
-    const labels = await page
-      .locator('[data-chart-plot] > span')
-      .evaluateAll((elements) =>
-        elements.slice(1).map((element) => {
-          const box = element.getBoundingClientRect();
-          return {left: box.left, right: box.right};
-        }),
-      );
-    for (let index = 1; index < labels.length; index++) {
-      expect(labels[index].left).toBeGreaterThan(labels[index - 1].right);
-    }
+  const labels = await page
+    .locator('[data-chart-plot] > span')
+    .evaluateAll((elements) =>
+      elements.slice(1).map((element) => {
+        const box = element.getBoundingClientRect();
+        return {left: box.left, right: box.right};
+      }),
+    );
+  for (let index = 1; index < labels.length; index++) {
+    expect(labels[index].left).toBeGreaterThan(labels[index - 1].right);
+  }
 
-    for (const button of await page
-      .getByRole('navigation')
-      .getByRole('button')
-      .all()) {
-      const box = await button.boundingBox();
-      expect(box!.width).toBeGreaterThanOrEqual(44);
-      expect(box!.height).toBeGreaterThanOrEqual(44);
-    }
+  for (const button of await page
+    .getByRole('navigation')
+    .getByRole('button')
+    .all()) {
+    const box = await button.boundingBox();
+    expect(box!.width).toBeGreaterThanOrEqual(44);
+    expect(box!.height).toBeGreaterThanOrEqual(44);
+  }
 
-    if (testInfo.project.name === 'mobile') {
-      await page.locator('[data-chart-plot]').scrollIntoViewIfNeeded();
-    }
+  if (testInfo.project.name === 'mobile') {
+    await page.locator('[data-chart-plot]').scrollIntoViewIfNeeded();
+  }
 
-    const plot = await page.locator('[data-chart-plot]').boundingBox();
-    const nav = await page.getByRole('navigation').boundingBox();
-    expect(plot!.y + plot!.height).toBeLessThan(nav!.y);
-    const icon = page.locator('[data-current-icon]');
-    expect(
-      await icon.evaluate((element) =>
-        decodeURIComponent(getComputedStyle(element).backgroundImage).includes(
-          '<animate',
-        ),
+  const plot = await page.locator('[data-chart-plot]').boundingBox();
+  const nav = await page.getByRole('navigation').boundingBox();
+  expect(plot!.y + plot!.height).toBeLessThan(nav!.y);
+  const icon = page.locator('[data-current-icon]');
+  expect(
+    await icon.evaluate((element) =>
+      decodeURIComponent(getComputedStyle(element).backgroundImage).includes(
+        '<animate',
       ),
-    ).toBe(true);
-    await page.emulateMedia({reducedMotion: 'reduce'});
-    expect(
-      await icon.evaluate((element) =>
-        decodeURIComponent(getComputedStyle(element).backgroundImage).includes(
-          '<animate',
-        ),
+    ),
+  ).toBe(true);
+  await page.emulateMedia({reducedMotion: 'reduce'});
+  expect(
+    await icon.evaluate((element) =>
+      decodeURIComponent(getComputedStyle(element).backgroundImage).includes(
+        '<animate',
       ),
-    ).toBe(false);
-    await page.screenshot({
-      path: testInfo.outputPath(`${density}.png`),
-      fullPage: true,
-    });
+    ),
+  ).toBe(false);
+  await page.screenshot({
+    path: testInfo.outputPath('large.png'),
+    fullPage: true,
   });
-}
+});
 
-test('typical desktop and narrower display reflow', async ({
+test('typical desktop and narrower display reflow @chromium-only', async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'chromium');
@@ -144,15 +142,14 @@ test('typical desktop and narrower display reflow', async ({
           globalThis.innerWidth,
       ),
     ).toBe(true);
-    await page.goto('/?density=standard');
     await page.screenshot({
-      path: testInfo.outputPath(`standard-${viewport.width}.png`),
+      path: testInfo.outputPath(`large-${viewport.width}.png`),
       fullPage: true,
     });
   }
 });
 
-test('large display retains long freezing conditions and full-scale rain', async ({
+test('large display retains long freezing conditions and full-scale rain @mobile', async ({
   page,
 }, testInfo) => {
   await page.unroute('https://api.open-meteo.com/**');
@@ -193,7 +190,7 @@ test('large display retains long freezing conditions and full-scale rain', async
   });
 });
 
-test('navigation keeps identical geometry across modes', async ({
+test('navigation keeps identical geometry across modes @all-browsers', async ({
   page,
 }, info) => {
   await page.goto('/');

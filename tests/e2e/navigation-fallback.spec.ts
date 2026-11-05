@@ -406,6 +406,8 @@ test('Photos reload follows a real transition and retains photo access', async (
   page,
   request,
 }) => {
+  await page.clock.install();
+  await page.clock.pauseAt(Date.now() + 60_000);
   await page.addInitScript(() => {
     let hasVersionResponse = false;
     let transitions = 0;
@@ -444,11 +446,25 @@ test('Photos reload follows a real transition and retains photo access', async (
     servedBuild: nextBuild,
     photoOutage: true,
   });
-  // Connectivity wake may itself produce the next transition. Verify ordering
-  // rather than assuming the current slide cannot advance during reconnection.
+  // Observe the real version response before advancing application timers. The
+  // production slideshow still emits the event that permits the build reload.
   await Promise.all([
     page.waitForEvent('load'),
-    page.evaluate(() => globalThis.dispatchEvent(new Event('online'))),
+    (async () => {
+      await Promise.all([
+        page.waitForResponse((response) =>
+          response.url().endsWith('/version.json'),
+        ),
+        page.evaluate(() => globalThis.dispatchEvent(new Event('online'))),
+      ]);
+      // Reconnection can re-arm rotation only after its native image/storage
+      // work finishes. Advancing earlier would skip past that new deadline.
+      await expect(page.locator('[data-photo-stage]')).toHaveAttribute(
+        'aria-busy',
+        'false',
+      );
+      await page.clock.fastForward(20_000);
+    })(),
   ]);
   expect(
     await page.evaluate(() =>

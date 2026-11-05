@@ -9,7 +9,7 @@ test.beforeEach(async ({page}) => {
   });
 });
 
-test('French weather shell, working modes and locally bundled assets', async ({
+test('French weather shell, working modes and locally bundled assets @all-browsers', async ({
   page,
 }, testInfo) => {
   const failures: string[] = [];
@@ -74,7 +74,7 @@ test('French weather shell, working modes and locally bundled assets', async ({
   });
 });
 
-test('admin placeholder is responsive and cannot upload', async ({
+test('admin placeholder is responsive and cannot upload @mobile', async ({
   page,
 }, testInfo) => {
   await page.goto('/admin/photos');
@@ -122,7 +122,9 @@ test('Worker routing fails closed even for document navigations', async ({
   ).toBeVisible();
 });
 
-test('keyboard navigation and reduced motion', async ({page}) => {
+test('keyboard navigation and reduced motion @chromium @webkit', async ({
+  page,
+}) => {
   await page.emulateMedia({reducedMotion: 'reduce'});
   await page.goto('/');
   const photos = page.getByRole('button', {name: 'Photos', exact: true});
@@ -136,7 +138,7 @@ test('keyboard navigation and reduced motion', async ({page}) => {
   expect(decodeURIComponent(css)).not.toMatch(/<animate/v);
 });
 
-test('only current weather animates and all Meteocons respect motion preference', async ({
+test('only current weather animates and all Meteocons respect motion preference @chromium @webkit', async ({
   page,
 }) => {
   await page.emulateMedia({reducedMotion: 'no-preference'});
@@ -177,7 +179,7 @@ test('only current weather animates and all Meteocons respect motion preference'
   expect(await images()).toEqual(animated);
 });
 
-test('built current icon visibly animates and becomes still with reduced motion', async ({
+test('built current icon visibly animates and becomes still with reduced motion @chromium @webkit', async ({
   page,
 }) => {
   // Real image timelines must advance: markup containing <animate> is insufficient.
@@ -233,7 +235,7 @@ test('built current icon visibly animates and becomes still with reduced motion'
   expect(after.equals(still)).toBe(true);
 });
 
-test('overcast cloud stays visible at both animation extremes', async ({
+test('overcast cloud stays visible at both animation extremes @chromium @webkit', async ({
   page,
 }, testInfo) => {
   await page.unroute('https://api.open-meteo.com/**');
@@ -278,11 +280,13 @@ test('overcast cloud stays visible at both animation extremes', async ({
           ),
         ),
     ).toBe(true);
-    await icon.screenshot({path: testInfo.outputPath(`overcast-${time}s.png`)});
+    await icon.screenshot({
+      path: testInfo.outputPath(`overcast-${time}s.png`),
+    });
   }
 });
 
-test('precipitation and lightning keep repeating in the bundled current icon', async ({
+test('precipitation and lightning keep repeating in the bundled current icon @chromium @webkit', async ({
   page,
 }, testInfo) => {
   await page.emulateMedia({reducedMotion: 'no-preference'});
@@ -381,7 +385,7 @@ test('precipitation and lightning keep repeating in the bundled current icon', a
   }
 });
 
-test('ordinary build publishes its matching public build ID and leaves worker activation gated', async ({
+test('ordinary build publishes its matching public build ID and leaves worker activation gated @chromium @webkit', async ({
   page,
   request,
 }) => {

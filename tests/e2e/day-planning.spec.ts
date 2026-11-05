@@ -33,7 +33,7 @@ const official = (now: number): OfficialCalendar => ({
   holidays: {'2026-11-01': 'La Toussaint', '2026-11-11': 'Armistice 1918'},
 });
 
-test('Wednesday private routines, quarter-hour weather and escaped labels fit the frame', async ({
+test('Wednesday private routines, quarter-hour weather and escaped labels fit the frame @mobile', async ({
   page,
 }, info) => {
   await page.clock.install({time: wednesday});
@@ -84,7 +84,7 @@ test('Wednesday private routines, quarter-hour weather and escaped labels fit th
   );
 });
 
-test('vacation and holiday appear beside six upcoming appointments, suppress routines and preserve day-off boundaries', async ({
+test('vacation and holiday appear beside six upcoming appointments, suppress routines and preserve day-off boundaries @mobile', async ({
   page,
 }, info) => {
   const now = Date.parse('2026-11-01T07:00:00Z');
@@ -166,7 +166,7 @@ test('vacation and holiday appear beside six upcoming appointments, suppress rou
   await expect(note).toContainText('Calendrier scolaire indisponible');
 });
 
-test('admin edits and persists separate day profiles without replacing base settings', async ({
+test('admin edits and persists separate day profiles without replacing base settings @mobile', async ({
   page,
 }) => {
   await page.request.get('https://127.0.0.1:8789/__test/reset', {

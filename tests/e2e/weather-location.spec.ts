@@ -51,7 +51,7 @@ test.beforeEach(async ({page}) => {
   );
 });
 
-test('search persists only on this device, keeps household time and resets to household', async ({
+test('search persists only on this device, keeps household time and resets to household @chromium @mobile', async ({
   page,
   browser,
 }, testInfo) => {
@@ -74,7 +74,10 @@ test('search persists only on this device, keeps household time and resets to ho
     fullPage: false,
   });
   await dialog
-    .getByRole('button', {name: 'New York, New York, États-Unis', exact: true})
+    .getByRole('button', {
+      name: 'New York, New York, États-Unis',
+      exact: true,
+    })
     .click();
   await expect(page.locator('[data-temperature]')).toHaveText('24°');
   await expect(page.locator('[data-clock]').first()).toHaveText('08:30');
@@ -161,7 +164,7 @@ test('unavailable storage keeps the choice for this visit and reports it', async
   await expect(page.locator('[data-location]')).toHaveText('Météo · Annecy');
 });
 
-test('picker controls retain complete focus outlines and modal scrolling', async ({
+test('picker controls retain complete focus outlines and modal scrolling @mobile', async ({
   page,
 }, info) => {
   await page.goto('/');
@@ -174,7 +177,9 @@ test('picker controls retain complete focus outlines and modal scrolling', async
     await auditFocus(page, dialog, info, {name: 'weather-location'}),
   ).toEqual([]);
   await dialog
-    .getByRole('link', {name: 'Modifier le lieu de la maison (administration)'})
+    .getByRole('link', {
+      name: 'Modifier le lieu de la maison (administration)',
+    })
     .focus();
   await expect(
     dialog.getByRole('link', {
@@ -248,7 +253,7 @@ test('a late response from the previous location cannot paint or cache over the 
   expect(cached.raw.current.temperature_2m).toBe(24);
 });
 
-test('current location is opt-in, preserves coordinates, estimates a city, and permission denial can recover', async ({
+test('current location is opt-in, preserves coordinates, estimates a city, and permission denial can recover @mobile', async ({
   page,
 }, info) => {
   await page.addInitScript(() => {
@@ -349,7 +354,9 @@ test('current location is opt-in, preserves coordinates, estimates a city, and p
   expect(geometry.gap).toBeGreaterThanOrEqual(8);
   expect(geometry.height).toBeGreaterThanOrEqual(44);
   expect(geometry.labelHeight).toBeLessThan(32);
-  await page.screenshot({path: info.outputPath('current-location-header.png')});
+  await page.screenshot({
+    path: info.outputPath('current-location-header.png'),
+  });
   await page.reload();
   await expect(page.locator('[data-location-greeting]')).toHaveText('Bonjour.');
   await expect(page.locator('[data-location-label]')).toHaveText(
@@ -368,75 +375,47 @@ test('current location is opt-in, preserves coordinates, estimates a city, and p
   }
 });
 
-for (const failure of [
-  'empty',
-  'malformed',
-  'unavailable',
-  'timeout',
-] as const) {
-  test(`GPS weather survives ${failure} city lookup`, async ({page}) => {
-    await page.addInitScript(() => {
-      Object.defineProperty(navigator, 'geolocation', {
-        value: {
-          getCurrentPosition(success: PositionCallback) {
-            success({
-              coords: {latitude: 40.712345, longitude: -74.012345},
-            } as GeolocationPosition);
-          },
+// Provider payload and timeout variants are covered by weather-location.test.ts.
+test('GPS weather stays usable when the city provider is unavailable @mobile', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'geolocation', {
+      value: {
+        getCurrentPosition(success: PositionCallback) {
+          success({
+            coords: {latitude: 40.712345, longitude: -74.012345},
+          } as GeolocationPosition);
         },
-      });
-    });
-    await page.route('https://photon.komoot.io/**', async (route) => {
-      if (failure === 'timeout') {
-        await new Promise<void>((resolve) => {
-          setTimeout(resolve, 4500);
-        });
-        await route.abort().catch(() => undefined);
-      } else if (failure === 'unavailable') {
-        await route.fulfill({status: 503});
-      } else {
-        await route.fulfill({
-          json: {
-            features:
-              failure === 'empty'
-                ? []
-                : [
-                    {
-                      properties: {
-                        name: '\u{202E}invalid',
-                        osm_key: 'place',
-                        osm_value: 'city',
-                      },
-                    },
-                  ],
-          },
-        });
-      }
-    });
-    await page.goto('/');
-    await page.getByRole('button', {name: 'Changer le lieu météo'}).click();
-    await page.getByRole('button', {name: 'Utiliser ma position'}).click();
-    await page
-      .getByRole('button', {
-        name: 'Ma position · ville indisponible',
-        exact: true,
-      })
-      .click();
-    await expect(page.locator('[data-temperature]')).toHaveText('24°');
-    expect(
-      await page.evaluate(
-        (key) => JSON.parse(localStorage.getItem(key)!) as unknown,
-        locationKey,
-      ),
-    ).toEqual({
-      location: 'Ma position',
-      latitude: 40.712345,
-      longitude: -74.012345,
-      timezone: 'America/New_York',
-      source: 'geolocation',
+      },
     });
   });
-}
+  await page.route('https://photon.komoot.io/**', async (route) =>
+    route.fulfill({status: 503}),
+  );
+  await page.goto('/');
+  await page.getByRole('button', {name: 'Changer le lieu météo'}).click();
+  await page.getByRole('button', {name: 'Utiliser ma position'}).click();
+  await page
+    .getByRole('button', {
+      name: 'Ma position · ville indisponible',
+      exact: true,
+    })
+    .click();
+  await expect(page.locator('[data-temperature]')).toHaveText('24°');
+  expect(
+    await page.evaluate(
+      (key) => JSON.parse(localStorage.getItem(key)!) as unknown,
+      locationKey,
+    ),
+  ).toEqual({
+    location: 'Ma position',
+    latitude: 40.712345,
+    longitude: -74.012345,
+    timezone: 'America/New_York',
+    source: 'geolocation',
+  });
+});
 
 test('closing the picker discards a late city response and saved legacy GPS stays compatible', async ({
   page,
@@ -488,7 +467,7 @@ test('closing the picker discards a late city response and saved legacy GPS stay
   await expect(page.locator('[data-location-label]')).toHaveText('Ma position');
 });
 
-test('a long town name keeps the header on one line at narrow phone widths', async ({
+test('a long town name keeps the header on one line at narrow phone widths @mobile', async ({
   page,
 }) => {
   await page.setViewportSize({width: 320, height: 800});

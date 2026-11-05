@@ -29,10 +29,14 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      grep: /@(?:all-browsers|chromium(?:-only)?)\b/v,
       use: {...devices['Desktop Chrome'], viewport: {width: 1280, height: 800}},
     },
     {
       name: 'firefox',
+      // Every ordinary scenario runs on the frame's engine unless it explicitly
+      // targets another platform. Extra engines are selected by scenario tags.
+      grepInvert: /@(?:chromium|mobile)-only\b/v,
       use: {
         ...devices['Desktop Firefox'],
         viewport: {width: 1280, height: 800},
@@ -40,10 +44,12 @@ export default defineConfig({
     },
     {
       name: 'webkit',
+      grep: /@(?:all-browsers|webkit)\b/v,
       use: {...devices['Desktop Safari'], viewport: {width: 1280, height: 800}},
     },
     {
       name: 'mobile',
+      grep: /@(?:all-browsers|mobile(?:-only)?)\b/v,
       use: {...devices['iPhone 13'], defaultBrowserType: 'webkit'},
     },
   ],

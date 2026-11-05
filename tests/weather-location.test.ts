@@ -16,7 +16,9 @@ const location = {
 
 describe('device weather location', () => {
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
   it('validates and reconstructs only weather fields', () => {
     expect(validateLocation({...location, secret: 'excluded'})).toEqual(
@@ -138,6 +140,68 @@ describe('device weather location', () => {
     ).rejects.toThrow();
     expect(fetcher).toHaveBeenCalledTimes(calls);
   });
+
+  it.each(['empty', 'malformed', 'unavailable', 'timeout'])(
+    'keeps precise GPS weather when the city lookup is %s',
+    async (failure) => {
+      vi.useFakeTimers();
+      // Node's native AbortSignal timeout uses real time independently of Vitest.
+      vi.spyOn(AbortSignal, 'timeout').mockImplementation((delay) => {
+        const controller = new AbortController();
+        setTimeout(() => {
+          controller.abort(new DOMException('Timeout', 'TimeoutError'));
+        }, delay);
+        return controller.signal;
+      });
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (url: URL, options: RequestInit) => {
+          if (url.hostname !== 'photon.komoot.io') {
+            return Response.json({timezone: 'Europe/Paris'});
+          }
+
+          if (failure === 'timeout') {
+            return new Promise<Response>((_resolve, reject) => {
+              options.signal!.addEventListener('abort', () => {
+                reject(new DOMException('Aborted', 'AbortError'));
+              });
+            });
+          }
+
+          return failure === 'unavailable'
+            ? new Response(null, {status: 503})
+            : Response.json({
+                features:
+                  failure === 'empty'
+                    ? []
+                    : [
+                        {
+                          properties: {
+                            name: '\u{202E}invalid',
+                            osm_key: 'place',
+                            osm_value: 'city',
+                          },
+                        },
+                      ],
+              });
+        }),
+      );
+      const coordinates = {latitude: 45.899234567, longitude: 6.129456789};
+      const pending = resolvePosition(
+        coordinates,
+        new AbortController().signal,
+      );
+      await vi.advanceTimersByTimeAsync(4000);
+      await expect(pending).resolves.toEqual({
+        ...coordinates,
+        source: 'geolocation',
+        timezone: 'Europe/Paris',
+        location: 'Ma position',
+        label: 'Ma position · ville indisponible',
+      });
+      expect(fetch).toHaveBeenCalledTimes(2);
+    },
+  );
 
   it('ignores absent, corrupt and inaccessible storage', () => {
     expect(readLocation()).toBeUndefined();

@@ -1,6 +1,6 @@
 import {expect, test} from '../fixtures/browser.ts';
 
-test('three clipboard items preview and convert locally without API calls', async ({
+test('three clipboard items preview and convert locally without API calls @mobile-only', async ({
   page,
 }) => {
   const requests: string[] = [];
@@ -79,7 +79,7 @@ test('three clipboard items preview and convert locally without API calls', asyn
   await expect(page.locator('[data-process]')).toBeDisabled();
 });
 
-test('a truncated clipboard batch is visible and cannot process', async ({
+test('a truncated clipboard batch is visible and cannot process @mobile-only', async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -115,7 +115,7 @@ test('a truncated clipboard batch is visible and cannot process', async ({
   await expect(page.locator('[data-process]')).toBeDisabled();
 });
 
-test('clipboard denial is recoverable and manual paste never inserts HTML or text', async ({
+test('clipboard denial is recoverable and manual paste never inserts HTML or text @mobile-only', async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -163,7 +163,7 @@ test('clipboard denial is recoverable and manual paste never inserts HTML or tex
   await expect(page.locator('[data-results]')).toBeEmpty();
 });
 
-test('clearing while clipboard access is pending prevents late previews', async ({
+test('clearing while clipboard access is pending prevents late previews @mobile-only', async ({
   page,
 }) => {
   await page.addInitScript(() => {

@@ -79,7 +79,7 @@ async function swipe(page: Page, direction: 'left' | 'right') {
   await page.mouse.up();
 }
 
-test('photo history retraces forward, restores on re-entry and releases decoded images while away', async ({
+test('photo history retraces forward, restores on re-entry and releases decoded images while away @mobile', async ({
   page,
 }) => {
   const stage = page.locator('[data-photo-stage]');
@@ -111,7 +111,7 @@ test('photo history retraces forward, restores on re-entry and releases decoded 
   await expect(page.locator('html')).toHaveAttribute('data-peak-urls', '2');
 });
 
-test('authorization loss while away clears history and returning never restores private pixels', async ({
+test('authorization loss while away clears history and returning never restores private pixels @chromium @mobile', async ({
   page,
 }) => {
   await page.getByRole('button', {name: 'Matin', exact: true}).click();
@@ -131,7 +131,7 @@ test('authorization loss while away clears history and returning never restores 
   );
 });
 
-test('screen swipes include Night, do not wrap or advance photos, and expire back to the schedule', async ({
+test('screen swipes include Night, do not wrap or advance photos, and expire back to the schedule @mobile', async ({
   page,
 }) => {
   const root = page.locator('[data-dashboard]');
@@ -154,7 +154,7 @@ test('screen swipes include Night, do not wrap or advance photos, and expire bac
   await expect(root).toHaveAttribute('data-mode', 'morning');
 });
 
-test('photo edge taps browse history, centre reveals controls, and small drags do neither', async ({
+test('photo edge taps browse history, centre reveals controls, and small drags do neither @mobile', async ({
   page,
 }, info) => {
   const stage = page.locator('[data-photo-stage]');
@@ -187,7 +187,7 @@ test('photo edge taps browse history, centre reveals controls, and small drags d
   await page.screenshot({path: info.outputPath('photos-touch-controls.png')});
 });
 
-test('forecast dialogs and two-finger maintenance holds are excluded from screen gestures', async ({
+test('forecast dialogs and two-finger maintenance holds are excluded from screen gestures @mobile', async ({
   page,
 }) => {
   const root = page.locator('[data-dashboard]');
@@ -223,7 +223,7 @@ test('forecast dialogs and two-finger maintenance holds are excluded from screen
   await expect(page.locator('[data-forecast-dialog]')).toBeVisible();
 });
 
-test('animated navigation completes, cancels on lifecycle changes and respects reduced motion', async ({
+test('animated navigation completes, cancels on lifecycle changes and respects reduced motion @all-browsers', async ({
   page,
 }, info) => {
   const root = page.locator('[data-dashboard]');
@@ -243,7 +243,9 @@ test('animated navigation completes, cancels on lifecycle changes and respects r
   await swipe(page, 'right');
   await expect(root).toHaveAttribute('data-mode', 'photos');
   await expect(root).not.toHaveAttribute('data-transition');
-  await page.screenshot({path: info.outputPath('photos-after-transition.png')});
+  await page.screenshot({
+    path: info.outputPath('photos-after-transition.png'),
+  });
   await page.getByRole('button', {name: 'Matin', exact: true}).click();
   await page.evaluate(() => globalThis.dispatchEvent(new Event('pagehide')));
   await expect(root).not.toHaveAttribute('data-transition');
@@ -254,7 +256,7 @@ test('animated navigation completes, cancels on lifecycle changes and respects r
   await expect(root).not.toHaveAttribute('data-transition');
 });
 
-test('returning to the last photo revalidates access and reuses saved bytes without an image request', async ({
+test('returning to the last photo revalidates access and reuses saved bytes without an image request @chromium @mobile', async ({
   page,
 }) => {
   const stage = page.locator('[data-photo-stage]');
@@ -290,7 +292,7 @@ test('returning to the last photo revalidates access and reuses saved bytes with
   expect(catalogRequests).toBe(1);
 });
 
-test('deleted history entries are reconciled and a single-photo collection has no previous entry', async ({
+test('deleted history entries are reconciled and a single-photo collection has no previous entry @mobile', async ({
   page,
 }) => {
   const stage = page.locator('[data-photo-stage]');
@@ -355,7 +357,7 @@ test('animation API failure falls back to immediate mode changes', async ({
   );
 });
 
-test('pointer cancellation and a long stationary hold never browse photos', async ({
+test('pointer cancellation and a long stationary hold never browse photos @mobile', async ({
   page,
 }) => {
   const stage = page.locator('[data-photo-stage]');
@@ -388,7 +390,7 @@ test('pointer cancellation and a long stationary hold never browse photos', asyn
   );
 });
 
-test('keyboard screen navigation keeps Night controls dim, including hover', async ({
+test('keyboard screen navigation keeps Night controls dim, including hover @all-browsers', async ({
   page,
 }) => {
   const root = page.locator('[data-dashboard]');
@@ -429,7 +431,7 @@ test('keyboard screen navigation keeps Night controls dim, including hover', asy
   await expect(root).toHaveAttribute('data-mode', 'morning');
 });
 
-test('an animation that never finishes cannot leave the screen offscreen', async ({
+test('an animation that never finishes cannot leave the screen offscreen @mobile', async ({
   page,
 }) => {
   const root = page.locator('[data-dashboard]');
@@ -457,7 +459,7 @@ test('an animation that never finishes cannot leave the screen offscreen', async
   await expect(root).not.toHaveAttribute('data-transition');
 });
 
-test('slow image loading has bounded preparation and fills the live page when ready', async ({
+test('slow image loading has bounded preparation and fills the live page when ready @mobile', async ({
   page,
 }) => {
   const root = page.locator('[data-dashboard]');

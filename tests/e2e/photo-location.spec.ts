@@ -79,7 +79,7 @@ test.beforeEach(async ({page}) => {
   await page.goto('/admin/photos');
   await expect(page.locator('[data-choose-files]')).toBeEnabled();
 });
-test('manual paste automatically saves its place; optional review and later editing change labels without changing pixels', async ({
+test('manual paste automatically saves its place; optional review and later editing change labels without changing pixels @all-browsers', async ({
   page,
 }, info) => {
   const photo = await fixture(page);
@@ -232,7 +232,7 @@ test('manual paste automatically saves its place; optional review and later edit
   await page.evaluate(() => globalThis.dispatchEvent(new Event('online')));
   await expect(page.locator('[data-photo-place]')).toBeHidden();
 });
-test('optional import review can override the extracted capture date', async ({
+test('optional import review can override the extracted capture date @mobile', async ({
   page,
 }) => {
   await page.locator('[data-import-review]').check();
@@ -247,7 +247,7 @@ test('optional import review can override the extracted capture date', async ({
   );
 });
 
-test('recovery requires a chosen matching photo and updates its place without uploading another image', async ({
+test('recovery requires a chosen matching photo and updates its place without uploading another image @mobile-only', async ({
   page,
 }) => {
   const photo = await fixture(page);
@@ -283,7 +283,7 @@ test('recovery requires a chosen matching photo and updates its place without up
   expect(records).toHaveLength(1);
   expect(records[0].place?.label).toBe('Paris');
 });
-test('failed geocoding does not block automatic upload; pending lookup can be cancelled', async ({
+test('failed geocoding does not block automatic upload; pending lookup can be cancelled @mobile', async ({
   page,
 }) => {
   await page.route('https://photon.komoot.io/**', async (route) =>
@@ -292,10 +292,9 @@ test('failed geocoding does not block automatic upload; pending lookup can be ca
   await page.locator('[data-photo-files]').setInputFiles(await fixture(page));
   await expect(page.locator('[data-storage]')).toContainText('1 photo');
   expect((await catalog(page)).photos[0].place).toBeUndefined();
+  const lookup = Promise.withResolvers<void>();
   await page.route('https://photon.komoot.io/**', async (route) => {
-    await new Promise<void>((resolve) => {
-      setTimeout(resolve, 1500);
-    });
+    await lookup.promise;
     await route.fulfill({json: {features: []}}).catch(() => undefined);
   });
   await page
@@ -305,6 +304,7 @@ test('failed geocoding does not block automatic upload; pending lookup can be ca
     'Recherche du lieu',
   );
   await page.locator('[data-import-clear]').click();
+  lookup.resolve();
   await expect(page.locator('[data-import-previews]')).toBeEmpty();
   await expect(page.locator('[data-storage]')).toContainText('1 photo');
 });

@@ -23,7 +23,7 @@ test.beforeEach(async ({page}) => {
   );
 });
 
-test('four usable checkpoints, full-day chart, advice and an honest empty agenda', async ({
+test('four usable checkpoints, full-day chart, advice and an honest empty agenda @all-browsers', async ({
   page,
 }) => {
   await page.goto('/?display=frame');
@@ -128,7 +128,7 @@ test('stale and unavailable weather keep essential content within the frame', as
   ).toBeLessThanOrEqual(800);
 });
 
-test('rain scale and one peak label stay readable for dry, wet and maximum forecasts', async ({
+test('rain scale and one peak label stay readable for dry, wet and maximum forecasts @mobile', async ({
   page,
 }, info) => {
   await page.unroute('https://api.open-meteo.com/**');
