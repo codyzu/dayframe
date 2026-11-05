@@ -97,7 +97,10 @@ its own slot's fixture state. Keep the worker count and fixture ports in sync.
 The ordinary Wrangler preview serves immutable built assets to both workers.
 Offline navigation uses one worker because its fault server has shared controls.
 Controlled page clocks may advance real application timers. Tests must still observe the production transition, decode or
-cleanup before asserting its outcome. Rendered animation/stillness checks retain
+cleanup before asserting its outcome. Wait for native network/storage work to
+settle before advancing a deadline that it schedules: recovery checks observe the
+retry button becoming enabled after health completes, rather than racing a timer
+against an outstanding request. Rendered animation/stillness checks retain
 the elapsed time needed to sample real pixels.
 
 Successful runs capture images only when their pixels are part of an assertion,
