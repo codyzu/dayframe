@@ -22,3 +22,12 @@ retains its existing auto-hide behavior. The main panels do not move when it
 hides. Actual frame/phone readability remains owner-observed acceptance in #18.
 See the weather and display-density runbooks for behavior and rollback. This
 branch is awaiting owner visual review; nothing was deployed.
+
+## Location-pill text correction
+
+The [updated header crop](location-pill.png) shows normal letter spacing and a
+small amount of end padding inside the truncated place label. This prevents the
+last glyph from being clipped by the greeting's inherited negative tracking.
+Captured from the built application in desktop Firefox; existing GPS-label and
+long-name cases also check desktop/mobile layout. Earlier full-frame captures
+above predate this small typography correction.

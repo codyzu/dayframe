@@ -8,7 +8,8 @@ const control =
   <span id="weather-location-name" class="pointer-events-none min-w-0">
     <span data-location class="flex min-w-0">
       <span class="sr-only">Météo · </span>
-      <span data-location-label class="truncate">
+      <!-- Leave room for glyph overhang inside the truncation box. -->
+      <span data-location-label class="truncate pr-0.5 tracking-normal">
         Annecy
       </span>
     </span>
