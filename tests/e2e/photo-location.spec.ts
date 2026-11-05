@@ -144,11 +144,7 @@ test('manual paste automatically saves its place; optional review and later edit
   await expect(page.locator('[data-photo-place]')).toHaveText('Vieille ville');
   await expect(page.locator('[data-photo-date]')).toHaveText('février 2024');
   const caption = (await page.locator('[data-photo-caption]').boundingBox())!;
-  for (const selector of [
-    '[data-display-retry]',
-    '[data-touch-hint]',
-    '[data-photo-controls]',
-  ]) {
+  for (const selector of ['[data-display-retry]', '[data-photo-controls]']) {
     const control = await page.locator(selector).boundingBox();
     if (control) {
       expect(

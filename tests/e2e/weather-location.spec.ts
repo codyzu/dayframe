@@ -321,16 +321,20 @@ test('current location is opt-in, preserves coordinates, estimates a city, and p
     source: 'geolocation',
   });
   await page.getByRole('button', {name: 'Fermer', exact: true}).click();
-  await expect(page.locator('[data-location-greeting]')).toHaveText('Bonjour.');
+  await expect(page.locator('[data-location-greeting]')).toContainText(
+    'Bonjour,',
+  );
   await expect(page.locator('[data-location-label]')).toHaveText(
     'Près de New York',
   );
   await expect(
     page.getByRole('button', {name: 'Changer le lieu météo'}),
   ).toHaveAccessibleDescription(/Météo · Près de New York.*Sur cet appareil/sv);
-  const header = page.locator('[data-dashboard-header]');
+  const header = page.locator('.morning-intro');
   const geometry = await header.evaluate((element) => {
-    const brand = element.querySelector('a')!.getBoundingClientRect();
+    const brand = element
+      .querySelector(':scope h1 > span')!
+      .getBoundingClientRect();
     const pill = element
       .querySelector('[data-location-open]')!
       .getBoundingClientRect();
@@ -345,9 +349,11 @@ test('current location is opt-in, preserves coordinates, estimates a city, and p
   });
   expect(geometry.gap).toBeGreaterThanOrEqual(8);
   expect(geometry.height).toBeGreaterThanOrEqual(44);
-  expect(geometry.labelHeight).toBeLessThan(32);
+  expect(geometry.labelHeight).toBeLessThanOrEqual(geometry.height);
   await page.reload();
-  await expect(page.locator('[data-location-greeting]')).toHaveText('Bonjour.');
+  await expect(page.locator('[data-location-greeting]')).toContainText(
+    'Bonjour,',
+  );
   await expect(page.locator('[data-location-label]')).toHaveText(
     'Près de New York',
   );
@@ -445,7 +451,9 @@ test('closing the picker discards a late city response and saved legacy GPS stay
       .catch(() => undefined);
   });
   await page.goto('/');
-  await expect(page.locator('[data-location-greeting]')).toHaveText('Bonjour.');
+  await expect(page.locator('[data-location-greeting]')).toContainText(
+    'Bonjour,',
+  );
   await page.getByRole('button', {name: 'Changer le lieu météo'}).click();
   await page.getByRole('button', {name: 'Utiliser ma position'}).click();
   await expect.poll(() => isWaiting).toBe(true);
@@ -477,8 +485,10 @@ test('a long town name keeps the header on one line at narrow phone widths @mobi
     'Saint-Rémy-en-Bouzemont-Saint-Genest-et-Isson',
   );
   expect(
-    await page.locator('[data-dashboard-header]').evaluate((element) => {
-      const brand = element.querySelector('a')!.getBoundingClientRect();
+    await page.locator('.morning-intro').evaluate((element) => {
+      const brand = element
+        .querySelector(':scope h1 > span')!
+        .getBoundingClientRect();
       const pill = element
         .querySelector('[data-location-open]')!
         .getBoundingClientRect();

@@ -11,6 +11,7 @@ import {
   dayHours,
   routineForDay,
   morningAdvice,
+  forecastAdvice,
 } from './morning.ts';
 import {
   createWeatherService,
@@ -25,7 +26,11 @@ import {
   recoveryAdvice,
   unavailableAdvice,
 } from './freshness.ts';
-import {mountFutureWeather} from './future.ts';
+import {
+  mountFutureWeather,
+  forecastDateLabel,
+  forecastDates,
+} from './future.ts';
 
 const rounded = (value: number) => `${Math.round(value)}°`;
 
@@ -34,7 +39,10 @@ export function mountWeather(
   onUpdate?: (state: WeatherState) => void,
   isLocalLocation = false,
 ) {
-  const future = mountFutureWeather(root);
+  const future = mountFutureWeather(root, () => {
+    renderedMinute = undefined;
+    render(latest);
+  });
   const notifyWeatherUpdate = onUpdate ?? (() => undefined);
   let planning: DayPlanning = emptyPlanning;
   let calendar: OfficialCalendar | undefined;
@@ -69,7 +77,10 @@ export function mountWeather(
 
   function render({weather, failed}: WeatherState) {
     notifyWeatherUpdate({weather, failed});
-    future.update({weather, failed});
+    const now = Date.now();
+    const selectedDate = future.update({weather, failed}, now);
+    const isFuture = selectedDate !== dateKey(now);
+    root.dataset.forecast = String(isFuture);
     if (!weather) {
       root.querySelector<HTMLTimeElement>('[data-reading-age]')!.hidden = true;
     }
@@ -78,18 +89,37 @@ export function mountWeather(
       return;
     }
 
-    const now = Date.now();
     const minute = Math.floor(now / 60_000);
     if (
       weather === renderedWeather &&
       minute === renderedMinute &&
-      failed === renderedFailure
+      failed === renderedFailure &&
+      selectedDate === renderedDay
     ) {
       return;
     }
 
     renderedMinute = minute;
     renderedFailure = failed;
+    const dayLabel =
+      selectedDate === forecastDates(now)[1]
+        ? 'demain'
+        : forecastDateLabel(selectedDate, false);
+    text(
+      '[data-weather-heading]',
+      isFuture ? `Prévisions · ${dayLabel}` : 'En ce moment',
+    );
+    text(
+      '[data-forecast-date]',
+      isFuture ? forecastDateLabel(selectedDate) : '',
+    );
+    root.querySelector<HTMLElement>('[data-forecast-date]')!.hidden = !isFuture;
+    root.querySelector<HTMLElement>('[data-temperature-label]')!.hidden =
+      !isFuture;
+    text(
+      '[data-advice-heading]',
+      isFuture ? `Conseil pour ${dayLabel}` : 'Conseil du jour',
+    );
     if (!weather) {
       if (failed) {
         text('[data-condition]', 'Météo indisponible');
@@ -113,14 +143,39 @@ export function mountWeather(
       now,
       failed,
     );
+    root.querySelector<HTMLTimeElement>('[data-reading-age]')!.hidden =
+      isFuture && !isStale;
     root.dataset.stale = String(isStale);
-    text('[data-weather-heading]', isStale ? 'Dernier relevé' : 'En ce moment');
+    if (!isFuture && isStale) {
+      text('[data-weather-heading]', 'Dernier relevé');
+    }
+
+    const daily = weather.daily.find((entry) => entry.date === selectedDate);
+    // Pick a returned instant belonging to this local calendar day, including DST.
+    let selectedTime =
+      weather.hourly.find((hour) => dateKey(hour.time) === selectedDate)
+        ?.time ?? Date.parse(`${selectedDate}T12:00:00Z`);
+    if (dateKey(selectedTime) !== selectedDate) {
+      selectedTime +=
+        dateKey(selectedTime) > selectedDate ? -86_400_000 : 86_400_000;
+    }
+
     const {label, icon} = conditionFor(
-      weather.current.code,
-      weather.current.isDay,
+      isFuture ? daily?.code : weather.current.code,
+      isFuture || weather.current.isDay,
     );
-    text('[data-temperature]', rounded(weather.current.temperature));
-    text('[data-condition]', label);
+    text(
+      '[data-temperature]',
+      isFuture
+        ? daily
+          ? rounded(daily.high)
+          : '—°'
+        : rounded(weather.current.temperature),
+    );
+    text(
+      '[data-condition]',
+      isFuture && !daily ? 'Prévision indisponible' : label,
+    );
     const iconElement = root.querySelector('[data-current-icon]');
     if (iconElement) {
       const previous = [...iconElement.classList].find((name) =>
@@ -135,21 +190,28 @@ export function mountWeather(
       }
     }
 
-    const daily = weather.daily.find((entry) => entry.date === dateKey(now));
     text(
       '[data-extremes]',
-      `Ressenti ${rounded(weather.current.feelsLike)} · ${daily ? `Max. ${rounded(daily.high)} / Min. ${rounded(daily.low)}` : 'Max. / Min. du jour indisponibles'}`,
+      `${isFuture ? '' : `Ressenti ${rounded(weather.current.feelsLike)} · `}${daily ? `Max. ${rounded(daily.high)} / Min. ${rounded(daily.low)}` : 'Max. / Min. du jour indisponibles'}`,
     );
     const summary = summarize(weather, now);
-    const dayRoutine = routine(now);
-    const advice = morningAdvice(weather, now, dayRoutine.points);
+    const dayRoutine = routine(isFuture ? selectedTime : now);
+    const advice = isFuture
+      ? forecastAdvice(weather, selectedDate)
+      : morningAdvice(weather, now, dayRoutine.points);
     text('[data-advice]', isStale ? staleLabel : advice.title);
     text('[data-checkpoint-heading]', dayRoutine.heading);
 
     text('[data-day-context]', dayRoutine.note);
     text(
       '[data-rain]',
-      isStale ? 'Conditions non actualisées.' : summary.current,
+      isStale
+        ? 'Conditions non actualisées.'
+        : isFuture
+          ? daily?.probability === undefined
+            ? 'Pluie : prévision indisponible'
+            : `Pluie ${daily.probability} %`
+          : summary.current,
     );
     text('[data-summary]', isStale ? recoveryAdvice : advice.detail);
     text(
@@ -161,10 +223,15 @@ export function mountWeather(
       status.hidden = !isStale;
     }
 
-    renderForecast(weather, now);
+    renderForecast(weather, isFuture ? selectedTime : now, now, isFuture);
   }
 
-  function renderForecast(weather: Weather, now: number) {
+  function renderForecast(
+    weather: Weather,
+    now: number,
+    actualNow: number,
+    isFuture: boolean,
+  ) {
     const today = dateKey(now);
     const dayRoutine = routine(now);
     const signature = JSON.stringify(dayRoutine.points);
@@ -198,8 +265,8 @@ export function mountWeather(
 
     const start = chartHours[0].time;
     const end = chartHours.at(-1)!.time;
-    const marker = ((now - start) / (end - start)) * 600;
-    const isVisible = marker >= 0 && marker <= 600;
+    const marker = ((actualNow - start) / (end - start)) * 600;
+    const isVisible = !isFuture && marker >= 0 && marker <= 600;
     line.style.display = isVisible ? '' : 'none';
     markerLabel.hidden = !isVisible;
     if (!isVisible) {
@@ -302,11 +369,11 @@ export function mountWeather(
       if (isActive) {
         render(latest);
       } else {
-        future.close();
+        future.reset();
       }
     },
     closeForecast() {
-      future.close();
+      future.reset();
     },
     wake() {
       service.wake();

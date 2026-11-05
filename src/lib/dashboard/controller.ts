@@ -35,7 +35,7 @@ function initializeDashboard(root: HTMLElement) {
     root.querySelectorAll<HTMLButtonElement>('[data-mode-button]');
   const panels = root.querySelectorAll<HTMLElement>('[data-mode-panel]');
   const footer = root.querySelector<HTMLElement>('[data-dashboard-footer]')!;
-  // The fixed dock grows when hints/retry text wraps. Reserve its real height
+  // The fixed dock grows when retry text wraps. Reserve its real height
   // for mobile content and native keyboard scrolling without polling layout.
   const dockObserver =
     typeof ResizeObserver === 'undefined'
@@ -299,14 +299,6 @@ function initializeDashboard(root: HTMLElement) {
       .querySelectorAll<HTMLElement>('[data-location-footer]')
       .forEach((element) => {
         element.textContent = `${next.location} · ${next.timezone}`;
-      });
-    root
-      .querySelectorAll<HTMLElement>('[data-location-greeting]')
-      .forEach((element) => {
-        element.textContent =
-          next.source === 'geolocation' || next.location === 'Ma position'
-            ? 'Bonjour.'
-            : `Bonjour, ${next.location}.`;
       });
     picker.update();
   }

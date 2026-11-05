@@ -7,7 +7,7 @@ import WeatherChart from './WeatherChart.astro';
 
 <div
   data-weather
-  class="group/weather grid gap-1.5 data-[observance=true]:gap-1"
+  class="group/weather min-w-0 grid gap-1 data-[observance=true]:gap-1"
 >
   <aside
     data-weather-alerts
@@ -65,28 +65,44 @@ import WeatherChart from './WeatherChart.astro';
       Météo-France via Meteoalarm · consignes
     </a>
   </aside>
+  <FutureWeather />
   <div
     data-weather-cards
     class="grid gap-4 min-[1000px]:grid-cols-[0.85fr_1.8fr]"
   >
     <section
-      class="surface min-w-0 flex flex-col justify-between px-4 py-3 group-data-[observance=true]/weather:py-1.5"
+      class="surface min-w-0 flex flex-col justify-between px-4 py-2 group-data-[observance=true]/weather:py-1.5"
       aria-labelledby="weather-title"
     >
       <h2
         class="text-[length:var(--font-weather-heading)] font-bold leading-tight"
         id="weather-title"
         data-weather-heading
+        aria-live="polite"
       >
         En ce moment
       </h2>
+      <p
+        data-forecast-date
+        hidden
+        class="text-[length:var(--font-weather-detail)] font-bold text-secondary"
+      ></p>
       <div class="flex items-center justify-between gap-1">
-        <span
-          class="text-[length:var(--font-weather-temperature)] font-bold tracking-[-0.06em] leading-none"
-          data-temperature
-        >
-          —°
-        </span>
+        <div>
+          <span
+            class="block text-[length:var(--font-weather-temperature)] font-bold tracking-[-0.06em] leading-none"
+            data-temperature
+          >
+            —°
+          </span>
+          <p
+            data-temperature-label
+            hidden
+            class="text-[length:var(--font-weather-detail)] text-secondary"
+          >
+            Maximum prévu
+          </p>
+        </div>
         <span
           class="weather-icon i-meteocons-not-available-fill inline-block size-[var(--icon-weather-current)] shrink-0 drop-shadow-[0_1px_1px_#182c3580]"
           data-current-icon
@@ -118,7 +134,7 @@ import WeatherChart from './WeatherChart.astro';
       ></time>
     </section>
     <section
-      class="surface min-w-0 px-4 py-3 group-data-[observance=true]/weather:py-1.5"
+      class="surface min-w-0 px-4 py-2 group-data-[observance=true]/weather:py-1.5"
       aria-labelledby="forecast-title"
     >
       <div class="flex flex-wrap items-baseline justify-between gap-2 mb-2">
@@ -129,7 +145,6 @@ import WeatherChart from './WeatherChart.astro';
         >
           Les repères de la journée
         </h2>
-        <FutureWeather />
       </div>
       <WeatherCheckpoints />
       <WeatherChart />
@@ -145,6 +160,7 @@ import WeatherChart from './WeatherChart.astro';
     >
       <h2
         id="advice-title"
+        data-advice-heading
         class="text-[length:var(--font-weather-detail)] font-bold leading-tight"
       >
         Conseil du jour
@@ -275,6 +291,23 @@ import WeatherChart from './WeatherChart.astro';
   </div>
 </div>
 <style>
+  /* A compact warning may wrap at narrow widths; full instructions remain in details. */
+  [data-weather-alerts] {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.125rem 0.75rem;
+  }
+  [data-weather-alerts] > a {
+    line-height: 1.2;
+  }
+
+  [data-weather][data-forecast='true']
+    [data-weather-cards]
+    > section:first-child {
+    border-color: var(--colors-primary);
+    background: var(--colors-elevated);
+  }
   [data-weather-alerts][data-level='unknown'] {
     display: flex;
     align-items: baseline;
@@ -293,9 +326,10 @@ import WeatherChart from './WeatherChart.astro';
   @media (min-width: 1000px) {
     [data-weather] {
       flex: 1;
-      grid-template-rows: auto auto minmax(min-content, 1fr) auto;
+      grid-template-rows: auto auto auto minmax(min-content, 1fr) auto;
     }
     [data-weather][data-alert='true'] {
+      --icon-weather-current: 6.25rem;
       gap: 0.25rem;
     }
     [data-weather][data-alert='true'] [data-weather-cards] > section {
@@ -309,14 +343,17 @@ import WeatherChart from './WeatherChart.astro';
     [data-weather-alerts] {
       grid-row: 1;
     }
-    [data-weather-cards] {
+    [data-future-days] {
       grid-row: 2;
     }
-    [data-weather-lower] {
+    [data-weather-cards] {
       grid-row: 3;
     }
-    [data-weather-footer] {
+    [data-weather-lower] {
       grid-row: 4;
+    }
+    [data-weather-footer] {
+      grid-row: 5;
     }
   }
 

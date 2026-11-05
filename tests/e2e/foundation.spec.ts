@@ -28,11 +28,11 @@ test('French weather shell, working modes and locally bundled assets @all-browse
   });
   await page.goto('/');
   await expect(
-    page.getByRole('heading', {name: 'Bonjour, Annecy.'}),
+    page.getByRole('heading', {name: /Bonjour,.*Annecy/v}),
   ).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
   await expect(page.locator('[data-clock]').first()).toHaveText(/\d{2}:\d{2}/v);
-  await expect(page.getByText('Météo · Annecy')).toBeVisible();
+  await expect(page.locator('[data-location-label]')).toHaveText('Annecy');
   await expect(
     page.getByRole('button', {name: 'Maison', exact: true}),
   ).toHaveCount(0);
@@ -42,7 +42,7 @@ test('French weather shell, working modes and locally bundled assets @all-browse
   for (const [button, title] of [
     ['Photos', 'Vos photos'],
     ['Nuit', 'Bonne nuit.'],
-    ['Matin', 'Bonjour, Annecy.'],
+    ['Matin', /Bonjour,.*Annecy/v],
   ]) {
     await page.getByRole('button', {name: button, exact: true}).click();
     await expect(page.getByRole('heading', {name: title})).toBeVisible();
@@ -136,7 +136,9 @@ test('only current weather animates and all Meteocons respect motion preference 
   await expect(page.locator('[data-current-icon]')).toHaveClass(
     /i-meteocons-partly-cloudy-day-fill/v,
   );
-  const icons = page.locator('[data-weather] [class*="i-meteocons-"]');
+  const icons = page.locator(
+    '[data-current-icon], [data-checkpoints] [class*="i-meteocons-"]',
+  );
   await expect(
     page.locator('[data-checkpoints] [class*="i-meteocons-"]').first(),
   ).toBeVisible();

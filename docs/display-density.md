@@ -18,6 +18,29 @@ must continue fitting without clipping, including six appointments and warning/d
 states. Phones can scroll Morning content; bottom clearance keeps it reachable above
 the shared navigation.
 
+## Compact Morning layout — review branch, 5 November 2026
+
+Morning uses one frame-width header: greeting with a weather-location pill,
+actual household date and clock. The pill opens the existing location picker;
+long labels truncate inside it and remain complete in the picker. The separate
+brand row and duplicate location above the clock are removed. Phones wrap the
+header. Below are the seven-day selector, conditions/checkpoints/chart row, and
+advice/agenda row. The selected forecast never changes the real header date.
+The main weather typography tokens retain their large sizes. Seven-day labels
+use 18px, with 16px Max/Min and 20px rain values. With an active warning, a compact
+banner, smaller condition illustration and a 70px plot preserve useful space
+without reducing the main weather text. Rain-axis and peak labels scale with the
+plot. Full warning details and official links remain available.
+
+The floating dock retains its existing anchor, auto-hide and reveal behavior.
+Navigation instructions above it are removed; failures and retry controls remain.
+On the frame it may temporarily overlap the last agenda rows while visible, as
+accepted by the owner; do not reserve an empty full-width dock band or reflow the
+cards when it hides. Phones retain scroll/focus clearance so content remains
+reachable. This accepted overlap refines the no-clipping policy above only for
+the temporary dock. Physical acceptance remains #18; this branch is for #23
+screenshot review and is not deployed.
+
 ## Controls
 
 Morning, Photos and Night use the same 24rem maximum navigation width (viewport

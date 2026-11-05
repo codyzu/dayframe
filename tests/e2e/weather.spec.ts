@@ -343,76 +343,6 @@ test('exhausted cached forecasts hide the chart and recover into the same shell'
   expect(await shell.evaluate((element) => element.isConnected)).toBe(true);
 });
 
-test('future browsing is bounded, accessible and fits large @chromium @mobile', async ({
-  page,
-}, testInfo) => {
-  let calls = 0;
-  await page.route('https://api.open-meteo.com/**', async (route) => {
-    calls++;
-    await route.fulfill({json: sevenDayFixture()});
-  });
-  await page.goto('/?display=frame');
-  const open = page.getByRole('button', {name: 'Prévisions sur 7 jours'});
-  await open.click();
-  const dialog = page.getByRole('dialog');
-  await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole('button', {name: 'Fermer'})).toBeFocused();
-  await expect(dialog.locator('[data-future-days] button')).toHaveCount(7);
-  const last = dialog.locator('[data-future-days] button').last();
-  await last.click();
-  await expect(last).toHaveAttribute('aria-pressed', 'true');
-  await expect(dialog.getByRole('button', {name: 'Fermer'})).toBeInViewport();
-  await expect(dialog.locator('[data-future-heading]')).toContainText(
-    '22 oct. 2026',
-  );
-  await expect(dialog.locator('tbody tr')).toHaveCount(24);
-  await expect(dialog.locator('[data-future-coverage]')).toContainText(
-    'Europe/Paris',
-  );
-  await expect(last.locator('[data-future-rain]')).toHaveText('Pluie : 65 %');
-  await expect(last.locator('[data-future-icon]')).toHaveCSS(
-    'background-image',
-    /data:image\/svg\+xml/v,
-  );
-  expect(
-    await dialog.evaluate(
-      (element) => element.scrollWidth <= element.clientWidth,
-    ),
-  ).toBe(true);
-  if (testInfo.project.name !== 'mobile') {
-    expect(
-      await page.evaluate(
-        () => globalThis.document.documentElement.scrollHeight,
-      ),
-    ).toBeLessThanOrEqual(800);
-    expect(
-      await dialog.evaluate(
-        (element) => element.scrollHeight <= element.clientHeight,
-      ),
-    ).toBe(true);
-  }
-
-  await dialog.getByRole('button', {name: 'Fermer'}).click();
-  await expect(open).toBeFocused();
-  await open.click();
-  await expect(
-    dialog.locator('[data-future-days] button').first(),
-  ).toHaveAttribute('aria-pressed', 'true');
-  await page.keyboard.press('Escape');
-  await expect(dialog).toBeHidden();
-  await expect(open).toBeFocused();
-  expect(calls).toBe(1);
-  await open.click();
-  // A scheduled mode transition closes the top-layer dialog.
-  await page.clock.setSystemTime(new Date('2026-10-16T08:01:00Z'));
-  await page.clock.fastForward(1000);
-  await expect(dialog).toBeHidden();
-  await expect(page.locator('[data-dashboard]')).toHaveAttribute(
-    'data-mode',
-    'photos',
-  );
-});
-
 test('partial old cache warns offline in both modes at large @mobile', async ({
   page,
 }, testInfo) => {
@@ -438,21 +368,13 @@ test('partial old cache warns offline in both modes at large @mobile', async ({
   await expect(page.locator('[data-summary]')).toHaveText(
     'Actualisation automatique en cours. Vérifiez la météo avant de partir.',
   );
-  await page.getByRole('button', {name: 'Prévisions sur 7 jours'}).click();
-  const dialog = page.getByRole('dialog');
-  await expect(dialog.locator('[data-future-status]')).toContainText(
-    'Prévisions non actualisées',
+  await page.locator('[data-future-days] button').last().click();
+  await expect(page.locator('[data-temperature]')).toHaveText('—°');
+  await expect(page.locator('[data-condition]')).toHaveText(
+    'Prévision indisponible',
   );
-  await dialog.locator('[data-future-days] button').last().click();
-  await expect(
-    dialog.locator('[data-future-days] button').last(),
-  ).toContainText('Prévision indisponible');
-  await expect(dialog.locator('[data-future-coverage]')).toContainText(
-    'horaires indisponibles',
-  );
-  await expect(dialog.locator('tbody tr')).toHaveCount(0);
-  await expect(dialog.locator('[data-future-chart]')).toBeHidden();
-  await dialog.getByRole('button', {name: 'Fermer'}).click();
+  await expect(page.locator('[data-chart-empty]')).toBeVisible();
+  await expect(page.locator('[data-chart-hours] tr')).toHaveCount(0);
   await page.locator('[data-dashboard]').dispatchEvent('pointerdown');
   await page.getByRole('button', {name: 'Photos', exact: true}).click();
   await expect(page.locator('[data-photo-weather-status]')).toHaveText(
@@ -510,10 +432,6 @@ test('stale successful responses follow backoff and recover without extra browse
     'data-stale',
     'true',
   );
-  await page.getByRole('button', {name: 'Prévisions sur 7 jours'}).click();
-  await expect(page.locator('[data-future-status]')).toContainText(
-    'non actualisées',
-  );
   await page.clock.fastForward(60_000);
   await expect.poll(() => calls).toBe(2);
   // Route entry precedes response processing. Wait for acceptance before moving
@@ -535,114 +453,7 @@ test('stale successful responses follow backoff and recover without extra browse
     'data-stale',
     'false',
   );
-  await page.getByRole('button', {name: 'Prévisions sur 7 jours'}).click();
-  await expect(page.locator('[data-future-status]')).toContainText(
-    'Prévisions pour Annecy',
-  );
   expect(calls).toBe(3);
-});
-
-test.describe('location timezone and DST', () => {
-  test.use({timezoneId: 'America/Los_Angeles'});
-  test('future dates use Paris across year change with a different browser timezone', async ({
-    page,
-  }) => {
-    const now = Date.parse('2026-12-31T23:30:00Z');
-    await page.clock.setSystemTime(new Date(now));
-    await page.route('https://api.open-meteo.com/**', async (route) => {
-      await route.fulfill({json: sevenDayFixture(now)});
-    });
-    await page.goto('/');
-    await page.getByRole('button', {name: 'Matin', exact: true}).click();
-    await page.getByRole('button', {name: 'Prévisions sur 7 jours'}).click();
-    await expect(
-      page.locator('[data-future-days] button').first(),
-    ).toHaveAttribute('aria-label', /^ven\. 1 janv\. 2027/v);
-    await expect(page.locator('[data-future-heading]')).toContainText(
-      '1 janv. 2027',
-    );
-    await page.clock.fastForward(
-      defaultSettings.overrideTimeoutSeconds * 1000 + 1000,
-    );
-    await expect(page.getByRole('dialog')).toBeHidden();
-  });
-
-  test('autumn detail distinguishes repeated local hours and keeps keyboard focus on refresh', async ({
-    page,
-  }) => {
-    const now = Date.parse('2026-10-25T06:30:00Z');
-    let requests = 0;
-    await page.clock.setSystemTime(new Date(now));
-    await page.route('https://api.open-meteo.com/**', async (route) => {
-      const time = await page.evaluate(() => Date.now());
-      const raw = sevenDayFixture(time);
-      raw.hourly.temperature_2m.fill(++requests === 1 ? 12 : 21);
-      await route.fulfill({json: raw});
-    });
-    await page.goto('/');
-    await page.getByRole('button', {name: 'Prévisions sur 7 jours'}).click();
-    const dialog = page.getByRole('dialog');
-    const first = dialog.locator('[data-future-days] button').first();
-    await first.focus();
-    await page.keyboard.press('Enter');
-    await expect(dialog.locator('tbody tr')).toHaveCount(25);
-    const repeated = dialog.locator('tbody tr').filter({hasText: '02:00'});
-    await expect(repeated).toHaveCount(2);
-    await expect(repeated.first()).toContainText('UTC+2');
-    await expect(repeated.last()).toContainText('UTC+1');
-    await expect(dialog.locator('tbody tr').first()).toContainText('12°');
-    // Keep browsing during the half-hour refresh without changing selection.
-    for (let elapsed = 0; elapsed < 1_800_000; elapsed += 50_000) {
-      await page.clock.fastForward(50_000);
-      await page.keyboard.press('Shift');
-    }
-
-    await expect(dialog.locator('tbody tr').first()).toContainText('21°');
-    expect(requests).toBe(2);
-    await expect(first).toHaveAttribute('aria-pressed', 'true');
-    await expect(dialog.locator('[data-future-heading]')).toContainText(
-      '25 oct. 2026',
-    );
-    await expect(first).toBeFocused();
-    await page.keyboard.press('Escape');
-    await expect(
-      page.getByRole('button', {name: 'Prévisions sur 7 jours'}),
-    ).toBeFocused();
-  });
-});
-
-test('forecast loading and unavailable states never invent future data', async ({
-  page,
-}) => {
-  let rejectRequest: (() => Promise<void>) | undefined;
-  await page.route('https://api.open-meteo.com/**', async (route) => {
-    rejectRequest = async () => route.abort();
-  });
-  await page.goto('/');
-  await page.getByRole('button', {name: 'Prévisions sur 7 jours'}).click();
-  const dialog = page.getByRole('dialog');
-  await expect(dialog.locator('[data-future-status]')).toHaveText(
-    'Chargement des prévisions…',
-  );
-  await expect(dialog.locator('[data-future-days] button')).toHaveCount(7);
-  await rejectRequest!();
-  await expect(dialog.locator('[data-future-status]')).toContainText(
-    'Prévisions indisponibles',
-  );
-  await expect(
-    dialog.locator('[data-future-days] button').first(),
-  ).toContainText('Pluie : —');
-  await expect(dialog.locator('tbody tr')).toHaveCount(0);
-  await page.keyboard.press('Tab');
-  expect(
-    await dialog.evaluate((element) =>
-      element.contains(globalThis.document.activeElement),
-    ),
-  ).toBe(true);
-  const tomorrow = dialog.locator('[data-future-days] button').nth(1);
-  await tomorrow.focus();
-  await page.keyboard.press('Space');
-  await expect(tomorrow).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('previous-year stale copy fits large and override expiry closes within Morning @mobile', async ({
@@ -673,11 +484,13 @@ test('previous-year stale copy fits large and override expiry closes within Morn
   }
 
   await page.getByRole('button', {name: 'Matin', exact: true}).click();
-  await page.getByRole('button', {name: 'Prévisions sur 7 jours'}).click();
   await page.clock.fastForward(
     defaultSettings.overrideTimeoutSeconds * 1000 + 1000,
   );
-  await expect(page.getByRole('dialog')).toBeHidden();
+  await expect(page.locator('[data-weather]')).toHaveAttribute(
+    'data-forecast',
+    'false',
+  );
   await expect(page.locator('[data-dashboard]')).toHaveAttribute(
     'data-mode',
     'morning',
@@ -769,187 +582,6 @@ test('a location change hides the previous reading age until validated weather i
   );
 });
 
-test('forecast closes after 60 idle seconds, restores focus and reopens with a fresh timeout', async ({
-  page,
-}) => {
-  await page.clock.pauseAt(fixtureNow + 60_000);
-  await page.route('https://api.open-meteo.com/**', async (route) =>
-    route.fulfill({json: sevenDayFixture()}),
-  );
-  await page.goto('/');
-  const open = page.getByRole('button', {name: 'Prévisions sur 7 jours'});
-  const dialog = page.getByRole('dialog');
-  await open.click();
-  await page.clock.fastForward(59_999);
-  await expect(dialog).toBeVisible();
-  await page.clock.fastForward(1);
-  await expect(dialog).toBeHidden();
-  await expect(open).toBeFocused();
-  await expect(page.locator('[data-dashboard]')).toHaveAttribute(
-    'data-mode',
-    'morning',
-  );
-  await page.clock.fastForward(20_000);
-  await open.click();
-  await page.clock.fastForward(59_999);
-  await expect(dialog).toBeVisible();
-  await page.clock.fastForward(1);
-  await expect(dialog).toBeHidden();
-  await expect(open).toBeFocused();
-});
-
-test('pointer, keyboard, wheel and touch input reset the forecast idle timeout', async ({
-  page,
-}) => {
-  await page.clock.pauseAt(fixtureNow + 60_000);
-  await page.route('https://api.open-meteo.com/**', async (route) =>
-    route.fulfill({json: sevenDayFixture()}),
-  );
-  await page.goto('/');
-  const open = page.getByRole('button', {name: 'Prévisions sur 7 jours'});
-  const dialog = page.getByRole('dialog');
-  await open.click();
-  const card = dialog.locator('[data-future-days] button').last();
-  for (const event of ['pointerdown', 'keydown', 'wheel', 'touchmove']) {
-    await page.clock.fastForward(40_000);
-    // Desktop Firefox has no TouchEvent constructor; exercise the shared input
-    // listener without implying a physical touch-device acceptance check.
-    await card.evaluate((element, eventName) => {
-      element.dispatchEvent(new Event(eventName, {bubbles: true}));
-    }, event);
-    await page.clock.fastForward(10_000);
-    await expect(dialog).toBeVisible();
-  }
-
-  await page.clock.fastForward(49_999);
-  await expect(dialog).toBeVisible();
-  await page.clock.fastForward(1);
-  await expect(dialog).toBeHidden();
-  await expect(open).toBeFocused();
-});
-
-test('weather refresh and programmatic focus do not prolong forecast browsing', async ({
-  page,
-}) => {
-  const start = fixtureNow + 60_000;
-  await page.clock.pauseAt(start);
-  await page.addInitScript(
-    ({key, cached, fetchedAt}) => {
-      localStorage.setItem(key, JSON.stringify({raw: cached, fetchedAt}));
-    },
-    {
-      key: cacheKey,
-      cached: sevenDayFixture(start - (45 * 60_000 - 55_000)),
-      fetchedAt: start,
-    },
-  );
-  let calls = 0;
-  await page.route('https://api.open-meteo.com/**', async (route) => {
-    calls++;
-    const now = await page.evaluate(() => Date.now());
-    await route.fulfill({json: sevenDayFixture(now)});
-  });
-  await page.goto('/');
-  const open = page.getByRole('button', {name: 'Prévisions sur 7 jours'});
-  await open.click();
-  const dialog = page.getByRole('dialog');
-  const card = dialog.locator('[data-future-days] button').last();
-  await card.focus();
-  expect(calls).toBe(0);
-  await page.clock.fastForward(55_000);
-  await expect
-    .poll(async () =>
-      page.evaluate((key) => {
-        const cached = JSON.parse(localStorage.getItem(key) ?? '{}') as {
-          fetchedAt?: number;
-        };
-        return cached.fetchedAt;
-      }, cacheKey),
-    )
-    .toBe(start + 55_000);
-  expect(calls).toBe(1);
-  await expect(card).toBeFocused();
-  await page.clock.fastForward(4999);
-  await expect(dialog).toBeVisible();
-  await page.clock.fastForward(1);
-  await expect(dialog).toBeHidden();
-  await expect(open).toBeFocused();
-});
-
-test('selected-day graph leads the forecast, with exact hourly details on demand @mobile', async ({
-  page,
-}) => {
-  await page.emulateMedia({reducedMotion: 'reduce'});
-  let calls = 0;
-  await page.route('https://api.open-meteo.com/**', async (route) => {
-    calls++;
-    await route.fulfill({json: sevenDayFixture()});
-  });
-  await page.goto('/?display=frame');
-  await page.getByRole('button', {name: 'Prévisions sur 7 jours'}).click();
-  const dialog = page.getByRole('dialog');
-  const chart = dialog.locator('[data-future-chart]');
-  await expect(chart).toBeVisible();
-  await expect(dialog.locator('[data-future-chart-now-label]')).toBeVisible();
-  await expect(dialog.locator('[data-future-chart-past]')).not.toHaveAttribute(
-    'width',
-    '0',
-  );
-  await expect(dialog.locator('[data-future-summary]')).toContainText(
-    'À venir',
-  );
-  await expect(dialog.locator('[data-future-details]')).not.toHaveAttribute(
-    'open',
-  );
-  await expect(dialog.getByRole('table')).toBeHidden();
-  await expect(chart.locator('rect title')).toHaveCount(24);
-  const originalPath = await chart.locator('path').first().getAttribute('d');
-  const tomorrow = dialog.locator('[data-future-days] button').nth(1);
-  await tomorrow.focus();
-  await page.keyboard.press('Enter');
-  await expect(tomorrow).toBeFocused();
-  await expect(tomorrow).toBeInViewport();
-  await expect(tomorrow).toHaveAttribute('aria-pressed', 'true');
-  await expect(dialog.locator('[data-future-chart-now-label]')).toBeHidden();
-  await expect(dialog.locator('[data-future-chart-past]')).toHaveAttribute(
-    'width',
-    '0',
-  );
-  await expect(chart.locator('path').first()).not.toHaveAttribute(
-    'd',
-    originalPath!,
-  );
-  await expect(chart).toBeInViewport();
-  const chartBounds = await chart.boundingBox();
-  const dialogBounds = await dialog.boundingBox();
-  expect(chartBounds!.y + chartBounds!.height).toBeLessThanOrEqual(
-    dialogBounds!.y + dialogBounds!.height,
-  );
-  await dialog.locator('summary').click();
-  await expect(dialog.getByRole('table')).toBeVisible();
-  await expect(dialog.locator('[data-future-hours] tr')).toHaveCount(24);
-  await dialog.locator('[data-future-days] button').last().click();
-  await expect(dialog.locator('[data-future-details]')).not.toHaveAttribute(
-    'open',
-  );
-  await expect(dialog.getByRole('table')).toBeHidden();
-  await expect(dialog.locator('[data-future-chart]')).toBeVisible();
-  await dialog.getByRole('button', {name: 'Fermer'}).click();
-  await page.getByRole('button', {name: 'Prévisions sur 7 jours'}).click();
-  const today = dialog.locator('[data-future-days] button').first();
-  await expect(today).toBeInViewport();
-  await expect(today).toHaveAttribute('aria-pressed', 'true');
-  await dialog.locator('summary').click();
-  await expect(dialog.getByRole('table')).toBeVisible();
-  await dialog.getByRole('button', {name: 'Fermer'}).click();
-  await page.getByRole('button', {name: 'Prévisions sur 7 jours'}).click();
-  await expect(dialog.getByRole('table')).toBeHidden();
-  await expect(dialog.locator('[data-future-details]')).not.toHaveAttribute(
-    'open',
-  );
-  expect(calls).toBe(1);
-});
-
 test('evening advice describes the next morning and keeps the daily extremes in the overview', async ({
   page,
 }) => {
@@ -972,80 +604,220 @@ test('evening advice describes the next morning and keeps the daily extremes in 
   );
 });
 
-test('partial hourly coverage is labeled without inventing earlier hours', async ({
+// The old modal journeys are replaced here; pure advice/date permutations live
+// in Vitest, while Firefox and mobile own selection wiring and responsive fit.
+test('day strip synchronizes weather, graph and advice without changing the real date @mobile', async ({
   page,
-}) => {
+}, info) => {
+  let calls = 0;
   await page.route('https://api.open-meteo.com/**', async (route) => {
+    calls++;
     const raw = sevenDayFixture();
-    // A contiguous forecast can begin partway through the first local day.
-    for (const values of Object.values(raw.hourly)) {
-      values.splice(0, 6);
-    }
-
+    raw.daily.temperature_2m_max[1] = 6;
+    raw.daily.temperature_2m_min[1] = 2;
+    raw.daily.precipitation_probability_max[1] = 0;
+    raw.hourly.temperature_2m.splice(
+      24,
+      24,
+      ...Array.from({length: 24}, () => 2),
+    );
+    raw.hourly.precipitation_probability.splice(
+      24,
+      24,
+      ...Array.from({length: 24}, () => 0),
+    );
+    raw.hourly.weather_code.splice(
+      24,
+      24,
+      ...Array.from({length: 24}, () => 3),
+    );
     await route.fulfill({json: raw});
   });
-  await page.goto('/');
-  await page.getByRole('button', {name: 'Prévisions sur 7 jours'}).click();
-  const dialog = page.getByRole('dialog');
-  await expect(dialog.locator('[data-future-chart-note]')).toBeVisible();
-  await expect(dialog.locator('[data-future-chart-note]')).toContainText(
-    'partielle',
+  await page.goto('/?display=frame');
+  await expect(page.locator('[data-temperature]')).toHaveText('12°');
+  const days = page.locator('[data-future-days] button');
+  await expect(days).toHaveCount(7);
+  await expect(days.first()).toContainText('Aujourd’hui');
+  await expect(days.first()).toContainText('Max 19° · Min 8°');
+  await expect(days.first()).toContainText('Pluie 65 %');
+  await days.nth(1).focus();
+  await page.keyboard.press('Enter');
+  await expect(days.nth(1)).toBeFocused();
+  await expect(days.nth(1)).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('[data-weather-heading]')).toHaveText(
+    'Prévisions · demain',
   );
-  const path = await dialog
-    .locator('[data-future-chart-curve]')
-    .first()
-    .getAttribute('d');
-  expect(path!.match(/M/gv)).toHaveLength(1);
-  await expect(dialog.locator('[data-future-chart-rain] rect')).toHaveCount(18);
-  await expect(dialog.locator('[data-future-chart-times]')).toContainText(
-    '06h',
+  await expect(page.locator('[data-forecast-date]')).toContainText(
+    '17 oct. 2026',
   );
-  await expect(dialog.locator('[data-future-chart-times]')).not.toContainText(
-    '00h',
+  await expect(page.locator('[data-temperature]')).toHaveText('6°');
+  await expect(page.locator('[data-temperature-label]')).toBeVisible();
+  await expect(page.locator('[data-extremes]')).not.toContainText('Ressenti');
+  await expect(page.locator('[data-advice-heading]')).toHaveText(
+    'Conseil pour demain',
   );
-  await dialog.locator('[data-future-days] button').nth(1).click();
-  await expect(dialog.locator('[data-future-chart-note]')).toBeHidden();
-  const fullPath = await dialog
-    .locator('[data-future-chart-curve]')
-    .first()
-    .getAttribute('d');
-  expect(fullPath!.match(/M/gv)).toHaveLength(1);
+  await expect(page.locator('[data-advice]')).toHaveText(
+    'Habillez-vous chaudement.',
+  );
+  await expect(page.locator('[data-point-temperature]').first()).toHaveText(
+    '2°',
+  );
+  await expect(page.locator('[data-point-label]').first()).toHaveText('Matin');
+  await expect(page.locator('[data-chart-range]')).toHaveText(
+    'Température · 2° à 2°C',
+  );
+  await expect(page.locator('[data-weather-now-label]')).toBeHidden();
+  await expect(page.locator('[data-date]')).toHaveText('vendredi 16 octobre');
+  await expect(page.locator('[data-current-icon]')).toHaveCSS(
+    'background-image',
+    /data:image\/svg\+xml/v,
+  );
+  await days.last().click();
+  await expect(page.locator('[data-forecast-date]')).toContainText(
+    '22 oct. 2026',
+  );
+  await expect(page.locator('[data-chart-hours] tr')).toHaveCount(17);
+  await days.first().click();
+  await expect(page.locator('[data-temperature]')).toHaveText('12°');
+  await expect(page.locator('[data-weather-heading]')).toHaveText(
+    'En ce moment',
+  );
+  await expect(page.locator('[data-temperature-label]')).toBeHidden();
+  await expect(page.locator('[data-weather-now-label]')).toBeVisible();
+  await expect(page.locator('[data-advice-heading]')).toHaveText(
+    'Conseil du jour',
+  );
+  expect(calls).toBe(1);
+  expect(
+    await page.evaluate(
+      () =>
+        globalThis.document.documentElement.scrollWidth <=
+        globalThis.innerWidth,
+    ),
+  ).toBe(true);
+  if (info.project.name !== 'mobile') {
+    expect(
+      await page.evaluate(
+        () => globalThis.document.documentElement.scrollHeight,
+      ),
+    ).toBeLessThanOrEqual(800);
+  }
+
+  await page
+    .getByRole('button', {name: 'Changer le lieu météo', exact: true})
+    .click();
+  await expect(page.locator('[data-location-dialog]')).toBeVisible();
 });
 
-test('forecast day buttons keep their complete focus outlines inside the scrolling strip @mobile', async ({
+test('future selection returns after idle, Escape and mode changes while real input extends it', async ({
   page,
 }) => {
+  await page.clock.pauseAt(fixtureNow + 60_000);
   await page.route('https://api.open-meteo.com/**', async (route) =>
     route.fulfill({json: sevenDayFixture()}),
   );
   await page.goto('/');
-  await page.getByRole('button', {name: 'Prévisions sur 7 jours'}).click();
-  const dialog = page.getByRole('dialog');
-  const strip = dialog.locator('[data-future-days]');
-  // Establish keyboard modality; Safari's Tab cycle depends on platform preferences.
-  await page.keyboard.press('Tab');
-  for (const index of [0, 3, 6]) {
-    const day = strip.locator('button').nth(index);
-    await day.focus();
-    await page.keyboard.press('Enter');
-    await expect(day).toBeFocused();
-    await expect(day).toHaveCSS('outline-style', 'solid');
-    const bounds = await day.evaluate((button) => {
-      const style = getComputedStyle(button);
-      const inset =
-        Number(style.outlineWidth.replace('px', '')) +
-        Number(style.outlineOffset.replace('px', ''));
-      const card = button.getBoundingClientRect();
-      const parent = button.parentElement!.getBoundingClientRect();
-      return {
-        left: card.left - inset - parent.left,
-        right: parent.right - card.right - inset,
-        top: card.top - inset - parent.top,
-        bottom: parent.bottom - card.bottom - inset,
-      };
-    });
-    for (const clearance of Object.values(bounds)) {
-      expect(clearance).toBeGreaterThanOrEqual(-1);
-    }
+  const days = page.locator('[data-future-days] button');
+  await days.nth(1).click();
+  for (const event of ['pointerdown', 'keydown', 'wheel', 'touchmove']) {
+    await page.clock.fastForward(50_000);
+    await days
+      .nth(1)
+      .evaluate(
+        (element, eventName) =>
+          element.dispatchEvent(new Event(eventName, {bubbles: true})),
+        event,
+      );
+    await expect(page.locator('[data-weather]')).toHaveAttribute(
+      'data-forecast',
+      'true',
+    );
   }
+
+  await page.clock.fastForward(59_999);
+  await expect(page.locator('[data-weather]')).toHaveAttribute(
+    'data-forecast',
+    'true',
+  );
+  await page.clock.fastForward(1);
+  await expect(days.first()).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('[data-weather-heading]')).toHaveText(
+    'En ce moment',
+  );
+  await days.last().click();
+  await page.keyboard.press('Escape');
+  await expect(days.first()).toHaveAttribute('aria-pressed', 'true');
+  await days.last().click();
+  await page.getByRole('button', {name: 'Photos', exact: true}).click();
+  await page.getByRole('button', {name: 'Matin', exact: true}).click();
+  await expect(days.first()).toHaveAttribute('aria-pressed', 'true');
+  await days.last().click();
+  await page.clock.setSystemTime(new Date(fixtureNow + 86_400_000));
+  await page.clock.fastForward(1000);
+  await expect(days.first()).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('[data-weather]')).toHaveAttribute(
+    'data-forecast',
+    'false',
+  );
+});
+
+test('refresh retains selection and focus without extending the idle deadline', async ({
+  page,
+}) => {
+  const start = fixtureNow + 60_000;
+  await page.clock.pauseAt(start);
+  await page.addInitScript(
+    ({key, cached, fetchedAt}) => {
+      localStorage.setItem(key, JSON.stringify({raw: cached, fetchedAt}));
+    },
+    {
+      key: cacheKey,
+      cached: sevenDayFixture(start - (45 * 60_000 - 55_000)),
+      fetchedAt: start,
+    },
+  );
+  let calls = 0;
+  await page.route('https://api.open-meteo.com/**', async (route) => {
+    calls++;
+    const now = await page.evaluate(() => Date.now());
+    const raw = sevenDayFixture(now);
+    raw.daily.temperature_2m_max[1] = 25;
+    await route.fulfill({json: raw});
+  });
+  await page.goto('/');
+  const tomorrow = page.locator('[data-future-days] button').nth(1);
+  await tomorrow.click();
+  await tomorrow.focus();
+  expect(calls).toBe(0);
+  await page.clock.fastForward(55_000);
+  await expect(page.locator('[data-temperature]')).toHaveText('25°');
+  await expect(tomorrow).toBeFocused();
+  await expect(tomorrow).toHaveAttribute('aria-pressed', 'true');
+  expect(calls).toBe(1);
+  await page.clock.fastForward(5000);
+  await expect(
+    page.locator('[data-future-days] button').first(),
+  ).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('unavailable initial forecasts keep seven usable dates without invented values', async ({
+  page,
+}) => {
+  await page.route('https://api.open-meteo.com/**', async (route) =>
+    route.abort(),
+  );
+  await page.goto('/');
+  const days = page.locator('[data-future-days] button');
+  await expect(days).toHaveCount(7);
+  await expect(days.first()).toContainText('Max — · Min —');
+  await expect(days.first()).toContainText('Pluie —');
+  await days.nth(1).click();
+  await expect(page.locator('[data-weather-heading]')).toHaveText(
+    'Prévisions · demain',
+  );
+  await expect(page.locator('[data-temperature]')).toHaveText('—°');
+  await expect(page.locator('[data-condition]')).toHaveText(
+    'Météo indisponible',
+  );
+  await expect(page.locator('[data-chart-hours] tr')).toHaveCount(0);
 });

@@ -70,20 +70,3 @@ export function temperatureOutlook(weather: Weather, now: number) {
     ? `${current}, autour de ${temperature(last.temperature)} vers ${time(last)}.`
     : `${current}. Suite des prévisions indisponible.`;
 }
-
-export function selectedDaySummary(hours: Hour[], now: number, date: string) {
-  const remaining =
-    date === dateKey(now)
-      ? hours.filter((hour) => hour.time + 3_600_000 > now)
-      : hours;
-  if (remaining.length === 0) {
-    return 'Suite des prévisions horaires indisponible.';
-  }
-
-  const low = Math.min(...remaining.map((hour) => hour.temperature));
-  const high = Math.max(...remaining.map((hour) => hour.temperature));
-  const wet = remaining.find(
-    (hour) => hour.probability >= 50 || hour.precipitation >= 0.2,
-  );
-  return `${date === dateKey(now) ? 'À venir : ' : ''}${temperature(low)} à ${temperature(high)}C. ${wet ? (wet.time <= now ? 'Pluie possible en ce moment.' : `Pluie possible vers ${time(wet)}.`) : 'Pas de pluie marquée prévue sur les heures disponibles.'}`;
-}

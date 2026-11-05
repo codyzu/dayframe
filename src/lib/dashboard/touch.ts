@@ -14,7 +14,7 @@ export function swipeDirection(start: Point, end: Point, elapsed: number) {
 }
 
 const interactive =
-  'button, a, input, select, textarea, summary, dialog, [role="button"], [contenteditable="true"], [data-dashboard-footer]';
+  'button, a, input, select, textarea, summary, dialog, [data-future-days], [role="button"], [contenteditable="true"], [data-dashboard-footer]';
 
 export function mountTouchNavigation(
   root: HTMLElement,
@@ -110,10 +110,6 @@ export function mountTouchNavigation(
       if (mode !== undefined) {
         callbacks.select(mode);
       }
-
-      root
-        .querySelector<HTMLElement>('[data-touch-hint]')
-        ?.setAttribute('hidden', '');
     } else if (gesture.mode === 'photos' && movement <= 12 && elapsed < 500) {
       const fraction = event.clientX / globalThis.innerWidth;
       if (fraction < 0.3 || fraction > 0.7) {

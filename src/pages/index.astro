@@ -6,7 +6,6 @@ import WeatherLocation from '../components/WeatherLocation.astro';
 import PhotoSlideshow from '../components/PhotoSlideshow.astro';
 import PhotoControls from '../components/PhotoControls.astro';
 import ModeNavigation from '../components/ModeNavigation.astro';
-import {displayConfig} from '../lib/dashboard/config';
 ---
 
 <BaseLayout
@@ -41,47 +40,24 @@ import {displayConfig} from '../lib/dashboard/config';
         class="fill-alpine-near"
       />
     </svg>
-    <header
-      data-dashboard-header
-      class="relative flex items-center justify-between gap-3"
-    >
-      <a
-        class="inline-flex shrink-0 items-center gap-2.5 text-lg md:text-[22px] font-bold tracking-tight"
-        href="/"
-        aria-label="Dayframe, accueil"
-      >
-        <span
-          class="grid place-items-center size-[33px] border border-accent rounded-[10px] text-2xl text-accent"
-          aria-hidden="true"
-        >
-          d.
-        </span>
-        dayframe
-      </a>
-      <WeatherLocation />
-    </header>
     <section
-      class="morning-panel flex flex-1 flex-col py-4 font-bold"
+      class="morning-panel min-w-0 flex flex-1 flex-col py-4 font-bold"
       data-mode-panel="morning"
       aria-labelledby="morning-title"
     >
-      <div class="morning-intro flex flex-col-reverse items-start justify-between gap-6 mb-6 md:flex-row md:items-center md:mb-6">
-        <div>
-          <h1
-            data-location-greeting
-            class="display-title font-bold"
-            id="morning-title"
-          >
-            Bonjour, {displayConfig.location}.
-          </h1>
-          <p
-            class="mt-2 text-2xl font-bold text-secondary first-letter:uppercase"
-            data-date
-          >
-            Chargement de la date…
-          </p>
-        </div>
-        <time class="clock" data-clock aria-label="Heure locale">
+      <div class="morning-intro flex flex-wrap items-center gap-x-6 gap-y-2 mb-2">
+        <h1
+          data-location-greeting
+          class="display-title flex min-w-0 items-center gap-2 font-bold"
+          id="morning-title"
+        >
+          <span>Bonjour,</span>
+          <WeatherLocation />
+        </h1>
+        <p class="text-2xl text-secondary first-letter:uppercase" data-date>
+          Chargement de la date…
+        </p>
+        <time class="clock ml-auto" data-clock aria-label="Heure locale">
           --:--
         </time>
       </div>
@@ -123,12 +99,6 @@ import {displayConfig} from '../lib/dashboard/config';
       >
         Réessayer la connexion
       </button>
-      <p
-        data-touch-hint
-        class="rounded-xl bg-surface px-3 py-2 text-center text-xs text-secondary"
-      >
-        Balayez pour changer d’écran. Photos : touchez les côtés pour parcourir.
-      </p>
       <ModeNavigation />
     </footer>
     <noscript>
@@ -169,14 +139,11 @@ import {displayConfig} from '../lib/dashboard/config';
     top: 0;
     right: 0;
     width: 65%;
-    height: 140px;
+    height: 90px;
     pointer-events: none;
   }
   .morning-intro {
     position: relative;
-  }
-  .dashboard[data-mode='photos'] [data-dashboard-header] {
-    visibility: hidden;
   }
   /* One anchored dock keeps navigation geometry identical in every mode.
      Safe-area offsets and mode/visibility selectors belong to this page. */
@@ -213,13 +180,8 @@ import {displayConfig} from '../lib/dashboard/config';
     --colors-secondary: var(--colors-night-ink);
     --colors-border: #625b4e;
   }
-  .dashboard[data-mode='night'] [data-dashboard-header],
   .dashboard[data-mode='night'] .alpine-header {
     visibility: hidden;
-  }
-  /* Keep the large greeting clear even when retry and navigation are revealed. */
-  .dashboard[data-mode='night'] [data-touch-hint] {
-    display: none;
   }
   .dashboard[data-mode='night'] [data-mode-panel='night'] {
     padding-bottom: 3rem;
@@ -230,20 +192,8 @@ import {displayConfig} from '../lib/dashboard/config';
     :global(html:has(.dashboard[data-mode='morning'])) {
       scroll-padding-bottom: 0.5rem;
     }
-    /* Keep the weather and agenda readable when a vigilance banner is present:
-       reclaim the decorative brand row before compressing any useful content. */
-    .dashboard[data-mode='morning'][data-alerts='true']
-      [data-dashboard-header] {
-      display: none;
-    }
-    .dashboard[data-mode='morning'][data-alerts='true'] .morning-intro {
-      margin-bottom: 0;
-    }
     .dashboard[data-mode='morning'][data-alerts='true'] .clock {
-      font-size: 4rem;
-    }
-    .dashboard[data-mode='morning'][data-alerts='true'] .morning-panel {
-      padding: 0;
+      font-size: 3rem;
     }
     .dashboard {
       padding: 0.75rem 2rem;
@@ -252,16 +202,17 @@ import {displayConfig} from '../lib/dashboard/config';
       padding-bottom: 0.75rem;
     }
     .morning-panel {
-      padding: 0.5rem 0;
+      padding: 0;
     }
     .morning-intro {
+      flex-wrap: nowrap;
       margin-bottom: 0;
     }
     .display-title {
       font-size: 2rem;
     }
     .clock {
-      font-size: 5rem;
+      font-size: 4rem;
     }
   }
 </style>

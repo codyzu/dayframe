@@ -208,3 +208,41 @@ export function routineForDay(
     note: context.note,
   };
 }
+
+export function forecastAdvice(weather: Weather, date: string) {
+  const hours = weather.hourly.filter(
+    (hour) =>
+      dateKey(hour.time) === date &&
+      hourLabel(hour.time) >= '06:00' &&
+      hourLabel(hour.time) <= '22:00',
+  );
+  if (hours.length === 0) {
+    return {
+      title: 'Consultez la météo avant de partir.',
+      detail: 'Prévisions de la journée indisponibles.',
+    };
+  }
+
+  const low = Math.min(...hours.map((hour) => hour.temperature));
+  const high = Math.max(...hours.map((hour) => hour.temperature));
+  const wet = hours.find(
+    (hour) => hour.probability >= 50 || hour.precipitation >= 0.2,
+  );
+  const isHazardous = hours.some((hour) =>
+    [56, 57, 66, 67, 95, 96, 97, 99].includes(hour.code ?? -1),
+  );
+  return {
+    title: isHazardous
+      ? 'Prudence pour les trajets.'
+      : low <= 3
+        ? 'Habillez-vous chaudement.'
+        : wet
+          ? 'Prenez un parapluie.'
+          : low < 15
+            ? 'Prévoyez une veste.'
+            : 'Une tenue légère devrait suffire.',
+    detail: isHazardous
+      ? 'Orage ou verglas possible : vérifiez les conditions avant de partir.'
+      : `${Math.round(low)}° à ${Math.round(high)}° sur les heures disponibles.${wet ? ` Pluie possible vers ${hourLabel(wet.time).replace(':', 'h')}.` : ''}`,
+  };
+}

@@ -215,11 +215,13 @@ test('forecast dialogs and two-finger maintenance holds are excluded from screen
     first!,
   );
   await page.getByRole('button', {name: 'Matin', exact: true}).click();
-  await page.locator('[data-forecast-open]').click();
-  await expect(page.locator('[data-forecast-dialog]')).toBeVisible();
+  await page
+    .getByRole('button', {name: 'Changer le lieu météo', exact: true})
+    .click();
+  await expect(page.locator('[data-location-dialog]')).toBeVisible();
   await swipe(page, 'left');
   await expect(root).toHaveAttribute('data-mode', 'morning');
-  await expect(page.locator('[data-forecast-dialog]')).toBeVisible();
+  await expect(page.locator('[data-location-dialog]')).toBeVisible();
 });
 
 test('animated navigation completes, cancels on lifecycle changes and respects reduced motion @all-browsers', async ({

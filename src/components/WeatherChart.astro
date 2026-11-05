@@ -95,7 +95,7 @@
         {[100, 50, 0].map((probability) => (
           <span
             class="absolute right-0 -translate-y-1/2"
-            style={{top: `${100 - probability * 0.8}px`}}
+            style={{top: `${100 - probability * 0.8}%`}}
           >
             {probability} %
           </span>
@@ -138,3 +138,11 @@
     </tr>
   </template>
 </div>
+<style>
+  /* A warning shares the frame height; shorten the plot, not its labels. */
+  @media (min-width: 1000px) {
+    :global([data-weather][data-alert='true']) [data-chart-plot] {
+      height: 70px;
+    }
+  }
+</style>

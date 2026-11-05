@@ -153,6 +153,16 @@ short multi-day forecast, and calendar events. Avoid cluttering the primary 10-i
 
 The visual direction follows the approved mockups: scenic Annecy-style background, tasteful translucent surfaces, legible typography, color weather icons, and a combined hourly chart. The background must never compromise contrast.
 
+**Review-branch design, 5 November 2026 (#23):** A compact header combines the
+greeting/location picker, actual household date and clock. An always-visible
+seven-day strip selects the conditions, four checkpoints, hourly graph and advice
+in place, with explicit future-date identification and an idle return to today.
+Remove the separate brand row, duplicated weather location and navigation hints.
+Keep the existing floating dock; temporary agenda overlap is accepted. See
+[weather browsing](weather.md#inline-seven-day-browsing--review-branch-5-november-2026)
+and [compact display layout](display-density.md#compact-morning-layout--review-branch-5-november-2026).
+This branch is awaiting owner screenshot review and is not a deployment claim.
+
 ### 4.2 Weather provider
 
 **Device location update, 29 October 2026:** The tappable weather location opens

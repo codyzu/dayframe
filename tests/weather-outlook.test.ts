@@ -1,12 +1,10 @@
 import {describe, expect, it} from 'vitest';
 import {dateKey, parseWeather} from '../src/lib/weather/adapter.ts';
-import {
-  adviceHours,
-  temperatureOutlook,
-  selectedDaySummary,
-} from '../src/lib/weather/outlook.ts';
+import {adviceHours, temperatureOutlook} from '../src/lib/weather/outlook.ts';
+import {runtimeConfig} from '../src/lib/dashboard/config.ts';
+import {forecastDates} from '../src/lib/weather/future.ts';
 import {chartGeometry} from '../src/lib/weather/chart.ts';
-import {morningAdvice} from '../src/lib/weather/morning.ts';
+import {morningAdvice, forecastAdvice} from '../src/lib/weather/morning.ts';
 import {fixtureNow, weatherFixture} from './fixtures/weather.ts';
 
 function dryDay() {
@@ -85,14 +83,34 @@ describe('forward-looking weather advice', () => {
       );
     }
   });
-  it('summarizes only remaining hours today and the full selected future day', () => {
+  it('uses only the selected future day for clothing, rain and hazards', () => {
     const weather = dryDay();
+    weather.current.feelsLike = -20;
+    weather.current.code = 99;
     weather.hourly[8].probability = 90;
-    const now = Date.parse('2026-10-16T14:00:00Z');
-    expect(
-      selectedDaySummary(weather.hourly.slice(0, 24), now, '2026-10-16'),
-    ).not.toContain('08h00');
-    expect(selectedDaySummary([], now, '2026-10-17')).toContain('indisponible');
+    expect(forecastAdvice(weather, '2026-10-17')).toEqual({
+      title: 'Prévoyez une veste.',
+      detail: '7° à 9° sur les heures disponibles.',
+    });
+    const future = weather.hourly.filter(
+      (hour) => dateKey(hour.time) === '2026-10-17',
+    );
+    future[8].probability = 80;
+    expect(forecastAdvice(weather, '2026-10-17').title).toBe(
+      'Prenez un parapluie.',
+    );
+    expect(forecastAdvice(weather, '2026-10-17').detail).toContain('08h00');
+    future[8].temperature = 2;
+    expect(forecastAdvice(weather, '2026-10-17').title).toBe(
+      'Habillez-vous chaudement.',
+    );
+    future[8].code = 67;
+    expect(forecastAdvice(weather, '2026-10-17').title).toBe(
+      'Prudence pour les trajets.',
+    );
+    expect(forecastAdvice(weather, '2026-10-18').detail).toContain(
+      'indisponibles',
+    );
   });
 });
 
@@ -100,4 +118,35 @@ it('does not connect the temperature curve across missing hourly coverage', () =
   const hours = dryDay().hourly.slice(0, 5);
   hours.splice(2, 1);
   expect(chartGeometry(hours)!.path.match(/M/gv)).toHaveLength(2);
+});
+
+it('keeps seven calendar dates across DST and year changes in the weather timezone', () => {
+  const previous = runtimeConfig.timezone;
+  try {
+    for (const timezone of [
+      'Europe/Paris',
+      'Pacific/Kiritimati',
+      'America/Los_Angeles',
+    ]) {
+      runtimeConfig.timezone = timezone;
+      for (const iso of [
+        '2026-10-25T00:30:00Z',
+        '2026-03-29T00:30:00Z',
+        '2026-12-31T23:30:00Z',
+      ]) {
+        const now = Date.parse(iso);
+        const dates = forecastDates(now);
+        expect(dates).toHaveLength(7);
+        expect(dates[0]).toBe(dateKey(now));
+        expect(new Set(dates).size).toBe(7);
+        for (let i = 1; i < dates.length; i++) {
+          expect(Date.parse(dates[i]) - Date.parse(dates[i - 1])).toBe(
+            86_400_000,
+          );
+        }
+      }
+    }
+  } finally {
+    runtimeConfig.timezone = previous;
+  }
 });

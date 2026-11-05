@@ -187,3 +187,12 @@ the verified artifact. A real-provider mobile WebKit check on production returne
 “Utiliser ma position” again to replace an older rounded preference; the original
 precision cannot be recovered from a previously rounded stored value. No physical
 iPhone permission/keyboard or frame acceptance is claimed.
+
+## Compact Morning location control — review branch, 5 November 2026
+
+The existing picker is opened by the place pill in “Bonjour, Annecy ▾”. It
+replaces the separate top-right weather-location label, including for estimated
+GPS place names and “Ma position”. The displayed place is a weather label and does
+not change the household clock, agenda or scheduling timezone. Existing opt-in,
+precise-coordinate storage, cancellation, reset and attribution behavior remains.
+This #23 branch refinement is for screenshot review, not new device acceptance.

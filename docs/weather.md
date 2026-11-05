@@ -149,7 +149,47 @@ confirmed the namespace/field structure and current feed timestamp; synthetic br
 fixtures establish departmental warning behavior, not a real current Haute-Savoie
 warning or actual-frame acceptance.
 
-## Seven-day browsing (F02) — 27 October 2026
+## Inline seven-day browsing — review branch, 5 November 2026
+
+The Morning view has an always-visible strip for today through day six. Each
+button shows its condition, labelled maximum/minimum and rain probability.
+Selecting a future date updates the conditions panel, four routine checkpoints,
+06:00–22:00 graph and deterministic clothing/rain advice together. Future
+conditions explicitly name the selected date and label the large temperature
+“Maximum prévu”; they do not show current feels-like or a current-time marker.
+Today restores the live presentation. Missing daily or hourly fields remain
+unavailable; old two-day caches remain supported without borrowing another day.
+
+Future advice uses only the selected day's useful hourly coverage, independently
+of today's current temperature, apparent temperature or hazards. The selected
+calendar date also chooses weekday/day-off checkpoints. Device-local places retain
+their neutral checkpoints. Household clock/date, agenda and official vigilance
+keep their independent time and validity rules.
+
+Selection is transient: today’s tile or Escape restores today; 60 seconds without
+input also restores it. Pointer, keyboard, wheel and touch-scroll input in the
+weather area restart the deadline; refresh and programmatic focus do not. Mode
+exit, override expiry, weather-location changes and local date rollover reset
+selection. Controls retain focus on refresh. The strip scrolls horizontally on
+phones, with room for keyboard outlines. No modal forecast or additional polling
+is used. Rain values keep the existing provider meaning (daily maximum hourly
+probability); no visible methodology note is added to the strip.
+
+This is the implementation proposed for owner screenshot review in #23, not a
+production or physical-device acceptance claim. Rollback is a web source revert;
+no preference/data migration, provider, credentials, paid service or offline
+retention change is involved. The historical modal implementation below is
+superseded on this branch.
+
+Upstream refreshed on 5 November at
+`34c91641e3cdd159756e3f1dcc15914148b2beff`: reviewed MIT `LICENSE`,
+`dashboard/js/views/home.js`, `dashboard/css/views/home.css` and the weather
+section of `dashboard/js/data.js`. Retained the ideas of a compact weather
+hierarchy and seven glanceable cells. Dayframe independently implements dated
+forecast selection, actionable advice and timestamped provider/cache recovery,
+instead of upstream's hour-indexed mock weather. No upstream code/assets copied.
+
+## Historical seven-day dialog (F02) — 27 October 2026
 
 The Morning **Prévisions sur 7 jours** button opens a native modal dialog. Seven
 local calendar dates, today through day six, show condition, low/high and daily

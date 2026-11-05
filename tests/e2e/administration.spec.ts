@@ -46,7 +46,7 @@ test('both administrators persist settings, export, validate schedules and recov
     'contain',
   );
   await expect(page.locator('[data-location-greeting]')).toHaveText(
-    'Bonjour, Maison de test.',
+    /Bonjour,.*Maison de test/v,
   );
   await page.unroute('**/api/config/display');
   await page.request.get('/__test/login?admin=two');

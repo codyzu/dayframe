@@ -59,6 +59,8 @@ export function renderChart(root: HTMLElement, hours: Hour[]) {
   empty.hidden = Boolean(geometry);
   if (!geometry) {
     empty.textContent = 'Prévisions de la journée indisponibles.';
+    chart.querySelector('[data-chart-hours]')!.replaceChildren();
+    chart.querySelector('[data-chart-rain]')!.replaceChildren();
     return;
   }
 
@@ -94,7 +96,7 @@ export function renderChart(root: HTMLElement, hours: Hour[]) {
       `${hourLabel(peak.start)}–${hourLabel(peak.end)} : maximum horaire ${peak.probability} %`,
     );
     peakLabel.style.left = `clamp(2rem, ${x((peak.start + peak.end) / 2) / 6}%, calc(100% - 2rem))`;
-    peakLabel.style.top = `${80 - peak.probability * 0.8}px`;
+    peakLabel.style.top = `${80 - peak.probability * 0.8}%`;
   }
 
   chart.querySelector<HTMLElement>(

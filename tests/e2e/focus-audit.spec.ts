@@ -108,25 +108,6 @@ test('dashboard vacation layout, all modes and forecast controls have complete f
     ).toBeLessThanOrEqual(800);
   }
 
-  await page.getByRole('button', {name: 'Prévisions sur 7 jours'}).click();
-  failures.push(
-    ...(await auditFocus(page, page.getByRole('dialog'), info, {
-      name: 'forecast',
-    })),
-  );
-  await page.getByRole('dialog').locator('summary').click();
-  await page.getByRole('dialog').evaluate((dialog) => {
-    dialog.scrollTop = dialog.scrollHeight;
-  });
-  failures.push(
-    ...(await auditFocus(
-      page,
-      page.getByRole('dialog').locator('.sticky'),
-      info,
-      {name: 'forecast-sticky', scroll: false},
-    )),
-  );
-  await page.getByRole('button', {name: 'Fermer'}).click();
   await page.getByRole('button', {name: 'Photos', exact: true}).click();
   await expect(page.locator('[data-photo-controls]')).toBeVisible();
   await page.getByRole('button', {name: 'Suivante', exact: true}).click();
