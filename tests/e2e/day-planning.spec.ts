@@ -144,10 +144,6 @@ test('vacation and holiday appear beside six upcoming appointments, suppress rou
     ).toBeLessThanOrEqual(800);
   }
 
-  await page.screenshot({
-    path: info.outputPath('holiday-vacation.png'),
-    fullPage: true,
-  });
   isOffline = true;
   await page.evaluate(() => globalThis.dispatchEvent(new Event('online')));
   await expect(note).toContainText('Vacances de la Toussaint');

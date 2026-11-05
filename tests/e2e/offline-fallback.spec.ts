@@ -126,9 +126,6 @@ test('self-contained CSP document rotates overnight, honors preferences and reta
     'false',
   );
   await expect(page.locator('html')).toHaveAttribute('data-urls', '2');
-  await page.screenshot({
-    path: `test-results/offline-${test.info().project.name}.png`,
-  });
 });
 
 test('missing, expired and corrupt storage fail closed @chromium @mobile', async ({
@@ -140,9 +137,6 @@ test('missing, expired and corrupt storage fail closed @chromium @mobile', async
   await standalone(page);
   await expect(page.locator('main img')).toHaveCount(0);
   await expect(page.locator('[data-status]')).toContainText('Aucune photo');
-  await page.screenshot({
-    path: test.info().outputPath('expired-fallback.png'),
-  });
   await page.clock.runFor(5000);
   await expect(page.locator('html')).toHaveAttribute(
     'data-native-ready',

@@ -3,9 +3,10 @@ import collection from '@iconify-json/meteocons/icons.json';
 import {expandMeteoconsSymbols} from '../src/lib/weather/icon-symbols.ts';
 import {repairMeteoconsTiming} from '../src/lib/weather/icon-timing.ts';
 
-it('expands animated artwork throughout the collection without duplicate IDs or dangling timing', () => {
+it('repairs and expands the installed collection with stable IDs and resolved timing', () => {
   for (const [name, icon] of Object.entries(collection.icons)) {
     const body = repairMeteoconsTiming(icon.body);
+    expect(repairMeteoconsTiming(body), name).toBe(body);
     const expanded = expandMeteoconsSymbols(body);
     if (body.includes('<animate') && body.includes('<use')) {
       expect(expanded, name).not.toMatch(/<(?:use|symbol)\b/v);

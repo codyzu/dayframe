@@ -94,10 +94,6 @@ test('Morning shows escaped, bounded events, stays within the frame and clears d
         globalThis.innerWidth,
     ),
   ).toBe(true);
-  await page.screenshot({
-    path: info.outputPath('morning-calendar.png'),
-    fullPage: true,
-  });
   expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain(
     'Journée familiale',
   );
@@ -313,12 +309,6 @@ for (const count of [0, 4, 6]) {
         () => globalThis.document.documentElement.scrollWidth,
       ),
     ).toBeLessThanOrEqual(await page.evaluate(() => globalThis.innerWidth));
-    if (count === 4) {
-      await page.screenshot({
-        path: info.outputPath(`tomorrow-${count}.png`),
-        fullPage: true,
-      });
-    }
 
     expect(
       await page.evaluate(() => JSON.stringify(localStorage)),

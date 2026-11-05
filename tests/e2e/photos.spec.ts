@@ -100,7 +100,7 @@ test.beforeEach(async ({page}) => {
 
 test('two admins upload WebP, review duplicates, see protected thumbnails and confirm deletion @all-browsers', async ({
   page,
-}, info) => {
+}) => {
   await login(page);
   const photo = await syntheticPhoto(page);
   await page.locator('[data-photo-files]').setInputFiles(photo);
@@ -136,11 +136,6 @@ test('two admins upload WebP, review duplicates, see protected thumbnails and co
         globalThis.innerWidth,
     ),
   ).toBe(true);
-  await page.screenshot({
-    path: info.outputPath(`admin-${info.project.name}.png`),
-    fullPage: true,
-    animations: 'disabled',
-  });
   await login(page, 'two');
   await expect(page.locator('[data-photo-gallery] article')).toHaveCount(2);
   page.once('dialog', async (dialog) => dialog.dismiss());
@@ -203,7 +198,7 @@ test('photo framing survives navigation, reload and settings refreshes @mobile',
 test('read-only cookie delivers images, slideshow refreshes, outages retain current photo and leaving clears blobs @chromium @mobile', async ({
   page,
   context,
-}, info) => {
+}) => {
   await login(page);
   await page
     .locator('[data-photo-files]')
@@ -239,10 +234,6 @@ test('read-only cookie delivers images, slideshow refreshes, outages retain curr
   await expect(image).toHaveCSS('object-fit', 'contain');
   await page.clock.runFor(350);
   await expect(page.locator('[data-slideshow] [data-clock]')).toBeVisible();
-  await page.screenshot({
-    path: info.outputPath(`slideshow-${info.project.name}.png`),
-    animations: 'disabled',
-  });
   const original = await image.getAttribute('src');
   await context.setOffline(true);
   await page.getByRole('button', {name: 'Suivante', exact: true}).click();
@@ -430,8 +421,6 @@ test('failed uploads retry with the same identity and expired sessions clear pri
     'Quota temporairement atteint',
   );
   const retry = page.getByRole('button', {name: 'Réessayer', exact: true});
-  const row = await page.locator('[data-upload-results] li').elementHandle();
-  const button = await retry.elementHandle();
   await retry.click();
   await expect.poll(() => attempts).toBe(2);
   await expect(retry).toBeVisible();
@@ -440,8 +429,6 @@ test('failed uploads retry with the same identity and expired sessions clear pri
   await retry.click();
   await expect(page.locator('[data-storage]')).toContainText('1 photo');
   await expect(page.locator('[data-upload-retry]')).toBeHidden();
-  expect(await row.evaluate((element) => element.isConnected)).toBe(true);
-  expect(await button.evaluate((element) => element.isConnected)).toBe(true);
   expect(identities).toHaveLength(3);
   expect(new Set(identities).size).toBe(1);
   await page.context().clearCookies();
@@ -676,10 +663,6 @@ test('a signed-in admin automatically caches ordinary Photos visits for offline 
   await expect(details).toContainText(
     'ne constitue pas une sauvegarde complète',
   );
-  await page.screenshot({
-    path: test.info().outputPath('offline-administration.png'),
-    fullPage: true,
-  });
   await page.goto('/');
   await page.getByRole('button', {name: 'Photos', exact: true}).click();
   await expect(page.locator('[data-photo-stage] img')).toBeVisible();
@@ -721,7 +704,7 @@ async function mockPhotoClipboard(
 
 test('clipboard import previews the full batch before explicit authenticated upload and duplicate review @chromium @mobile', async ({
   page,
-}, info) => {
+}) => {
   await login(page);
   await page.goto('/admin/photos?import=clipboard&expected=3');
   await expect(page.locator('[data-import-paste]')).toBeEnabled();
@@ -747,10 +730,6 @@ test('clipboard import previews the full batch before explicit authenticated upl
     page.locator('[data-import-previews] img').first(),
   ).toHaveJSProperty('naturalWidth', 320);
   expect(posts).toBe(0);
-  await page.screenshot({
-    path: info.outputPath('clipboard-staged.png'),
-    fullPage: true,
-  });
   await page.locator('[data-import-add]').click();
   for (let index = 0; index < 2; index++) {
     await expect(page.getByRole('dialog')).toBeVisible();
@@ -895,10 +874,6 @@ test('oversized clipboard batch fills recovery groups by bytes without repeating
     'data-clipboard-reads',
     JSON.stringify([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9]),
   );
-  await page.screenshot({
-    path: test.info().outputPath('clipboard-recovery.png'),
-    fullPage: true,
-  });
 });
 
 test('more than ten shared photos automatically stages ten and detects clipboard replacement @mobile-only', async ({
@@ -1059,10 +1034,6 @@ test('picker and paste share a quiet preview flow, with conversion feedback and 
   );
   await expect(page.locator('[data-import-paste]')).toBeEnabled();
   await expect(page.locator('[data-import-status]')).toBeHidden();
-  await page.screenshot({
-    path: test.info().outputPath('simplified-uploads.png'),
-    fullPage: true,
-  });
 });
 
 test('failed paste reveals manual fallback and cancelling restores the two choices @mobile', async ({

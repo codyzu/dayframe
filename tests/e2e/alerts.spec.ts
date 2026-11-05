@@ -57,20 +57,15 @@ test('official warnings have severity, departmental coverage and periods; cards 
   await expect(banner).toContainText('09:30');
   await expect(page.locator('[data-agenda-events] li')).toHaveCount(6);
   await page.clock.fastForward(16_000);
-  if (info.project.name !== 'mobile') {
-    expect(
-      await page.evaluate(
-        () => globalThis.document.documentElement.scrollHeight,
-      ),
-    ).toBeLessThanOrEqual(800);
-    const agenda = await page.locator('[data-agenda]').boundingBox();
-    expect(agenda!.y + agenda!.height).toBeGreaterThan(735);
+  if (info.project.name === 'mobile') {
+    return;
   }
 
-  await page.screenshot({
-    path: info.outputPath('alerts-six-events.png'),
-    fullPage: true,
-  });
+  expect(
+    await page.evaluate(() => globalThis.document.documentElement.scrollHeight),
+  ).toBeLessThanOrEqual(800);
+  const agenda = await page.locator('[data-agenda]').boundingBox();
+  expect(agenda!.y + agenda!.height).toBeGreaterThan(735);
 });
 
 test('clear feed hides the banner; failures, stale feeds and expiry never imply an all-clear', async ({
@@ -145,10 +140,6 @@ test('larger Photos overlay fits long conditions and Night has no technical copy
   expect(
     await overlay.evaluate((element) => element.scrollWidth),
   ).toBeLessThanOrEqual((await overlay.boundingBox())!.width + 1);
-  await page.screenshot({
-    path: info.outputPath('photos-large-overlay.png'),
-    fullPage: true,
-  });
   await page.getByRole('button', {name: 'Nuit', exact: true}).click();
   await expect(page.getByRole('heading', {name: 'Bonne nuit.'})).toBeVisible();
   await expect(

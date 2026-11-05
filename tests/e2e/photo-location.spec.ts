@@ -80,7 +80,7 @@ test.beforeEach(async ({page}) => {
 });
 test('manual paste automatically saves its place; optional review and later editing change labels without changing pixels @all-browsers', async ({
   page,
-}, info) => {
+}) => {
   const photo = await fixture(page);
   let lookups = 0;
   page.on('request', (request) => {
@@ -134,10 +134,6 @@ test('manual paste automatically saves its place; optional review and later edit
   expect((await catalog(page)).photos[0].capturedAt).toBe(
     '2024-02-29T00:05:06+02:00',
   );
-  await page.screenshot({
-    path: info.outputPath('admin-place.png'),
-    fullPage: true,
-  });
   await page.goto('/');
   await page.getByRole('button', {name: 'Photos', exact: true}).click();
   await expect(page.locator('[data-photo-stage] img')).toBeVisible();
@@ -161,33 +157,6 @@ test('manual paste automatically saves its place; optional review and later edit
           caption.y + caption.height <= control.y ||
           control.y + control.height <= caption.y,
       ).toBe(true);
-    }
-  }
-
-  await page.screenshot({path: info.outputPath('photo-place.png')});
-  if (info.project.name === 'chromium') {
-    const backdrop = page.locator('[data-photo-stage] img').first();
-    for (const variant of ['bright', 'busy']) {
-      await backdrop.evaluate(async (image: HTMLImageElement, pattern) => {
-        const canvas = globalThis.document.createElement('canvas');
-        canvas.width = 1280;
-        canvas.height = 800;
-        const context = canvas.getContext('2d')!;
-        context.fillStyle = '#fff8ec';
-        context.fillRect(0, 0, 1280, 800);
-        if (pattern === 'busy') {
-          for (let i = 0; i < 160; i++) {
-            context.fillStyle = `hsl(${i * 23} 75% ${40 + (i % 4) * 15}%)`;
-            context.fillRect((i * 109) % 1280, (i * 47) % 800, 95, 70);
-          }
-        }
-
-        image.src = canvas.toDataURL();
-        await image.decode();
-      }, variant);
-      await page.screenshot({
-        path: info.outputPath(`photo-caption-${variant}.png`),
-      });
     }
   }
 

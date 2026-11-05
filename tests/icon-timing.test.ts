@@ -2,32 +2,6 @@ import {expect, it} from 'vitest';
 import collection from '@iconify-json/meteocons/icons.json';
 import {repairMeteoconsTiming} from '../src/lib/weather/icon-timing.ts';
 
-it('resolves timing references throughout the installed Meteocons collection', () => {
-  for (const [name, icon] of Object.entries(collection.icons)) {
-    const repaired = repairMeteoconsTiming(icon.body);
-    const ids = new Set(
-      Array.from(
-        repaired.matchAll(/\bid="(?<id>[^"]+)"/gv),
-        (match) => match.groups!.id,
-      ),
-    );
-    for (const timing of repaired.matchAll(
-      /\b(?:begin|end)="(?<timing>[^"]+)"/gv,
-    )) {
-      for (const reference of timing.groups!.timing.matchAll(
-        /(?:^|;)\s*(?<target>[\w\-.]+)\.(?:begin|end)/gv,
-      )) {
-        expect(
-          ids.has(reference.groups!.target),
-          `${name}: ${reference.groups!.target}`,
-        ).toBe(true);
-      }
-    }
-
-    expect(repairMeteoconsTiming(repaired), name).toBe(repaired);
-  }
-});
-
 it('preserves valid cross-animation links and independently repeating artwork', () => {
   const body =
     '<animate id="x1" begin="0s" dur="1s"/>' +

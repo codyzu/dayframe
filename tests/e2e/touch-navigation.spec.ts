@@ -184,7 +184,6 @@ test('photo edge taps browse history, centre reveals controls, and small drags d
   await page.mouse.up();
   await expect(stage).toHaveAttribute('data-photo-id', first!);
   await expect(root).toHaveAttribute('data-mode', 'photos');
-  await page.screenshot({path: info.outputPath('photos-touch-controls.png')});
 });
 
 test('forecast dialogs and two-finger maintenance holds are excluded from screen gestures @mobile', async ({
@@ -225,7 +224,7 @@ test('forecast dialogs and two-finger maintenance holds are excluded from screen
 
 test('animated navigation completes, cancels on lifecycle changes and respects reduced motion @all-browsers', async ({
   page,
-}, info) => {
+}) => {
   const root = page.locator('[data-dashboard]');
   await page.emulateMedia({reducedMotion: 'no-preference'});
   await expect(page.locator('body')).toHaveCSS(
@@ -243,9 +242,6 @@ test('animated navigation completes, cancels on lifecycle changes and respects r
   await swipe(page, 'right');
   await expect(root).toHaveAttribute('data-mode', 'photos');
   await expect(root).not.toHaveAttribute('data-transition');
-  await page.screenshot({
-    path: info.outputPath('photos-after-transition.png'),
-  });
   await page.getByRole('button', {name: 'Matin', exact: true}).click();
   await page.evaluate(() => globalThis.dispatchEvent(new Event('pagehide')));
   await expect(root).not.toHaveAttribute('data-transition');

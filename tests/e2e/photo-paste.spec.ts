@@ -1,6 +1,6 @@
 import {expect, test} from '../fixtures/browser.ts';
 
-test('three clipboard items preview and convert locally without API calls @mobile-only', async ({
+test('clipboard diagnostic previews, converts and clears locally without API calls @mobile-only', async ({
   page,
 }) => {
   const requests: string[] = [];
@@ -77,129 +77,33 @@ test('three clipboard items preview and convert locally without API calls @mobil
   });
   await expect(page.locator('[data-results] img')).toHaveCount(0);
   await expect(page.locator('[data-process]')).toBeDisabled();
-});
-
-test('a truncated clipboard batch is visible and cannot process @mobile-only', async ({
-  page,
-}) => {
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator, 'clipboard', {
-      value: {
-        async read() {
-          const canvas = document.createElement('canvas');
-          canvas.width = 20;
-          canvas.height = 20;
-          const blob = await new Promise<Blob>((resolve) => {
-            canvas.toBlob((value) => {
-              resolve(value!);
-            });
-          });
-          return [
-            {
-              types: ['image/png'],
-              async getType() {
-                return blob;
-              },
-            },
-          ];
-        },
-      },
-    });
-  });
-  await page.goto('/experiments/photo-paste/?expected=3');
-  await page.locator('[data-paste]').click();
-  await expect(page.locator('[data-count]')).toHaveText(
-    '1 photo(s) reçue(s) sur 3 attendue(s).',
-  );
-  await expect(page.getByRole('status')).toContainText('Lot incomplet');
-  await expect(page.locator('[data-process]')).toBeDisabled();
-});
-
-test('clipboard denial is recoverable and manual paste never inserts HTML or text @mobile-only', async ({
-  page,
-}) => {
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator, 'clipboard', {
-      value: {
-        async read() {
-          throw new DOMException('Denied', 'NotAllowedError');
-        },
-      },
-    });
-  });
-  await page.goto('/experiments/photo-paste/');
-  await page.locator('[data-paste]').click();
-  await expect(page.getByRole('status')).toContainText(
-    'Collage annulé, refusé ou indisponible',
-  );
-  await expect(page.locator('[data-paste]')).toBeEnabled();
+  // A valid late clipboard result must not repopulate a cleared diagnostic.
   await page.evaluate(() => {
-    // eslint-disable-next-line unicorn/isolated-functions -- DataTransfer is a browser global in this Playwright callback.
-    const data = new DataTransfer();
-    data.setData(
-      'text/html',
-      '<img src="https://example.invalid/private"><script>alert(1)</script>',
-    );
-    data.setData('text/plain', 'CLIPBOARD_TEXT_MUST_NOT_APPEAR');
-    globalThis.document.querySelector('[data-paste-zone]')!.dispatchEvent(
-      // eslint-disable-next-line unicorn/isolated-functions -- ClipboardEvent is a browser global in this Playwright callback.
-      new ClipboardEvent('paste', {
-        clipboardData: data,
-        cancelable: true,
-      }),
-    );
+    const read = navigator.clipboard.read.bind(navigator.clipboard);
+    navigator.clipboard.read = async () => {
+      await new Promise<void>((resolve) => {
+        globalThis.addEventListener(
+          'test-allow-paste',
+          () => {
+            resolve();
+          },
+          {
+            once: true,
+          },
+        );
+      });
+      return read();
+    };
   });
-  await expect(page.getByRole('status')).toContainText('Aucune image reçue');
-  await expect(page.locator('[data-clipboard-report]')).toContainText(
-    'collage manuel',
-  );
-  await expect(page.locator('body')).not.toContainText(
-    'CLIPBOARD_TEXT_MUST_NOT_APPEAR',
-  );
-  await expect(page.locator('body')).not.toContainText(
-    'example.invalid/private',
-  );
-  await expect(page.locator('[data-paste-zone]')).toBeEmpty();
-  await expect(page.locator('[data-results]')).toBeEmpty();
-});
-
-test('clearing while clipboard access is pending prevents late previews @mobile-only', async ({
-  page,
-}) => {
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator, 'clipboard', {
-      value: {
-        async read() {
-          await new Promise<void>((resolve) => {
-            globalThis.addEventListener(
-              'test-allow-paste',
-              () => {
-                resolve();
-              },
-              {once: true},
-            );
-          });
-          return [
-            {
-              types: ['image/png'],
-              async getType() {
-                return new Blob(['invalid'], {type: 'image/png'});
-              },
-            },
-          ];
-        },
-      },
-    });
-  });
-  await page.goto('/experiments/photo-paste/');
   await page.locator('[data-paste]').click();
   await page.locator('[data-clear]').click();
-  await page.evaluate(() => {
-    globalThis.dispatchEvent(new Event('test-allow-paste'));
-  });
+  await page.evaluate(() =>
+    globalThis.dispatchEvent(new Event('test-allow-paste')),
+  );
   await expect(page.locator('[data-paste]')).toBeEnabled();
   await expect(page.locator('[data-results]')).toBeEmpty();
   await expect(page.getByRole('status')).toHaveText(
     'Aperçus et résultats effacés.',
   );
+  expect(requests).toEqual([]);
 });

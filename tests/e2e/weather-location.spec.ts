@@ -69,10 +69,6 @@ test('search persists only on this device, keeps household time and resets to ho
   await expect(page.getByLabel('Ville ou code postal')).toBeFocused();
   await page.getByLabel('Ville ou code postal').fill('New York');
   await page.getByRole('button', {name: 'Rechercher', exact: true}).click();
-  await page.screenshot({
-    path: testInfo.outputPath('location-search.png'),
-    fullPage: false,
-  });
   await dialog
     .getByRole('button', {
       name: 'New York, New York, États-Unis',
@@ -90,10 +86,6 @@ test('search persists only on this device, keeps household time and resets to ho
   await expect(dialog.locator('[data-location-current]')).toContainText(
     'America/New_York',
   );
-  await page.screenshot({
-    path: testInfo.outputPath('location-picker.png'),
-    fullPage: true,
-  });
   await dialog.getByRole('button', {name: 'Fermer', exact: true}).click();
   await expect(
     page.getByRole('button', {name: 'Changer le lieu météo'}),
@@ -255,7 +247,7 @@ test('a late response from the previous location cannot paint or cache over the 
 
 test('current location is opt-in, preserves coordinates, estimates a city, and permission denial can recover @mobile', async ({
   page,
-}, info) => {
+}) => {
   await page.addInitScript(() => {
     let calls = 0;
     Object.defineProperty(navigator, 'geolocation', {
@@ -354,9 +346,6 @@ test('current location is opt-in, preserves coordinates, estimates a city, and p
   expect(geometry.gap).toBeGreaterThanOrEqual(8);
   expect(geometry.height).toBeGreaterThanOrEqual(44);
   expect(geometry.labelHeight).toBeLessThan(32);
-  await page.screenshot({
-    path: info.outputPath('current-location-header.png'),
-  });
   await page.reload();
   await expect(page.locator('[data-location-greeting]')).toHaveText('Bonjour.');
   await expect(page.locator('[data-location-label]')).toHaveText(

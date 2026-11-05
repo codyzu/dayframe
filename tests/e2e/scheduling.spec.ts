@@ -29,10 +29,6 @@ test('schedule, inactivity, touch reveal, clock corrections and resume @mobile',
   ]) {
     await page.getByRole('button', {name: label, exact: true}).click();
     await expect(root).toHaveAttribute('data-mode', mode);
-    await page.screenshot({
-      path: info.outputPath(`${mode}.png`),
-      fullPage: true,
-    });
     if (mode === 'photos') {
       await expect(page.locator('[data-photo-temperature]')).toHaveText('12°');
       await expect(page.locator('[data-photo-condition]')).toHaveText(
@@ -173,7 +169,7 @@ test('Photos weather refreshes without opening Morning and labels cached data', 
 
 test('periodic configuration refresh, invalid response, outage and online recovery', async ({
   page,
-}, info) => {
+}) => {
   let configuration: Settings = {
     ...defaultSettings,
     schedule: [{start: '00:00', end: '23:59', mode: 'photos'}],
@@ -239,10 +235,6 @@ test('periodic configuration refresh, invalid response, outage and online recove
   const before = requests;
   await page.clock.fastForward(301_000);
   await expect.poll(requestCount).toBe(before + 1);
-  await page.screenshot({
-    path: info.outputPath('recovered-night.png'),
-    fullPage: true,
-  });
 });
 
 test('saved Home periods display Photos without losing household settings', async ({

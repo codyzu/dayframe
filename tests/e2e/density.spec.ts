@@ -117,10 +117,6 @@ test('large layout, readable labels and animated icons @all-browsers', async ({
       ),
     ),
   ).toBe(false);
-  await page.screenshot({
-    path: testInfo.outputPath('large.png'),
-    fullPage: true,
-  });
 });
 
 test('typical desktop and narrower display reflow @chromium-only', async ({
@@ -142,10 +138,6 @@ test('typical desktop and narrower display reflow @chromium-only', async ({
           globalThis.innerWidth,
       ),
     ).toBe(true);
-    await page.screenshot({
-      path: testInfo.outputPath(`large-${viewport.width}.png`),
-      fullPage: true,
-    });
   }
 });
 
@@ -183,16 +175,11 @@ test('large display retains long freezing conditions and full-scale rain @mobile
       ),
     ).toBeLessThanOrEqual(800);
   }
-
-  await page.screenshot({
-    path: testInfo.outputPath('freezing-rain.png'),
-    fullPage: true,
-  });
 });
 
 test('navigation keeps identical geometry across modes @all-browsers', async ({
   page,
-}, info) => {
+}) => {
   await page.goto('/');
   const nav = page.getByRole('navigation', {name: 'Modes d’affichage'});
   const original = await nav.boundingBox();
@@ -214,9 +201,5 @@ test('navigation keeps identical geometry across modes @all-browsers', async ({
     expect(box!.y).toBeCloseTo(original!.y, 0);
     expect(box!.width).toBeCloseTo(original!.width, 0);
     expect(box!.height).toBeCloseTo(original!.height, 0);
-    await page.screenshot({
-      path: info.outputPath(`navigation-${name}.png`),
-      animations: 'disabled',
-    });
   }
 });

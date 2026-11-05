@@ -68,11 +68,6 @@ test('live day/night data, accessible graph and 30-minute refresh @mobile', asyn
     ).toBeLessThanOrEqual(800);
   }
 
-  await page.screenshot({
-    path: testInfo.outputPath('weather-day.png'),
-    fullPage: true,
-    animations: 'disabled',
-  });
   await page.clock.fastForward(1_800_000);
   await expect(page.locator('[data-current-icon]')).toHaveClass(/clear-night/v);
   expect(calls).toBe(2);
@@ -83,17 +78,12 @@ test('live day/night data, accessible graph and 30-minute refresh @mobile', asyn
     'background-image',
     /data:image\/svg\+xml/v,
   );
-  await page.screenshot({
-    path: testInfo.outputPath('weather-night.png'),
-    fullPage: true,
-    animations: 'disabled',
-  });
 });
 
 test('cached weather survives reload offline, ages visibly and recovers @chromium @mobile', async ({
   page,
   context,
-}, testInfo) => {
+}) => {
   await page.route('https://api.open-meteo.com/**', async (route) => {
     await route.fulfill({json: weatherFixture()});
   });
@@ -127,11 +117,6 @@ test('cached weather survives reload offline, ages visibly and recovers @chromiu
   await page.getByRole('button', {name: 'Photos', exact: true}).click();
   await expect(page.getByRole('heading', {name: 'Vos photos'})).toBeVisible();
   await page.getByRole('button', {name: 'Matin', exact: true}).click();
-  await page.screenshot({
-    path: testInfo.outputPath('weather-stale.png'),
-    fullPage: true,
-    animations: 'disabled',
-  });
   await context.setOffline(false);
   await page.unroute('https://api.open-meteo.com/**');
   await page.route('https://api.open-meteo.com/**', async (route) => {
@@ -407,11 +392,6 @@ test('future browsing is bounded, accessible and fits large @chromium @mobile', 
     ).toBe(true);
   }
 
-  await page.screenshot({
-    path: testInfo.outputPath('forecast-large.png'),
-    fullPage: true,
-    animations: 'disabled',
-  });
   await dialog.getByRole('button', {name: 'Fermer'}).click();
   await expect(open).toBeFocused();
   await open.click();
@@ -478,10 +458,6 @@ test('partial old cache warns offline in both modes at large @mobile', async ({
   await expect(page.locator('[data-photo-weather-status]')).toHaveText(
     'Relevé il y a 50 min · non actualisé',
   );
-  await page.screenshot({
-    path: testInfo.outputPath('photos-dated-stale.png'),
-    fullPage: true,
-  });
   await page.getByRole('button', {name: 'Matin', exact: true}).click();
   await expect(page.locator('[data-dashboard]')).toHaveAttribute(
     'data-mode',
@@ -490,10 +466,6 @@ test('partial old cache warns offline in both modes at large @mobile', async ({
   await expect(page.locator('[data-dashboard]')).not.toHaveAttribute(
     'data-transition',
   );
-  await page.screenshot({
-    path: testInfo.outputPath('morning-dated-stale.png'),
-    fullPage: true,
-  });
   expect(
     await page.evaluate(
       () =>
@@ -517,29 +489,6 @@ test('partial old cache warns offline in both modes at large @mobile', async ({
   }
 
   expect(calls).toBe(1);
-});
-
-test('future dates use Paris across year change with a different browser timezone', async ({
-  page,
-}) => {
-  const now = Date.parse('2026-12-31T23:30:00Z');
-  await page.clock.setSystemTime(new Date(now));
-  await page.route('https://api.open-meteo.com/**', async (route) => {
-    await route.fulfill({json: sevenDayFixture(now)});
-  });
-  await page.goto('/');
-  await page.getByRole('button', {name: 'Matin', exact: true}).click();
-  await page.getByRole('button', {name: 'Prévisions sur 7 jours'}).click();
-  await expect(
-    page.locator('[data-future-days] button').first(),
-  ).toHaveAttribute('aria-label', /^ven\. 1 janv\. 2027/v);
-  await expect(page.locator('[data-future-heading]')).toContainText(
-    '1 janv. 2027',
-  );
-  await page.clock.fastForward(
-    defaultSettings.overrideTimeoutSeconds * 1000 + 1000,
-  );
-  await expect(page.getByRole('dialog')).toBeHidden();
 });
 
 test('stale successful responses follow backoff and recover without extra browse requests', async ({
@@ -595,14 +544,40 @@ test('stale successful responses follow backoff and recover without extra browse
 
 test.describe('location timezone and DST', () => {
   test.use({timezoneId: 'America/Los_Angeles'});
+  test('future dates use Paris across year change with a different browser timezone', async ({
+    page,
+  }) => {
+    const now = Date.parse('2026-12-31T23:30:00Z');
+    await page.clock.setSystemTime(new Date(now));
+    await page.route('https://api.open-meteo.com/**', async (route) => {
+      await route.fulfill({json: sevenDayFixture(now)});
+    });
+    await page.goto('/');
+    await page.getByRole('button', {name: 'Matin', exact: true}).click();
+    await page.getByRole('button', {name: 'Prévisions sur 7 jours'}).click();
+    await expect(
+      page.locator('[data-future-days] button').first(),
+    ).toHaveAttribute('aria-label', /^ven\. 1 janv\. 2027/v);
+    await expect(page.locator('[data-future-heading]')).toContainText(
+      '1 janv. 2027',
+    );
+    await page.clock.fastForward(
+      defaultSettings.overrideTimeoutSeconds * 1000 + 1000,
+    );
+    await expect(page.getByRole('dialog')).toBeHidden();
+  });
+
   test('autumn detail distinguishes repeated local hours and keeps keyboard focus on refresh', async ({
     page,
   }) => {
     const now = Date.parse('2026-10-25T06:30:00Z');
+    let requests = 0;
     await page.clock.setSystemTime(new Date(now));
     await page.route('https://api.open-meteo.com/**', async (route) => {
       const time = await page.evaluate(() => Date.now());
-      await route.fulfill({json: sevenDayFixture(time)});
+      const raw = sevenDayFixture(time);
+      raw.hourly.temperature_2m.fill(++requests === 1 ? 12 : 21);
+      await route.fulfill({json: raw});
     });
     await page.goto('/');
     await page.getByRole('button', {name: 'Prévisions sur 7 jours'}).click();
@@ -615,16 +590,19 @@ test.describe('location timezone and DST', () => {
     await expect(repeated).toHaveCount(2);
     await expect(repeated.first()).toContainText('UTC+2');
     await expect(repeated.last()).toContainText('UTC+1');
-    const original = await first.elementHandle();
+    await expect(dialog.locator('tbody tr').first()).toContainText('12°');
     // Keep browsing during the half-hour refresh without changing selection.
     for (let elapsed = 0; elapsed < 1_800_000; elapsed += 50_000) {
       await page.clock.fastForward(50_000);
       await page.keyboard.press('Shift');
     }
 
-    await expect
-      .poll(async () => original.evaluate((element) => element.isConnected))
-      .toBe(false);
+    await expect(dialog.locator('tbody tr').first()).toContainText('21°');
+    expect(requests).toBe(2);
+    await expect(first).toHaveAttribute('aria-pressed', 'true');
+    await expect(dialog.locator('[data-future-heading]')).toContainText(
+      '25 oct. 2026',
+    );
     await expect(first).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(
@@ -708,7 +686,7 @@ test('previous-year stale copy fits large and override expiry closes within Morn
 
 test('reading age advances in both modes without counting the download as a new reading', async ({
   page,
-}, testInfo) => {
+}) => {
   let calls = 0;
   let hasRecovered = false;
   await page.route('https://api.open-meteo.com/**', async (route) => {
@@ -754,10 +732,6 @@ test('reading age advances in both modes without counting the download as a new 
   await expect(age).toHaveText('Relevé à l’instant');
   await expect(age).toHaveAttribute('data-stale', 'false');
   expect(calls).toBe(3);
-  await page.screenshot({
-    path: testInfo.outputPath('reading-age-recovered.png'),
-    fullPage: true,
-  });
 });
 
 test('a location change hides the previous reading age until validated weather is available', async ({
@@ -904,7 +878,7 @@ test('weather refresh and programmatic focus do not prolong forecast browsing', 
 
 test('selected-day graph leads the forecast, with exact hourly details on demand @mobile', async ({
   page,
-}, testInfo) => {
+}) => {
   await page.emulateMedia({reducedMotion: 'reduce'});
   let calls = 0;
   await page.route('https://api.open-meteo.com/**', async (route) => {
@@ -951,11 +925,6 @@ test('selected-day graph leads the forecast, with exact hourly details on demand
   expect(chartBounds!.y + chartBounds!.height).toBeLessThanOrEqual(
     dialogBounds!.y + dialogBounds!.height,
   );
-  await page.screenshot({
-    path: testInfo.outputPath('forecast-graph.png'),
-    fullPage: false,
-    animations: 'disabled',
-  });
   await dialog.locator('summary').click();
   await expect(dialog.getByRole('table')).toBeVisible();
   await expect(dialog.locator('[data-future-hours] tr')).toHaveCount(24);
@@ -983,7 +952,7 @@ test('selected-day graph leads the forecast, with exact hourly details on demand
 
 test('evening advice describes the next morning and keeps the daily extremes in the overview', async ({
   page,
-}, testInfo) => {
+}) => {
   const now = Date.parse('2026-10-16T20:05:00Z');
   await page.clock.setSystemTime(new Date(now));
   await page.route('https://api.open-meteo.com/**', async (route) => {
@@ -1001,11 +970,6 @@ test('evening advice describes the next morning and keeps the daily extremes in 
   await expect(page.locator('[data-extremes]')).toContainText(
     'Max. 19° / Min. 8°',
   );
-  await page.screenshot({
-    path: testInfo.outputPath('evening-advice.png'),
-    fullPage: true,
-    animations: 'disabled',
-  });
 });
 
 test('partial hourly coverage is labeled without inventing earlier hours', async ({

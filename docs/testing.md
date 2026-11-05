@@ -47,7 +47,7 @@ project's grep in a local config and retain the ordinary fixture setup.
 | Focus                                | Full dashboard audit on all projects. Settings, setup and photo controls on Firefox and mobile.                                                                                                               |
 | Offline photos and fallback document | All three engines, using mobile WebKit for WebKit coverage. Real IndexedDB transactions, cross-tab invalidation, expiration, decoding and private-pixel cleanup stay in browsers.                             |
 | Enabled offline navigation           | Every scenario on Chromium, Firefox and mobile WebKit. This suite tests service-worker install/update, network faults, retirement, recovery and reload ordering.                                              |
-| Clipboard experiment                 | Mobile WebKit checks its maintained diagnostic route. Production import coverage lives in the photo administration suite.                                                                                     |
+| Clipboard experiment                 | One mobile WebKit smoke covers diagnostic previews, conversion, no uploads and clearing a valid late clipboard result. Detailed import and error coverage lives in the photo administration suite.            |
 
 Desktop Firefox and mobile emulation provide local synthetic evidence. They do
 not establish physical GeckoView or iPhone acceptance. Existing device and
@@ -72,6 +72,20 @@ Offline navigation uses one worker because its fault server has shared controls.
 Controlled page clocks may advance real application timers. Tests must still observe the production transition, decode or
 cleanup before asserting its outcome. Rendered animation/stillness checks retain
 the elapsed time needed to sample real pixels.
+
+Successful runs capture images only when their pixels are part of an assertion,
+including motion, overcast paint and focus rings. Ordinary state screenshots are
+collected during explicit visual review. Automatic failure screenshots and focus
+diagnostics remain available for debugging. A saved screenshot alone does not
+establish visual regression coverage.
+
+Browser animation checks use representative drizzle/snow, rain, lightning and
+hail graphs across day/night examples. One collection-wide unit pass checks all
+installed icons after repair and expansion, including each stage's idempotency.
+Targeted transform fixtures retain ambiguous-link and geometry regressions.
+Tests assert refreshed forecast data, selection and focus without requiring DOM
+replacement. The separate weather node-reuse checks protect the documented frame
+performance behavior.
 
 An initial working budget is eight minutes for hosted checks and ten minutes
 through production smoke, excluding runner queues. Runtime evidence and the

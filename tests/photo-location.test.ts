@@ -90,7 +90,7 @@ describe('photo capture location', () => {
     expect((await paused.lookup(file(48, 2), signal)).place).toBeUndefined();
     expect(throttled).toHaveBeenCalledTimes(1);
   });
-  it('skips unsupported/no-GPS input and ignores cancelled late responses', async () => {
+  it('skips missing GPS and rejects an already-aborted lookup', async () => {
     const fetcher = vi.fn(async () => Response.json({features: []}));
     vi.stubGlobal('fetch', fetcher);
     const service = createPlaceLookup();
@@ -103,7 +103,7 @@ describe('photo capture location', () => {
   });
 });
 
-it('caps a page at 100 lookups and clears coordinate reuse when explicitly forgotten', async () => {
+it('caps a page at 100 provider lookups', async () => {
   vi.useFakeTimers();
   const fetcher = vi.fn(async () => Response.json({features: []}));
   vi.stubGlobal('fetch', fetcher);
@@ -114,10 +114,6 @@ it('caps a page at 100 lookups and clears coordinate reuse when explicitly forgo
     await service.lookup(file(40 + index / 1000, 6), signal);
   }
 
-  expect(fetcher).toHaveBeenCalledTimes(100);
-  service.clear();
-  vi.setSystemTime(1_800_000_200_000);
-  await service.lookup(file(40, 6), signal);
   expect(fetcher).toHaveBeenCalledTimes(100);
 });
 

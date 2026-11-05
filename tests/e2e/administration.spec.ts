@@ -13,7 +13,7 @@ test.beforeEach(async ({page}) => {
 
 test('both administrators persist settings, export, validate schedules and recover access @mobile', async ({
   page,
-}, info) => {
+}) => {
   await page.request.get('/__test/login');
   await page.goto('/admin/settings');
   await expect(page.locator('[data-status]')).toContainText('one@example.test');
@@ -63,10 +63,6 @@ test('both administrators persist settings, export, validate schedules and recov
   await page.locator('[data-start]').nth(1).fill('09:59');
   await page.getByRole('button', {name: 'Enregistrer les réglages'}).click();
   await expect(page.locator('[data-status]')).toContainText('chevauchement');
-  await page.screenshot({
-    path: info.outputPath(`settings-${info.project.name}.png`),
-    fullPage: true,
-  });
   expect(
     await page.evaluate(
       () =>
@@ -85,7 +81,7 @@ test('both administrators persist settings, export, validate schedules and recov
 test('frame provisioning persists across browser contexts, rejects off-network reads and revokes the old key @chromium @mobile', async ({
   page,
   browser,
-}, info) => {
+}) => {
   await page.request.get('/__test/login');
   await page.goto('/admin/photos');
   await expect(page.locator('[data-choose-files]')).toBeEnabled();
@@ -128,10 +124,6 @@ test('frame provisioning persists across browser contexts, rejects off-network r
       route.fulfill({json: weatherFixture()}),
     );
     await frame.goto('/setup');
-    await frame.screenshot({
-      path: info.outputPath(`setup-${info.project.name}.png`),
-      fullPage: true,
-    });
     await frame.getByLabel('Clé du cadre').fill(key!);
     await frame.getByRole('button', {name: 'Connecter', exact: true}).click();
     await expect(frame).toHaveURL(`${origin}/?display=frame`);

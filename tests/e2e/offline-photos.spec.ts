@@ -66,7 +66,7 @@ test.beforeEach(async ({page}) => {
 
 test('authorized browsers automatically save gradually, rotate offline and return with only two URLs @chromium @mobile', async ({
   page,
-}, info) => {
+}) => {
   await page.goto('/calendar-privacy');
   const body = Buffer.from(
     'UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA',
@@ -179,7 +179,6 @@ test('authorized browsers automatically save gradually, rotate offline and retur
   });
   expect(geometry.controlsBottom).toBeLessThanOrEqual(geometry.retryTop);
   expect(geometry.width).toBeLessThanOrEqual(geometry.viewport);
-  await page.screenshot({path: info.outputPath('offline-photos.png')});
 });
 
 test('shared store bounds encoded count/bytes, projects metadata and fences stale writes @chromium @mobile', async ({
@@ -683,7 +682,7 @@ test('automatic initialization in another tab preserves pending authorized work 
 
 test('quiet large playback keeps partial sync silent and failures actionable @chromium @mobile', async ({
   page,
-}, info) => {
+}) => {
   await page.addInitScript((value) => {
     localStorage.setItem('dayframe.display-density.v1', value);
   }, 'large');
@@ -740,8 +739,6 @@ test('quiet large playback keeps partial sync silent and failures actionable @ch
     expect(positions.controlsTop).toBeGreaterThan(positions.clockBottom);
   }
 
-  await page.screenshot({path: info.outputPath('quiet-large.png')});
-
   await page.route('**/api/photos**', async (route) => route.abort());
   await page.evaluate(() => globalThis.dispatchEvent(new Event('online')));
   await expect(page.locator('[data-photo-status]')).toHaveText(
@@ -759,7 +756,6 @@ test('quiet large playback keeps partial sync silent and failures actionable @ch
     statusBox!.y,
   );
   expect(statusBox!.y + statusBox!.height).toBeLessThanOrEqual(retryBox!.y);
-  await page.screenshot({path: info.outputPath('offline-large.png')});
 
   await page.route('**/api/photos**', async (route) =>
     route.fulfill({status: 403, json: {error: {message: 'Denied'}}}),
@@ -771,12 +767,11 @@ test('quiet large playback keeps partial sync silent and failures actionable @ch
     'Accès privé requis',
   );
   await expect(page.locator('[data-photo-offline-status]')).toBeHidden();
-  await page.screenshot({path: info.outputPath('denied-large.png')});
 });
 
 test('unavailable local storage warns during online playback and clears after recovery @chromium @mobile', async ({
   page,
-}, info) => {
+}) => {
   await page.addInitScript(() => {
     const open = indexedDB.open.bind(indexedDB);
     // Prototype interception also exercises WebKit’s store opens.
@@ -805,7 +800,6 @@ test('unavailable local storage warns during online playback and clears after re
     'Copies locales indisponibles · lecture en ligne.',
   );
   await expect(page.locator('[data-photo-offline-status]')).toBeVisible();
-  await page.screenshot({path: info.outputPath('storage-unavailable.png')});
   await page.evaluate(() => {
     globalThis.document.documentElement.dataset.storageRecovered = 'true';
     globalThis.dispatchEvent(new Event('online'));
@@ -817,7 +811,7 @@ test('unavailable local storage warns during online playback and clears after re
 for (const state of ['empty', 'failure'] as const) {
   test(`${state} collection keeps useful display text without sync chatter @chromium @mobile`, async ({
     page,
-  }, info) => {
+  }) => {
     await page.route('**/api/photos', async (route) =>
       route.fulfill(
         state === 'empty'
@@ -834,6 +828,5 @@ for (const state of ['empty', 'failure'] as const) {
     );
     await expect(page.locator('[data-photo-offline-status]')).toBeHidden();
     await expect(page.locator('[data-photo-stage] img')).toHaveCount(0);
-    await page.screenshot({path: info.outputPath(`${state}.png`)});
   });
 }

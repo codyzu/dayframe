@@ -183,10 +183,5 @@ test('rain scale and one peak label stay readable for dry, wet and maximum forec
         ),
       ).toBeLessThanOrEqual(800);
     }
-
-    await page.screenshot({
-      path: info.outputPath(`rain-${value}.png`),
-      fullPage: true,
-    });
   }
 });
