@@ -47,7 +47,7 @@ project's grep in a local config and retain the ordinary fixture setup.
 | Focus                                | Full dashboard audit on all projects. Settings, setup and photo controls on Firefox and mobile.                                                                                                               |
 | Offline photos and fallback document | All three engines, using mobile WebKit for WebKit coverage. Real IndexedDB transactions, cross-tab invalidation, expiration, decoding and private-pixel cleanup stay in browsers.                             |
 | Enabled offline navigation           | Every scenario on Chromium, Firefox and mobile WebKit. This suite tests service-worker install/update, network faults, retirement, recovery and reload ordering.                                              |
-| Clipboard experiment                 | One mobile WebKit smoke covers diagnostic previews, conversion, no uploads and clearing a valid late clipboard result. Detailed import and error coverage lives in the photo administration suite.            |
+| Clipboard experiment                 | One mobile WebKit smoke covers previews, conversion, no uploads, late-result clearing, denial and HTML rejection. Production import cases live in the photo administration suite.                             |
 
 Desktop Firefox and mobile emulation provide local synthetic evidence. They do
 not establish physical GeckoView or iPhone acceptance. Existing device and

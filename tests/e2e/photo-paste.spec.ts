@@ -105,5 +105,41 @@ test('clipboard diagnostic previews, converts and clears locally without API cal
   await expect(page.getByRole('status')).toHaveText(
     'Aperçus et résultats effacés.',
   );
+  // This public diagnostic has its own paste handler and must reject HTML too.
+  await page.evaluate(() => {
+    navigator.clipboard.read = async () => {
+      throw new DOMException('Denied', 'NotAllowedError');
+    };
+  });
+  await page.locator('[data-paste]').click();
+  await expect(page.getByRole('status')).toContainText(
+    'Collage annulé, refusé ou indisponible',
+  );
+  await expect(page.locator('[data-paste]')).toBeEnabled();
+  await page.evaluate(() => {
+    // eslint-disable-next-line unicorn/isolated-functions -- DataTransfer is a browser global in this Playwright callback.
+    const data = new DataTransfer();
+    data.setData(
+      'text/html',
+      '<img src="https://example.invalid/private"><script>alert(1)</script>',
+    );
+    data.setData('text/plain', 'CLIPBOARD_TEXT_MUST_NOT_APPEAR');
+    globalThis.document.querySelector('[data-paste-zone]')!.dispatchEvent(
+      // eslint-disable-next-line unicorn/isolated-functions -- ClipboardEvent is a browser global in this Playwright callback.
+      new ClipboardEvent('paste', {
+        clipboardData: data,
+        cancelable: true,
+      }),
+    );
+  });
+  await expect(page.getByRole('status')).toContainText('Aucune image reçue');
+  await expect(page.locator('[data-paste-zone]')).toBeEmpty();
+  await expect(page.locator('[data-results]')).toBeEmpty();
+  await expect(page.locator('body')).not.toContainText(
+    'CLIPBOARD_TEXT_MUST_NOT_APPEAR',
+  );
+  await expect(
+    page.locator('img[src="https://example.invalid/private"]'),
+  ).toHaveCount(0);
   expect(requests).toEqual([]);
 });

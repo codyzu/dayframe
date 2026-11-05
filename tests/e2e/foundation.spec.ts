@@ -262,7 +262,7 @@ test('bundled overcast artwork paints a cloud at both animation extremes @chromi
     }, time);
     const painted = await icon.screenshot({animations: 'allow'});
     // Compare actual painted pixels with the same surface without the artwork.
-    // Ancestor opacity/clipping regressions must not pass on SVG markup alone.
+    // A transparent or fully clipped-away icon must not pass on SVG markup alone.
     await icon.locator('svg').evaluate((svg) => {
       svg.style.visibility = 'hidden';
     });
