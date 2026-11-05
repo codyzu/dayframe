@@ -9,9 +9,11 @@ jobs for both pull requests and main pushes; it does not reduce release coverage
 
 The `quality` job runs types, lint and unit/Worker tests while `build` produces
 ordinary and navigation-enabled assets. Each build is uploaded once as a one-day
-`regular-assets` or `navigation-assets` artifact. The two `playwright` matrix jobs
-download their respective artifacts into `dist/` and run concurrently; neither
-browser job builds or changes the candidate assets.
+`regular-assets` or `navigation-assets` artifact. The three `playwright` matrix jobs
+download their respective artifacts into `dist/` and run concurrently: two shards
+cover the regular suite and one job covers navigation. No browser job builds or
+changes the candidate assets. Each regular shard keeps its two isolated workers;
+the navigation fault server remains serial on its own runner.
 
 Browser jobs use the official Playwright Noble image pinned to the exact
 `@playwright/test` version in `package.json`, with Node from `.nvmrc`. Update the
@@ -19,7 +21,7 @@ image and its version guard together with Playwright. The image supplies browser
 and Linux dependencies; the job still installs the locked project dependencies.
 See the [official container guidance](https://playwright.dev/docs/docker).
 
-The required `checks` status succeeds only when quality, build and both browser
+The required `checks` status succeeds only when quality, build and all browser
 jobs succeed. Failure, cancellation or a skipped prerequisite fails the gate.
 Only a successful main push can deploy: it downloads that run's exact
 `navigation-assets` artifact, enforces the Free-plan assertion, then uploads and
@@ -84,7 +86,7 @@ security deferrals remain in their issues and hardware runbooks.
 
 Both browser suites retain JSON timing reports under
 `test-results/{regular,navigation}/results.json`. GitHub uploads these as the
-seven-day `browser-timings-regular` and `browser-timings-navigation` artifacts, including on successful runs. Failure
+seven-day `browser-timings-{regular,navigation}-{shard}` artifacts, including on successful runs. Failure
 screenshots and details remain in the corresponding `browser-failures-*` artifact. Compare timings on the same
 runner class and distinguish queue delay, browser installation, fixture startup,
 test execution and deployment.

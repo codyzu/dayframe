@@ -70,9 +70,15 @@ jobs:
       # Preserve both reports even if one suite fails.
       fail-fast: false
       matrix:
-        suite: [regular, navigation]
+        include:
+          - suite: regular
+            shard: 1
+          - suite: regular
+            shard: 2
+          - suite: navigation
+            shard: 1
     concurrency:
-      group: playwright-${{ matrix.suite }}-${{ github.event.pull_request.number || github.ref }}
+      group: playwright-${{ matrix.suite }}-${{ matrix.shard }}-${{ github.event.pull_request.number || github.ref }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -98,7 +104,7 @@ jobs:
           path: dist/
       - name: Verify ordinary browser behavior
         if: matrix.suite == 'regular'
-        run: pnpm test:e2e
+        run: pnpm test:e2e --shard=${{ matrix.shard }}/2
       - name: Verify navigation-enabled browser behavior
         if: matrix.suite == 'navigation'
         # Consume the build artifact directly; do not rebuild it in this job.
@@ -107,7 +113,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: browser-timings-${{ matrix.suite }}
+          name: browser-timings-${{ matrix.suite }}-${{ matrix.shard }}
           path: test-results/*/results.json
           if-no-files-found: ignore
           retention-days: 7
@@ -115,7 +121,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: browser-failures-${{ matrix.suite }}
+          name: browser-failures-${{ matrix.suite }}-${{ matrix.shard }}
           path: test-results/
           retention-days: 7
   checks:
