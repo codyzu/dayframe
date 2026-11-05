@@ -5,6 +5,7 @@
 1. Read [the technical specification](docs/technical-specification.md) for requirements and hard constraints.
 2. Read the selected GitHub issue for current scope, acceptance gates, dependencies and deferrals. Read [the delivery approach and implementation history](docs/implementation-plan.md) for upstream context and relevant dated evidence; historical task lists are not a current backlog.
 3. **This project builds on Wes Bos's work in [wesbos/photo-frame-dashboard](https://github.com/wesbos/photo-frame-dashboard).** Read the plan's upstream section and inspect the relevant upstream code/docs before implementing dashboard or device work. Record what is reused, adapted, or intentionally different, with source paths and a commit SHA when available. Do not treat the upstream reference as an optional footnote.
+4. Before choosing verification or adding/changing tests, read [the permanent testing policy](docs/testing.md#permanent-test-policy). Use its rules for test value, layer selection, browser assignments, consolidation and runtime review.
 
 The local specification controls product requirements. Upstream is a source of implementation ideas and hardware research, not proof that a procedure works on our frame. Check license and attribution requirements before copying code or assets; do not assume permission from public visibility.
 

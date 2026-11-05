@@ -5,6 +5,96 @@ integration tests, the ordinary build and browser tests, then an enabled offline
 navigation build and its browser tests. CI runs these same checks in independent
 jobs for both pull requests and main pushes; it does not reduce release coverage.
 
+## Permanent test policy
+
+The suite should protect lasting product behavior and important failure boundaries
+with the smallest set of reliable checks that distinguishes correct from broken
+behavior. A passing test count or coverage percentage is not a quality target.
+A completed issue, temporary experiment or implementation detail does not by
+itself justify a permanent regression test.
+
+### Decide what deserves a test
+
+Before adding a case, identify the concrete regression it would catch and inspect
+existing coverage. Extend or improve the existing owning test when it already
+exercises that journey. Add a separate case when it protects a distinct outcome,
+boundary or failure mode; avoid replaying setup and an entire workflow for one
+more assertion. Keep tests independent and readable rather than merging unrelated
+contracts into a long scenario just to reduce the test count.
+
+Use the cheapest layer that can reliably detect the regression:
+
+| Layer                                | Owns                                                                   | Example                                                                                            |
+| ------------------------------------ | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Unit                                 | Pure rules, parsing, validation, permutations and numerical boundaries | Exhaustive weather mappings, DST/date selection and upload-size boundaries                         |
+| Worker integration                   | Real authorization, HTTP, persistence and transaction contracts        | Rejected private reads, retry idempotency and SQLite/KV failure handling                           |
+| Browser                              | Wiring and behavior that requires an actual browser                    | Import preview/upload flow, focus paint, responsive layout, IndexedDB and service-worker lifecycle |
+| Explicit device/visual investigation | Acceptance evidence and temporary diagnostics                          | Physical GeckoView recovery or an owner-requested screenshot review                                |
+
+Exhaustive rule/provider permutations belong in unit or integration tests. Browser
+journeys use representative inputs to prove the pieces work together; they do not
+repeat every lower-layer variant. Some overlap is intentional: testing a pure
+validation rule does not prove the real endpoint enforces it or the UI handles
+its rejection. Keep that boundary coverage and explain its purpose.
+
+### Keep assertions meaningful
+
+Assert observable results or a documented security, compatibility or performance
+contract. Test names must describe what the assertions actually establish.
+Prefer refreshed data and retained focus to requiring a particular DOM node to
+be destroyed or retained. DOM reuse and request-count assertions remain useful
+when they protect an explicit frame-performance or provider-usage contract.
+
+A screenshot saved for inspection is diagnostic output. Permanent visual checks
+must compare relevant rendered pixels or geometry; CSS properties alone do not
+prove visible paint. Capture images on success only when an assertion uses them;
+keep failure diagnostics and explicit visual-review captures available.
+
+For a bug fix, check that the new or changed assertion detects the original defect
+when practical. Use a focused before-fix run or a small deliberate mutation for a
+suspected weak assertion; do not add a project-wide mutation run to every change.
+Tests that only confirm their mock's response or cannot detect their claimed
+regression need to be strengthened, replaced or removed.
+
+### Limit browser and platform multiplication
+
+Default ordinary journeys to Firefox at 1280 × 800. Additional engines or viewports
+need a specific rendering, API, input or layout reason, using the tags and coverage
+map below. Do not add `@all-browsers` as a precaution for every feature. Mobile
+WebKit usually provides WebKit engine coverage; desktop WebKit is additional
+coverage when its layout or keyboard behavior matters. Cover today's large-type
+layout; legacy Standard settings need bounded compatibility coverage, not a second
+full scenario sweep. Keep PR and main selections identical.
+
+Preserve the coverage map's authorization, privacy clearing, real storage,
+offline recovery and engine-specific contracts. Similar titles do not establish
+redundancy. Desktop emulation remains separate from physical-device acceptance;
+adding automated coverage never reopens an owner-deferred device/security gate.
+
+### Maintain the suite as the product changes
+
+When behavior is replaced or retired, update or remove its old tests as part of
+the same change. Retain compatibility cases only for supported old data or clients.
+A production journey should own detailed feature coverage; a separate diagnostic
+page generally needs only its own meaningful smoke and any distinct safety guards.
+Temporary probes and evidence collection do not automatically join the release
+suite. Docs-only changes use formatting, link and whitespace checks.
+
+For additions or changes, explain briefly in the issue or review:
+
+- Which regression is newly protected, and why existing coverage is insufficient.
+- Why this layer and any extra browser assignments are needed.
+- Whether older overlapping coverage was extended, consolidated or retired.
+- For materially expensive changes, what the timing reports show and why the cost
+  is justified.
+
+This is a reasoning checklist, not a requirement for a new document per test.
+There is no one-in/one-out quota or ban on adding important coverage. Start with
+focused checks; run the complete gate for releases. Do not repeatedly run unrelated
+full suites after checks pass unless new changes or unresolved failures justify it.
+Measure material suite growth using the existing reports and representative hosted
+runs; do not benchmark every assertion or add routine local benchmarking to CI.
+
 ## CI artifact handoff
 
 The `quality` job runs types, lint and unit/Worker tests while `build` produces
@@ -23,7 +113,9 @@ See the [official container guidance](https://playwright.dev/docs/docker).
 
 The required `checks` status succeeds only when quality, build and all browser
 jobs succeed. Failure, cancellation or a skipped prerequisite fails the gate.
-Only a successful main push can deploy: it downloads that run's exact
+Keep its `always()` condition and explicit result checks: otherwise a failed
+prerequisite skips the aggregate job, and [GitHub accepts skipped required jobs](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-jobs-with-conditions)
+for branch protection. Only a successful main push can deploy: it downloads that run's exact
 `navigation-assets` artifact, enforces the Free-plan assertion, then uploads and
 checks the live deployment. Artifacts are candidates until the complete gate
 passes; their presence alone never authorizes deployment. Browser jobs receive
@@ -119,9 +211,15 @@ Tests assert refreshed forecast data, selection and focus without requiring DOM
 replacement. The separate weather node-reuse checks protect the documented frame
 performance behavior.
 
-An initial working budget is eight minutes for hosted checks and ten minutes
-through production smoke, excluding runner queues. Runtime evidence and the
-current improvement work belong in [issue #20](https://github.com/codyzu/dayframe/issues/20).
+Aim for about five minutes through the complete hosted verification gate and
+six minutes through production smoke, excluding runner queues. These are review
+targets, not hard failure thresholds or a reason to drop valuable assertions.
+Investigate sustained overruns across comparable runs: distinguish setup/network
+variation, actual test work, elapsed time and total runner usage. Optimize repeated
+work and unnecessary waits before adding parallel runners or narrowing coverage;
+more parallelism can reduce elapsed time while increasing compute usage. Keep the
+€0 requirement and verified-artifact release gate intact. The measured baseline
+and optimization evidence are in [issue #20](https://github.com/codyzu/dayframe/issues/20).
 
 ## Provenance
 
