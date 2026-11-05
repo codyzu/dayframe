@@ -1,22 +1,23 @@
 name: Checks
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 permissions:
   contents: read
+defaults:
+  run:
+    shell: bash
+env:
+  WRANGLER_SEND_METRICS: 'false'
 jobs:
-  checks:
+  quality:
     concurrency:
-      group: checks-${{ github.event.pull_request.number || github.ref }}
+      group: quality-${{ github.event.pull_request.number || github.ref }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
-    timeout-minutes: 25
-    env:
-      WRANGLER_SEND_METRICS: 'false'
-      # Ordinary browser checks run first; only the verified final enabled build
-      # becomes the production artifact on a main-branch push.
-      DAYFRAME_RELEASE_ASSETS: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && '1' || '0' }}
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -26,33 +27,113 @@ jobs:
           cache: pnpm
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
-      - name: Install test browsers
-        run: pnpm exec playwright install --with-deps chromium firefox webkit
-      - name: Check types, lint, tests, and production build
-        run: pnpm verify
-      - name: Preserve browser timings
-        if: always()
+      - name: Check types, lint and unit tests
+        run: pnpm check && pnpm lint && pnpm test
+  build:
+    concurrency:
+      group: build-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build ordinary assets
+        run: pnpm build
+      - name: Preserve ordinary browser assets
         uses: actions/upload-artifact@v4
         with:
-          name: browser-timings
-          path: test-results/*/results.json
-          if-no-files-found: ignore
-          retention-days: 7
-      - name: Preserve verified production assets
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: actions/upload-artifact@v4
-        with:
-          name: production-assets
+          name: regular-assets
           path: dist/
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 1
-      - uses: actions/upload-artifact@v4
-        if: failure()
+      - name: Build navigation-enabled assets
+        run: DAYFRAME_OFFLINE_NAVIGATION=1 pnpm build
+      - name: Preserve navigation and deployment candidate
+        uses: actions/upload-artifact@v4
         with:
-          name: browser-failures
+          name: navigation-assets
+          path: dist/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+  playwright:
+    needs: build
+    strategy:
+      # Preserve both reports even if one suite fails.
+      fail-fast: false
+      matrix:
+        suite: [regular, navigation]
+    concurrency:
+      group: playwright-${{ matrix.suite }}-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      # Keep this version equal to @playwright/test in package.json.
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      options: --ipc=host --init
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Require matching browser image
+        run: test "$(node -p "require('./package.json').devDependencies['@playwright/test']")" = '1.64.1'
+      - name: Restore built assets
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.suite }}-assets
+          path: dist/
+      - name: Verify ordinary browser behavior
+        if: matrix.suite == 'regular'
+        run: pnpm test:e2e
+      - name: Verify navigation-enabled browser behavior
+        if: matrix.suite == 'navigation'
+        # Consume the build artifact directly; do not rebuild it in this job.
+        run: pnpm exec playwright test --config playwright.offline.config.ts
+      - name: Preserve browser timings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-timings-${{ matrix.suite }}
+          path: test-results/*/results.json
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Preserve browser failures
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-failures-${{ matrix.suite }}
           path: test-results/
           retention-days: 7
+  checks:
+    # Preserve the required status name and fail closed on skipped/cancelled jobs.
+    needs: [quality, build, playwright]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require complete verification
+        env:
+          QUALITY_RESULT: ${{ needs.quality.result }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          PLAYWRIGHT_RESULT: ${{ needs.playwright.result }}
+        run: |
+          test "$QUALITY_RESULT" = success
+          test "$BUILD_RESULT" = success
+          test "$PLAYWRIGHT_RESULT" = success
   deploy:
     needs: checks
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -86,7 +167,7 @@ jobs:
       - name: Restore verified production assets
         uses: actions/download-artifact@v4
         with:
-          name: production-assets
+          name: navigation-assets
           path: dist/
       - name: Upload verified build to Cloudflare
         run: |

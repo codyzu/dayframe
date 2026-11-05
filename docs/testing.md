@@ -1,11 +1,38 @@
 # Verification suite
 
-`pnpm verify` is the shared gate for local verification, pull requests and pushes
-to main. It checks types and formatting, runs Vitest and Worker integration tests,
-builds the ordinary application, runs browser tests, then builds and tests enabled
-offline navigation. The release workflow retains that verified enabled build for
-deployment. The Free-plan assertion and production smoke checks follow in the
-deployment job.
+`pnpm verify` is the complete local gate: types, formatting, Vitest and Worker
+integration tests, the ordinary build and browser tests, then an enabled offline
+navigation build and its browser tests. CI runs these same checks in independent
+jobs for both pull requests and main pushes; it does not reduce release coverage.
+
+## CI artifact handoff
+
+The `quality` job runs types, lint and unit/Worker tests while `build` produces
+ordinary and navigation-enabled assets. Each build is uploaded once as a one-day
+`regular-assets` or `navigation-assets` artifact. The two `playwright` matrix jobs
+download their respective artifacts into `dist/` and run concurrently; neither
+browser job builds or changes the candidate assets.
+
+Browser jobs use the official Playwright Noble image pinned to the exact
+`@playwright/test` version in `package.json`, with Node from `.nvmrc`. Update the
+image and its version guard together with Playwright. The image supplies browsers
+and Linux dependencies; the job still installs the locked project dependencies.
+See the [official container guidance](https://playwright.dev/docs/docker).
+
+The required `checks` status succeeds only when quality, build and both browser
+jobs succeed. Failure, cancellation or a skipped prerequisite fails the gate.
+Only a successful main push can deploy: it downloads that run's exact
+`navigation-assets` artifact, enforces the Free-plan assertion, then uploads and
+checks the live deployment. Artifacts are candidates until the complete gate
+passes; their presence alone never authorizes deployment. Browser jobs receive
+no production credentials. Local `pnpm verify` and its ordinary-build restoration
+behavior remain available unchanged.
+
+Main pushes, pull requests and manual dispatch use the same verification jobs.
+Feature branches use a PR or manual dispatch, avoiding duplicate push/PR runs for
+the same change. Manual dispatch never deploys. Superseded verification jobs can
+be cancelled independently; active production uploads retain their separate,
+non-cancelling concurrency group.
 
 ## Choosing coverage
 
@@ -57,8 +84,8 @@ security deferrals remain in their issues and hardware runbooks.
 
 Both browser suites retain JSON timing reports under
 `test-results/{regular,navigation}/results.json`. GitHub uploads these as the
-seven-day `browser-timings` artifact, including on successful runs. Failure
-screenshots and details remain in `browser-failures`. Compare timings on the same
+seven-day `browser-timings-regular` and `browser-timings-navigation` artifacts, including on successful runs. Failure
+screenshots and details remain in the corresponding `browser-failures-*` artifact. Compare timings on the same
 runner class and distinguish queue delay, browser installation, fixture startup,
 test execution and deployment.
 
