@@ -17,6 +17,8 @@ import {administrationRuntime} from './administration-runtime.ts';
 import {photoAuthority, testAudience, testIssuer} from './photo-auth.ts';
 
 const authority = await photoAuthority();
+const port = Number(process.argv[2] ?? 8789);
+const origin = `https://127.0.0.1:${port}`;
 const originalFetch = fetch;
 // eslint-disable-next-line unicorn/no-global-object-property-assignment -- Only the test issuer is intercepted in this isolated process.
 globalThis.fetch = async (input, init) =>
@@ -105,7 +107,7 @@ const server = createServer(
   },
   (incoming, outgoing) => {
     void (async () => {
-      const url = new URL(incoming.url ?? '/', 'https://127.0.0.1:8789');
+      const url = new URL(incoming.url ?? '/', origin);
       if (url.pathname === '/__test/login') {
         const email =
           url.searchParams.get('admin') === 'two'
@@ -187,7 +189,7 @@ const server = createServer(
     });
   },
 );
-server.listen(8789, '127.0.0.1');
+server.listen(port, '127.0.0.1');
 async function close() {
   server.close();
   await platform.dispose();

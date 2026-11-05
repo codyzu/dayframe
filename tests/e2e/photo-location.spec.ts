@@ -1,12 +1,11 @@
 /* eslint-disable unicorn/no-await-expression-member -- Inline response checks keep the browser flow readable. */
 import {Buffer} from 'node:buffer';
 import {type Page} from '@playwright/test';
-import {expect, test} from '../fixtures/browser.ts';
+import {expect, test, photoOrigin as origin} from '../fixtures/browser.ts';
 import {gpsPng} from '../fixtures/photo-gps.ts';
 import {type PhotoMetadata} from '../../src/lib/photos/contracts.ts';
 import {weatherFixture} from '../fixtures/weather.ts';
 
-const origin = 'https://127.0.0.1:8789';
 test.use({baseURL: origin, ignoreHTTPSErrors: true});
 async function fixture(page: Page, latitude = 45.8992, longitude = 6.1294) {
   const data = await page.evaluate(() => {

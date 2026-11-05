@@ -1,9 +1,8 @@
 /* eslint-disable unicorn/no-await-expression-member -- Keep browser response assertions inline for the role matrix. */
 import {Buffer} from 'node:buffer';
-import {expect, test} from '../fixtures/browser.ts';
+import {expect, test, photoOrigin as origin} from '../fixtures/browser.ts';
 import {weatherFixture} from '../fixtures/weather.ts';
 
-const origin = 'https://127.0.0.1:8789';
 test.use({baseURL: origin, ignoreHTTPSErrors: true});
 test.beforeEach(async ({page}) => {
   await page.request.get('/__test/reset');

@@ -41,10 +41,10 @@ project's grep in a local config and retain the ordinary fixture setup.
 | Foundation and density               | Shared shell and large layout on all four projects. Legacy Standard preferences have one compatibility test. Browser engines retain real SVG motion/reduced-motion checks.                                    |
 | Weather, warnings and planning       | Firefox covers refresh, failures, stale data and timing. Mobile adds representative layout/dialog journeys. Cached-weather recovery also runs in Chromium. Provider payload permutations stay in Vitest.      |
 | Calendar                             | Render empty, constrained and full agenda shapes on Firefox and mobile. Vitest covers every row-count boundary, DST and date selection.                                                                       |
-| Administration                       | Settings UI on Firefox and mobile; provisioning, persistent cookies and revocation on all three engines.                                                                                                      |
+| Administration                       | Settings UI on Firefox and mobile. Provisioning, persistent cookies and revocation on all three engines.                                                                                                      |
 | Photo administration                 | Core upload/review/delete and place/date caption journeys on all projects. Orientation, image privacy and session recovery retain relevant engines. Detailed phone batch-boundary cases run on mobile WebKit. |
 | Touch navigation                     | Firefox and mobile exercise gestures, timers and geometry. Actual animation lifecycle and Night colors also cover Chromium and desktop WebKit.                                                                |
-| Focus                                | Full dashboard audit on all projects; settings, setup and photo controls on Firefox and mobile.                                                                                                               |
+| Focus                                | Full dashboard audit on all projects. Settings, setup and photo controls on Firefox and mobile.                                                                                                               |
 | Offline photos and fallback document | All three engines, using mobile WebKit for WebKit coverage. Real IndexedDB transactions, cross-tab invalidation, expiration, decoding and private-pixel cleanup stay in browsers.                             |
 | Enabled offline navigation           | Every scenario on Chromium, Firefox and mobile WebKit. This suite tests service-worker install/update, network faults, retirement, recovery and reload ordering.                                              |
 | Clipboard experiment                 | Mobile WebKit checks its maintained diagnostic route. Production import coverage lives in the photo administration suite.                                                                                     |
@@ -62,10 +62,14 @@ screenshots and details remain in `browser-failures`. Compare timings on the sam
 runner class and distinguish queue delay, browser installation, fixture startup,
 test execution and deployment.
 
-Tests use one worker because the photo and navigation fixture servers expose
-shared reset/control state. Concurrent workers need isolated servers and storage
-before they can safely run these tests. Controlled page clocks may advance real
-application timers; tests must still observe the production transition, decode or
+Regular tests use two workers. Each parallel slot owns a separate HTTPS photo
+fixture server on port 8789 or 8791, with independent KV, SQLite, signing authority
+and credentials. Tests select their origin using Playwright's stable parallel
+index, including after a failed worker is replaced. Each scenario still resets
+its own slot's fixture state. Keep the worker count and fixture ports in sync.
+The ordinary Wrangler preview serves immutable built assets to both workers.
+Offline navigation uses one worker because its fault server has shared controls.
+Controlled page clocks may advance real application timers. Tests must still observe the production transition, decode or
 cleanup before asserting its outcome. Rendered animation/stillness checks retain
 the elapsed time needed to sample real pixels.
 

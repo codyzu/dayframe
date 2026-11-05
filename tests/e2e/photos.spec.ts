@@ -1,10 +1,9 @@
 import {Buffer} from 'node:buffer';
 import {type Page} from '@playwright/test';
-import {expect, test} from '../fixtures/browser.ts';
+import {expect, test, photoOrigin as origin} from '../fixtures/browser.ts';
 import {defaultSettings} from '../../src/lib/dashboard/settings.ts';
 import {fixtureNow, weatherFixture} from '../fixtures/weather.ts';
 
-const origin = 'https://127.0.0.1:8789';
 test.use({baseURL: origin, ignoreHTTPSErrors: true});
 
 // eslint-disable-next-line max-params -- Named fixture inputs keep the test matrix compact.

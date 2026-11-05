@@ -1,10 +1,9 @@
 import {Buffer} from 'node:buffer';
-import {expect, test} from '../fixtures/browser.ts';
+import {expect, test, photoOrigin as origin} from '../fixtures/browser.ts';
 import {auditFocus} from '../fixtures/focus-audit.ts';
 import {fixtureNow, sevenDayFixture} from '../fixtures/weather.ts';
 import {defaultSettings} from '../../src/lib/dashboard/settings.ts';
 
-const origin = 'https://127.0.0.1:8789';
 const photo = Buffer.from(
   'UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA',
   'base64',

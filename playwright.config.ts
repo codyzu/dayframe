@@ -3,7 +3,7 @@ import {defineConfig, devices} from '@playwright/test';
 export default defineConfig({
   testDir: './tests/e2e',
   testIgnore: '**/navigation-fallback.spec.ts',
-  workers: 1,
+  workers: 2,
   outputDir: 'test-results/regular',
   reporter: [
     ['dot'],
@@ -17,14 +17,13 @@ export default defineConfig({
       reuseExistingServer: false,
       timeout: 60_000,
     },
-    {
-      command:
-        'node --experimental-transform-types tests/fixtures/photo-server.ts',
-      url: 'https://127.0.0.1:8789/api/health',
+    ...[8789, 8791].map((port) => ({
+      command: `node --experimental-transform-types tests/fixtures/photo-server.ts ${port}`,
+      url: `https://127.0.0.1:${port}/api/health`,
       ignoreHTTPSErrors: true,
       reuseExistingServer: false,
       timeout: 60_000,
-    },
+    })),
   ],
   projects: [
     {

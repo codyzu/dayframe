@@ -1,5 +1,10 @@
+import process from 'node:process';
 import {test as base} from '@playwright/test';
 import {alertsFixture} from './alerts.ts';
+
+// Playwright preserves parallelIndex when replacing a failed worker. Each slot
+// owns a separate HTTPS server, KV store, signing authority and SQLite runtime.
+export const photoOrigin = `https://127.0.0.1:${8789 + 2 * Number(process.env.TEST_PARALLEL_INDEX ?? 0)}`;
 
 // Every browser scenario owns its warning data; ordinary UI checks never call
 // the live national feed. A test's later route can replace this clear bulletin.

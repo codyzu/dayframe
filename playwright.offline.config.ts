@@ -3,6 +3,8 @@ import base from './playwright.config.ts';
 
 export default defineConfig({
   ...base,
+  // Fault controls belong to one server shared by this suite.
+  workers: 1,
   outputDir: 'test-results/navigation',
   reporter: [
     ['dot'],

@@ -1,5 +1,5 @@
 import {alertsFixture} from '../fixtures/alerts.ts';
-import {expect, test} from '../fixtures/browser.ts';
+import {expect, test, photoOrigin} from '../fixtures/browser.ts';
 import {defaultSettings} from '../../src/lib/dashboard/settings.ts';
 import {
   dayOffSchedule,
@@ -169,13 +169,13 @@ test('vacation and holiday appear beside six upcoming appointments, suppress rou
 test('admin edits and persists separate day profiles without replacing base settings @mobile', async ({
   page,
 }) => {
-  await page.request.get('https://127.0.0.1:8789/__test/reset', {
+  await page.request.get(`${photoOrigin}/__test/reset`, {
     ignoreHTTPSErrors: true,
   });
-  await page.request.get('https://127.0.0.1:8789/__test/login', {
+  await page.request.get(`${photoOrigin}/__test/login`, {
     ignoreHTTPSErrors: true,
   });
-  await page.goto('https://127.0.0.1:8789/admin/settings');
+  await page.goto(`${photoOrigin}/admin/settings`);
   await expect(page.locator('[data-controls]')).toBeEnabled();
   await page.locator('[data-school-calendar]').check();
   await page.locator('[data-add-day-period]').click();
