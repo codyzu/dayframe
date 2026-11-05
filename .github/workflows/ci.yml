@@ -79,7 +79,7 @@ jobs:
     container:
       # Keep this version equal to @playwright/test in package.json.
       image: mcr.microsoft.com/playwright:v1.64.1-noble
-      options: --ipc=host --init
+      options: --user 1001 --ipc=host --init
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

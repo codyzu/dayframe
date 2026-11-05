@@ -156,6 +156,9 @@ test('critical-script failure on a fresh visit enters installed fallback at the 
     .evaluate((button: HTMLButtonElement) => {
       button.click();
     });
+  // Recovery finishes after its native health fetch. Advancing while it is
+  // pending skips the newly armed retry, leaving a real 15-second wait.
+  await expect(page.locator('[data-offline] button')).toBeEnabled();
   expect(navigations).toEqual([]);
   await control(request, {});
   await Promise.all([
