@@ -86,7 +86,7 @@ test('large layout, readable labels and animated icons @all-browsers', async ({
   }
 
   for (const button of await page
-    .getByRole('navigation')
+    .getByRole('navigation', {name: 'Modes d’affichage'})
     .getByRole('button')
     .all()) {
     const box = await button.boundingBox();
@@ -99,7 +99,9 @@ test('large layout, readable labels and animated icons @all-browsers', async ({
   }
 
   const plot = await page.locator('[data-chart-plot]').boundingBox();
-  const nav = await page.getByRole('navigation').boundingBox();
+  const nav = await page
+    .getByRole('navigation', {name: 'Modes d’affichage'})
+    .boundingBox();
   expect(plot!.y + plot!.height).toBeLessThan(nav!.y);
   const icon = page.locator('[data-current-icon]');
   expect(

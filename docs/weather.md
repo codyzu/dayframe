@@ -149,7 +149,7 @@ confirmed the namespace/field structure and current feed timestamp; synthetic br
 fixtures establish departmental warning behavior, not a real current Haute-Savoie
 warning or actual-frame acceptance.
 
-## Inline seven-day browsing — review branch, 5 November 2026
+## Inline seven-day browsing — 5 November 2026
 
 The Morning view has an always-visible strip for today through day six. Each
 button shows its condition, labelled maximum/minimum and rain probability.
@@ -175,11 +175,11 @@ phones, with room for keyboard outlines. No modal forecast or additional polling
 is used. Rain values keep the existing provider meaning (daily maximum hourly
 probability); no visible methodology note is added to the strip.
 
-This is the implementation proposed for owner screenshot review in #23, not a
-production or physical-device acceptance claim. Rollback is a web source revert;
+The owner approved this implementation in #23 after screenshot review. Automated
+layout evidence remains separate from physical-device acceptance. Rollback is a web source revert;
 no preference/data migration, provider, credentials, paid service or offline
 retention change is involved. The historical modal implementation below is
-superseded on this branch.
+superseded by the inline selector.
 
 Upstream refreshed on 5 November at
 `34c91641e3cdd159756e3f1dcc15914148b2beff`: reviewed MIT `LICENSE`,

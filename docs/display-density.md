@@ -18,7 +18,7 @@ must continue fitting without clipping, including six appointments and warning/d
 states. Phones can scroll Morning content; bottom clearance keeps it reachable above
 the shared navigation.
 
-## Compact Morning layout — review branch, 5 November 2026
+## Compact Morning layout — 5 November 2026
 
 Morning uses one frame-width header: greeting with a weather-location pill,
 actual household date and clock. The pill opens the existing location picker;
@@ -38,8 +38,8 @@ On the frame it may temporarily overlap the last agenda rows while visible, as
 accepted by the owner; do not reserve an empty full-width dock band or reflow the
 cards when it hides. Phones retain scroll/focus clearance so content remains
 reachable. This accepted overlap refines the no-clipping policy above only for
-the temporary dock. Physical acceptance remains #18; this branch is for #23
-screenshot review and is not deployed.
+the temporary dock. The owner approved the #23 screenshot review; physical
+acceptance remains #18.
 
 ## Controls
 

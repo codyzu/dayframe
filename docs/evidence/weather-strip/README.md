@@ -20,8 +20,9 @@ capture-only case was removed from the permanent suite per the testing policy.
 The visible dock is expected to temporarily cover the last agenda rows; it
 retains its existing auto-hide behavior. The main panels do not move when it
 hides. Actual frame/phone readability remains owner-observed acceptance in #18.
-See the weather and display-density runbooks for behavior and rollback. This
-branch is awaiting owner visual review; nothing was deployed.
+See the weather and display-density runbooks for behavior and rollback. These
+captures were prepared before deployment; the owner subsequently approved the
+layout and requested deployment.
 
 ## Location-pill text correction
 
