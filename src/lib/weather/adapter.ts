@@ -28,6 +28,7 @@ export type Weather = {
     low: number;
     code?: number;
     probability?: number;
+    precipitation?: number;
   }>;
 };
 
@@ -54,7 +55,7 @@ export function weatherUrl() {
     hourly:
       'temperature_2m,precipitation_probability,precipitation,weather_code,is_day',
     daily:
-      'temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max',
+      'temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max,precipitation_sum',
   }).toString();
   return url.href;
 }
@@ -248,8 +249,13 @@ export function parseWeather(input: unknown, fetchedAt: number): Weather {
       throw new Error('Invalid daily range');
     }
 
-    const extra: {code?: number; probability?: number} = {};
-    for (const field of ['weather_code', 'precipitation_probability_max']) {
+    const extra: {code?: number; probability?: number; precipitation?: number} =
+      {};
+    for (const field of [
+      'weather_code',
+      'precipitation_probability_max',
+      'precipitation_sum',
+    ]) {
       if (daily[field] === undefined) {
         continue; // Old v1 caches remain readable, without invented rain data.
       }
@@ -264,7 +270,13 @@ export function parseWeather(input: unknown, fetchedAt: number): Weather {
       const value: unknown = get(field);
       if (field === 'weather_code') {
         extra.code = code(value);
-      } else if (value !== null) {
+      } else if (field === 'precipitation_sum' && value !== null) {
+        if (record(root.daily_units).precipitation_sum !== 'mm') {
+          throw new Error('Unexpected daily precipitation unit');
+        }
+
+        extra.precipitation = number(value, 0, 2000);
+      } else if (field === 'precipitation_probability_max' && value !== null) {
         if (record(root.daily_units).precipitation_probability_max !== '%') {
           throw new Error('Unexpected daily probability unit');
         }

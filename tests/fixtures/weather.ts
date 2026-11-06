@@ -63,7 +63,11 @@ export function sevenDayFixture(now = fixtureNow) {
   const days = Array.from({length: 7}, (_, index) => start + index * 86_400);
   return {
     ...raw,
-    daily_units: {...raw.daily_units, precipitation_probability_max: '%'},
+    daily_units: {
+      ...raw.daily_units,
+      precipitation_probability_max: '%',
+      precipitation_sum: 'mm',
+    },
     hourly: Object.fromEntries(
       Object.entries(raw.hourly).map(([key, values]) => [
         key,
@@ -78,6 +82,7 @@ export function sevenDayFixture(now = fixtureNow) {
       temperature_2m_min: days.map(() => 8),
       weather_code: days.map(() => 61),
       precipitation_probability_max: days.map(() => 65),
+      precipitation_sum: days.map(() => 3),
     },
   };
 }

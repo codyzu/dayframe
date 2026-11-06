@@ -149,6 +149,51 @@ confirmed the namespace/field structure and current feed timestamp; synthetic br
 fixtures establish departmental warning behavior, not a real current Haute-Savoie
 warning or actual-frame acceptance.
 
+## Weekly trend picker — review branch, 6 November 2026
+
+The review implementation for #24 replaces the repeated daily condition tiles
+with a continuous maximum-temperature line and adjacent daily total-precipitation
+bars. Seven lightly divided button columns still select the existing day details;
+the selected column has a shaded background and accent underline. No minimum
+series or daily icons are shown in this first version. The selected-day four
+moments and hourly graph retain their precipitation probabilities.
+
+The same weather request adds Open-Meteo daily `precipitation_sum`, validated in
+millimetres with bounded finite nonnegative values. This is the provider's daily
+total including rain, showers and snowfall, not a sum reconstructed from the
+possibly partial hourly coverage. See the [provider definitions](https://open-meteo.com/en/docs#daily-parameter-definition).
+Maximum temperature and precipitation use independent linear scales. The
+precipitation scale starts at zero, spans at least 30mm and grows to accommodate
+larger returned totals, so an otherwise dry week cannot give a small shower a
+full-height bar. Each value is directly labelled; missing days break the line,
+missing amounts show “— mm” and have no bar. Positive amounts below 0.1mm display
+“<0,1 mm” rather than becoming an apparent zero.
+
+The old versioned raw-response cache remains compatible: missing/new/null totals
+stay unknown until a normal successful refresh. There is no forced extra request,
+new key, settings migration, provider, dependency, billing or private-retention
+change. The previous parser ignores the extra provider field, so rollback is a
+web-source revert without deleting cached weather or private data. Existing
+selection, timeout, location/date rollover, freshness and recovery behavior is
+retained. SVG marks redraw on data/date or width changes; day buttons retain
+focus/scroll during refresh.
+
+Local synthetic measurements at 1280 × 800 found the previous picker at **99px**
+and this review picker at **99px**, including its focus/scroll clearance. The unit
+legend occupies a 104px left gutter beside the date row; no extra legend row is
+added. Narrow screens keep a readable horizontally scrollable continuous strip.
+[Review screenshots and capture context](evidence/weather-trend/README.md) cover
+wet weather, summer heat, a selected future day, full agenda and warning/day-off
+states. The branch awaits owner screenshot approval before merge/deployment;
+physical frame/phone acceptance remains #18.
+
+Upstream refreshed on 6 November at
+`34c91641e3cdd159756e3f1dcc15914148b2beff`: reviewed MIT `LICENSE`,
+`dashboard/js/views/home.js`, `dashboard/css/views/home.css`, and weather in
+`dashboard/js/data.js`. Retained the glanceable seven-cell hierarchy as an idea;
+independently implemented a timestamped multi-day temperature/amount trend rather
+than upstream's hour-indexed mock weather. No upstream code or assets copied.
+
 ## Inline seven-day browsing — 5 November 2026
 
 The Morning view has an always-visible strip for today through day six. Each

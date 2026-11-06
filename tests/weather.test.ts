@@ -56,7 +56,7 @@ describe('provider boundary', () => {
     expect(url.searchParams.get('timeformat')).toBe('unixtime');
     expect(url.searchParams.get('forecast_days')).toBe('7');
     expect(url.searchParams.get('daily')).toBe(
-      'temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max',
+      'temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max,precipitation_sum',
     );
     const weather = parseWeather(weatherFixture(), fixtureNow);
     expect(weather.current.temperature).toBe(12);

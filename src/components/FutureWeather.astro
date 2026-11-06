@@ -1,29 +1,57 @@
 <nav
   data-future-days
-  class="flex min-w-0 max-w-full gap-2 overflow-x-auto p-2 scroll-p-2 min-[1000px]:grid min-[1000px]:grid-cols-7"
+  class="min-w-0 max-w-full overflow-x-auto p-2 scroll-p-2"
   aria-label="Choisir le jour de la météo"
-></nav>
+>
+  <div class="trend-strip relative min-w-[70rem] h-[83px] rounded-2xl bg-surface">
+    <div
+      class="absolute top-1 left-2 w-22 whitespace-nowrap text-[13px] font-bold leading-tight"
+      aria-hidden="true"
+    >
+      <p class="text-temperature">━ Max. °C</p>
+      <p class="mt-1 text-rain">▰ Précip. mm</p>
+    </div>
+    <div
+      data-future-buttons
+      class="absolute inset-y-0 left-[104px] right-0 grid grid-cols-7"
+    ></div>
+    <svg
+      data-future-trend
+      class="trend-plot pointer-events-none absolute top-6 left-0 w-full h-[58px] overflow-visible"
+      aria-hidden="true"
+    ></svg>
+  </div>
+</nav>
 <template data-future-day-template>
   <button
     type="button"
-    class="future-day relative flex flex-col items-center justify-center gap-0 shrink-0 w-40 min-[1000px]:w-auto min-w-0 min-h-12 rounded-2xl border border-transparent bg-surface px-2 py-0.5 text-[length:var(--font-weather-detail)] leading-tight hover:bg-elevated aria-pressed:bg-primary aria-pressed:hover:bg-primary aria-pressed:text-surface focus-visible:outline-2 focus-visible:outline-accent"
+    class="future-day relative min-w-0 min-h-12 flex items-start justify-center pt-1 border-r border-r-border/40 border-b-3 border-b-transparent bg-transparent text-primary text-lg font-bold leading-tight hover:bg-elevated aria-pressed:bg-background aria-pressed:border-b-accent aria-pressed:hover:bg-background focus-visible:outline-accent rounded-sm"
   >
-    <span class="flex items-center justify-center gap-1">
-      <span data-future-date class="font-bold text-lg"></span>
-      <span
-        data-future-icon
-        aria-hidden="true"
-        class="inline-block size-7 shrink-0"
-      ></span>
-    </span>
+    <span data-future-date></span>
     <span data-future-condition class="sr-only"></span>
-    <span data-future-extremes class="text-base whitespace-nowrap"></span>
-    <span data-future-rain class="font-bold"></span>
   </button>
 </template>
 <style>
-  /* Keep seven simultaneous forecasts still on the low-power household frame. */
-  [data-future-icon] {
-    background-image: var(--dayframe-static-icon);
+  /* The continuous chart crosses seven independent buttons. SVG coordinates
+     and text halos keep the compact overlapping measures legible at all widths. */
+  .trend-plot :global(text) {
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: 700;
+    paint-order: stroke;
+    stroke: var(--colors-surface);
+    stroke-width: 4px;
+    stroke-linejoin: round;
+  }
+  .trend-plot :global([data-amount]) {
+    font-size: 16px;
+  }
+  .trend-plot :global([data-selected='true'] text) {
+    stroke: var(--colors-background);
+  }
+  @media (min-width: 1000px) {
+    .trend-strip {
+      min-width: 0;
+    }
   }
 </style>

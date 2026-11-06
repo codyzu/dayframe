@@ -638,8 +638,17 @@ test('day strip synchronizes weather, graph and advice without changing the real
   const days = page.locator('[data-future-days] button');
   await expect(days).toHaveCount(7);
   await expect(days.first()).toContainText('Aujourd’hui');
-  await expect(days.first()).toContainText('Max 19° · Min 8°');
-  await expect(days.first()).toContainText('Pluie 65 %');
+  await expect(days.first()).toHaveAttribute(
+    'aria-label',
+    /maximum 19, minimum 8/v,
+  );
+  await expect(days.first()).toHaveAttribute(
+    'aria-label',
+    /Précipitations : 3 millimètres/v,
+  );
+  await expect(
+    page.locator('[data-future-trend] [data-amount]').first(),
+  ).toHaveText('3 mm');
   await days.nth(1).focus();
   await page.keyboard.press('Enter');
   await expect(days.nth(1)).toBeFocused();
@@ -809,8 +818,15 @@ test('unavailable initial forecasts keep seven usable dates without invented val
   await page.goto('/');
   const days = page.locator('[data-future-days] button');
   await expect(days).toHaveCount(7);
-  await expect(days.first()).toContainText('Max — · Min —');
-  await expect(days.first()).toContainText('Pluie —');
+  await expect(days.first()).toHaveAttribute(
+    'aria-label',
+    /Prévision indisponible/v,
+  );
+  await expect(days.first()).toHaveAttribute(
+    'aria-label',
+    /Précipitations : indisponibles/v,
+  );
+  await expect(page.locator('[data-future-trend] rect')).toHaveCount(0);
   await days.nth(1).click();
   await expect(page.locator('[data-weather-heading]')).toHaveText(
     'Prévisions · demain',

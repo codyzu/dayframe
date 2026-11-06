@@ -1,4 +1,5 @@
 import {describe, expect, it} from 'vitest';
+import {trendGeometry, precipitationLabel} from '../src/lib/weather/trend.ts';
 import {forecastDates} from '../src/lib/weather/future.ts';
 import {
   staleWeatherLabel,
@@ -55,11 +56,104 @@ describe('bounded future forecasts', () => {
     expect(weather.daily[6]).toMatchObject({
       date: '2026-10-22',
       probability: 65,
+      precipitation: 3,
       code: 61,
     });
     expect(
       parseWeather(weatherFixture(), fixtureNow).daily[0].probability,
     ).toBeUndefined();
+  });
+  it('keeps absent and null daily totals unknown instead of summing partial hours', () => {
+    const old = parseWeather(weatherFixture(), fixtureNow);
+    expect(old.daily[0].precipitation).toBeUndefined();
+    const raw = sevenDayFixture();
+    raw.daily.precipitation_sum[0] = 0;
+    Object.assign(raw.daily, {
+      precipitation_sum: [0, null, 0.04, 3.5, 18, 24, 0],
+    });
+    const weather = parseWeather(raw, fixtureNow);
+    expect(weather.daily.map((day) => day.precipitation)).toEqual([
+      0,
+      undefined,
+      0.04,
+      3.5,
+      18,
+      24,
+      0,
+    ]);
+    expect(precipitationLabel(undefined)).toBe('—');
+    expect(precipitationLabel(0)).toBe('0');
+    expect(precipitationLabel(0.04)).toBe('<0,1');
+    expect(precipitationLabel(3.5)).toBe('3,5');
+  });
+  it.each(['negative', 'nonfinite', 'length', 'units'])(
+    'rejects invalid daily precipitation %s',
+    (kind) => {
+      const raw = sevenDayFixture();
+      switch (kind) {
+        case 'negative': {
+          raw.daily.precipitation_sum[0] = -1;
+
+          break;
+        }
+
+        case 'nonfinite': {
+          raw.daily.precipitation_sum[0] = NaN;
+
+          break;
+        }
+
+        case 'length': {
+          raw.daily.precipitation_sum.pop();
+
+          break;
+        }
+
+        case 'units': {
+          raw.daily_units.precipitation_sum = 'cm';
+
+          break;
+        }
+        // No default
+      }
+
+      expect(() => parseWeather(raw, fixtureNow)).toThrow();
+    },
+  );
+  it('draws independent bounded scales and breaks the temperature line at missing days', () => {
+    const dates = forecastDates(fixtureNow);
+    const {daily} = parseWeather(sevenDayFixture(), fixtureNow);
+    daily[0].high = -5;
+    daily[1].precipitation = 0;
+    daily[2].precipitation = 60;
+    daily.splice(3, 1);
+    const chart = trendGeometry(dates, daily, 1200);
+    expect(chart.path.match(/M/gv)).toHaveLength(2);
+    expect(chart.points[3].day).toBeUndefined();
+    expect(chart.points[1].rainHeight).toBe(0);
+    expect(chart.points[2].rainHeight).toBe(32);
+    expect(chart.amountCeiling).toBe(60);
+    for (const point of chart.points) {
+      expect(point.x).toBeGreaterThan(104);
+      expect(point.rainX).toBeLessThan(1200);
+      expect(point.rainY).toBeGreaterThanOrEqual(22);
+      expect(point.y).toBeGreaterThanOrEqual(20);
+      expect(point.y).toBeLessThanOrEqual(48);
+    }
+
+    for (const day of daily) {
+      day.precipitation = 0;
+      day.high = 20;
+    }
+
+    const dry = trendGeometry(dates, daily, 1200);
+    expect(dry.amountCeiling).toBe(30);
+    expect(dry.path).not.toMatch(/NaN|Infinity/v);
+    expect(
+      dry.points
+        .filter((point) => point.day)
+        .every((point) => point.rainHeight === 0),
+    ).toBe(true);
   });
   it('handles partial coverage and rejects invalid extra arrays, units and unbounded payloads', () => {
     const raw = sevenDayFixture();

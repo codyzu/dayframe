@@ -18,6 +18,22 @@ must continue fitting without clipping, including six appointments and warning/d
 states. Phones can scroll Morning content; bottom clearance keeps it reachable above
 the shared navigation.
 
+## Weekly trend strip — review branch, 6 November 2026
+
+The #24 review branch uses the same **99px** picker height measured on the
+previous 1280 × 800 layout. A small left legend shares the day-label row; the
+maximum-temperature line and adjacent millimetre bars occupy the remaining
+horizontal space. Main weather typography, graph, four moments, header and dock
+are unchanged. Day names are 18px, plotted maxima 18px and amount labels 16px;
+background-coloured text halos keep crossing marks from obscuring values.
+
+Seven full-height columns remain native buttons with explicit date/value names,
+selected state and painted keyboard focus. Mobile preserves horizontal scrolling
+instead of shrinking seven days into unreadable columns. The SVG is decorative
+for assistive technology because each button exposes the equivalent values.
+This is local synthetic screenshot-review evidence, not deployment or physical
+acceptance. [Capture context](evidence/weather-trend/README.md).
+
 ## Compact Morning layout — 5 November 2026
 
 Morning uses one frame-width header: greeting with a weather-location pill,
