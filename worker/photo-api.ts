@@ -1,6 +1,7 @@
 import {type PlaceRecord} from '../src/lib/photos/place.ts';
 import {
   hashPattern,
+  isImportOrder,
   isPhotoMetadata,
   shaPattern,
   type PhotoMetadata,
@@ -269,6 +270,13 @@ async function uploadPhoto(
     return failure(400, 'INVALID_METADATA', 'Empreintes invalides.');
   }
 
+  const importGroup = request.headers.get('X-Photo-Import-Group') ?? undefined;
+  const indexHeader = request.headers.get('X-Photo-Import-Index');
+  const importIndex = indexHeader === null ? undefined : Number(indexHeader);
+  if (indexHeader === '' || !isImportOrder(importGroup, importIndex)) {
+    return failure(400, 'INVALID_METADATA', 'Ordre d’import invalide.');
+  }
+
   const body = await readBounded(request);
   const dimensions = webpDimensions(body);
   const key = `photo:${id}`;
@@ -312,6 +320,7 @@ async function uploadPhoto(
     contentType: 'image/webp',
     uploadedAt: new Date().toISOString(),
     uploadedBy: subject,
+    ...(importGroup !== undefined && {importGroup, importIndex}),
   };
   // A single record atomically couples bytes and listable key metadata.
   // Concurrent cross-location writes still use KV's last-write-wins semantics.

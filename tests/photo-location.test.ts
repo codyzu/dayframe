@@ -1,7 +1,12 @@
 /* eslint-disable unicorn/no-await-expression-member -- Inline assertions keep lookup results readable. */
 import {afterEach, describe, expect, it, vi} from 'vitest';
 import {photoCoordinates} from '../src/lib/photos/gps.ts';
-import {isPhotoPlace, placeFromInput} from '../src/lib/photos/place.ts';
+import {
+  isPhotoPlace,
+  placeFromInput,
+  captureEditorValues,
+  captureTimestampFromEditor,
+} from '../src/lib/photos/place.ts';
 import {createPlaceLookup} from '../src/lib/photos/place-lookup.ts';
 import {gpsJpeg, gpsPng} from './fixtures/photo-gps.ts';
 
@@ -12,6 +17,53 @@ afterEach(() => {
   vi.useRealTimers();
 });
 describe('photo capture location', () => {
+  it('preserves camera-local precision and offset through human-friendly edits without guessing a timezone', () => {
+    for (const timestamp of [
+      '2024-03-01',
+      '2024-03-01T14:30',
+      '2024-03-01T14:30Z',
+      '2024-03-01T14:30:06.123456789+02:00',
+    ]) {
+      const fields = captureEditorValues(timestamp);
+      expect(captureTimestampFromEditor(timestamp, fields)).toBe(timestamp);
+      expect(
+        captureTimestampFromEditor(timestamp, {...fields, day: '2024-02-29'}),
+      ).toBe(timestamp.replace('2024-03-01', '2024-02-29'));
+      expect(
+        captureTimestampFromEditor(timestamp, {...fields, day: ''}),
+      ).toBeUndefined();
+    }
+
+    expect(
+      captureTimestampFromEditor('2024-03-01T14:30Z', {
+        day: '2024-03-01',
+        time: '14:30:00',
+        offset: 'Z',
+      }),
+    ).toBe('2024-03-01T14:30Z');
+    expect(
+      captureTimestampFromEditor(undefined, {
+        day: '2024-03-01',
+        time: '14:30',
+        offset: '',
+      }),
+    ).toBe('2024-03-01T14:30');
+    expect(
+      captureTimestampFromEditor('2024-03-01T14:30Z', {
+        day: '2024-03-01',
+        time: '',
+        offset: 'Z',
+      }),
+    ).toBe('2024-03-01');
+    expect(() =>
+      captureTimestampFromEditor(undefined, {
+        day: '2024-03-01',
+        time: '14:30',
+        offset: 'Europe/Paris',
+      }),
+    ).toThrow('Décalage');
+  });
+
   it('reads JPEG byte orders, hemisphere references and zero coordinates', () => {
     for (const isLittle of [true, false]) {
       for (const [lat, lon] of [

@@ -626,11 +626,12 @@ existing owner-requested M7 calendar slice; it does not change hardware acceptan
 
 Owner selects automatic city/area labels from capture GPS during future uploads,
 using the verified iPhone Shortcut/manual-paste path. Ordinary paste/selection
-starts upload without a location confirmation; optional pre-upload customization
-and later admin correction/removal remain available. No-GPS/lookup failure does
+starts upload without a location confirmation; admin correction/removal remains
+available through a focused details editor. No-GPS/lookup failure does
 not block upload. Store only private place text/provenance, never raw capture GPS
 or EXIF in optimized photos; labels remain online-only. Existing-photo recovery
-uses explicitly chosen matches and metadata-only edits. Actual household backfill
+uses explicitly chosen matches and fills missing locations/capture dates through
+metadata-only edits, preserving existing corrections. Actual household backfill
 and Apple Photos access are deferred by the owner. [ADR 0010](decisions/0010-photo-place-labels.md)
 defines storage/concurrency, compatibility, provider/cost and rollback.
 
@@ -639,7 +640,19 @@ defines storage/concurrency, compatibility, provider/cost and rollback.
 
 Photo imports read JPEG or PNG EXIF capture timestamps when present. Dayframe
 preserves camera-local time and its UTC offset when known. Partial records may
-store a date alone. Admins can edit or clear the date and time during optional
-import review or from the catalog. The frame shows the French month and year
+store a date alone. Admins can edit or clear the date and time from the catalog’s
+details editor. The frame shows the French month and year
 under the location when photo captions are enabled and the live catalog is
 available. See [photo operations](photos.md#capture-dates).
+
+### Photo administration refinement — 6 November 2026
+
+Ordinary picker/native paste imports run automatically, with a visible paste target
+and whole-selection progress. Advanced location opt-out/provider disclosure and
+combined missing-place/date recovery are collapsed. The collection orders newest
+upload selections first, preserving source order within a selection after refresh;
+metadata edits do not reorder photos. Compact cards open a focused Save/Cancel
+editor with optional native time and advanced explicit UTC offset. Preserve imported
+precision, unknown timezones and separate upload/capture dates. No overwrite,
+image replacement, new offline metadata retention or paid service is introduced.
+See [photo administration](photos.md#photo-place-labels--3-november-2026) and issue #26.

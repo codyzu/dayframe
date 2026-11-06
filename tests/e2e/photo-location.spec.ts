@@ -78,7 +78,7 @@ test.beforeEach(async ({page}) => {
   await page.goto('/admin/photos');
   await expect(page.locator('[data-choose-files]')).toBeEnabled();
 });
-test('manual paste automatically saves its place; optional review and later editing change labels without changing pixels @all-browsers', async ({
+test('manual paste saves metadata and a focused editor changes details without changing pixels @all-browsers', async ({
   page,
 }) => {
   const photo = await fixture(page);
@@ -89,7 +89,7 @@ test('manual paste automatically saves its place; optional review and later edit
     }
   });
   await page.goto('/admin/photos?import=clipboard&expected=1');
-  await expect(page.locator('[data-import-zone]')).toBeVisible();
+  await expect(page.locator('[data-choose-files]')).toBeEnabled();
   await paste(page, photo.buffer);
   await expect(page.locator('[data-storage]')).toContainText('1 photo');
   let record = (await catalog(page)).photos[0];
@@ -99,41 +99,25 @@ test('manual paste automatically saves its place; optional review and later edit
   const original = await (
     await page.request.get(`/api/photos/${record.id}`)
   ).body();
-  await page.locator('[data-import-review]').check();
-  await page.locator('[data-photo-files]').setInputFiles(photo);
-  await expect(
-    page.getByLabel('Lieu de la photo 1', {exact: true}),
-  ).toHaveValue('Annecy');
-  await expect(
-    page.getByLabel('Date de prise de vue de la photo 1'),
-  ).toHaveValue('2024-03-01');
-  expect(lookups).toBe(1);
-  await page
-    .getByLabel('Lieu de la photo 1', {exact: true})
-    .fill('Lac d’Annecy');
-  await page.locator('[data-import-add]').click();
-  await expect(page.locator('[data-upload-summary]')).toContainText(
-    'déjà présente',
-  );
-  await expect(page.locator('[data-place-input]')).toHaveValue('Lac d’Annecy');
+  const edit = page.locator('[data-edit-photo]');
+  await edit.click();
+  await expect(page.locator('[data-place-input]')).toBeFocused();
+  await page.locator('[data-place-input]').fill('Ne pas enregistrer');
+  await page.locator('[data-editor-cancel]').click();
+  await expect(edit).toBeFocused();
+  await expect(page.locator('[data-card-place]')).toHaveText('Annecy');
+  await edit.click();
   await page.locator('[data-place-input]').fill('Vieille ville');
-  await page.getByRole('button', {name: 'Enregistrer le lieu'}).click();
-  await expect(page.locator('[data-admin-status]')).toHaveText(
-    'Lieu enregistré.',
-  );
+  await page.locator('[data-capture-date]').fill('2024-02-29');
+  await page.locator('[data-editor-save]').click();
+  await expect(page.locator('[data-photo-editor]')).not.toBeVisible();
+  await expect(edit).toBeFocused();
   record = (await catalog(page)).photos[0];
   expect(record.place).toEqual({label: 'Vieille ville', source: 'manual'});
+  expect(record.capturedAt).toBe('2024-02-29T00:05:06+02:00');
   expect(
     await (await page.request.get(`/api/photos/${record.id}`)).body(),
   ).toEqual(original);
-  await page.locator('[data-capture-date]').fill('2024-02-29');
-  await page.getByRole('button', {name: 'Enregistrer le lieu'}).click();
-  await expect(page.locator('[data-admin-status]')).toHaveText(
-    'Date enregistrée.',
-  );
-  expect((await catalog(page)).photos[0].capturedAt).toBe(
-    '2024-02-29T00:05:06+02:00',
-  );
   await page.goto('/');
   await page.getByRole('button', {name: 'Photos', exact: true}).click();
   await expect(page.locator('[data-photo-stage] img')).toBeVisible();
@@ -196,27 +180,56 @@ test('manual paste automatically saves its place; optional review and later edit
   await page.evaluate(() => globalThis.dispatchEvent(new Event('online')));
   await expect(page.locator('[data-photo-place]')).toBeHidden();
 });
-test('optional import review can override the extracted capture date @mobile', async ({
+test('date editor supports optional time, unknown timezone, clearing and denial cleanup @mobile', async ({
   page,
 }) => {
-  await page.locator('[data-import-review]').check();
   await page.locator('[data-photo-files]').setInputFiles(await fixture(page));
-  const input = page.getByLabel('Date de prise de vue de la photo 1');
-  await expect(input).toHaveValue('2024-03-01');
-  await input.fill('2024-03-02');
-  await page.locator('[data-import-add]').click();
-  await expect(page.locator('[data-capture-date]')).toHaveValue('2024-03-02');
-  expect((await catalog(page)).photos[0].capturedAt).toBe(
-    '2024-03-02T00:05:06+02:00',
+  await expect(page.locator('[data-storage]')).toContainText('1 photo');
+  await page.locator('[data-edit-photo]').click();
+  await page.locator('[data-capture-time]').fill('14:30');
+  await page.locator('[data-timezone-details] summary').click();
+  await page.locator('[data-capture-offset]').fill('');
+  await page.locator('[data-editor-save]').click();
+  await expect(page.locator('[data-photo-editor]')).not.toBeVisible();
+  expect((await catalog(page)).photos[0].capturedAt).toMatch(
+    /^2024-03-01T14:30(?::00)?$/v,
   );
+  await page.locator('[data-edit-photo]').click();
+  await page.locator('[data-remove-time]').click();
+  await page.locator('[data-editor-save]').click();
+  await expect(page.locator('[data-photo-editor]')).not.toBeVisible();
+  expect((await catalog(page)).photos[0].capturedAt).toBe('2024-03-01');
+  await page.locator('[data-edit-photo]').click();
+  await page.locator('[data-remove-date]').click();
+  await page.locator('[data-editor-save]').click();
+  await expect(page.locator('[data-photo-editor]')).not.toBeVisible();
+  expect((await catalog(page)).photos[0].capturedAt).toBeUndefined();
+  await page.locator('[data-edit-photo]').click();
+  await page.route('**/api/photos/*/place', async (route) =>
+    route.fulfill({status: 401, json: {error: {message: 'Accès requis'}}}),
+  );
+  await page.locator('[data-editor-save]').click();
+  await expect(page.locator('[data-photo-editor]')).not.toBeVisible();
+  await expect(page.locator('[data-editor-image]')).not.toHaveAttribute('src');
+  await expect(page.locator('[data-place-input]')).toHaveValue('');
+  await expect(page.locator('[data-photo-gallery] img')).toHaveCount(0);
 });
 
-test('recovery requires a chosen matching photo and updates its place without uploading another image @mobile-only', async ({
+test('confirmed recovery fills missing places and dates, preserves corrections and supports date-only recovery @mobile', async ({
   page,
 }) => {
   const photo = await fixture(page);
   await page.locator('[data-photo-files]').setInputFiles(photo);
   await expect(page.locator('[data-storage]')).toContainText('1 photo');
+  const initial = (await catalog(page)).photos[0];
+  const original = await (
+    await page.request.get(`/api/photos/${initial.id}`)
+  ).body();
+  await page.locator('[data-edit-photo]').click();
+  await page.locator('[data-place-input]').fill('');
+  await page.locator('[data-remove-date]').click();
+  await page.locator('[data-editor-save]').click();
+  await expect(page.locator('[data-photo-editor]')).not.toBeVisible();
   let uploads = 0;
   page.on('request', (request) => {
     if (
@@ -226,26 +239,68 @@ test('recovery requires a chosen matching photo and updates its place without up
       uploads++;
     }
   });
-  await page.locator('[data-recover-locations]').check();
+  await page.locator('[data-recovery-options] summary').click();
+  await page.locator('[data-recover-locations]').click();
   await page
     .locator('[data-photo-files]')
     .setInputFiles(await fixture(page, 48.8584, 2.2945));
-  await expect(
-    page.getByLabel('Lieu de la photo 1', {exact: true}),
-  ).toHaveValue('Paris');
-  await page.locator('[data-import-add]').click();
+  await expect(page.locator('[data-recovery-dialog]')).toBeVisible();
+  await expect(page.locator('[data-recovery-place]')).toContainText('Paris');
+  await page
+    .getByRole('button', {name: 'Compléter les informations', exact: true})
+    .click();
   await expect(page.locator('[data-recovery-dialog]')).toBeVisible();
   await page.locator('[data-recovery-dialog] input[type=radio]').check();
   await page
-    .getByRole('button', {name: 'Confirmer le lieu', exact: true})
+    .getByRole('button', {name: 'Compléter les informations', exact: true})
     .click();
   await expect(page.locator('[data-upload-summary]')).toContainText(
-    '1 lieu(x) retrouvé(s)',
+    '1 lieu(x) retrouvé(s) · 1 date(s) retrouvée(s)',
+  );
+  let record = (await catalog(page)).photos[0];
+  expect(record.place?.label).toBe('Paris');
+  expect(record.capturedAt).toBe('2024-03-01T00:05:06+02:00');
+  expect(record.uploadedAt).toBe(initial.uploadedAt);
+  await page.locator('[data-edit-photo]').click();
+  await page.locator('[data-place-input]').fill('Lieu corrigé');
+  await page.locator('[data-capture-date]').fill('2020-01-02');
+  await page.locator('[data-editor-save]').click();
+  await expect(page.locator('[data-photo-editor]')).not.toBeVisible();
+  await page.locator('[data-photo-files]').setInputFiles(photo);
+  await expect(page.locator('[data-recovery-dialog]')).toBeVisible();
+  await page.locator('[data-recovery-dialog] input[type=radio]').check();
+  await page
+    .getByRole('button', {name: 'Compléter les informations', exact: true})
+    .click();
+  await expect(page.locator('[data-upload-summary]')).toContainText(
+    '1 photo(s) vérifiée(s)',
+  );
+  record = (await catalog(page)).photos[0];
+  expect(record.place?.label).toBe('Lieu corrigé');
+  expect(record.capturedAt).toBe('2020-01-02T00:05:06+02:00');
+  await page.locator('[data-edit-photo]').click();
+  await page.locator('[data-remove-date]').click();
+  await page.locator('[data-editor-save]').click();
+  await expect(page.locator('[data-photo-editor]')).not.toBeVisible();
+  await page.getByText('Options', {exact: true}).click();
+  await page.locator('[data-photo-location-consent]').uncheck();
+  await page.locator('[data-photo-files]').setInputFiles(photo);
+  await expect(page.locator('[data-recovery-dialog]')).toBeVisible();
+  await page.locator('[data-recovery-dialog] input[type=radio]').check();
+  await page
+    .getByRole('button', {name: 'Compléter les informations', exact: true})
+    .click();
+  await expect(page.locator('[data-upload-summary]')).toContainText(
+    '1 date(s) retrouvée(s)',
+  );
+  expect((await catalog(page)).photos[0].place?.label).toBe('Lieu corrigé');
+  expect((await catalog(page)).photos[0].capturedAt).toBe(
+    '2024-03-01T00:05:06+02:00',
   );
   expect(uploads).toBe(0);
-  const records = (await catalog(page)).photos;
-  expect(records).toHaveLength(1);
-  expect(records[0].place?.label).toBe('Paris');
+  expect(
+    await (await page.request.get(`/api/photos/${initial.id}`)).body(),
+  ).toEqual(original);
 });
 test('failed geocoding does not block automatic upload; pending lookup can be cancelled @mobile', async ({
   page,
@@ -264,11 +319,16 @@ test('failed geocoding does not block automatic upload; pending lookup can be ca
   await page
     .locator('[data-photo-files]')
     .setInputFiles(await fixture(page, 47, 3));
-  await expect(page.locator('[data-import-previews]')).toContainText(
+  await expect(page.locator('[data-progress-label]')).toContainText(
     'Recherche du lieu',
   );
+  await expect(page.locator('[data-edit-photo]')).toBeDisabled();
+  await expect(page.locator('[data-refresh]')).toBeDisabled();
   await page.locator('[data-import-clear]').click();
+  await expect(page.locator('[data-edit-photo]')).toBeEnabled();
   lookup.resolve();
-  await expect(page.locator('[data-import-previews]')).toBeEmpty();
+  await expect(page.locator('[data-import-current]')).not.toHaveAttribute(
+    'src',
+  );
   await expect(page.locator('[data-storage]')).toContainText('1 photo');
 });

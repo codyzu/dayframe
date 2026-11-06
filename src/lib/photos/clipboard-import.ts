@@ -1,329 +1,99 @@
 import {photoCaptureTimestamp} from './gps.ts';
 import {createPlaceLookup} from './place-lookup.ts';
-import {
-  captureTimestampFromInputs,
-  placeFromInput,
-  type PhotoImport,
-  type PhotoPlace,
-} from './place.ts';
-// Clipboard contents are read only after an explicit user gesture; never parse HTML.
+import {type PhotoImport, type PhotoPlace} from './place.ts';
+import {type ImportProgress} from './import-progress.ts';
+
+// Native paste supplies the metadata-preserving iPhone representation.
+// Never read clipboard HTML, text, URLs or the asynchronous Clipboard API.
 export function mountClipboardImport(
   root: HTMLElement,
-  importFiles: (files: PhotoImport[]) => Promise<void>,
-  knownPlace: (file: File) => Promise<PhotoPlace | undefined> = async () =>
-    undefined,
+  options: {
+    importFiles: (files: PhotoImport[]) => Promise<void>;
+    knownPlace: (file: File) => Promise<PhotoPlace | undefined>;
+    onSelection: () => void;
+    onPreparing: (isPreparing: boolean) => void;
+    progress: ImportProgress;
+  },
 ) {
-  const paste = root.querySelector<HTMLButtonElement>('[data-import-paste]')!;
   const choose = root.querySelector<HTMLButtonElement>('[data-choose-files]')!;
-  const fallback = root.querySelector<HTMLDetailsElement>(
-    '[data-import-fallback]',
-  )!;
-  const add = root.querySelector<HTMLButtonElement>('[data-import-add]')!;
   const clear = root.querySelector<HTMLButtonElement>('[data-import-clear]')!;
   const zone = root.querySelector<HTMLElement>('[data-import-zone]')!;
+  const target = root.querySelector<HTMLElement>('[data-import-target]')!;
+  const heading = root.querySelector<HTMLElement>('[data-paste-heading]')!;
   const status = root.querySelector<HTMLElement>('[data-import-status]')!;
-  const previews = root.querySelector<HTMLElement>('[data-import-previews]')!;
-  const expected = root.querySelector<HTMLInputElement>(
-    '[data-import-expected]',
-  )!;
   const consent = root.querySelector<HTMLInputElement>(
     '[data-photo-location-consent]',
   )!;
-  const review = root.querySelector<HTMLInputElement>('[data-import-review]')!;
-  const recovery = root.querySelector<HTMLInputElement>(
+  const recovery = root.querySelector<HTMLButtonElement>(
     '[data-recover-locations]',
   )!;
   const lookup = createPlaceLookup();
-  let locationController = new AbortController();
-  let staged: Array<{
-    entry: PhotoImport;
-    input: HTMLInputElement;
-    original: string;
-    dateInput: HTMLInputElement;
-    timeInput: HTMLInputElement;
-  }> = [];
+  const {progress} = options;
   const query = new URL(location.href).searchParams;
-  const queryCount = query.get('expected');
-  const isShortcut = query.get('import') === 'clipboard';
-  const pasteSummary = fallback.querySelector('summary')!;
-  if (queryCount !== null) {
-    expected.readOnly = true;
-    expected.value =
-      /^[1-9]\d{0,2}$/v.test(queryCount) && Number(queryCount) <= 100
-        ? queryCount
-        : '0';
-  }
-
+  const expected = query.get('expected');
+  const expectedCount = expected === null ? undefined : Number(expected);
   let sourceCount = 0;
   let batchStart = 0;
-  let batchEnd = 0;
+  let selectionId = crypto.randomUUID();
   let isClipboard = true;
   let selectedFiles: File[] = [];
   let isEnabled = false;
-  let isReading = false;
-  let isPreviewing = false;
-  let hasValidPreviews = false;
+  let isPreparing = false;
   let generation = 0;
-  let files: File[] = [];
-  let urls: string[] = [];
-  function releasePreviews() {
-    previews.replaceChildren();
-    for (const url of urls) {
-      URL.revokeObjectURL(url);
-    }
-
-    urls = [];
-  }
-
-  function complete() {
-    const wanted = Number(expected.value);
-    return (
-      hasValidPreviews &&
-      files.length > 0 &&
-      (expected.value === '' ||
-        (Number.isSafeInteger(wanted) &&
-          wanted >= 1 &&
-          wanted <= 100 &&
-          wanted === sourceCount)) &&
-      files.length === batchEnd - batchStart
-    );
-  }
+  let controller = new AbortController();
 
   function update() {
-    const hasStaged = files.length > 0;
-    pasteSummary.textContent = consent.checked
-      ? 'Collage manuel avec le lieu'
-      : 'Le collage ne fonctionne pas ?';
-    if (
-      isShortcut &&
-      isEnabled &&
-      isClipboard &&
-      !hasStaged &&
-      consent.checked
-    ) {
-      fallback.hidden = false;
-      fallback.open = true;
-    }
-
-    const isContinuing = sourceCount > 0 && batchStart < sourceCount;
-    paste.disabled = !isEnabled || isReading || isPreviewing;
-    consent.disabled = !isEnabled || isReading || isPreviewing;
-    review.disabled = !isEnabled || isReading || isPreviewing;
-    paste.hidden = hasStaged;
-    paste.textContent =
-      isContinuing && batchStart > 0
-        ? isClipboard
-          ? 'Coller les suivantes'
-          : 'Préparer les suivantes'
-        : 'Coller des photos';
-    choose.hidden = hasStaged || (isContinuing && batchStart > 0);
-    choose.disabled = !isEnabled || isReading || isPreviewing;
-    clear.hidden = !hasStaged && !isContinuing;
-    clear.disabled = !isEnabled || isReading;
-    add.hidden = !hasStaged || (!review.checked && !recovery.checked);
-    add.disabled = !isEnabled || isReading || isPreviewing || !complete();
-    zone.contentEditable = String(isEnabled && !isReading && !isPreviewing);
-    status.hidden = (status.textContent ?? '').trim() === '';
-  }
-
-  function explain(message: string) {
-    status.textContent = message;
-    fallback.hidden = !isClipboard;
-    update();
+    const isContinuing = batchStart > 0 && batchStart < sourceCount;
+    choose.disabled = !isEnabled || isPreparing;
+    consent.disabled = !isEnabled || isPreparing;
+    recovery.disabled = !isEnabled || isPreparing;
+    clear.hidden = !isPreparing && !isContinuing;
+    clear.disabled = !isEnabled;
+    zone.contentEditable = String(isEnabled && !isPreparing);
+    zone.setAttribute('aria-disabled', String(!isEnabled || isPreparing));
+    target.classList.toggle('opacity-50', !isEnabled || isPreparing);
+    heading.textContent = isContinuing
+      ? `Encore ${sourceCount - batchStart} photo${sourceCount - batchStart > 1 ? 's' : ''} : collez les suivantes ici`
+      : query.get('import') === 'clipboard'
+        ? 'Vos photos sont prêtes à être ajoutées'
+        : 'Collez vos photos ici';
+    status.hidden = status.textContent === '';
   }
 
   function reset() {
     generation++;
-    locationController.abort();
-    locationController = new AbortController();
-    staged = [];
-    files = [];
-    batchEnd = batchStart;
-    hasValidPreviews = false;
-    isPreviewing = false;
-    releasePreviews();
+    controller.abort();
+    controller = new AbortController();
+    isPreparing = false;
+    options.onPreparing(false);
     zone.replaceChildren();
+    progress.clearImage();
+  }
+
+  function startSelection() {
+    reset();
+    sourceCount = 0;
+    batchStart = 0;
+    selectionId = crypto.randomUUID();
+    selectedFiles = [];
+    isClipboard = true;
+    status.textContent = '';
+    progress.clear();
     update();
   }
 
-  async function showPreviews() {
-    releasePreviews();
-    staged = [];
-    hasValidPreviews = false;
-    if (!isEnabled || files.length === 0) {
-      update();
-      return;
-    }
-
-    const run = generation;
-    const {signal} = locationController;
-    const batch = files;
-    isPreviewing = true;
-    status.textContent = 'Préparation des aperçus…';
-    update();
-    try {
-      for (const [index, file] of batch.entries()) {
-        const source = new Image();
-        const sourceUrl = URL.createObjectURL(file);
-        try {
-          source.src = sourceUrl;
-          await source.decode();
-          if (run !== generation) {
-            return;
-          }
-
-          const scale = Math.min(
-            1,
-            320 / Math.max(source.naturalWidth, source.naturalHeight),
-          );
-          const canvas = document.createElement('canvas');
-          canvas.width = Math.max(1, Math.round(source.naturalWidth * scale));
-          canvas.height = Math.max(1, Math.round(source.naturalHeight * scale));
-          const context = canvas.getContext('2d');
-          if (!context) {
-            throw new Error('Aperçu indisponible.');
-          }
-
-          context.drawImage(source, 0, 0, canvas.width, canvas.height);
-          const thumbnail = await new Promise<Blob>((resolve, reject) => {
-            canvas.toBlob((blob) => {
-              if (blob) {
-                resolve(blob);
-              } else {
-                reject(new Error('Aperçu indisponible.'));
-              }
-            }, 'image/png');
-          });
-          if (run !== generation) {
-            return;
-          }
-
-          const image = document.createElement('img');
-          const url = URL.createObjectURL(thumbnail);
-          urls.push(url);
-          image.src = url;
-          image.alt = `Photo à importer ${batchStart + index + 1}`;
-          image.className =
-            'h-32 w-full object-contain rounded-lg bg-background';
-          const card = document.createElement('div');
-          card.className = 'min-w-0 space-y-2';
-          const label = document.createElement('label');
-          label.className = 'block text-sm';
-          label.textContent = `Lieu de la photo ${batchStart + index + 1}`;
-          const field = document.createElement('input');
-          field.type = 'text';
-          field.maxLength = 160;
-          field.className =
-            'mt-1 min-h-11 w-full rounded-lg border border-border bg-elevated px-2';
-          label.append(field);
-          const message = document.createElement('p');
-          message.className = 'text-sm';
-          const dateLabel = document.createElement('label');
-          dateLabel.className = 'block text-sm';
-          dateLabel.textContent = `Date de prise de vue de la photo ${batchStart + index + 1}`;
-          const dateInput = document.createElement('input');
-          dateInput.type = 'date';
-          dateInput.className = field.className;
-          dateLabel.hidden = recovery.checked;
-          dateLabel.append(dateInput);
-          const timeLabel = document.createElement('label');
-          timeLabel.className = 'block text-sm';
-          timeLabel.textContent = `Heure de prise de vue de la photo ${batchStart + index + 1}`;
-          timeLabel.hidden = recovery.checked;
-          const timeInput = document.createElement('input');
-          timeInput.type = 'text';
-          timeInput.maxLength = 24;
-          timeInput.placeholder = '14:30:00+02:00';
-          timeInput.className = field.className;
-          timeLabel.append(timeInput);
-          card.append(image, label, message, dateLabel, timeLabel);
-          previews.append(card);
-          const entry: PhotoImport = {file};
-          if (!recovery.checked) {
-            const timestamp = photoCaptureTimestamp(await file.arrayBuffer());
-            dateInput.value = timestamp?.slice(0, 10) ?? '';
-            timeInput.value = timestamp?.slice(11) ?? '';
-            if (run !== generation || !isEnabled) {
-              return;
-            }
-          }
-
-          const item = {
-            entry,
-            input: field,
-            original: '',
-            dateInput,
-            timeInput,
-          };
-          staged.push(item);
-          if (consent.checked) {
-            message.textContent = 'Recherche du lieu…';
-            const known = await knownPlace(file);
-            signal.throwIfAborted();
-            const result = known
-              ? {
-                  place: known,
-                  message: 'Lieu déjà enregistré, réutilisé sans recherche.',
-                }
-              : await lookup.lookup(file, signal);
-            if (run !== generation || !isEnabled) {
-              return;
-            }
-
-            entry.place = result.place;
-            field.value = result.place?.label ?? '';
-            item.original = field.value;
-            message.textContent = result.message;
-          } else {
-            message.textContent =
-              'Lieu facultatif, à saisir ou à laisser vide.';
-          }
-
-          status.textContent = `Aperçu ${index + 1} sur ${batch.length}…`;
-        } finally {
-          URL.revokeObjectURL(sourceUrl);
-          source.removeAttribute('src');
-        }
-      }
-
-      hasValidPreviews = true;
-      describe();
-    } catch {
-      if (run === generation) {
-        releasePreviews();
-        explain(
-          'Une photo ne peut pas être lue. Choisissez une version JPEG ou PNG, ou relancez le partage avec le raccourci Dayframe PNG.',
-        );
-      }
-    } finally {
-      if (run === generation) {
-        isPreviewing = false;
-        update();
-        if (complete() && !review.checked && !recovery.checked) {
-          submitBatch();
-        }
-      }
-    }
-  }
-
-  function describe() {
-    status.textContent =
-      files.length === 0
-        ? ''
-        : complete()
-          ? `${files.length} photo${files.length > 1 ? 's' : ''} sur ${sourceCount} prête${files.length > 1 ? 's' : ''} à ajouter${batchStart > 0 ? ` · ${batchStart} déjà traitée${batchStart > 1 ? 's' : ''}` : ''}.`
-          : `${sourceCount} photo(s) reçue(s) sur ${expected.value} attendue(s). Relancez le raccourci ou essayez le collage manuel.`;
-    if (complete()) {
-      fallback.hidden = true;
-      fallback.open = false;
-    } else if (files.length > 0) {
-      fallback.hidden = !isClipboard;
-    }
-
+  function explain(message: string) {
+    status.textContent = message;
+    progress.show(batchStart, 'Sélection à vérifier');
     update();
   }
 
   function selectRange(itemCount: number) {
+    if (itemCount > 100) {
+      explain('Choisissez au maximum 100 photos à la fois.');
+      return;
+    }
+
     if (itemCount !== sourceCount && batchStart > 0) {
       explain(
         'Le nombre de photos du presse-papiers a changé. Annulez puis recommencez le collage.',
@@ -331,158 +101,156 @@ export function mountClipboardImport(
       return;
     }
 
-    sourceCount = itemCount;
-    if (itemCount > 100) {
-      explain('Choisissez au maximum 100 photos à la fois.');
+    if (
+      isClipboard &&
+      expectedCount !== undefined &&
+      (expectedCount !== itemCount ||
+        !Number.isSafeInteger(expectedCount) ||
+        expectedCount < 1 ||
+        expectedCount > 100)
+    ) {
+      explain(
+        `${itemCount} photo(s) reçue(s) sur ${expected} attendue(s). Relancez le raccourci puis collez à nouveau.`,
+      );
       return;
     }
 
+    if (itemCount === 0) {
+      explain(
+        'Aucune image lisible. Utilisez le raccourci Dayframe PNG ou choisissez des photos JPEG ou PNG.',
+      );
+      return;
+    }
+
+    if (sourceCount === 0) {
+      options.onSelection();
+      progress.begin(itemCount);
+    }
+
+    sourceCount = itemCount;
     return {start: batchStart, end: Math.min(batchStart + 10, itemCount)};
   }
 
-  function receive(blobs: Blob[], itemCount: number) {
-    if (blobs.length !== itemCount || blobs.length === 0) {
-      explain(
-        'Aucune image lisible. Utilisez le raccourci Dayframe PNG ou essayez le collage manuel.',
-      );
+  async function receive(source: File[]) {
+    const range = selectRange(source.length);
+    if (!range) {
       return;
     }
 
-    const oversized = blobs.findIndex((blob) => blob.size > 40 * 1024 * 1024);
-    if (oversized !== -1) {
-      explain(
-        `La photo ${batchStart + oversized + 1} dépasse la limite de 40 Mio par photo (${(blobs[oversized].size / (1024 * 1024)).toFixed(1)} Mio reçus). ${isClipboard ? 'Essayez le collage manuel ci-dessous pour reprendre les photos restantes.' : 'Annulez puis choisissez une version plus petite.'}`,
-      );
-      if (isClipboard) {
-        fallback.open = true;
+    const files: File[] = [];
+    let bytes = 0;
+    for (const file of source.slice(range.start, range.end)) {
+      if (
+        files.length > 0 &&
+        (!file.type.startsWith('image/') ||
+          file.size > 40 * 1024 * 1024 ||
+          bytes + file.size > 100_000_000)
+      ) {
+        break;
       }
 
-      return;
-    }
+      if (!file.type.startsWith('image/')) {
+        explain(
+          'Une photo ne peut pas être lue. Choisissez une version JPEG ou PNG, ou utilisez le raccourci Dayframe PNG.',
+        );
+        return;
+      }
 
-    const bytes = blobs.reduce((sum, blob) => sum + blob.size, 0);
-    if (bytes > 100_000_000) {
-      explain(
-        `Le lot fait ${Math.ceil(bytes / 1_000_000)} Mo : la limite est de 100 Mo par lot.`,
-      );
-      return;
-    }
+      if (file.size > 40 * 1024 * 1024) {
+        explain(
+          `La photo ${batchStart + 1} dépasse la limite de 40 Mio par photo (${(file.size / (1024 * 1024)).toFixed(1)} Mio reçus). Annulez puis choisissez une version plus petite.`,
+        );
+        return;
+      }
 
-    batchEnd = batchStart + blobs.length;
-    files = blobs.map((blob, index) =>
-      blob instanceof File
-        ? blob
-        : new File([blob], `Photo ${batchStart + index + 1}`, {
-            type: blob.type,
-          }),
-    );
-    void showPreviews();
-  }
-
-  // Preserve clipboard order. Inspect at most one next image that does not fit;
-  // never retain that lookahead in the staged group or advance past it.
-  function shouldStartNextGroup(blob: Blob, accepted: Blob[]) {
-    return (
-      accepted.length > 0 &&
-      (!blob.type.startsWith('image/') ||
-        blob.size > 40 * 1024 * 1024 ||
-        accepted.reduce((sum, item) => sum + item.size, 0) + blob.size >
-          100_000_000)
-    );
-  }
-
-  function readClipboard() {
-    if (!isEnabled || isReading || isPreviewing) {
-      return;
-    }
-
-    if (batchStart >= sourceCount && sourceCount > 0) {
-      startSelection();
-    }
-
-    if (!isClipboard) {
-      stageSelected();
-      return;
-    }
-
-    reset();
-    if (consent.checked) {
-      fallback.hidden = false;
-      fallback.open = true;
-      zone.focus();
-      explain(
-        'Maintenez le doigt dans la zone puis choisissez Coller : ce collage conserve les lieux.',
-      );
-      return;
-    }
-
-    if (typeof navigator.clipboard?.read !== 'function') {
-      explain('Utilisez la zone de collage ci-dessous.');
-      fallback.open = true;
-      return;
+      files.push(file);
+      bytes += file.size;
     }
 
     const run = generation;
-    // Keep this call inside the click gesture, before any await or API request.
-    const pending = navigator.clipboard.read();
-    isReading = true;
-    status.textContent = 'Choisissez Coller si votre iPhone le demande…';
+    const {signal} = controller;
+    isPreparing = true;
+    options.onPreparing(true);
+    status.textContent = '';
     update();
-    void (async () => {
-      try {
-        const items = await pending;
-        if (run !== generation || !isEnabled) {
-          return;
-        }
-
-        const range = selectRange(items.length);
-        if (!range) {
-          return;
-        }
-
-        const selected = items.slice(range.start, range.end);
-        const blobs: Blob[] = [];
-        for (const item of selected) {
-          const type = item.types.includes('image/png')
-            ? 'image/png'
-            : item.types.find((type) => type.startsWith('image/'));
-          if (type === undefined) {
-            break;
-          }
-
-          const blob = await item.getType(type);
-          if (run !== generation || !isEnabled) {
-            return;
-          }
-
-          if (shouldStartNextGroup(blob, blobs)) {
-            break;
-          }
-
-          blobs.push(blob);
-          if (blob.size > 40 * 1024 * 1024) {
-            break;
-          }
-        }
-
-        receive(blobs, blobs.length);
-      } catch {
-        if (run === generation) {
-          explain(
-            'Collage refusé ou indisponible. Réessayez ou utilisez le collage manuel.',
+    const entries: PhotoImport[] = [];
+    try {
+      for (const [index, file] of files.entries()) {
+        progress.preview(file);
+        progress.show(
+          batchStart,
+          `Préparation de la photo ${batchStart + index + 1}`,
+        );
+        const entry: PhotoImport = {
+          file,
+          importGroup: selectionId,
+          importIndex: batchStart + index,
+          capturedAt: photoCaptureTimestamp(await file.arrayBuffer()),
+        };
+        signal.throwIfAborted();
+        if (consent.checked) {
+          progress.show(
+            batchStart,
+            `Recherche du lieu · photo ${batchStart + index + 1}`,
           );
+          const known = await options.knownPlace(file);
+          signal.throwIfAborted();
+          const result = known
+            ? {place: known}
+            : await lookup.lookup(file, signal);
+          entry.place = result.place;
         }
-      } finally {
-        isReading = false;
+
+        signal.throwIfAborted();
+        entries.push(entry);
+      }
+
+      if (run !== generation || !isEnabled) {
+        return;
+      }
+
+      isPreparing = false;
+      options.onPreparing(false);
+      progress.clearImage();
+      // Advance only a validated group, keeping the full source order on repaste.
+      batchStart += entries.length;
+      await options.importFiles(entries);
+      if (run !== generation) {
+        return;
+      }
+
+      if (batchStart < sourceCount) {
+        if (isClipboard) {
+          progress.show(
+            batchStart,
+            'Collez les photos suivantes pour continuer',
+          );
+          status.textContent =
+            'Maintenez le doigt dans la zone puis touchez Coller pour continuer avec le même presse-papiers.';
+        } else if (isEnabled) {
+          await receive(selectedFiles);
+        }
+      } else {
+        selectedFiles = [];
+      }
+    } catch {
+      if (run === generation) {
+        explain(
+          'Préparation impossible. Choisissez une version JPEG ou PNG, ou utilisez le raccourci Dayframe PNG.',
+        );
+      }
+    } finally {
+      if (run === generation) {
+        isPreparing = false;
+        options.onPreparing(false);
         update();
       }
-    })();
+    }
   }
 
-  paste.addEventListener('click', readClipboard);
   zone.addEventListener('paste', (event) => {
     event.preventDefault();
-    if (!isEnabled || isReading || isPreviewing) {
+    if (!isEnabled || isPreparing) {
       return;
     }
 
@@ -490,175 +258,53 @@ export function mountClipboardImport(
       startSelection();
     }
 
-    reset();
-    const pasted = [...(event.clipboardData?.files ?? [])];
-    const range = selectRange(pasted.length);
-    if (!range) {
-      return;
-    }
-
-    const selected = pasted.slice(range.start, range.end);
-    const images: Blob[] = [];
-    for (const file of selected) {
-      if (
-        shouldStartNextGroup(file, images) ||
-        !file.type.startsWith('image/')
-      ) {
-        break;
-      }
-
-      images.push(file);
-      if (file.size > 40 * 1024 * 1024) {
-        break;
-      }
-    }
-
-    receive(images, images.length);
+    zone.replaceChildren();
+    void receive([...(event.clipboardData?.files ?? [])]);
   });
-  function startSelection() {
-    sourceCount = 0;
-    batchStart = 0;
-    selectedFiles = [];
-    isClipboard = true;
-    expected.value =
-      queryCount === null
-        ? ''
-        : /^[1-9]\d{0,2}$/v.test(queryCount) && Number(queryCount) <= 100
-          ? queryCount
-          : '0';
-    fallback.hidden = true;
-    fallback.open = false;
-    reset();
-  }
-
-  function stageSelected() {
-    reset();
-    const images: File[] = [];
-    for (const file of selectedFiles.slice(batchStart, batchStart + 10)) {
-      if (shouldStartNextGroup(file, images)) {
-        break;
-      }
-
-      images.push(file);
-      if (file.size > 40 * 1024 * 1024) {
-        break;
-      }
-    }
-
-    receive(images, images.length);
-  }
-
-  clear.addEventListener('click', () => {
+  // Prevent typing or dropping rich HTML into this image-only paste surface.
+  zone.addEventListener('beforeinput', (event) => {
+    event.preventDefault();
+  });
+  zone.addEventListener('drop', (event) => {
+    event.preventDefault();
+  });
+  clear.addEventListener('click', startSelection);
+  function clearSession() {
+    lookup.clear();
     startSelection();
-    describe();
-  });
-  function submitBatch() {
-    if (!isEnabled || isReading || isPreviewing || !complete()) {
-      return;
-    }
-
-    let batch: PhotoImport[];
-    try {
-      batch = staged.map(({entry, input, original, dateInput, timeInput}) => ({
-        ...entry,
-        capturedAt: captureTimestampFromInputs(
-          dateInput.value,
-          timeInput.value,
-        ),
-        place:
-          input.value === original ? entry.place : placeFromInput(input.value),
-      }));
-    } catch (error) {
-      explain(error instanceof Error ? error.message : 'Lieu invalide.');
-      return;
-    }
-
-    batchStart += batch.length;
-    reset();
-    status.textContent = 'Ajout en cours…';
-    update();
-    void importFiles(batch).finally(() => {
-      status.textContent =
-        batchStart < sourceCount
-          ? `${sourceCount - batchStart} photo${sourceCount - batchStart > 1 ? 's' : ''} restante${sourceCount - batchStart > 1 ? 's' : ''}.`
-          : '';
-      if (batchStart >= sourceCount) {
-        selectedFiles = [];
-      }
-
-      update();
-      if (
-        !isClipboard &&
-        batchStart < sourceCount &&
-        !review.checked &&
-        !recovery.checked
-      ) {
-        stageSelected();
-      }
-    });
   }
 
-  add.addEventListener('click', submitBatch);
+  globalThis.addEventListener('pagehide', clearSession);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      clearSession();
+    }
+  });
   consent.addEventListener('change', () => {
-    generation++;
-    locationController.abort();
-    locationController = new AbortController();
-    isPreviewing = false;
     if (!consent.checked) {
       lookup.clear();
     }
-
-    void showPreviews();
   });
-  globalThis.addEventListener('pagehide', () => {
-    lookup.clear();
-    startSelection();
-  });
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) {
-      return;
-    }
-
-    lookup.clear();
-    startSelection();
-  });
-  const setAllowed = (isAllowed: boolean, isAccessLost = false) => {
-    if (isAccessLost) {
-      lookup.clear();
-    }
-
-    if (!isAllowed && isEnabled) {
-      generation++;
-      locationController.abort();
-      isPreviewing = false;
-      hasValidPreviews = false;
-      releasePreviews();
-    }
-
-    const isChanged = isEnabled !== isAllowed;
-    isEnabled = isAllowed;
-    if (isChanged && isAllowed) {
-      void showPreviews();
-    }
-
-    update();
-  };
-
+  update();
   return {
-    setAllowed,
+    setAllowed(isAllowed: boolean, isAccessLost = false) {
+      if (isAccessLost) {
+        clearSession();
+      }
+
+      isEnabled = isAllowed;
+      update();
+    },
     stageFiles(picked: File[]) {
-      if (!isEnabled || isReading || isPreviewing || picked.length === 0) {
+      if (!isEnabled || isPreparing || picked.length === 0) {
         return;
       }
 
       startSelection();
       isClipboard = false;
       selectedFiles = picked;
-      // The Shortcut's count applies only to clipboard inputs.
-      expected.value = '';
-      if (selectRange(picked.length)) {
-        stageSelected();
-      }
+      void receive(picked);
     },
+    reset: startSelection,
   };
 }

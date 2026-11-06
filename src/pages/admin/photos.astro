@@ -60,119 +60,120 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         Ajouter des photos
       </h2>
       <p class="mt-2 text-sm text-slate-600">Vos originaux restent intacts.</p>
-      <label class="mt-5 flex items-start gap-3 text-sm leading-relaxed">
-        <input
-          data-photo-location-consent
-          checked
-          type="checkbox"
-          class="mt-1 size-5 shrink-0"
-        />
-        <span>
-          Ajouter automatiquement le lieu des photos. Le GPS de chaque image
-          sélectionnée est envoyé à Photon, sans la photo ni vos identifiants.
-          Seul le nom du lieu est conservé dans Dayframe. Ce choix vaut pour
-          cette page.
-        </span>
-      </label>
-      <p class="mt-2 text-sm text-slate-600">
-        Sur iPhone, utilisez le raccourci puis le collage manuel pour conserver
-        les lieux. Le bouton de lecture du presse-papiers retire le GPS lors de
-        nos essais. Les photos sans GPS restent importables.
+      <p class="mt-3 text-sm text-slate-600">
+        Lieux et dates récupérés automatiquement lorsqu’ils sont disponibles.
+        Vous pourrez les corriger dans la collection.
       </p>
-      <p class="mt-2 text-xs text-slate-600">
-        Lieux estimés :{' '}
-        <a href="https://github.com/komoot/photon" class="underline">
-          Photon
-        </a>{' '}
-        ·{' '}
-        <a href="https://www.openstreetmap.org/copyright" class="underline">
-          © OpenStreetMap · ODbL
-        </a>
-        .
-      </p>
-      <label class="mt-4 flex items-center gap-3 text-sm">
-        <input data-import-review type="checkbox" class="size-5" />
-        Personnaliser les lieux et dates avant l’ajout
-      </label>
-      <p class="mt-2 text-sm text-slate-600">
-        Par défaut, coller ou choisir des photos lance leur ajout avec le lieu
-        trouvé. Vous pourrez corriger le lieu dans la collection.
-      </p>
-      <label class="mt-4 flex items-center gap-3 text-sm">
-        <input data-recover-locations type="checkbox" class="size-5" />
-        Retrouver les lieux de photos déjà présentes (sans ajouter de photos)
-      </label>
-      <div class="mt-5 flex flex-wrap gap-3">
-        <button
-          data-import-paste
-          disabled
-          type="button"
-          class="min-h-12 rounded-full bg-primary px-6 py-3 font-semibold text-elevated disabled:opacity-50"
-        >
-          Coller des photos
-        </button>
-        <button
-          data-choose-files
-          disabled
-          type="button"
-          class="min-h-12 rounded-full border border-border px-6 py-3 font-semibold disabled:opacity-50"
-        >
-          Choisir des photos
-        </button>
-        <input
-          data-photo-files
-          type="file"
-          multiple
-          accept="image/*,.heic,.heif"
-          hidden
-        />
-      </div>
-      <input data-import-expected type="hidden" />
-      <p data-import-status role="status" class="mt-4 text-sm" hidden></p>
-      <details data-import-fallback hidden class="mt-3">
-        <summary class="min-h-11 cursor-pointer underline">
-          Le collage ne fonctionne pas ?
-        </summary>
-        <p class="my-3 text-sm">
-          Maintenez le doigt dans la zone, puis choisissez Coller.
-        </p>
+      <div class="mt-6 grid gap-5 md:grid-cols-2 md:items-center">
+        <div>
+          <button
+            data-choose-files
+            disabled
+            type="button"
+            class="min-h-12 rounded-full bg-primary px-6 py-3 font-semibold text-elevated disabled:opacity-50"
+          >
+            Choisir des photos
+          </button>
+          <input
+            data-photo-files
+            type="file"
+            multiple
+            accept="image/*,.heic,.heif"
+            hidden
+          />
+          <details class="mt-3 text-sm text-slate-600">
+            <summary class="min-h-11 cursor-pointer">
+              Depuis Photos sur iPhone
+            </summary>
+            <p>
+              Dans Photos, partagez vos images avec le raccourci Dayframe PNG,
+              puis collez-les ici pour conserver les lieux et dates disponibles.
+            </p>
+          </details>
+        </div>
         <div
-          data-import-zone
-          role="textbox"
-          aria-label="Zone de collage des photos"
-          contenteditable="false"
-          class="min-h-24 rounded-lg border border-border p-3"
-        ></div>
-      </details>
-      <div
-        data-import-previews
-        class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3"
-      ></div>
-      <div class="flex flex-wrap items-center gap-3">
-        <button
-          data-import-add
-          hidden
-          disabled
-          type="button"
-          class="mt-4 min-h-12 rounded-full bg-primary px-6 font-semibold text-elevated disabled:opacity-50"
+          data-import-target
+          class="rounded-xl border border-dashed border-border bg-background p-4"
         >
-          Ajouter les photos
-        </button>
-        <button
-          data-import-clear
-          hidden
-          type="button"
-          class="mt-4 min-h-12 px-3 underline disabled:opacity-50"
-        >
-          Annuler
-        </button>
+          <p data-paste-heading class="font-semibold">
+            Collez vos photos ici
+          </p>
+          <p id="paste-help" class="mt-1 text-sm text-slate-600">
+            Maintenez le doigt dans la zone, puis touchez Coller. Au clavier :
+            Ctrl+V ou ⌘V.
+          </p>
+          <div
+            data-import-zone
+            role="textbox"
+            aria-label="Zone de collage des photos"
+            aria-describedby="paste-help"
+            aria-disabled="true"
+            tabindex="0"
+            contenteditable="false"
+            class="mt-3 min-h-16 rounded-lg border border-border bg-elevated p-3"
+          ></div>
+        </div>
       </div>
+      <p
+        data-recovery-notice
+        hidden
+        class="mt-4 rounded-lg bg-background p-3 text-sm"
+      >
+        Récupération active : seuls les lieux et dates manquants seront
+        complétés, après confirmation de la photo existante. Aucun ajout de
+        photo.
+      </p>
+      <div
+        data-import-progress
+        hidden
+        class="mt-5 rounded-xl bg-background p-4"
+      >
+        <div class="flex items-center gap-3">
+          <img
+            data-import-current
+            hidden
+            alt="Photo en cours de traitement"
+            class="size-14 rounded-lg object-cover"
+          />
+          <div class="min-w-0 flex-1">
+            <p
+              data-progress-label
+              role="status"
+              class="text-sm font-semibold"
+            ></p>
+            <progress
+              data-progress-bar
+              aria-label="Progression de l’import"
+              max="1"
+              value="0"
+              class="mt-2 h-3 w-full appearance-none overflow-hidden rounded-full border-0 bg-border [&::-moz-progress-bar]:bg-primary [&::-webkit-progress-bar]:bg-border [&::-webkit-progress-value]:bg-primary"
+            ></progress>
+          </div>
+        </div>
+        <p data-import-status role="status" class="mt-2 text-sm" hidden></p>
+      </div>
+      <button
+        data-import-clear
+        hidden
+        type="button"
+        class="mt-3 min-h-11 px-3 text-sm underline"
+      >
+        Annuler la sélection
+      </button>
       <p
         data-upload-summary
         role="status"
         hidden
-        class="mt-5 font-semibold"
+        class="mt-4 font-semibold"
       ></p>
+      <a
+        data-view-added
+        href="#collection"
+        hidden
+        class="inline-flex min-h-11 items-center text-sm underline"
+      >
+        Voir les photos ajoutées
+      </a>
       <details data-upload-details hidden class="mt-2">
         <summary class="min-h-11 cursor-pointer text-sm underline">
           Détails des ajouts
@@ -183,9 +184,33 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           class="mt-2 space-y-3 text-sm"
         ></ul>
       </details>
-      <details class="mt-5 text-sm text-slate-600">
+      <details class="mt-5 border-t border-border pt-2 text-sm text-slate-600">
         <summary class="min-h-11 cursor-pointer">Options</summary>
-        <label class="flex items-center gap-2">
+        <label class="mt-2 flex items-start gap-3">
+          <input
+            data-photo-location-consent
+            checked
+            type="checkbox"
+            class="mt-1 size-5 shrink-0"
+          />
+          <span>
+            Retrouver automatiquement les lieux. Le GPS de chaque image est
+            envoyé à Photon, sans la photo ni vos identifiants. Seul le nom du
+            lieu est conservé. Ce choix vaut pour cette page.
+          </span>
+        </label>
+        <p class="mt-3 text-xs">
+          Lieux estimés :{' '}
+          <a href="https://github.com/komoot/photon" class="underline">
+            Photon
+          </a>{' '}
+          ·{' '}
+          <a href="https://www.openstreetmap.org/copyright" class="underline">
+            © OpenStreetMap · ODbL
+          </a>
+          .
+        </p>
+        <label class="mt-3 flex items-center gap-2">
           Seuil de similarité
           <input
             data-similarity
@@ -196,6 +221,24 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             class="min-h-11 w-16 rounded-lg border border-border bg-elevated px-2"
           />
         </label>
+      </details>
+      <details data-recovery-options class="mt-2 text-sm text-slate-600">
+        <summary class="min-h-11 cursor-pointer">
+          Compléter les informations de photos existantes
+        </summary>
+        <p class="my-2">
+          Choisissez ou collez les photos d’origine. Les lieux et dates déjà
+          enregistrés seront conservés, sans remplacer les images.
+        </p>
+        <button
+          data-recover-locations
+          type="button"
+          aria-pressed="false"
+          disabled
+          class="min-h-11 underline"
+        >
+          Activer la récupération des lieux et dates
+        </button>
       </details>
       <template data-upload-result-template>
         <li>
@@ -213,7 +256,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     </section>
     <div class="mt-7 flex flex-wrap items-center justify-between gap-4">
       <div>
-        <h2 class="text-2xl font-semibold">La collection</h2>
+        <h2 id="collection" tabindex="-1" class="text-2xl font-semibold">
+          La collection
+        </h2>
+        <p class="mt-1 text-sm text-slate-600">Derniers ajouts en premier</p>
         <p data-storage class="mt-2 text-sm text-slate-600">
           Stockage non connecté
         </p>
@@ -261,69 +307,156 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         />
         <div class="p-3">
           <p
-            data-photo-details
-            class="text-xs leading-relaxed text-slate-600"
-          ></p>
-          <a
-            data-download
-            class="inline-flex min-h-11 items-center underline text-sm"
-            download
+            data-new-badge
+            hidden
+            class="mb-2 text-xs font-semibold text-slate-600"
           >
-            Télécharger
-          </a>
-          <form data-place-form class="mt-3 space-y-2">
-            <label class="block text-sm">
-              Lieu (facultatif)
-              <input
-                data-place-input
-                maxlength="160"
-                type="text"
-                class="mt-1 min-h-11 w-full rounded-lg border border-border bg-elevated px-2"
-              />
-            </label>
-            <label class="block text-sm">
-              Date de prise de vue (facultative)
-              <input
-                data-capture-date
-                type="date"
-                class="mt-1 min-h-11 w-full rounded-lg border border-border bg-elevated px-2"
-              />
-            </label>
-            <label class="block text-sm">
-              Heure locale et décalage UTC (facultatifs)
-              <input
-                data-capture-time
-                type="text"
-                maxlength="24"
-                placeholder="14:30:00+02:00"
-                class="mt-1 min-h-11 w-full rounded-lg border border-border bg-elevated px-2"
-              />
-            </label>
-            <button type="submit" class="min-h-11 underline text-sm">
-              Enregistrer le lieu et la date
-            </button>
-            <p data-place-status role="status" class="text-sm"></p>
-          </form>
+            Ajoutée à l’instant
+          </p>
+          <p data-card-place class="truncate font-semibold"></p>
+          <p data-card-date class="mt-1 text-sm text-slate-600"></p>
+          <p data-place-status role="status" class="mt-1 text-sm"></p>
           <button
-            data-delete
+            data-edit-photo
             type="button"
-            class="mt-3 min-h-11 w-full rounded-full border border-warning px-3 text-sm text-warning"
+            class="mt-2 min-h-11 text-sm underline"
           >
-            Supprimer
+            Modifier les détails
           </button>
+          <details class="text-sm text-slate-600">
+            <summary class="min-h-11 cursor-pointer">Autres actions</summary>
+            <p data-photo-details class="text-xs leading-relaxed"></p>
+            <a
+              data-download
+              class="inline-flex min-h-11 items-center underline"
+              download
+            >
+              Télécharger
+            </a>
+            <button
+              data-delete
+              type="button"
+              class="min-h-11 w-full rounded-full border border-warning px-3 text-warning"
+            >
+              Supprimer
+            </button>
+          </details>
         </div>
       </article>
     </template>
+    <dialog
+      data-photo-editor
+      aria-labelledby="editor-title"
+      class="m-auto max-h-[90vh] w-[min(92vw,640px)] overflow-auto rounded-2xl bg-surface p-5 text-primary backdrop:bg-black/65 md:p-7"
+    >
+      <!-- Validate in the editor: WebKit can block native validation inside collapsed details. -->
+      <form data-place-form novalidate class="space-y-4">
+        <h2 id="editor-title" class="text-2xl font-semibold">
+          Modifier les détails
+        </h2>
+        <img
+          data-editor-image
+          alt="Photo à modifier"
+          class="max-h-56 w-full rounded-xl object-contain bg-background"
+        />
+        <label class="block text-sm">
+          Lieu (facultatif)
+          <input
+            data-place-input
+            maxlength="160"
+            type="text"
+            class="mt-1 min-h-11 w-full rounded-lg border border-border bg-elevated px-3"
+          />
+        </label>
+        <label class="block text-sm">
+          Date de prise de vue (facultative)
+          <input
+            data-capture-date
+            type="date"
+            class="mt-1 min-h-11 w-full rounded-lg border border-border bg-elevated px-3"
+          />
+        </label>
+        <button
+          data-remove-date
+          type="button"
+          hidden
+          class="min-h-11 text-sm underline"
+        >
+          Retirer la date
+        </button>
+        <details data-time-details>
+          <summary class="min-h-11 cursor-pointer text-sm">
+            Ajouter ou modifier l’heure
+          </summary>
+          <label class="block text-sm">
+            Heure locale (facultative)
+            <input
+              data-capture-time
+              type="time"
+              step="1"
+              class="mt-1 min-h-11 w-full rounded-lg border border-border bg-elevated px-3"
+            />
+          </label>
+          <button
+            data-remove-time
+            type="button"
+            hidden
+            class="min-h-11 text-sm underline"
+          >
+            Retirer l’heure
+          </button>
+          <details data-timezone-details class="mt-2 text-sm text-slate-600">
+            <summary class="min-h-11 cursor-pointer">
+              Fuseau horaire · avancé
+            </summary>
+            <label class="block">
+              Décalage UTC, si connu
+              <input
+                data-capture-offset
+                type="text"
+                maxlength="6"
+                placeholder="+02:00"
+                class="mt-1 min-h-11 w-full rounded-lg border border-border bg-elevated px-3"
+              />
+            </label>
+            <p class="mt-2">
+              Laissez vide si inconnu. Le fuseau de votre téléphone n’est jamais
+              appliqué automatiquement. Z signifie UTC.
+            </p>
+          </details>
+        </details>
+        <p data-editor-status role="status" class="text-sm"></p>
+        <div class="flex gap-3">
+          <button
+            data-editor-save
+            type="submit"
+            class="min-h-11 rounded-full bg-primary px-5 text-elevated"
+          >
+            Enregistrer
+          </button>
+          <button
+            data-editor-cancel
+            type="button"
+            class="min-h-11 px-4 underline"
+          >
+            Annuler
+          </button>
+        </div>
+      </form>
+    </dialog>
     <dialog
       data-recovery-dialog
       class="m-auto w-[min(90vw,700px)] max-h-[90vh] overflow-auto rounded-2xl bg-surface p-6 text-primary backdrop:bg-black/65"
     >
       <form method="dialog">
-        <h2 class="text-2xl font-semibold">Confirmer la photo et son lieu</h2>
+        <h2 class="text-2xl font-semibold">
+          Confirmer la photo et les informations
+        </h2>
         <p class="mt-3 text-sm">
           Choisissez la photo existante correspondante. Une ressemblance ne
-          prouve pas qu’il s’agit de la même image. Aucun original ni nouvelle
-          photo ne sera envoyé.
+          prouve pas qu’il s’agit de la même image. Seules les informations
+          manquantes seront complétées. Aucun original ni nouvelle photo ne sera
+          envoyé.
         </p>
         <div data-recovery-images class="mt-4 grid grid-cols-2 gap-3"></div>
         <p data-recovery-place class="mt-4 font-semibold"></p>
@@ -332,7 +465,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             value="save"
             class="min-h-11 rounded-full bg-primary px-5 text-elevated"
           >
-            Confirmer le lieu
+            Compléter les informations
           </button>
           <button
             formnovalidate

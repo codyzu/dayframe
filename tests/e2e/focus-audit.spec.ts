@@ -217,7 +217,7 @@ test('setup and clipboard experiment buttons have complete rings @mobile', async
   expect(failures).toEqual([]);
 });
 
-test('photo administration controls, gallery and import previews have complete rings @mobile', async ({
+test('photo administration controls, gallery and details editor have complete rings @mobile', async ({
   page,
 }, info) => {
   await page.request.get('/__test/login');
@@ -230,13 +230,6 @@ test('photo administration controls, gallery and import previews have complete r
     canvas.getContext('2d')!.fillRect(0, 0, 64, 32);
     return canvas.toDataURL('image/png').split(',', 2)[1];
   });
-  await page.locator('[data-import-review]').check();
-  await page.locator('[data-photo-files]').setInputFiles({
-    name: 'audit.png',
-    mimeType: 'image/png',
-    buffer: Buffer.from(png, 'base64'),
-  });
-  await expect(page.locator('[data-import-add]')).toBeEnabled();
   const failures = await auditFocus(page, page.locator('body'), info, {
     name: 'photo-import',
   });
@@ -248,7 +241,11 @@ test('photo administration controls, gallery and import previews have complete r
         })
       : route.continue(),
   );
-  await page.locator('[data-import-add]').click();
+  await page.locator('[data-photo-files]').setInputFiles({
+    name: 'audit.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from(png, 'base64'),
+  });
   await expect(page.locator('[data-upload-retry]')).toBeVisible();
   failures.push(
     ...(await auditFocus(page, page.locator('body'), info, {
@@ -257,12 +254,20 @@ test('photo administration controls, gallery and import previews have complete r
   );
   await page.unroute('**/api/photos');
   await page.locator('[data-upload-retry]').click();
-  await expect(page.locator('[data-delete]')).toBeVisible();
+  await expect(page.locator('[data-edit-photo]')).toBeVisible();
+  await page.locator('[data-photo-gallery] details summary').click();
   failures.push(
     ...(await auditFocus(page, page.locator('body'), info, {
       name: 'photo-gallery',
     })),
   );
+  await page.locator('[data-edit-photo]').click();
+  failures.push(
+    ...(await auditFocus(page, page.locator('[data-photo-editor]'), info, {
+      name: 'photo-editor',
+    })),
+  );
+  await page.locator('[data-editor-cancel]').click();
   await page.locator('[data-photo-files]').setInputFiles({
     name: 'similar-audit.png',
     mimeType: 'image/png',
@@ -271,7 +276,6 @@ test('photo administration controls, gallery and import previews have complete r
       Buffer.from('synthetic-variation'),
     ]),
   });
-  await page.locator('[data-import-add]').click();
   await expect(page.getByRole('dialog')).toBeVisible();
   failures.push(
     ...(await auditFocus(page, page.getByRole('dialog'), info, {

@@ -66,31 +66,9 @@ async function login(page: Page, admin = 'one') {
   await expect(
     page.getByRole('button', {name: 'Choisir des photos'}),
   ).toBeEnabled();
-  // Existing scenarios exercise explicit review; default automatic intake has its own tests.
-  await page.locator('[data-import-review]').check();
-  await page.locator('[data-photo-location-consent]').uncheck();
 }
 
 test.beforeEach(async ({page}) => {
-  // These regression cases explicitly exercise optional preview/review, including
-  // fresh navigations to Shortcut URLs. Automatic intake is tested separately.
-  await page.addInitScript(() => {
-    globalThis.document.addEventListener('DOMContentLoaded', () => {
-      const review = globalThis.document.querySelector<HTMLInputElement>(
-        '[data-import-review]',
-      );
-      const location = globalThis.document.querySelector<HTMLInputElement>(
-        '[data-photo-location-consent]',
-      );
-      if (review) {
-        review.checked = true;
-      }
-
-      if (location) {
-        location.checked = false;
-      }
-    });
-  });
   await page.clock.install({time: fixtureNow});
   await page.request.get('/__test/reset');
   await page.route('https://api.open-meteo.com/**', async (route) =>
@@ -104,12 +82,13 @@ test('two admins upload WebP, review duplicates, see protected thumbnails and co
   await login(page);
   const photo = await syntheticPhoto(page);
   await page.locator('[data-photo-files]').setInputFiles(photo);
-  await page.locator('[data-import-add]').click();
   await expect(page.locator('[data-upload-results]')).toContainText(
     'ajouté (1600 × 800)',
   );
   await expect(page.locator('[data-storage]')).toContainText('1 photo');
   const thumbnail = page.locator('[data-photo-gallery] img');
+  await expect(page.locator('[data-choose-files]')).toBeEnabled();
+  await thumbnail.scrollIntoViewIfNeeded();
   await expect(thumbnail).toBeVisible();
   await expect(thumbnail).toHaveJSProperty('naturalWidth', 1600);
   const url = await thumbnail.getAttribute('src');
@@ -119,13 +98,11 @@ test('two admins upload WebP, review duplicates, see protected thumbnails and co
   const anonymous = await page.request.get(url!, {headers: {Cookie: ''}});
   expect(anonymous.status()).toBe(401);
   await page.locator('[data-photo-files]').setInputFiles(photo);
-  await page.locator('[data-import-add]').click();
   await expect(page.locator('[data-upload-results]')).toContainText(
     'doublon exact',
   );
   const similar = await syntheticPhoto(page, 'autre.png', 2400, 1200, 10);
   await page.locator('[data-photo-files]').setInputFiles(similar);
-  await page.locator('[data-import-add]').click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await page.getByRole('button', {name: 'Garder cette photo'}).click();
   await expect(page.locator('[data-storage]')).toContainText('2 photos');
@@ -138,6 +115,7 @@ test('two admins upload WebP, review duplicates, see protected thumbnails and co
   ).toBe(true);
   await login(page, 'two');
   await expect(page.locator('[data-photo-gallery] article')).toHaveCount(2);
+  await page.locator('[data-photo-gallery] details summary').first().click();
   page.once('dialog', async (dialog) => dialog.dismiss());
   await page
     .getByRole('button', {name: 'Supprimer', exact: true})
@@ -159,7 +137,6 @@ test('photo framing survives navigation, reload and settings refreshes @mobile',
   await page
     .locator('[data-photo-files]')
     .setInputFiles(await syntheticPhoto(page));
-  await page.locator('[data-import-add]').click();
   await expect(page.locator('[data-storage]')).toContainText('1 photo');
   let settings = {...defaultSettings, fit: 'contain' as const};
   await page.route('**/api/config/display', async (route) => {
@@ -203,7 +180,6 @@ test('read-only cookie delivers images, slideshow refreshes, outages retain curr
   await page
     .locator('[data-photo-files]')
     .setInputFiles(await syntheticPhoto(page));
-  await page.locator('[data-import-add]').click();
   await expect(page.locator('[data-storage]')).toContainText('1 photo');
   await context.clearCookies();
   const session = await page.request.get('/__test/display');
@@ -268,7 +244,6 @@ test('photo access failures keep retry available when configuration and weather 
   await page
     .locator('[data-photo-files]')
     .setInputFiles(await syntheticPhoto(page));
-  await page.locator('[data-import-add]').click();
   await expect(page.locator('[data-storage]')).toContainText('1 photo');
   await context.clearCookies();
   await page.request.get('/__test/display');
@@ -313,11 +288,9 @@ test('unsupported picker formats cannot be added and explain how to choose a rea
     mimeType: 'image/heic',
     buffer: Buffer.from('synthetic unsupported input'),
   });
-  await expect(page.locator('[data-import-status]')).toContainText(
-    'Une photo ne peut pas être lue',
+  await expect(page.locator('[data-upload-results]')).toContainText(
+    'Format non lisible',
   );
-  await expect(page.locator('[data-import-add]')).toBeDisabled();
-  await expect(page.locator('[data-import-fallback]')).toBeHidden();
   await expect(page.locator('[data-upload-results] img')).toHaveCount(0);
   await expect(page.locator('[data-storage]')).toContainText('0 photos');
 });
@@ -355,7 +328,6 @@ test('orientation is applied without upscaling and metadata is removed @chromium
     mimeType: 'image/jpeg',
     buffer: Buffer.concat([jpeg.subarray(0, 2), exif, jpeg.subarray(2)]),
   });
-  await page.locator('[data-import-add]').click();
   await expect(page.locator('[data-upload-results]')).toContainText(
     'ajouté (40 × 80)',
   );
@@ -365,6 +337,8 @@ test('orientation is applied without upscaling and metadata is removed @chromium
   const response = await page.request.get(url!);
   const bytes = await response.body();
   expect(bytes.toString('ascii')).not.toMatch(/EXIF|XMP |ICCP/v);
+  await expect(page.locator('[data-choose-files]')).toBeEnabled();
+  await page.locator('[data-photo-gallery] img').scrollIntoViewIfNeeded();
   await expect(page.locator('[data-photo-gallery] img')).toHaveJSProperty(
     'naturalWidth',
     40,
@@ -416,7 +390,6 @@ test('failed uploads retry with the same identity and expired sessions clear pri
   await page
     .locator('[data-photo-files]')
     .setInputFiles(await syntheticPhoto(page));
-  await page.locator('[data-import-add]').click();
   await expect(page.locator('[data-upload-results]')).toContainText(
     'Quota temporairement atteint',
   );
@@ -452,7 +425,6 @@ test('slideshow polls for additions and keeps at most two image URLs', async ({
   await page
     .locator('[data-photo-files]')
     .setInputFiles(await syntheticPhoto(page));
-  await page.locator('[data-import-add]').click();
   await expect(page.locator('[data-storage]')).toContainText('1 photo');
   await page.addInitScript(() => {
     const urls = new Set<string>();
@@ -494,7 +466,6 @@ test('slideshow polls for additions and keeps at most two image URLs', async ({
       .setInputFiles(
         await syntheticPhoto(adminPage, 'nouveau.png', 2400, 1200, 10),
       );
-    await adminPage.locator('[data-import-add]').click();
     await expect(adminPage.getByRole('dialog')).toBeVisible();
     await adminPage.getByRole('button', {name: 'Garder cette photo'}).click();
     await expect(adminPage.locator('[data-storage]')).toContainText('2 photos');
@@ -558,7 +529,6 @@ test('expired upload sessions retain the whole selected batch for recovery in th
     }
   });
   await page.locator('[data-photo-files]').setInputFiles(files);
-  await page.locator('[data-import-add]').click();
   await expect(page.locator('[data-upload-results]')).toContainText(
     'Session expirée',
   );
@@ -594,7 +564,6 @@ test('backward clocks clear private slideshow pixels and online verification res
   await page
     .locator('[data-photo-files]')
     .setInputFiles(await syntheticPhoto(page));
-  await page.locator('[data-import-add]').click();
   await expect(page.locator('[data-storage]')).toContainText('1 photo');
   await context.clearCookies();
   await page.request.get('/__test/display');
@@ -641,7 +610,6 @@ test('a signed-in admin automatically caches ordinary Photos visits for offline 
   await page
     .locator('[data-photo-files]')
     .setInputFiles(await syntheticPhoto(page));
-  await page.locator('[data-import-add]').click();
   await expect(page.locator('[data-storage]')).toContainText('1 photo');
   await page.goto('/');
   await page.getByRole('button', {name: 'Photos', exact: true}).click();
@@ -678,495 +646,257 @@ test('a signed-in admin automatically caches ordinary Photos visits for offline 
   );
 });
 
-async function mockPhotoClipboard(
-  page: Page,
-  photos: Array<{buffer: Uint8Array}>,
-) {
-  await page.evaluate(
-    (encoded) => {
-      Object.defineProperty(navigator, 'clipboard', {
-        configurable: true,
-        value: {
-          async read() {
-            return encoded.map((bytes) => ({
-              types: ['image/png'],
-              async getType() {
-                return new Blob([new Uint8Array(bytes)], {type: 'image/png'});
-              },
-            }));
-          },
-        },
-      });
-    },
-    photos.map((photo) => [...photo.buffer]),
-  );
-}
-
-test('clipboard import previews the full batch before explicit authenticated upload and duplicate review @chromium @mobile', async ({
-  page,
-}) => {
-  await login(page);
-  await page.goto('/admin/photos?import=clipboard&expected=3');
-  await expect(page.locator('[data-import-paste]')).toBeEnabled();
-  await expect(page.locator('[data-import-expected]')).toHaveJSProperty(
-    'readOnly',
-    true,
-  );
-  const photos = [
-    await syntheticPhoto(page, 'a.png', 2400, 1200),
-    await syntheticPhoto(page, 'b.png', 2400, 1200, 10),
-    await syntheticPhoto(page, 'c.png', 2400, 1200, 20),
-  ];
-  await mockPhotoClipboard(page, photos);
-  let posts = 0;
-  page.on('request', (request) => {
-    if (request.method() === 'POST' && request.url().endsWith('/api/photos')) {
-      posts++;
-    }
-  });
-  await page.locator('[data-import-paste]').click();
-  await expect(page.locator('[data-import-previews] img')).toHaveCount(3);
-  await expect(
-    page.locator('[data-import-previews] img').first(),
-  ).toHaveJSProperty('naturalWidth', 320);
-  expect(posts).toBe(0);
-  await page.locator('[data-import-add]').click();
-  for (let index = 0; index < 2; index++) {
-    await expect(page.getByRole('dialog')).toBeVisible();
-    await page.getByRole('button', {name: 'Garder cette photo'}).click();
-  }
-
-  await expect(page.locator('[data-storage]')).toContainText('3 photos');
-  expect(posts).toBe(3);
-  await expect(page.locator('[data-import-previews] img')).toHaveCount(0);
-  await page.locator('[data-import-paste]').click();
-  await page.locator('[data-import-add]').click();
-  await expect(page.locator('[data-upload-results]')).toContainText(
-    'doublon exact',
-  );
-  await expect(page.locator('[data-upload-results] li')).toHaveCount(6);
-  expect(posts).toBe(3);
-});
-
-test('clipboard mismatches cannot upload and native paste ignores HTML @mobile', async ({
-  page,
-}) => {
-  await login(page);
-  await page.goto('/admin/photos?import=clipboard&expected=3');
-  await expect(page.locator('[data-import-paste]')).toBeEnabled();
-  await mockPhotoClipboard(page, [await syntheticPhoto(page)]);
-  await page.locator('[data-import-paste]').click();
-  await expect(page.locator('[data-import-status]')).toContainText(
-    '1 photo(s) reçue(s) sur 3',
-  );
-  await expect(page.locator('[data-import-add]')).toBeDisabled();
-  await page.evaluate(() => {
-    const event = new Event('paste', {cancelable: true});
-    Object.defineProperty(event, 'clipboardData', {
-      value: {
-        files: [],
-        types: ['text/html'],
-        getData: () => '<img src="https://example.invalid/private">',
-      },
-    });
-    globalThis.document
-      .querySelector('[data-import-zone]')!
-      .dispatchEvent(event);
-  });
-  await expect(page.locator('[data-import-zone]')).toBeEmpty();
-  await expect(page.locator('[data-import-previews]')).toBeEmpty();
-  await expect(page.locator('[data-import-add]')).toBeDisabled();
-  await expect(page.locator('[data-storage]')).toContainText('0 photos');
-});
-
-test('staged clipboard photos survive session recovery in the same tab and clear on page exit @mobile', async ({
-  page,
-}) => {
-  await login(page);
-  await page.goto('/admin/photos?import=clipboard&expected=1');
-  await expect(page.locator('[data-import-paste]')).toBeEnabled();
-  await mockPhotoClipboard(page, [await syntheticPhoto(page)]);
-  await page.locator('[data-import-paste]').click();
-  await expect(page.locator('[data-import-previews] img')).toHaveCount(1);
-  await page.context().clearCookies();
-  await page.locator('[data-refresh]').click();
-  await expect(page.locator('[data-import-previews] img')).toHaveCount(0);
-  await expect(page.locator('[data-import-add]')).toBeDisabled();
-  await page.request.get('/__test/login?admin=two');
-  await page.locator('[data-refresh]').click();
-  await expect(page.locator('[data-import-previews] img')).toHaveCount(1);
-  await expect(page.locator('[data-import-add]')).toBeEnabled();
-  await page.evaluate(() => globalThis.dispatchEvent(new Event('pagehide')));
-  await expect(page.locator('[data-import-previews]')).toBeEmpty();
-  await expect(page.locator('[data-import-add]')).toBeDisabled();
-});
-
-// Inflate only Blob.size to exercise guards without allocating a 100 MB fixture.
-async function mockSizedClipboard(
+// Native paste and inflated File.size exercise transport guards without large allocations.
+async function pastePhotos(
   page: Page,
   photo: {buffer: Uint8Array},
-  count: number,
-  size: number | number[],
+  sizes: number[],
 ) {
-  await page.evaluate(
-    ({bytes, total, reportedSize}) => {
-      const reads: number[] = [];
-      Object.defineProperty(navigator, 'clipboard', {
-        configurable: true,
-        value: {
-          async read() {
-            return Array.from({length: total}, (_, index) => ({
-              types: ['image/png'],
-              async getType() {
-                reads.push(index);
-                globalThis.document.documentElement.dataset.clipboardReads =
-                  JSON.stringify(reads);
-                const blob = new Blob([new Uint8Array(bytes)], {
-                  type: 'image/png',
-                });
-                Object.defineProperty(blob, 'size', {
-                  value: Array.isArray(reportedSize)
-                    ? reportedSize[index]
-                    : reportedSize,
-                });
-                return blob;
-              },
-            }));
-          },
-        },
-      });
-    },
-    {bytes: [...photo.buffer], total: count, reportedSize: size},
-  );
-}
-
-test('oversized clipboard batch fills recovery groups by bytes without repeating the share @mobile-only', async ({
-  page,
-}) => {
-  await login(page);
-  await page.goto('/admin/photos?import=clipboard&expected=10');
-  await expect(page.locator('[data-import-paste]')).toBeEnabled();
-  await mockSizedClipboard(
-    page,
-    await syntheticPhoto(page, 'budget.png', 240, 120),
-    10,
-    11_000_000,
-  );
-  await page.locator('[data-import-paste]').click();
-  await expect(page.locator('[data-import-previews] img')).toHaveCount(9);
-  await expect(page.locator('[data-import-status]')).toContainText(
-    '9 photos sur 10 prêtes',
-  );
-  await expect(page.locator('[data-storage]')).toContainText('0 photos');
-  await page.locator('[data-import-add]').click();
-  await expect(page.locator('[data-upload-results] li')).toHaveCount(9);
-  await expect(page.locator('[data-upload-results]')).toContainText(
-    'doublon exact',
-  );
-  await expect(
-    page.getByRole('button', {name: 'Coller les suivantes'}),
-  ).toBeEnabled();
-  await page.getByRole('button', {name: 'Coller les suivantes'}).click();
-  await expect(page.locator('[data-import-status]')).toContainText(
-    '1 photo sur 10 prête',
-  );
-  await expect(page.locator('html')).toHaveAttribute(
-    'data-clipboard-reads',
-    JSON.stringify([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9]),
-  );
-});
-
-test('more than ten shared photos automatically stages ten and detects clipboard replacement @mobile-only', async ({
-  page,
-}) => {
-  await login(page);
-  await page.goto('/admin/photos?import=clipboard&expected=11');
-  await expect(page.locator('[data-import-paste]')).toBeEnabled();
-  await mockSizedClipboard(
-    page,
-    await syntheticPhoto(page, 'count.png', 240, 120),
-    11,
-    1000,
-  );
-  await page.locator('[data-import-paste]').click();
-  await expect(page.locator('[data-import-status]')).toContainText(
-    '10 photos sur 11 prêtes',
-  );
-  await expect(page.locator('[data-import-add]')).toBeEnabled();
-  // Changing the source clipboard count cannot silently continue a split import.
-  await mockSizedClipboard(
-    page,
-    await syntheticPhoto(page, 'count.png', 240, 120),
-    10,
-    1000,
-  );
-  await page.locator('[data-import-add]').click();
-  await page.locator('[data-import-paste]').click();
-  await expect(page.locator('[data-import-status]')).toContainText(
-    'presse-papiers a changé',
-  );
-  await expect(page.locator('[data-import-add]')).toBeDisabled();
-});
-
-test('individual oversized photo identifies the 40 MiB limit rather than the batch limit @mobile-only', async ({
-  page,
-}) => {
-  await login(page);
-  await page.goto('/admin/photos?import=clipboard&expected=1');
-  await expect(page.locator('[data-import-paste]')).toBeEnabled();
-  await mockSizedClipboard(
-    page,
-    await syntheticPhoto(page),
-    1,
-    41 * 1024 * 1024,
-  );
-  await page.locator('[data-import-paste]').click();
-  await expect(page.locator('[data-import-status]')).toContainText(
-    'photo 1 dépasse la limite de 40 Mio',
-  );
-  await expect(page.locator('[data-import-add]')).toBeDisabled();
-});
-
-test('adaptive clipboard groups accept exactly 100 MB and native paste uses the same boundary @mobile-only', async ({
-  page,
-}) => {
-  await login(page);
-  await page.goto('/admin/photos?import=clipboard&expected=4');
-  await expect(page.locator('[data-import-paste]')).toBeEnabled();
-  const photo = await syntheticPhoto(page, 'boundary.png', 240, 120);
-  const sizes = [40_000_000, 35_000_000, 25_000_000, 1];
-  await mockSizedClipboard(page, photo, sizes.length, sizes);
-  await page.locator('[data-import-paste]').click();
-  await expect(page.locator('[data-import-status]')).toContainText(
-    '3 photos sur 4 prêtes',
-  );
-  await expect(page.locator('[data-import-add]')).toBeEnabled();
-  await page.evaluate(
-    ({bytes, reportedSizes}) => {
-      const files = reportedSizes.map((size) => {
-        const blob = new Blob([new Uint8Array(bytes)], {type: 'image/png'});
-        Object.defineProperty(blob, 'size', {value: size});
-        return blob;
-      });
-      const event = new Event('paste', {cancelable: true});
-      Object.defineProperty(event, 'clipboardData', {value: {files}});
-      globalThis.document
-        .querySelector('[data-import-zone]')!
-        .dispatchEvent(event);
-    },
-    {bytes: [...photo.buffer], reportedSizes: sizes},
-  );
-  await expect(page.locator('[data-import-previews] img')).toHaveCount(3);
-  await expect(page.locator('[data-import-add]')).toBeEnabled();
-  await expect(page.locator('[data-import-status]')).toContainText(
-    '3 photos sur 4 prêtes',
-  );
-  await expect(page.locator('[data-storage]')).toContainText('0 photos');
-});
-
-test('adaptive groups preserve order with uneven photo sizes and defer an individually oversized photo @mobile-only', async ({
-  page,
-}) => {
-  await login(page);
-  await page.goto('/admin/photos?import=clipboard&expected=3');
-  await expect(page.locator('[data-import-paste]')).toBeEnabled();
-  await mockSizedClipboard(
-    page,
-    await syntheticPhoto(page, 'deferred.png', 240, 120),
-    3,
-    [1_000_000, 41 * 1024 * 1024, 1_000_000],
-  );
-  await page.locator('[data-import-paste]').click();
-  await expect(page.locator('[data-import-status]')).toContainText(
-    '1 photo sur 3 prête',
-  );
-  await page.locator('[data-import-add]').click();
-  await expect(page.locator('[data-upload-results]')).toContainText('ajouté');
-  await page.getByRole('button', {name: 'Coller les suivantes'}).click();
-  await expect(page.locator('[data-import-status]')).toContainText(
-    'photo 2 dépasse la limite de 40 Mio',
-  );
-  await expect(page.locator('[data-import-add]')).toBeDisabled();
-  await expect(page.locator('[data-upload-results] li')).toHaveCount(1);
-});
-
-test('picker and paste share a quiet preview flow, with conversion feedback and a compact result @mobile', async ({
-  page,
-}) => {
-  await login(page);
-  await expect(page.locator('[data-access-message]')).toBeHidden();
-  await expect(page.locator('[data-import-status]')).toBeHidden();
-  await expect(page.locator('[data-import-fallback]')).toBeHidden();
-  await expect(page.locator('[data-import-add]')).toBeHidden();
-  await expect(page.locator('[data-import-clear]')).toBeHidden();
-  let posts = 0;
-  const uploadGate = Promise.withResolvers<void>();
-  await page.route('**/api/photos', async (route) => {
-    if (route.request().method() === 'POST') {
-      posts++;
-      await uploadGate.promise;
-    }
-
-    await route.continue();
-  });
-  await page
-    .locator('[data-photo-files]')
-    .setInputFiles(await syntheticPhoto(page));
-  await expect(page.locator('[data-import-add]')).toBeEnabled();
-  await expect(page.locator('[data-import-previews] img')).toHaveCount(1);
-  expect(posts).toBe(0);
-  await page.locator('[data-import-add]').click();
-  await expect(page.locator('[data-upload-results]')).toContainText(
-    'convertie, envoi',
-  );
-  await expect(page.locator('[data-upload-details]')).toHaveJSProperty(
-    'open',
-    true,
-  );
-  await expect(page.locator('[data-import-paste]')).toBeDisabled();
-  await expect(page.locator('[data-choose-files]')).toBeDisabled();
-  await expect.poll(() => posts).toBe(1);
-  uploadGate.resolve();
-  await expect(page.locator('[data-upload-summary]')).toHaveText('1 ajoutée');
-  await expect(page.locator('[data-upload-details]')).toHaveJSProperty(
-    'open',
-    false,
-  );
-  await expect(page.locator('[data-import-paste]')).toBeEnabled();
-  await expect(page.locator('[data-import-status]')).toBeHidden();
-});
-
-test('failed paste reveals manual fallback and cancelling restores the two choices @mobile', async ({
-  page,
-}) => {
-  await login(page);
-  await page.evaluate(() => {
-    Object.defineProperty(navigator, 'clipboard', {
-      configurable: true,
-      value: {
-        async read() {
-          throw new Error('denied');
-        },
-      },
-    });
-  });
-  await page.locator('[data-import-paste]').click();
-  await expect(page.locator('[data-import-status]')).toContainText(
-    'Collage refusé',
-  );
-  await expect(page.locator('[data-import-fallback]')).toBeVisible();
-  await page.getByText('Le collage ne fonctionne pas ?', {exact: true}).click();
-  await expect(page.locator('[data-import-zone]')).toBeVisible();
-  await mockPhotoClipboard(page, [await syntheticPhoto(page)]);
-  await page.locator('[data-import-paste]').click();
-  await expect(page.locator('[data-import-add]')).toBeEnabled();
-  await page.locator('[data-import-clear]').click();
-  await expect(page.locator('[data-import-previews]')).toBeEmpty();
-  await expect(page.locator('[data-import-fallback]')).toBeHidden();
-  await expect(page.locator('[data-import-paste]')).toBeVisible();
-  await expect(page.locator('[data-choose-files]')).toBeVisible();
-  await expect(page.locator('[data-storage]')).toContainText('0 photos');
-});
-
-test('picker retains remaining files for the next group without reopening the chooser @mobile-only', async ({
-  page,
-}) => {
-  await login(page);
-  const photo = await syntheticPhoto(page, 'picker.png', 240, 120);
-  const photos = Array.from({length: 11}, (_, index) => ({
-    ...photo,
-    name: `photo-${index + 1}.png`,
-  }));
-  await page.locator('[data-photo-files]').setInputFiles(photos);
-  await expect(page.locator('[data-import-add]')).toBeEnabled();
-  await expect(page.locator('[data-import-previews] img')).toHaveCount(10);
-  await page.locator('[data-import-add]').click();
-  await expect(page.locator('[data-upload-summary]')).toHaveText(
-    '1 ajoutée · 9 déjà présentes',
-  );
-  await expect(page.locator('[data-import-status]')).toHaveText(
-    '1 photo restante.',
-  );
-  await page.getByRole('button', {name: 'Préparer les suivantes'}).click();
-  await expect(page.locator('[data-import-add]')).toBeEnabled();
-  await expect(page.locator('[data-import-previews] img')).toHaveCount(1);
-  await page.locator('[data-import-add]').click();
-  await expect(page.locator('[data-upload-summary]')).toHaveText(
-    '1 ajoutée · 10 déjà présentes',
-  );
-  await expect(page.locator('[data-import-status]')).toBeHidden();
-});
-
-test('manual paste recovers four remaining photos after a size error without restarting six-photo import @mobile-only', async ({
-  page,
-}) => {
-  await login(page);
-  await page.goto('/admin/photos?import=clipboard&expected=6');
-  await expect(page.locator('[data-import-paste]')).toBeEnabled();
-  const photo = await syntheticPhoto(page, 'recovery.png', 240, 120);
-  await mockSizedClipboard(page, photo, 6, [
-    20_000_000,
-    20_000_000,
-    41 * 1024 * 1024,
-    5_000_000,
-    5_000_000,
-    5_000_000,
-  ]);
-  await page.locator('[data-import-paste]').click();
-  await expect(page.locator('[data-import-previews] img')).toHaveCount(2);
-  await expect(page.locator('[data-import-add]')).toBeEnabled();
-  await page.locator('[data-import-add]').click();
-  await expect(page.locator('[data-upload-results] li')).toHaveCount(2);
-  await page.getByRole('button', {name: 'Coller les suivantes'}).click();
-  await expect(page.locator('[data-import-status]')).toContainText(
-    'photo 3 dépasse la limite de 40 Mio',
-  );
-  await expect(page.locator('[data-import-status]')).toContainText(
-    '41.0 Mio reçus',
-  );
-  await expect(page.locator('[data-import-zone]')).toBeVisible();
-  await expect(page.locator('[data-import-add]')).toBeDisabled();
-  // Native paste still exposes the original six items, in smaller representations.
   await page.locator('[data-import-zone]').evaluate(
-    (zone, bytes) => {
-      const files = Array.from(
-        {length: 6},
-        (_, index) =>
-          new File([new Uint8Array(bytes)], `original-${index + 1}.png`, {
-            type: 'image/png',
-          }),
-      );
+    (zone, {bytes, reportedSizes}) => {
+      const files = reportedSizes.map((size, index) => {
+        const file = new File(
+          [new Uint8Array(bytes)],
+          `original-${index + 1}.png`,
+          {type: 'image/png'},
+        );
+        Object.defineProperty(file, 'size', {value: size});
+        return file;
+      });
       const event = new Event('paste', {cancelable: true});
       Object.defineProperty(event, 'clipboardData', {value: {files}});
       zone.dispatchEvent(event);
     },
-    [...photo.buffer],
+    {bytes: [...photo.buffer], reportedSizes: sizes},
   );
-  await expect(page.locator('[data-import-previews] img')).toHaveCount(4);
+}
+
+test('native paste imports automatically, reports whole-selection progress and preserves source order after reload @chromium @mobile', async ({
+  page,
+}) => {
+  await login(page);
+  await expect(page.locator('[data-import-zone]')).toBeVisible();
+  await expect(page.locator('[data-import-paste]')).toHaveCount(0);
+  await expect(page.locator('[data-import-review]')).toHaveCount(0);
+  const files = [
+    await syntheticPhoto(page, 'one.png', 320, 240),
+    await syntheticPhoto(page, 'two.png', 320, 240, 20),
+  ];
+  const ids: string[] = [];
+  const gate = Promise.withResolvers<void>();
+  await page.route('**/api/photos', async (route) => {
+    if (route.request().method() === 'POST') {
+      ids.push(route.request().headers()['x-photo-sha256']);
+      if (ids.length === 1) {
+        await gate.promise;
+      }
+    }
+
+    await route.continue();
+  });
+  await page.locator('[data-import-zone]').evaluate(
+    (zone, sources) => {
+      const event = new Event('paste', {cancelable: true});
+      Object.defineProperty(event, 'clipboardData', {
+        value: {
+          files: sources.map(
+            ({name, bytes}) =>
+              new File([new Uint8Array(bytes)], name, {type: 'image/png'}),
+          ),
+        },
+      });
+      zone.dispatchEvent(event);
+    },
+    files.map((file) => ({name: file.name, bytes: [...file.buffer]})),
+  );
+  await expect(page.locator('[data-progress-label]')).toContainText(
+    '0 sur 2 traitées · Envoi',
+  );
+  await expect(page.locator('[data-progress-bar]')).toHaveAttribute('max', '2');
+  await expect(page.locator('[data-import-current]')).toBeVisible();
+  await expect(page.locator('[data-choose-files]')).toBeDisabled();
+  gate.resolve();
+  await expect(page.locator('[data-similar-dialog]')).toBeVisible();
+  await page.getByRole('button', {name: 'Garder cette photo'}).click();
+  await expect(page.locator('[data-storage]')).toContainText('2 photos');
+  await expect(page.locator('[data-progress-bar]')).toHaveJSProperty(
+    'value',
+    2,
+  );
+  await expect(page.locator('[data-view-added]')).toBeVisible();
+  await expect(page.locator('[data-new-badge]:visible')).toHaveCount(2);
   await expect(
-    page.locator('[data-import-previews] img').first(),
-  ).toHaveAttribute('alt', 'Photo à importer 3');
+    page.locator('[data-photo-gallery] article').first(),
+  ).toHaveAttribute('data-photo-id', ids[0]);
+  await page.reload();
+  await expect(page.locator('[data-photo-gallery] article')).toHaveCount(2);
+  expect(
+    await page
+      .locator('[data-photo-gallery] article')
+      .evaluateAll((cards) =>
+        cards.map((card) => (card as HTMLElement).dataset.photoId),
+      ),
+  ).toEqual(ids);
+  await page
+    .locator('[data-photo-files]')
+    .setInputFiles(await syntheticPhoto(page, 'latest.png', 320, 240, 40));
+  await expect(page.locator('[data-similar-dialog]')).toBeVisible();
+  await page.getByRole('button', {name: 'Garder cette photo'}).click();
+  await expect(page.locator('[data-photo-gallery] article')).toHaveCount(3);
+  await page.locator('[data-edit-photo]').last().click();
+  await page.locator('[data-place-input]').fill('Souvenir');
+  await page.locator('[data-editor-save]').click();
+  await expect(page.locator('[data-photo-editor]')).not.toBeVisible();
+  await page.reload();
+  await expect(page.locator('[data-photo-gallery] article')).toHaveCount(3);
+  expect(
+    await page
+      .locator('[data-photo-gallery] article')
+      .evaluateAll((cards) =>
+        cards.map((card) => (card as HTMLElement).dataset.photoId),
+      ),
+  ).toEqual([ids[2], ids[0], ids[1]]);
+});
+
+test('clipboard count mismatches and HTML cannot upload @mobile', async ({
+  page,
+}) => {
+  await login(page);
+  await page.goto('/admin/photos?import=clipboard&expected=3');
+  await expect(page.locator('[data-choose-files]')).toBeEnabled();
+  await pastePhotos(page, await syntheticPhoto(page), [1000]);
   await expect(page.locator('[data-import-status]')).toContainText(
-    '4 photos sur 6 prêtes',
+    '1 photo(s) reçue(s) sur 3',
+  );
+  await page.locator('[data-import-zone]').evaluate((zone) => {
+    const event = new Event('paste', {cancelable: true});
+    Object.defineProperty(event, 'clipboardData', {
+      value: {
+        files: [],
+        getData: () => '<img src="https://example.invalid/private">',
+      },
+    });
+    zone.dispatchEvent(event);
+  });
+  await expect(page.locator('[data-import-zone]')).toBeEmpty();
+  await pastePhotos(
+    page,
+    await syntheticPhoto(page),
+    Array.from({length: 101}, () => 1000),
   );
   await expect(page.locator('[data-import-status]')).toContainText(
-    '2 déjà traitées',
+    'au maximum 100 photos',
   );
-  await expect(page.locator('[data-import-fallback]')).toBeHidden();
-  // Preparing recovery must not send anything before explicit confirmation.
-  await expect(page.locator('[data-upload-results] li')).toHaveCount(2);
-  await page.locator('[data-import-add]').click();
-  await expect(page.locator('[data-upload-results] li')).toHaveCount(6);
-  await expect(page.locator('[data-upload-results]')).toContainText(
-    'original-3.png',
+  await expect(page.locator('[data-storage]')).toContainText('0 photos');
+});
+
+test('native paste fills adaptive groups, detects clipboard replacement and retains progress @mobile-only', async ({
+  page,
+}) => {
+  await login(page);
+  const photo = await syntheticPhoto(page, 'budget.png', 240, 120);
+  const sizes = Array.from({length: 11}, () => 11_000_000);
+  await pastePhotos(page, photo, sizes);
+  await expect(page.locator('[data-upload-summary]')).toHaveText(
+    '1 ajoutée · 8 déjà présentes',
   );
-  await expect(page.locator('[data-upload-results]')).toContainText(
-    'original-6.png',
+  await expect(page.locator('[data-progress-bar]')).toHaveJSProperty(
+    'value',
+    9,
   );
+  await expect(page.locator('[data-progress-bar]')).toHaveAttribute(
+    'max',
+    '11',
+  );
+  await expect(page.locator('[data-paste-heading]')).toContainText(
+    'Encore 2 photos',
+  );
+  await pastePhotos(page, photo, [1000]);
+  await expect(page.locator('[data-import-status]')).toContainText(
+    'presse-papiers a changé',
+  );
+  await pastePhotos(page, photo, sizes);
+  await expect(page.locator('[data-upload-summary]')).toHaveText(
+    '1 ajoutée · 10 déjà présentes',
+  );
+  await expect(page.locator('[data-progress-bar]')).toHaveJSProperty(
+    'value',
+    11,
+  );
+});
+
+test('native paste accepts exactly 100 MB, defers oversized next photo, and resumes smaller representations @mobile-only', async ({
+  page,
+}) => {
+  await login(page);
+  const photo = await syntheticPhoto(page, 'boundary.png', 240, 120);
+  await pastePhotos(page, photo, [
+    40_000_000,
+    35_000_000,
+    25_000_000,
+    41 * 1024 * 1024,
+    1000,
+    1000,
+  ]);
+  await expect(page.locator('[data-upload-results] li')).toHaveCount(3);
+  await expect(page.locator('[data-upload-summary]')).toHaveText(
+    '1 ajoutée · 2 déjà présentes',
+  );
+  await pastePhotos(page, photo, [
+    40_000_000,
+    35_000_000,
+    25_000_000,
+    41 * 1024 * 1024,
+    1000,
+    1000,
+  ]);
+  await expect(page.locator('[data-import-status]')).toContainText(
+    'photo 4 dépasse la limite de 40 Mio',
+  );
+  await expect(page.locator('[data-progress-bar]')).toHaveJSProperty(
+    'value',
+    3,
+  );
+  await pastePhotos(page, photo, [1000, 1000, 1000, 1000, 1000, 1000]);
   await expect(page.locator('[data-upload-summary]')).toHaveText(
     '1 ajoutée · 5 déjà présentes',
   );
-  await expect(page.locator('[data-import-status]')).toBeHidden();
+  await expect(page.locator('[data-progress-bar]')).toHaveJSProperty(
+    'value',
+    6,
+  );
+  await expect(page.locator('[data-upload-results]')).toContainText(
+    'original-4.png',
+  );
+});
+
+test('picker continues beyond ten automatically and fresh selections reset progress @mobile-only', async ({
+  page,
+}) => {
+  await login(page);
+  const photo = await syntheticPhoto(page, 'picker.png', 240, 120);
+  await page.locator('[data-photo-files]').setInputFiles(
+    Array.from({length: 11}, (_, index) => ({
+      ...photo,
+      name: `photo-${index + 1}.png`,
+    })),
+  );
+  await expect(page.locator('[data-upload-summary]')).toHaveText(
+    '1 ajoutée · 10 déjà présentes',
+  );
+  await expect(page.locator('[data-progress-bar]')).toHaveJSProperty(
+    'value',
+    11,
+  );
+  await page.locator('[data-photo-files]').setInputFiles(photo);
+  await expect(page.locator('[data-upload-summary]')).toHaveText(
+    '1 déjà présente',
+  );
+  await expect(page.locator('[data-progress-bar]')).toHaveJSProperty(
+    'value',
+    1,
+  );
+  await expect(page.locator('[data-progress-bar]')).toHaveAttribute('max', '1');
 });
 
 test('offline diagnostics collapse and clear when administrator access is denied', async ({

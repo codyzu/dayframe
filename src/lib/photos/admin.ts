@@ -1,9 +1,7 @@
 /* eslint-disable @typescript-eslint/no-loop-func -- Each card captures its own immutable photo; shared catalog updates are serialized by isBusy. */
 /* eslint-disable no-alert -- Native confirmation is required before permanent deletion. */
 import {
-  captureTimestampFromInputs,
   isCaptureTimestamp,
-  placeFromInput,
   isPhotoPlace,
   type PhotoPlace,
   type PhotoImport,
@@ -23,6 +21,9 @@ import {
   type PhotoMetadata,
 } from './contracts.ts';
 import {mountClipboardImport} from './clipboard-import.ts';
+import {createImportProgress} from './import-progress.ts';
+import {newestPhotos} from './catalog-order.ts';
+import {mountPhotoEditor} from './editor.ts';
 import {processPhoto} from './processing.ts';
 
 const adminRoot = document.querySelector<HTMLElement>('[data-photo-admin]');
@@ -92,7 +93,7 @@ function mountAdmin(root: HTMLElement) {
     }
   }
 
-  const recovery = root.querySelector<HTMLInputElement>(
+  const recovery = root.querySelector<HTMLButtonElement>(
     '[data-recover-locations]',
   )!;
   const recoveryDialog = root.querySelector<HTMLDialogElement>(
@@ -104,6 +105,7 @@ function mountAdmin(root: HTMLElement) {
   let isPlacesAvailable = true;
   let isBusy = false;
   let isUploading = false;
+  let isPreparing = false;
   let isAuthorized = false;
   let accessGeneration = 0;
   onOfflineInvalidation(() => {
@@ -111,9 +113,60 @@ function mountAdmin(root: HTMLElement) {
     showError(new ApiError('Accès privé à vérifier. Reconnectez-vous.', 401));
   });
   let privacyDeadline = Date.now() + 300_000;
-  const intake = mountClipboardImport(root, uploadFiles, async (file) => {
-    const hash = await sha256(await file.arrayBuffer());
-    return catalog.find(({id}) => id === hash)?.place;
+  const progress = createImportProgress(root);
+  const recent = new Map<string, number>();
+  const editor = mountPhotoEditor(root, async (photo, place, date) => {
+    if (isBusy || !isAuthorized) {
+      throw new Error('Accès privé à vérifier. Reconnectez-vous.');
+    }
+
+    setBusy(true);
+    try {
+      await savePlace(
+        photo,
+        place,
+        accessGeneration,
+        date === photo.capturedAt ? undefined : (date ?? null),
+      );
+      root.querySelector<HTMLElement>(
+        `[data-photo-id="${CSS.escape(photo.id)}"] [data-place-status]`,
+      )!.textContent = 'Détails enregistrés.';
+    } catch (error) {
+      showError(error);
+      throw error;
+    } finally {
+      setBusy(false);
+    }
+  });
+  const intake = mountClipboardImport(root, {
+    importFiles: uploadFiles,
+    onPreparing(isPreparingValue) {
+      isPreparing = isPreparingValue;
+      setCatalogBusy(isBusy || isPreparing);
+    },
+    async knownPlace(file) {
+      const hash = await sha256(await file.arrayBuffer());
+      return catalog.find(({id}) => id === hash)?.place;
+    },
+    onSelection() {
+      results.replaceChildren();
+      root.querySelector<HTMLElement>('[data-view-added]')!.hidden = true;
+      summarize();
+    },
+    progress,
+  });
+  recovery.addEventListener('click', () => {
+    const isRecovering = recovery.getAttribute('aria-pressed') !== 'true';
+    intake.reset();
+    recovery.setAttribute('aria-pressed', String(isRecovering));
+    recovery.textContent = isRecovering
+      ? 'Revenir à l’ajout de photos'
+      : 'Activer la récupération des lieux et dates';
+    root.querySelector<HTMLElement>('[data-recovery-notice]')!.hidden =
+      !isRecovering;
+  });
+  root.querySelector('[data-view-added]')!.addEventListener('click', () => {
+    root.querySelector<HTMLElement>('#collection')!.focus();
   });
   const accessMessage = root.querySelector<HTMLElement>(
     '[data-access-message]',
@@ -126,15 +179,22 @@ function mountAdmin(root: HTMLElement) {
     isBusy = isBusyValue || isUploading;
     choose.disabled = isBusy || !isAuthorized;
     recovery.disabled = isBusy || !isAuthorized;
-    for (const control of gallery.querySelectorAll<
-      HTMLInputElement | HTMLButtonElement
-    >(':scope [data-place-form] input, :scope [data-place-form] button')) {
-      control.disabled = isBusy || !isAuthorized || !isPlacesAvailable;
+    setCatalogBusy(isBusy || isPreparing);
+    intake.setAllowed(!isBusy && isAuthorized, !isAuthorized);
+  };
+
+  function setCatalogBusy(isBlocked: boolean) {
+    for (const control of gallery.querySelectorAll<HTMLButtonElement>(
+      '[data-edit-photo], [data-delete]',
+    )) {
+      control.disabled =
+        isBlocked ||
+        !isAuthorized ||
+        (control.matches('[data-edit-photo]') && !isPlacesAvailable);
     }
 
-    intake.setAllowed(!isBusy && isAuthorized, !isAuthorized);
-    refreshButton.disabled = isBusy;
-  };
+    refreshButton.disabled = isBlocked;
+  }
 
   function listen(
     target: EventTarget,
@@ -160,6 +220,9 @@ function mountAdmin(root: HTMLElement) {
       offlineDiagnostics.textContent = '';
       offlineDetails.open = false;
       login.hidden = false;
+      editor.clear();
+      recent.clear();
+      progress.clear();
       catalog = [];
       pending.clear();
       deleted.clear();
@@ -184,10 +247,11 @@ function mountAdmin(root: HTMLElement) {
     const bytes = catalog.reduce((sum, photo) => sum + photo.size + 1024, 0);
     root.querySelector<HTMLElement>('[data-storage]')!.textContent =
       `${catalog.length} photo${catalog.length === 1 ? '' : 's'} · ${(bytes / 1_000_000).toFixed(1)} Mo utilisés${bytes >= storageWarningBytes ? ' · Stockage bientôt plein : faites de la place avant d’ajouter des photos.' : ''}`;
-    for (const photo of catalog) {
+    for (const photo of newestPhotos(catalog)) {
       const card = template.content.firstElementChild!.cloneNode(
         true,
       ) as HTMLElement;
+      card.dataset.photoId = photo.id;
       card.querySelector('img')!.src = `/api/photos/${photo.id}`;
       const download =
         card.querySelector<HTMLAnchorElement>('[data-download]')!;
@@ -195,70 +259,30 @@ function mountAdmin(root: HTMLElement) {
       download.download = `${photo.id}.webp`;
       card.querySelector<HTMLElement>('[data-photo-details]')!.textContent =
         `${photo.width} × ${photo.height} · ${Math.round(photo.size / 1024)} Kio · ${new Date(photo.uploadedAt).toLocaleDateString('fr-FR')}`;
-      const placeInput =
-        card.querySelector<HTMLInputElement>('[data-place-input]')!;
-      const dateInput = card.querySelector<HTMLInputElement>(
-        '[data-capture-date]',
-      )!;
-      const timeInput = card.querySelector<HTMLInputElement>(
-        '[data-capture-time]',
-      )!;
-      dateInput.value = photo.capturedAt?.slice(0, 10) ?? '';
-      timeInput.value = photo.capturedAt?.slice(11) ?? '';
-      timeInput.disabled = isBusy || !isAuthorized || !isPlacesAvailable;
-      dateInput.disabled = isBusy || !isAuthorized || !isPlacesAvailable;
-      placeInput.value = photo.place?.label ?? '';
-      placeInput.disabled = isBusy || !isAuthorized || !isPlacesAvailable;
-      card.querySelector<HTMLButtonElement>('button[type=submit]')!.disabled =
-        isBusy || !isAuthorized || !isPlacesAvailable;
-      const placeStatus = card.querySelector<HTMLElement>(
-        '[data-place-status]',
-      )!;
-      placeStatus.textContent = isPlacesAvailable
-        ? ''
-        : 'Lieux indisponibles. Actualisez pour les modifier.';
-      card.querySelector('form')!.addEventListener('submit', (event) => {
-        event.preventDefault();
-        if (isBusy || !isAuthorized) {
-          return;
-        }
-
-        setBusy(true);
-        const run = accessGeneration;
-        void (async () => {
-          try {
-            const date = captureTimestampFromInputs(
-              dateInput.value,
-              timeInput.value,
-            );
-
-            const label = placeInput.value.trim();
-            const place =
-              label === photo.place?.label
-                ? photo.place
-                : placeFromInput(label);
-            await savePlace(
-              photo,
-              place,
-              run,
-              date === photo.capturedAt ? undefined : (date ?? null),
-            );
-            status.textContent =
-              date === photo.capturedAt
-                ? 'Lieu enregistré.'
-                : 'Date enregistrée.';
-            accessMessage.hidden = false;
-          } catch (error) {
-            placeStatus.textContent =
-              error instanceof Error
-                ? error.message
-                : 'Enregistrement impossible.';
-            showError(error);
-          } finally {
-            setBusy(false);
-          }
-        })();
+      card.querySelector<HTMLElement>('[data-card-place]')!.textContent =
+        photo.place?.label ?? 'Ajouter un lieu';
+      card.querySelector<HTMLElement>('[data-card-date]')!.textContent =
+        photo.capturedAt === undefined
+          ? 'Ajouter une date'
+          : new Date(
+              `${photo.capturedAt.slice(0, 10)}T12:00:00Z`,
+            ).toLocaleDateString('fr-FR', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+              timeZone: 'UTC',
+            });
+      card.querySelector<HTMLElement>('[data-new-badge]')!.hidden =
+        Date.now() - (recent.get(photo.id) ?? 0) > 300_000;
+      const edit = card.querySelector<HTMLButtonElement>('[data-edit-photo]')!;
+      edit.disabled = isBusy || !isAuthorized || !isPlacesAvailable;
+      edit.addEventListener('click', () => {
+        editor.open(photo);
       });
+      card.querySelector<HTMLElement>('[data-place-status]')!.textContent =
+        isPlacesAvailable
+          ? ''
+          : 'Informations indisponibles. Actualisez pour les modifier.';
       const button = card.querySelector<HTMLButtonElement>('[data-delete]')!;
       listen(button, 'click', async () => {
         if (
@@ -392,14 +416,15 @@ function mountAdmin(root: HTMLElement) {
     render();
   }
 
-  async function hasRecoveredPlace(
+  async function recoverInformation(
     photo: Awaited<ReturnType<typeof processPhoto>>,
-    place: PhotoPlace | undefined,
+    entry: PhotoImport,
     run: number,
   ) {
-    if (!place) {
+    const {place, capturedAt} = entry;
+    if (!place && capturedAt === undefined) {
       throw new Error(
-        'Saisissez ou recherchez le lieu avant de confirmer la récupération.',
+        'Aucun lieu ni date à récupérer. Vous pouvez modifier les détails dans la collection.',
       );
     }
 
@@ -419,7 +444,7 @@ function mountAdmin(root: HTMLElement) {
           .slice(0, 5);
     if (candidates.length === 0) {
       throw new Error(
-        'Aucune photo correspondante. Aucun ajout effectué ; vous pouvez saisir le lieu dans la collection.',
+        'Aucune photo correspondante. Aucun ajout effectué ; modifiez les détails dans la collection.',
       );
     }
 
@@ -453,8 +478,13 @@ function mountAdmin(root: HTMLElement) {
       images.append(label);
     }
 
-    recoveryDialog.querySelector('[data-recovery-place]')!.textContent =
-      place.label;
+    recoveryDialog.querySelector('[data-recovery-place]')!.textContent = [
+      place ? `Lieu proposé : ${place.label}` : 'Lieu indisponible',
+      capturedAt === undefined
+        ? 'Date indisponible'
+        : `Date proposée : ${capturedAt.slice(0, 10)}`,
+      'Les informations déjà enregistrées seront conservées.',
+    ].join(' · ');
     recoveryDialog.returnValue = 'skip';
     recoveryDialog.showModal();
     try {
@@ -471,11 +501,22 @@ function mountAdmin(root: HTMLElement) {
       const selected = images.querySelector<HTMLInputElement>('input:checked');
       const target = candidates.find(({id}) => id === selected?.value);
       if (target && recoveryDialog.returnValue === 'save') {
-        await savePlace(target, place, run);
-        return true;
+        const recoveredPlace = target.place ? undefined : place;
+        const recoveredDate =
+          target.capturedAt === undefined ? capturedAt : undefined;
+        if (recoveredPlace !== undefined || recoveredDate !== undefined) {
+          await savePlace(
+            target,
+            target.place ?? recoveredPlace,
+            run,
+            recoveredDate,
+          );
+        }
+
+        return {place: Boolean(recoveredPlace), date: Boolean(recoveredDate)};
       }
 
-      return false;
+      return undefined;
     } finally {
       URL.revokeObjectURL(url);
       images.replaceChildren();
@@ -497,14 +538,19 @@ function mountAdmin(root: HTMLElement) {
     row.dataset.outcome = 'processing';
     text.textContent = `${file.name} · conversion…`;
     summarize();
+    progress.preview(file);
     try {
       const photo = await processPhoto(file);
       verifyGeneration(run);
       if (isRecovering) {
-        const isSaved = await hasRecoveredPlace(photo, place, run);
-        row.dataset.outcome = isSaved ? 'located' : 'skipped';
-        text.textContent = isSaved
-          ? 'Lieu enregistré sur la photo existante.'
+        const recovered = await recoverInformation(photo, entry, run);
+        row.dataset.outcome = recovered ? 'recovered' : 'skipped';
+        row.dataset.recoveredPlace = String(Boolean(recovered?.place));
+        row.dataset.recoveredDate = String(Boolean(recovered?.date));
+        text.textContent = recovered
+          ? recovered.place || recovered.date
+            ? 'Informations manquantes complétées.'
+            : 'Informations déjà présentes, conservées.'
           : 'Photo passée ; aucun ajout.';
         return 'complete' as const;
       }
@@ -562,6 +608,10 @@ function mountAdmin(root: HTMLElement) {
           'Content-Type': 'image/webp',
           'X-Photo-Sha256': photo.sha256,
           'X-Photo-Dhash': photo.perceptualHash,
+          ...(entry.importGroup !== undefined && {
+            'X-Photo-Import-Group': entry.importGroup,
+            'X-Photo-Import-Index': String(entry.importIndex),
+          }),
         },
         body: photo.blob,
       });
@@ -588,6 +638,11 @@ function mountAdmin(root: HTMLElement) {
         body.photo = pending.get(body.photo.id) ?? body.photo;
       }
 
+      if (!body.duplicate) {
+        recent.set(body.photo.id, Date.now());
+        root.querySelector<HTMLElement>('[data-view-added]')!.hidden = false;
+      }
+
       pending.set(body.photo.id, body.photo);
       deleted.delete(body.photo.id);
       catalog = [...catalog.filter(({id}) => id !== body.photo.id), body.photo];
@@ -602,6 +657,7 @@ function mountAdmin(root: HTMLElement) {
       retry.hidden = false;
       return 'retry' as const;
     } finally {
+      progress.clearImage();
       setBusy(false);
       summarize();
     }
@@ -644,7 +700,15 @@ function mountAdmin(root: HTMLElement) {
     const count = (outcome: string) =>
       outcomes.filter((value) => value === outcome).length;
     const parts = [
-      count('located') > 0 ? `${count('located')} lieu(x) retrouvé(s)` : '',
+      [...results.querySelectorAll('[data-recovered-place="true"]')].length > 0
+        ? `${results.querySelectorAll('[data-recovered-place="true"]').length} lieu(x) retrouvé(s)`
+        : '',
+      [...results.querySelectorAll('[data-recovered-date="true"]')].length > 0
+        ? `${results.querySelectorAll('[data-recovered-date="true"]').length} date(s) retrouvée(s)`
+        : '',
+      count('recovered') > 0
+        ? `${count('recovered')} photo(s) vérifiée(s)`
+        : '',
       count('added') > 0
         ? `${count('added')} ajoutée${count('added') > 1 ? 's' : ''}`
         : '',
@@ -661,8 +725,24 @@ function mountAdmin(root: HTMLElement) {
     summary.textContent = parts.join(' · ');
     summary.hidden = parts.length === 0;
     uploadDetails.hidden = outcomes.length === 0;
-    uploadDetails.open =
-      count('processing') > 0 || count('uploading') > 0 || count('error') > 0;
+    uploadDetails.open = count('error') > 0;
+    if (!isAuthorized || outcomes.length === 0) {
+      return;
+    }
+
+    const done = outcomes.filter(
+      (outcome) => !['processing', 'uploading'].includes(outcome ?? ''),
+    ).length;
+    progress.show(
+      done,
+      count('processing') > 0
+        ? 'Conversion…'
+        : count('uploading') > 0
+          ? 'Envoi…'
+          : count('error') > 0
+            ? 'Certaines photos sont à réessayer'
+            : 'Traitement terminé',
+    );
   }
 
   async function uploadFiles(files: PhotoImport[]) {
@@ -670,7 +750,7 @@ function mountAdmin(root: HTMLElement) {
       return;
     }
 
-    const isRecovering = recovery.checked;
+    const isRecovering = recovery.getAttribute('aria-pressed') === 'true';
     isUploading = true;
     setBusy(true);
     try {
@@ -737,6 +817,20 @@ function mountAdmin(root: HTMLElement) {
   });
   // Bound decoded admin previews even during an offline outage or a long upload/review.
   const privacyCheck = setInterval(() => {
+    for (const [id, addedAt] of recent) {
+      if (!(Date.now() - addedAt > 300_000)) {
+        continue;
+      }
+
+      recent.delete(id);
+      const badge = gallery.querySelector<HTMLElement>(
+        `[data-photo-id="${CSS.escape(id)}"] [data-new-badge]`,
+      );
+      if (badge) {
+        badge.hidden = true;
+      }
+    }
+
     if (Date.now() >= privacyDeadline) {
       showError(new ApiError('Accès privé à vérifier. Reconnectez-vous.', 401));
     }
@@ -759,6 +853,7 @@ function mountAdmin(root: HTMLElement) {
   globalThis.addEventListener('pagehide', () => {
     clearInterval(privacyCheck);
     gallery.replaceChildren();
+    editor.clear();
     recoveryDialog.close('skip');
     if (dialog.open) {
       dialog.close('skip');

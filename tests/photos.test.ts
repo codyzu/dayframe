@@ -6,6 +6,7 @@ import {
   differenceHash,
   hammingDistance,
   isPhotoMetadata,
+  isImportOrder,
   maxPhotoBytes,
   sha256,
   type PhotoMetadata,
@@ -16,6 +17,7 @@ import {
 } from '../worker/administration.ts';
 import {listPhotos, webpDimensions, type PhotoKV} from '../worker/photos.ts';
 import {stripWebpMetadata} from '../src/lib/photos/webp.ts';
+import {newestPhotos} from '../src/lib/photos/catalog-order.ts';
 import {shufflePhotos} from '../src/lib/photos/slideshow.ts';
 import {administrationRuntime} from './fixtures/administration-runtime.ts';
 import {
@@ -307,6 +309,12 @@ describe('protected photo API with real local KV', () => {
     for (const headers of [
       {'X-Photo-Sha256': 'bad'},
       {'X-Photo-Dhash': 'bad'},
+      {'X-Photo-Import-Group': 'bad', 'X-Photo-Import-Index': '0'},
+      {'X-Photo-Import-Group': '12345678-1234-4234-8234-123456789abc'},
+      {
+        'X-Photo-Import-Group': '12345678-1234-4234-8234-123456789abc',
+        'X-Photo-Import-Index': '100',
+      },
     ] as Array<Record<string, string>>) {
       expect(
         (await request('/api/photos', 'POST', admin, image(), headers)).status,
@@ -342,10 +350,45 @@ describe('protected photo API with real local KV', () => {
     ).toBe(413);
   });
   it('uploads idempotently, lists metadata without binaries, serves protected images, and deletes safely', async () => {
-    const first = await request('/api/photos', 'POST', admin, image());
+    const first = await request('/api/photos', 'POST', admin, image(), {
+      'X-Photo-Import-Group': '12345678-1234-4234-8234-123456789abc',
+      'X-Photo-Import-Index': '1',
+    });
     expect(first.status).toBe(201);
     const result = (await first.json()) as {photo: PhotoMetadata};
     expect(result.photo.uploadedBy).toBe('one@example.test');
+    expect(result.photo.importGroup).toBe(
+      '12345678-1234-4234-8234-123456789abc',
+    );
+    expect(result.photo.importIndex).toBe(1);
+    const legacy = {
+      ...result.photo,
+      importGroup: undefined,
+      importIndex: undefined,
+    };
+    expect(isPhotoMetadata(legacy)).toBe(true);
+    expect(isImportOrder(undefined, 0)).toBe(false);
+    const next = {
+      ...result.photo,
+      id: 'c'.repeat(64),
+      importIndex: 0,
+      uploadedAt: '2026-11-06T12:00:00Z',
+    };
+    const firstInGroup = {...result.photo, uploadedAt: '2026-11-06T12:00:01Z'};
+    const older = {
+      ...legacy,
+      id: 'a'.repeat(64),
+      uploadedAt: '2026-11-05T00:00:00Z',
+    };
+    const latest = {
+      ...legacy,
+      id: 'd'.repeat(64),
+      uploadedAt: '2026-11-07T00:00:00Z',
+    };
+    expect(
+      newestPhotos([firstInGroup, latest, older, next]).map(({id}) => id),
+    ).toEqual([latest.id, next.id, firstInGroup.id, older.id]);
+
     expect(isPhotoMetadata(result.photo)).toBe(true);
     const retry = await request('/api/photos', 'POST', admin, image());
     expect(await retry.json()).toMatchObject({

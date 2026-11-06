@@ -16,6 +16,8 @@ export type PhotoMetadata = {
   sha256: string;
   perceptualHash: string;
   uploadedAt: string;
+  importGroup?: string;
+  importIndex?: number;
   uploadedBy: string;
   width: number;
   height: number;
@@ -30,6 +32,7 @@ export function isPhotoMetadata(value: unknown): value is PhotoMetadata {
 
   const p = value as PhotoMetadata;
   return (
+    isImportOrder(p.importGroup, p.importIndex) &&
     (p.capturedAt === undefined || isCaptureTimestamp(p.capturedAt)) &&
     (p.place === undefined || isPhotoPlace(p.place)) &&
     (p.placeRevision === undefined ||
@@ -108,5 +111,19 @@ export function hasPhotoSize(value: {
     isBoundedInteger(value.width, maxPhotoEdge) &&
     isBoundedInteger(value.height, maxPhotoEdge) &&
     isBoundedInteger(value.size, maxPhotoBytes)
+  );
+}
+
+export function isImportOrder(group: unknown, index: unknown) {
+  return (
+    (group === undefined && index === undefined) ||
+    (typeof group === 'string' &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/v.test(
+        group,
+      ) &&
+      typeof index === 'number' &&
+      Number.isSafeInteger(index) &&
+      index >= 0 &&
+      index < 100)
   );
 }

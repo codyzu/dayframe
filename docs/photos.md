@@ -506,31 +506,84 @@ rollout and household backfill remain separate. [ADR 0010](decisions/0010-photo-
 records storage, privacy, cost, provenance and rollback. Current delivery evidence
 and remaining acceptance belong to [#22](https://github.com/codyzu/dayframe/issues/22).
 
-Pasting or choosing images now starts ordinary imports automatically with a place
-when JPEG/PNG capture GPS is readable. The checked automatic-location option explains
-that coordinates go directly to Photon without the photo or credentials; it can be
-disabled before selection. Missing GPS or provider failure leaves the place empty
-and does not block upload. The UI never substitutes the uploader's current position.
-“Personnaliser les lieux avant l’ajout” restores preview/Add with an editable place
-for each image. Every gallery card also supports later correction/removal. The
-saved value is a bounded plain label and manual/estimated provenance, never raw GPS.
+Pasting or choosing images starts ordinary imports automatically. The administration
+page shows a native paste target immediately; the redundant asynchronous Paste
+button and pre-upload review checkbox are removed. On iPhone, share with the
+metadata-preserving **Dayframe PNG** Shortcut, then use the native Paste command
+in the target. The earlier owner-observed experiment preserved GPS in native paste
+but lost it through the asynchronous Clipboard API. That API is no longer used in
+production import. The public clipboard diagnostic remains a separate experiment.
+A web release cannot update an installed Shortcut or establish physical iPhone
+acceptance. Existing device/Shortcut deferrals remain unchanged.
 
-Use **manual paste** with the metadata-preserving Shortcut. Shortcut links open
-the manual paste zone directly when automatic location is enabled; the Paste
-button opens the same zone from ordinary administration. The asynchronous clipboard read
-path lost GPS in the owner-observed iPhone experiment. Intermediate PNGs retain
-metadata, including potentially more than GPS, but final WebPs still strip it.
-The production generator's admin-import mode preserves metadata; historical test
-modes retain their previous settings. A signed native replacement and iPhone sync
-need separate verification; a web release cannot change an installed Shortcut.
-The prior Shortcut preserves its previous behavior for rollback.
+Optional JPEG/PNG capture dates and locations are extracted before image
+normalization. Missing metadata, lookup timeout/failure or unsupported EXIF never
+blocks an otherwise readable image. Automatic location is enabled by default;
+**Options** discloses the coordinate-only Photon request and provides a session-only
+opt-out before selection. Photon receives no image or credentials. No uploader
+position is substituted. Only private plain-text labels/provenance and capture
+timestamps are saved; raw GPS is discarded and optimized WebPs remain metadata-free.
+Intermediate Shortcut PNGs/clipboard may retain other metadata. Attribution and the
+bounded lookup policy from ADR 0010 remain unchanged.
 
-Recovery mode takes reselected originals/shared copies and proposes existing matches
-using exact source SHA or bounded dHash similarity. The owner chooses the existing
-photo and confirms the place; no new image is uploaded or replaced. An ambiguous
-match is never silently applied. If originals/GPS/matches are unavailable, edit the
-place manually in the gallery. The actual Apple Photos library recovery is deferred
-until the owner provides access; no library permission/search has been requested.
+Whole-selection progress counts completed outcomes, including duplicates, skips
+and failures, rather than estimating byte-transfer percentages. It names preparation,
+lookup, conversion and upload, with one temporary source thumbnail. Processing stays
+sequential, with at most ten images/100 MB per group, 40 MiB per source and 100 images
+per selection. Picker groups continue automatically. Clipboard groups explicitly
+request another native paste of the same selection; the cursor and total survive
+between groups. Changed counts, invalid expected counts and non-image paste are
+rejected. Text/HTML/URLs are never imported. Cancellation stops pending preparation
+and discards previews; successful uploads are not undone. Failures have individual
+same-tab retries. Access denial/page exit clears private previews and decoded editor
+images; no additional persistent/offline photo or metadata retention is introduced.
+
+The collection uses newest **upload selection** first on arrival, refresh and each
+successful upload; within a selection it preserves source order. Server-owned
+`uploadedAt` remains distinct from capture time. Optional validated `importGroup`
+(UUID v4) and `importIndex` (0–99) in the existing KV metadata preserve group order
+across reloads and adaptive groups. Groups sort by their newest member's server
+upload timestamp; legacy photos use their upload timestamp with deterministic ID
+ties. Exact duplicate retries preserve the existing date/group. Editing metadata
+never changes ordering. New uploads receive a five-minute, page-session badge and
+a **Voir les photos ajoutées** link; imports do not force scrolling or reload the
+page. The gallery is still fully rendered; bounded gallery rendering remains #2.
+
+Cards show place and capture date, with a focused **Modifier les détails** dialog.
+Save/Cancel and Escape preserve keyboard return focus. Time is optional, uses a
+native time picker, and advanced timezone editing accepts an explicit UTC offset
+or unknown timezone. Imported precision/offset is retained for unchanged time,
+including date-only edits; the uploader's timezone is never guessed. Clearing the
+date clears its time too. File dimensions/size/upload date, download and confirmed
+delete live under **Autres actions**. Save conflicts/failures remain visible and
+retryable; authorization denial clears the editor.
+
+**Compléter les informations de photos existantes** is a collapsed maintenance
+action. When enabled, choosing/pasting sources proposes exact or bounded perceptual
+matches for explicit confirmation. It fills only missing locations and/or capture
+dates; date-only sources work with location lookup disabled. Existing values,
+including manual corrections, remain intact. Image bytes, identity, upload date and
+order are preserved; no new image is uploaded. Missing originals, unmatched images
+or sources without either field leave records unchanged and explain manual editing.
+Actual Apple Photos library access/household backfill remains owner-deferred.
+
+Compatibility and rollback: both added import-order fields are optional. Old records
+and old upload clients remain accepted; older Workers ignore the new headers, and
+older readers tolerate the fields. Reverting the UI restores its former ordering
+and controls without deleting images, places or dates. Preserve date/place mappings
+before reverting to a pre-capture-date build, which can drop dates during place
+edits. Existing metadata revision conflict checks remain authoritative; this change
+adds no service, paid resource, migration or expanded offline projection.
+
+Upstream review, 6 November 2026: `dashboard/js/views/photos.js`,
+`dashboard/js/views/home.js` and root MIT `LICENSE` at
+`34c91641e3cdd159756e3f1dcc15914148b2beff` were inspected. The upstream photo view
+provides slideshow/details controls, not a private upload/recovery administration
+flow. Dayframe retains its own French Astro/UnoCSS editor, authenticated Worker
+pipeline, capture metadata and bounded native-paste workflow. No upstream source
+or assets were copied. Current implementation/release evidence belongs to
+[issue #26](https://github.com/codyzu/dayframe/issues/26); synthetic browser evidence
+does not establish actual-device acceptance.
 
 The Photos pin control enables labels on this browser (hidden by default); the
 preference stores only a boolean. Labels are absent from offline image records and
@@ -553,7 +606,7 @@ check, and old records without a capture date remain valid.
 JPEG APP1 and PNG eXIf sources can supply EXIF `DateTimeOriginal` before browser
 conversion. A missing or invalid date leaves the field blank. The browser
 uses the metadata actually delivered by the picker or clipboard. Admins can
-change or clear the date during import review or from the catalog. The frame
+change or clear the date using the collection’s details editor. The frame
 renders the French month and year under the place with the existing caption preference. Dates
 remain private and outside the offline photo cache. No new services are used.
 
