@@ -4,7 +4,8 @@ Local synthetic screenshots for [issue #24](https://github.com/codyzu/dayframe/i
 branch `codex/weekly-weather-trend`. These show the actual built application with
 fictional weather, warnings, day-off context and six synthetic agenda events.
 No household data, live provider data or credentials appear in the captures.
-Owner screenshot approval is required before merging or deploying this branch.
+These screenshots were prepared before deployment. The owner subsequently
+approved the layout and requested merge and deployment.
 
 - [Wet week, today selected](wet-today-firefox.png).
 - [Wet week, Sunday selected](wet-sunday-firefox.png).

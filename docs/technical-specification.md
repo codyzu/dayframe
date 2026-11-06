@@ -163,11 +163,11 @@ Keep the existing floating dock; temporary agenda overlap is accepted. See
 and [compact display layout](display-density.md#compact-morning-layout--5-november-2026).
 Physical-device acceptance remains separate from the owner-approved screenshot review.
 
-**Review branch, 6 November 2026 (#24):** Replace the repeated day tiles with a
+**Owner-approved design, 6 November 2026 (#24):** Replace the repeated day tiles with a
 maximum-temperature line and adjacent daily total-precipitation bars in mm,
 keeping the picker's existing desktop height. Retain day selection and detailed
-hourly/checkpoint percentages. This change awaits owner screenshot approval
-before merge or deployment; see [weekly trend behavior](weather.md#weekly-trend-picker--review-branch-6-november-2026).
+hourly/checkpoint percentages. The owner approved the screenshot review and
+requested deployment; see [weekly trend behavior](weather.md#weekly-trend-picker--6-november-2026).
 
 ### 4.2 Weather provider
 

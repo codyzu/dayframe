@@ -149,9 +149,9 @@ confirmed the namespace/field structure and current feed timestamp; synthetic br
 fixtures establish departmental warning behavior, not a real current Haute-Savoie
 warning or actual-frame acceptance.
 
-## Weekly trend picker — review branch, 6 November 2026
+## Weekly trend picker — 6 November 2026
 
-The review implementation for #24 replaces the repeated daily condition tiles
+The owner-approved implementation for #24 replaces the repeated daily condition tiles
 with a continuous maximum-temperature line and adjacent daily total-precipitation
 bars. Seven lightly divided button columns still select the existing day details;
 the selected column has a shaded background and accent underline. No minimum
@@ -179,12 +179,12 @@ retained. SVG marks redraw on data/date or width changes; day buttons retain
 focus/scroll during refresh.
 
 Local synthetic measurements at 1280 × 800 found the previous picker at **99px**
-and this review picker at **99px**, including its focus/scroll clearance. The unit
+and the trend picker at **99px**, including its focus/scroll clearance. The unit
 legend occupies a 104px left gutter beside the date row; no extra legend row is
 added. Narrow screens keep a readable horizontally scrollable continuous strip.
 [Review screenshots and capture context](evidence/weather-trend/README.md) cover
 wet weather, summer heat, a selected future day, full agenda and warning/day-off
-states. The branch awaits owner screenshot approval before merge/deployment;
+states. The owner approved the screenshots and requested merge/deployment;
 physical frame/phone acceptance remains #18.
 
 Upstream refreshed on 6 November at
