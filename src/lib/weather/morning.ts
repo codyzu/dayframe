@@ -106,6 +106,22 @@ export function twoHourRain(hours: Hour[]) {
   return result;
 }
 
+const rainCheckpointPhrases = new Map([
+  ['sortie', 'pour la sortie'],
+  ['activités', 'pour les activités'],
+  ['départ', 'pour le départ'],
+  ['retour', 'pour le retour'],
+  ['après-midi', 'cet après-midi'],
+  ['soir', 'ce soir'],
+]);
+
+function rainCheckpointContext(point: Checkpoint) {
+  const context =
+    rainCheckpointPhrases.get(point.label.toLocaleLowerCase('fr-FR')) ??
+    `pour « ${point.label} »`;
+  return `${context} à ${point.time.replace(':', 'h')}`;
+}
+
 export function morningAdvice(
   weather: Weather,
   now: number,
@@ -122,12 +138,15 @@ export function morningAdvice(
   const wet = future.find(
     (hour) => hour.probability >= 50 || hour.precipitation >= 0.2,
   );
-  const pickup = checkpointForecasts(weather, now, checkpoints).find(
+  const laterCheckpoint = checkpointForecasts(weather, now, checkpoints).find(
     (point) =>
+      wet &&
       point.time >= '16:00' &&
       point.forecast &&
       point.at !== undefined &&
       point.at >= now &&
+      // A checkpoint in/before the first wet hourly slot adds no timing detail.
+      point.at >= wet.time + 3_600_000 &&
       (point.forecast.probability >= 50 || point.forecast.precipitation >= 0.2),
   );
   const feels = weather.current.feelsLike;
@@ -152,25 +171,25 @@ export function morningAdvice(
     details.push(
       'Orage ou verglas possible : vérifiez les conditions avant de partir.',
     );
-  } else if (isCold) {
+  } else if (wet) {
     details.push(
-      wet
-        ? 'Bonnet, gants et parapluie conseillés.'
-        : 'Bonnet et gants conseillés.',
+      wet.time <= now
+        ? 'Pluie possible dès maintenant.'
+        : `Pluie possible ${dateKey(wet.time) === dateKey(now) ? '' : 'demain '}vers ${hourLabel(wet.time).replace(':', 'h')}.`,
     );
-  } else if (wet && isJacket) {
-    details.push('Une veste sera aussi utile.');
-  }
+    // Keep two short sentences: cold protection takes priority over a routine hint.
+    if (isCold) {
+      details.push('Bonnet, gants et parapluie conseillés.');
+    } else if (laterCheckpoint) {
+      details[0] = `${details[0].slice(0, -1)}, et aussi ${rainCheckpointContext(laterCheckpoint)}.`;
+    } else if (isJacket) {
+      details.push('Une veste sera aussi utile.');
+    }
+  } else {
+    if (isCold) {
+      details.push('Bonnet et gants conseillés.');
+    }
 
-  if (!isHazardous && wet) {
-    details.push(
-      pickup
-        ? `Pluie possible vers ${pickup.time.replace(':', 'h')}.`
-        : wet.time <= now
-          ? 'Pluie possible en ce moment.'
-          : `Pluie possible ${dateKey(wet.time) === dateKey(now) ? '' : 'demain '}vers ${hourLabel(wet.time).replace(':', 'h')}.`,
-    );
-  } else if (!isHazardous) {
     details.push(temperatureOutlook(weather, now));
   }
 

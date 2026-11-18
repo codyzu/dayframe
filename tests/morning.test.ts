@@ -99,17 +99,63 @@ describe('family day forecasts', () => {
 });
 
 describe('short deterministic French advice', () => {
-  it('prioritizes uncertain rain near pickups and a jacket', () => {
+  it('describes the first rain risk before a naturally labelled later checkpoint', () => {
     expect(morningAdvice(fixture(), fixtureNow)).toEqual({
       title: 'Prenez un parapluie.',
-      detail: 'Une veste sera aussi utile. Pluie possible vers 16h30.',
+      detail: 'Pluie possible vers 15h00, et aussi pour la sortie à 16h30.',
     });
   });
-  it('does not recommend an already passed pickup', () => {
+  it('describes current hourly rain risk before a later checkpoint, ignoring passed checkpoints', () => {
+    const weather = fixture();
+    // Synthetic counterpart of the live Annecy diagnosis: wet now and later.
+    for (const hour of weather.hourly) {
+      hour.probability = 80;
+    }
+
+    expect(morningAdvice(weather, fixtureNow).detail).toBe(
+      'Pluie possible dès maintenant, et aussi pour la sortie à 16h30.',
+    );
     const now = Date.parse('2026-10-16T14:45:00Z');
-    expect(morningAdvice(fixture(), now).detail).toContain('18h00');
-    expect(morningAdvice(fixture(), now).detail).not.toContain('16h30');
+    expect(morningAdvice(weather, now).detail).toBe(
+      'Pluie possible dès maintenant, et aussi pour les activités à 18h00.',
+    );
   });
+  it('omits redundant checkpoints within the first wet hour and keeps jacket advice', () => {
+    const weather = fixture();
+    for (const hour of weather.hourly) {
+      hour.probability = hourLabel(hour.time) >= '16:00' ? 80 : 0;
+    }
+
+    expect(
+      morningAdvice(weather, fixtureNow, [{time: '16:30', label: 'Départ'}])
+        .detail,
+    ).toBe('Pluie possible vers 16h00. Une veste sera aussi utile.');
+    expect(
+      morningAdvice(weather, fixtureNow, [{time: '17:00', label: 'Départ'}])
+        .detail,
+    ).toBe('Pluie possible vers 16h00, et aussi pour le départ à 17h00.');
+    // Interpolation can mark 16:30 wet using the 17:00 sample. It must
+    // not move the summary's first-risk time earlier than that sample.
+    for (const hour of weather.hourly) {
+      hour.probability = hourLabel(hour.time) === '17:00' ? 80 : 0;
+    }
+
+    expect(morningAdvice(weather, fixtureNow).detail).toBe(
+      'Pluie possible vers 17h00. Une veste sera aussi utile.',
+    );
+  });
+  it.each([
+    ['Après-midi', 'cet après-midi'],
+    ['Soir', 'ce soir'],
+    ['Atelier créatif', 'pour « Atelier créatif »'],
+  ])(
+    'uses the actual checkpoint label %s without assuming a school pickup',
+    (label, context) => {
+      expect(
+        morningAdvice(fixture(), fixtureNow, [{time: '17:00', label}]).detail,
+      ).toBe(`Pluie possible vers 15h00, et aussi ${context} à 17h00.`);
+    },
+  );
   it('handles cold, dry variation, light clothing, amount thresholds and hazardous conditions', () => {
     const weather = fixture();
     for (const hour of weather.hourly) {
@@ -136,6 +182,10 @@ describe('short deterministic French advice', () => {
     expect(morningAdvice(weather, fixtureNow).title).toContain('tenue légère');
     weather.hourly[16].precipitation = 0.2;
     expect(morningAdvice(weather, fixtureNow).title).toContain('parapluie');
+    weather.current.feelsLike = 3;
+    expect(morningAdvice(weather, fixtureNow).detail).toBe(
+      'Pluie possible vers 16h00. Bonnet, gants et parapluie conseillés.',
+    );
     weather.current.code = 67;
     expect(morningAdvice(weather, fixtureNow).title).toContain('Prudence');
     expect(

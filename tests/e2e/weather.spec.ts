@@ -18,6 +18,11 @@ test('live day/night data, accessible graph and 30-minute refresh @mobile', asyn
   await page.route('https://api.open-meteo.com/**', async (route) => {
     calls++;
     const raw = weatherFixture(fixtureNow + (calls - 1) * 1_800_000);
+    if (calls === 1) {
+      // Synthetic wet-all-day counterpart of the reported timing mismatch.
+      raw.hourly.precipitation_probability.fill(80);
+    }
+
     raw.current.weather_code = 0;
     raw.current.is_day = calls === 1 ? 1 : 0;
     await route.fulfill({json: raw});
@@ -42,7 +47,15 @@ test('live day/night data, accessible graph and 30-minute refresh @mobile', asyn
       bars.every((bar) => bar.namespaceURI === 'http://www.w3.org/2000/svg'),
     ),
   ).toBe(true);
-  await expect(page.locator('[data-summary]')).toContainText('16h30');
+  await expect(page.locator('[data-summary]')).toHaveText(
+    'Pluie possible dès maintenant, et aussi pour la sortie à 16h30.',
+  );
+  const summary = page.locator('[data-summary]');
+  const summaryBounds = (await summary.boundingBox())!;
+  const cardBounds = (await summary.locator('..').boundingBox())!;
+  expect(summaryBounds.y + summaryBounds.height).toBeLessThanOrEqual(
+    cardBounds.y + cardBounds.height,
+  );
   await expect(
     page.getByRole('link', {name: 'Météo : Open-Meteo · CC BY 4.0'}),
   ).toBeVisible();

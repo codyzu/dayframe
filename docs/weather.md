@@ -21,7 +21,7 @@ Only public weather is persisted. This does not establish offline app-shell load
 
 Twelve hourly samples start with the current hour. The temperature is a yellow line using the left °C axis; precipitation probability is a blue bar using the right % axis. A dotted marker follows the actual time. A hidden HTML table provides each hour, temperature, probability and French condition. Color is supplemented by shapes, labels and a legend.
 
-A forecast risk begins at **50% probability or 0.1 mm** in an hourly sample. Current precipitation uses the current code/amount, separately from the forecast probability. Snow, freezing precipitation and storms get specific current wording. Future advice names the first risk hour; a low-risk statement applies only to the displayed period, never the entire day. Short/missing forecast coverage has no dry-weather claim. These thresholds are product heuristics, not official alerts. No AI service is used.
+The original `summary.ts` helper uses **50% probability or 0.1 mm** in an hourly sample; the visible Morning advice uses the rules below. Current precipitation uses the current code/amount, separately from the forecast probability. Snow, freezing precipitation and storms get specific current wording. Future advice names the first risk hour; a low-risk statement applies only to the displayed period, never the entire day. Short/missing forecast coverage has no dry-weather claim. These thresholds are product heuristics, not official alerts. No AI service is used.
 
 `conditions.ts` separates WMO codes, semantic conditions, French labels, and literal day/night Meteocons classes. All 29 specification codes (including 97), plus missing/unknown fallback, are tested against the installed icon collection. UnoCSS explicitly scans the browser TypeScript source. Only the large current-conditions Fill icon animates by default; hourly chart icons always use the bundled static images. The build also bundles a static SVG for each used icon, removing SVG animation elements and revealing initially transparent rain paths. The weather component always selects these still images for hourly icons and uses them for the current icon with `prefers-reduced-motion: reduce`, including when the preference changes while the page is open. This works without JavaScript or external requests. Actual-frame animation performance remains unverified pending M6.
 
@@ -30,6 +30,45 @@ The build applies `src/lib/weather/icon-timing.ts` to the complete Meteocons col
 One collection-wide unit pass covers reference integrity and repair/expansion idempotency across all 450 installed icons. Targeted fixtures retain valid cross-links, independent loops, shared wind/smoke timing, and rejection of unsupported/ambiguous timing. Browser checks sample representative combined drizzle/snow, rain, lightning and hail graphs across day/night examples at their initial, third and tenth cycles. They inline the exact bundled CSS image to control SVG time. A separate overcast check compares painted artwork with its empty surface at both animation extremes. The production CSS-background motion/stillness and static hourly/reduced-motion checks remain separate. Desktop playback does not close actual-frame performance/paint acceptance.
 
 When upgrading an already-running dev server from the original static-only config, restart it (`pnpm exec astro dev stop`, then `pnpm run dev`). The original config mutated the imported icon collection in memory; hot reloading the config or refreshing the browser cannot restore animation elements in that cached collection. A fresh process loads the unmodified SVGs.
+
+## Rain timing in Morning advice
+
+The visible advice uses `morningAdvice` in `src/lib/weather/morning.ts`, with
+**50% probability or 0.2 mm** as its hourly rain-risk threshold. It considers the
+current hourly slot and the remaining local day; from 21h it also considers
+tomorrow through 07h. A wet current slot reads **Pluie possible dès maintenant**;
+otherwise the first qualifying hour is named, with **demain** when appropriate.
+This describes forecast risk, not an observation or a promise of continuous rain.
+The chart independently retains 06h–22h and shows probabilities below 50% too.
+
+A future wet routine checkpoint from 16h onward can add a labelled clause:
+**Pluie possible dès maintenant, et aussi pour la sortie à 16h30.** The phrase
+uses the actual checkpoint label: **pour les activités**, **cet après-midi** or
+**ce soir** as appropriate; other custom labels remain quoted verbatim, such as
+**pour « Atelier créatif » à 17h00**. It must be outside the first wet hourly slot
+and must not have passed. Half-hour checkpoints still use the maximum of adjacent
+hourly rain values, but cannot override or advance the first forecast risk time.
+Advice remains bounded to two short sentences. Cold-protection details take
+priority over the optional checkpoint; a jacket hint fills the second sentence
+when neither cold protection nor a useful checkpoint applies. Hazardous conditions
+retain their existing priority, and stale data retains recovery guidance.
+
+Diagnostic check on 18 November 2026 around 09h10 Europe/Paris: a fresh request
+for the checked-in public Annecy coordinates returned 93% / 0.4 mm for 09h,
+remaining above the rain-risk probability threshold through 18h. This independently
+retrieved provider response reproduces the timing problem; it is not an inspection
+of the owner's browser cache or device location. Raw data is not committed.
+Permanent tests use synthetic wet-current-hour/later-checkpoint inputs and the
+existing synthetic future-onset scenario; ordinary checks never rely on live data.
+
+Upstream review for this correction: `wesbos/photo-frame-dashboard` at
+`346b712b8f3c42e7407baae3c620116ebae9c85e`, root MIT `LICENSE`,
+`dashboard/js/app.js` (`weatherNow`, `hourly`) and `dashboard/js/views/home.js`.
+Retain the idea of first-rain timing separate from activity advice. Dayframe's
+French probability wording, absolute timestamps and optional routine hint are
+independently authored; no upstream code or assets copied. Rollback is a source
+revert; provider requests, settings and cache formats remain compatible, with no
+data migration or offline-retention change.
 
 ## Deterministic development
 
