@@ -1,5 +1,6 @@
 import {displayConfig, runtimeConfig} from '../dashboard/config.ts';
 import {hourLabel, dateKey} from './adapter.ts';
+import {mountAlertDetails} from './alert-details.ts';
 
 const atom = 'http://www.w3.org/2005/Atom';
 const cap = 'urn:oasis:names:tc:emergency:cap:1.2';
@@ -108,6 +109,7 @@ export function parseAlerts(xml: string): Bulletin {
 }
 
 export function mountAlerts(root: HTMLElement) {
+  const closeDetails = mountAlertDetails(root);
   const title = root.querySelector<HTMLElement>('[data-alert-title]')!;
   const detail = root.querySelector<HTMLElement>('[data-alert-detail]')!;
   const full = root.querySelector<HTMLElement>('[data-alert-full]')!;
@@ -182,6 +184,10 @@ export function mountAlerts(root: HTMLElement) {
 
   function render() {
     renderContent();
+    if (root.hidden === true) {
+      closeDetails();
+    }
+
     const dashboard = root.closest<HTMLElement>('[data-dashboard]')!;
     const value = String(root.hidden === false);
     if (root.parentElement!.dataset.alert !== value) {
@@ -235,6 +241,7 @@ export function mountAlerts(root: HTMLElement) {
   return {
     tick(isActive: boolean) {
       if (!isActive) {
+        closeDetails();
         return;
       }
 
@@ -244,6 +251,7 @@ export function mountAlerts(root: HTMLElement) {
       }
     },
     pause() {
+      closeDetails();
       pending?.abort();
       due = 0;
     },

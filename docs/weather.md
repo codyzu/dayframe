@@ -180,13 +180,43 @@ The [Meteoalarm terms](https://meteoalarm.org/en/live/page/terms-and-conditions)
 were inspected via the website's public content service on 21 October 2026
 (last-updated text: 15 March 2024). They permit warning-information reuse under
 terms equivalent to CC BY 4.0 with added attribution, original-information, issue-time,
-link, timeliness and disclaimer requirements. The banner names Météo-France, details
-link Meteoalarm and the unchanged original feed, and forecast methodology links the
+link, timeliness and disclaimer requirements. Details name Météo-France and link its
+official instructions, Meteoalarm and the unchanged original feed; forecast methodology links the
 licence, identifies the adaptation and includes the required delay disclaimer.
 No Meteoalarm artwork or website code is copied. A live national-feed download
 confirmed the namespace/field structure and current feed timestamp; synthetic browser
 fixtures establish departmental warning behavior, not a real current Haute-Savoie
 warning or actual-frame acceptance.
+
+### Warning details interaction — 18 November 2026
+
+The entire warning summary toggles a native disclosure, with a bordered **Détails**
+control and a minimum 40px touch height (owner refinement after the local demo,
+reduced from 48px to recover 8px of frame height). The whole summary remains
+clickable. The compact banner keeps the warning and
+validity information; source attribution and official instructions sit inside the
+expanded panel. The same control remains available for unavailable/unsupported
+states. The panel scrolls within a bounded height on phones and has a visible
+**Fermer** button. Panel gestures do not trigger dashboard mode swipes.
+
+Repeating the summary activation, tapping outside, **Fermer**, or Escape closes
+the panel. An outside tap still activates the tapped control. After 60 seconds
+without interaction inside the disclosure it closes automatically; pointer,
+touch scrolling and wheel/scroll activity reset the deadline. Keyboard focus
+within the disclosure pauses automatic closure until focus leaves. Touch or
+mouse focus alone does not pause it. Closing from within restores focus to the
+summary. Background warning refresh does not extend the reading deadline.
+Leaving Morning, hiding the page or clearing the warning banner also closes it.
+The warning itself remains visible while applicable. No selection is persisted;
+rollback is a web source revert with no data/settings migration.
+
+Upstream review for this interaction refreshed on 18 November 2026 at
+`346b712b8f3c42e7407baae3c620116ebae9c85e`: inspected
+`dashboard/js/views/home.js` and the root MIT `LICENSE`. Retain the glanceable
+weather hierarchy as an idea; the upstream overview has no equivalent official
+vigilance disclosure. The native disclosure, dismissal and focus behavior here
+are independently authored; no upstream source or assets copied. Local browser
+checks use synthetic warnings; physical frame/iPhone acceptance remains separate.
 
 ## Weekly trend picker — 6 November 2026
 

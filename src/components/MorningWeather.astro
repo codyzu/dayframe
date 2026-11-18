@@ -7,36 +7,65 @@ import WeatherChart from './WeatherChart.astro';
 
 <div
   data-weather
-  class="group/weather min-w-0 grid gap-1 data-[observance=true]:gap-1"
+  class="group/weather min-w-0 grid gap-1 data-[alert=true]:data-[observance=true]:gap-0.5"
 >
   <aside
     data-weather-alerts
     data-level="unknown"
-    class="relative z-1 rounded-2xl border border-border bg-surface px-4 py-1 text-primary data-[level=yellow]:bg-[#fff0b3] data-[level=orange]:bg-[#ffdab3] data-[level=orange]:border-[#9a4200] data-[level=red]:bg-[#8c1823] data-[level=red]:border-[#8c1823] data-[level=red]:text-white"
+    class="relative z-1 rounded-2xl border border-border bg-surface px-4 text-primary data-[level=yellow]:bg-[#fff0b3] data-[level=orange]:bg-[#ffdab3] data-[level=orange]:border-[#9a4200] data-[level=red]:bg-[#8c1823] data-[level=red]:border-[#8c1823] data-[level=red]:text-white"
     aria-label="Vigilance météorologique"
     aria-live="polite"
   >
-    <details class="alert-details relative">
-      <summary class="cursor-pointer flex items-baseline justify-between gap-3">
+    <details class="alert-details relative min-w-0 flex-1 basis-full min-[1000px]:basis-auto">
+      <summary class="min-h-10 cursor-pointer list-none flex items-center justify-between gap-3 rounded-xl hover:bg-black/5">
         <span
           data-alert-title
           class="font-bold text-[length:var(--font-weather-detail)] leading-tight"
         >
           Vérification de la vigilance…
         </span>
-        <span class="text-xs shrink-0 underline">Détails</span>
+        <span class="min-h-10 shrink-0 inline-flex items-center rounded-xl border border-current bg-white/20 px-4 text-base font-bold">
+          Détails{' '}
+          <span aria-hidden="true" class="ml-2">
+            ▾
+          </span>
+        </span>
       </summary>
-      <div class="surface absolute top-full left-0 right-0 z-8 p-4 shadow-lg">
+      <div
+        data-alert-panel
+        class="surface absolute top-full left-0 right-0 z-8 mt-2 max-h-[60vh] overflow-y-auto overscroll-contain p-4 text-primary shadow-lg"
+      >
+        <div class="mb-3 flex items-center justify-between gap-3">
+          <p class="text-base font-bold">Détails de la vigilance</p>
+          <button
+            type="button"
+            data-alert-close
+            class="min-h-12 shrink-0 rounded-xl border border-border px-4 py-2 text-base font-bold hover:bg-elevated"
+          >
+            Fermer
+          </button>
+        </div>
         <p
           data-alert-full
           class="text-base leading-relaxed whitespace-pre-line"
         ></p>
+        <a
+          class="mt-3 min-h-12 flex items-center text-sm underline underline-offset-2"
+          href="https://vigilance.meteofrance.fr/fr/haute-savoie"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Météo-France via Meteoalarm · consignes
+        </a>
         <p class="mt-2 flex flex-wrap gap-4 text-sm">
-          <a class="underline" href="https://meteoalarm.org/en/live/">
+          <a
+            class="min-h-12 inline-flex items-center underline"
+            href="https://meteoalarm.org/en/live/"
+          >
             Meteoalarm
           </a>
           <a
-            class="underline"
+            class="min-h-12 inline-flex items-center underline"
             href="/api/weather-alerts"
             target="_blank"
             rel="noreferrer"
@@ -56,14 +85,6 @@ import WeatherChart from './WeatherChart.astro';
       </div>
     </details>
     <p data-alert-detail class="text-base leading-tight"></p>
-    <a
-      class="text-xs underline underline-offset-2"
-      href="https://vigilance.meteofrance.fr/fr/haute-savoie"
-      target="_blank"
-      rel="noreferrer"
-    >
-      Météo-France via Meteoalarm · consignes
-    </a>
   </aside>
   <FutureWeather />
   <div
@@ -298,8 +319,9 @@ import WeatherChart from './WeatherChart.astro';
     flex-wrap: wrap;
     gap: 0.125rem 0.75rem;
   }
-  [data-weather-alerts] > a {
-    line-height: 1.2;
+  /* Preserve the full-width touch target without WebKit's native marker. */
+  .alert-details > summary::-webkit-details-marker {
+    display: none;
   }
 
   [data-weather][data-forecast='true']
@@ -317,8 +339,7 @@ import WeatherChart from './WeatherChart.astro';
   [data-weather-alerts][data-level='unknown'] [data-alert-title] {
     font-size: 0.875rem;
   }
-  [data-weather-alerts][data-level='unknown'] [data-alert-detail],
-  [data-weather-alerts][data-level='unknown'] summary > span:last-child {
+  [data-weather-alerts][data-level='unknown'] [data-alert-detail] {
     display: none;
   }
   /* Fill the frame's available height; the lower cards can grow beneath their
@@ -330,7 +351,6 @@ import WeatherChart from './WeatherChart.astro';
     }
     [data-weather][data-alert='true'] {
       --icon-weather-current: 6.25rem;
-      gap: 0.25rem;
     }
     [data-weather][data-alert='true'] [data-weather-cards] > section {
       padding-block: 0.375rem;

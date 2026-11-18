@@ -105,6 +105,147 @@ test('clear feed hides the banner; failures, stale feeds and expiry never imply 
   await expect(banner).toContainText('Vigilance indisponible');
 });
 
+// Native disclosure, touch focus and mobile panel bounds require real browsers.
+test('warning details toggle, renew touch inactivity and dismiss without hiding the warning @mobile', async ({
+  page,
+}, info) => {
+  await page.route('**/api/weather-alerts', async (route) =>
+    route.fulfill({
+      contentType: 'application/atom+xml',
+      body: alertsFixture([
+        {},
+        {severity: 'Moderate', event: 'Moderate wind warning'},
+      ]),
+    }),
+  );
+  await page.goto('/?display=frame');
+  const banner = page.locator('[data-weather-alerts]');
+  await expect(banner).toHaveAttribute('data-level', 'orange');
+  const summary = banner.locator('summary');
+  const panel = banner.locator('[data-alert-panel]');
+  const activate = async () =>
+    info.project.name === 'mobile' ? summary.tap() : summary.click();
+  expect((await summary.boundingBox())!.height).toBeGreaterThanOrEqual(40);
+  const controlHeight = (await summary
+    .locator(':scope > span:last-child')
+    .boundingBox())!.height;
+  expect(controlHeight).toBeGreaterThanOrEqual(40);
+  expect(controlHeight).toBeLessThanOrEqual(44);
+  const source = banner.getByRole('link', {
+    name: 'Météo-France via Meteoalarm · consignes',
+  });
+  await expect(source).toBeHidden();
+  await activate();
+  await expect(panel).toBeVisible();
+  await expect(source).toBeVisible();
+  await expect(panel).toContainText('Orages (orange)');
+  const bounds = (await panel.boundingBox())!;
+  const viewport = page.viewportSize()!;
+  expect(bounds.x).toBeGreaterThanOrEqual(0);
+  expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width);
+  expect(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height);
+  await activate();
+  await expect(panel).toBeHidden();
+  await activate();
+  await page.clock.fastForward(45_000);
+  const text = panel.locator('[data-alert-full]');
+  if (info.project.name === 'mobile') {
+    await text.tap();
+  } else {
+    await text.click();
+  }
+
+  await page.clock.fastForward(45_000);
+  await expect(panel).toBeVisible();
+  if (info.project.name === 'mobile') {
+    // Observe a real scroll event before advancing its new idle deadline.
+    await panel.evaluate(
+      async (element) =>
+        new Promise<void>((resolve) => {
+          element.addEventListener(
+            'scroll',
+            () => {
+              resolve();
+            },
+            {once: true},
+          );
+          element.scrollTop = element.scrollHeight;
+        }),
+    );
+    await page.clock.fastForward(45_000);
+    await expect(panel).toBeVisible();
+  }
+
+  await page.clock.fastForward(16_000);
+  await expect(panel).toBeHidden();
+  await expect(banner).toBeVisible();
+  await activate();
+  await panel.getByRole('button', {name: 'Fermer', exact: true}).click();
+  await expect(panel).toBeHidden();
+  await expect(summary).toBeFocused();
+
+  // Outside dismissal must preserve the same tap's intended action.
+  await activate();
+  const location = page.locator('.morning-intro [data-location-open]');
+  if (info.project.name === 'mobile') {
+    await location.tap();
+  } else {
+    await location.click();
+  }
+
+  await expect(panel).toBeHidden();
+  await expect(page.locator('[data-location-dialog]')).toBeVisible();
+  await page.locator('[data-location-close]').click();
+  await activate();
+  await page.keyboard.press('Escape');
+  await expect(panel).toBeHidden();
+  await activate();
+  // Reveal the idle dock before changing mode, then return without reopening.
+  await page.getByRole('button', {name: 'Photos', exact: true}).click();
+  await expect(page.locator('[data-dashboard]')).toHaveAttribute(
+    'data-mode',
+    'photos',
+  );
+  await page.getByRole('button', {name: 'Matin', exact: true}).click();
+  await expect(banner).toBeVisible();
+  await expect(panel).toBeHidden();
+});
+
+test('keyboard warning reading survives refresh and resumes its idle deadline after focus leaves', async ({
+  page,
+}) => {
+  let calls = 0;
+  await page.route('**/api/weather-alerts', async (route) => {
+    calls++;
+    await route.fulfill({
+      contentType: 'application/atom+xml',
+      body: alertsFixture([{}], fixtureNow + (calls - 1) * 120_000),
+    });
+  });
+  await page.goto('/?display=frame');
+  const banner = page.locator('[data-weather-alerts]');
+  await expect(banner).toHaveAttribute('data-level', 'orange');
+  const summary = banner.locator('summary');
+  const panel = banner.locator('[data-alert-panel]');
+  await summary.focus();
+  await page.keyboard.press('Enter');
+  await expect(panel).toBeVisible();
+  await page.keyboard.press('Tab');
+  await expect(
+    panel.getByRole('button', {name: 'Fermer', exact: true}),
+  ).toBeFocused();
+  await page.clock.fastForward(121_000);
+  await expect(banner.locator('[data-alert-full]')).toContainText('08:32');
+  await expect(panel).toBeVisible();
+  await expect(
+    panel.getByRole('button', {name: 'Fermer', exact: true}),
+  ).toBeFocused();
+  await page.locator('[data-forecast-day]').first().focus();
+  await page.clock.fastForward(61_000);
+  await expect(panel).toBeHidden();
+  await expect(page.locator('[data-forecast-day]').first()).toBeFocused();
+});
+
 test('larger Photos overlay fits long conditions and Night has no technical copy @mobile', async ({
   page,
 }, info) => {

@@ -14,7 +14,7 @@ export function swipeDirection(start: Point, end: Point, elapsed: number) {
 }
 
 const interactive =
-  'button, a, input, select, textarea, summary, dialog, [data-future-days], [role="button"], [contenteditable="true"], [data-dashboard-footer]';
+  'button, a, input, select, textarea, summary, dialog, [data-alert-panel], [data-future-days], [role="button"], [contenteditable="true"], [data-dashboard-footer]';
 
 export function mountTouchNavigation(
   root: HTMLElement,
