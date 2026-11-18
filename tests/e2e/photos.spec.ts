@@ -842,6 +842,11 @@ test('native paste accepts exactly 100 MB, defers oversized next photo, and resu
   await expect(page.locator('[data-upload-summary]')).toHaveText(
     '1 ajoutée · 2 déjà présentes',
   );
+  // The summary can finish before the clipboard handler resumes after import.
+  // Wait for its continuation message before dispatching another native paste.
+  await expect(page.locator('[data-import-status]')).toContainText(
+    'Maintenez le doigt dans la zone puis touchez Coller',
+  );
   await pastePhotos(page, photo, [
     40_000_000,
     35_000_000,
