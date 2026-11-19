@@ -20,7 +20,12 @@ import {
   wmoConditions,
 } from '../src/lib/weather/conditions.ts';
 import {summarize} from '../src/lib/weather/summary.ts';
-import {fixtureNow, weatherFixture} from './fixtures/weather.ts';
+import {daylightFor, weatherLightPhase} from '../src/lib/weather/daylight.ts';
+import {
+  fixtureNow,
+  sevenDayFixture,
+  weatherFixture,
+} from './fixtures/weather.ts';
 
 afterEach(() => {
   vi.useRealTimers();
@@ -56,7 +61,7 @@ describe('provider boundary', () => {
     expect(url.searchParams.get('timeformat')).toBe('unixtime');
     expect(url.searchParams.get('forecast_days')).toBe('7');
     expect(url.searchParams.get('daily')).toBe(
-      'temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max,precipitation_sum',
+      'temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max,precipitation_sum,sunrise,sunset',
     );
     const weather = parseWeather(weatherFixture(), fixtureNow);
     expect(weather.current.temperature).toBe(12);
@@ -161,6 +166,40 @@ describe('provider boundary', () => {
       '2026-10-25',
       '2026-10-26',
     ]);
+  });
+  it('formats solar instants in the forecast timezone across a DST boundary', () => {
+    const now = Date.parse('2026-10-24T06:30:00Z');
+    const weather = parseWeather(sevenDayFixture(now), now);
+    const first = weather.daily[0].daylight;
+    const second = weather.daily[1].daylight;
+    expect(hourLabel(first!.sunrise!)).toBe('07:52');
+    expect(hourLabel(second!.sunrise!)).toBe('06:52');
+    expect(hourLabel(second!.sunset!)).toBe('17:47');
+  });
+  it('ignores optional solar values that are missing, invalid or outside their day', () => {
+    const raw = sevenDayFixture();
+    Object.assign(raw.daily_units, {sunset: 'iso8601'});
+    raw.daily.sunrise[0] = raw.daily.sunrise[1];
+    Object.assign(raw.daily.sunrise, {1: null});
+    const weather = parseWeather(raw, fixtureNow);
+    expect(weather.current.temperature).toBe(12);
+    expect(daylightFor(weather, fixtureNow)).toBeUndefined();
+    expect(weather.daily[1].daylight).toBeUndefined();
+    expect(hourLabel(weather.daily[2].daylight!.sunrise!)).toBe('07:52');
+  });
+  it('uses event times for the decorative light phase and falls back with old caches', () => {
+    const weather = parseWeather(sevenDayFixture(), fixtureNow);
+    const {sunrise, sunset} = daylightFor(weather, fixtureNow)!;
+    expect(weatherLightPhase(weather, sunrise! - 3_600_000)).toBe('night');
+    expect(weatherLightPhase(weather, sunrise!)).toBe('dawn');
+    expect(weatherLightPhase(weather, sunrise! + 3_600_000)).toBe('day');
+    expect(weatherLightPhase(weather, sunset!)).toBe('dusk');
+    expect(weatherLightPhase(weather, sunset! + 3_600_000)).toBe('night');
+
+    const old = parseWeather(weatherFixture(), fixtureNow);
+    expect(weatherLightPhase(old, fixtureNow)).toBe('day');
+    expect(weatherLightPhase(old, sunset! + 3_600_000)).toBe('night');
+    expect(daylightFor(weather, fixtureNow + 7 * 86_400_000)).toBeUndefined();
   });
   it('rejects HTTP failures', async () => {
     vi.stubGlobal(

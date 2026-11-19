@@ -47,6 +47,12 @@ test('official warnings have severity, departmental coverage and periods; cards 
   await page.goto('/?display=frame');
   const banner = page.locator('[data-weather-alerts]');
   await expect(banner).toHaveAttribute('data-level', 'red');
+  await expect(banner).toHaveCSS('border-top-left-radius', '0px');
+  const band = (await banner.boundingBox())!;
+  const lake = (await page.locator('[data-lake-window]').boundingBox())!;
+  expect(band.x).toBe(0);
+  expect(band.width).toBe(page.viewportSize()!.width);
+  expect(lake.y).toBeGreaterThanOrEqual(band.y + band.height);
   await expect(banner).toContainText(
     'Vigilance rouge · Pluie-inondation · Haute-Savoie',
   );
@@ -55,7 +61,9 @@ test('official warnings have severity, departmental coverage and periods; cards 
   await expect(banner).toContainText('Pluie-inondation (rouge)');
   await expect(banner).not.toContainText('Neige');
   await expect(banner).toContainText('09:30');
-  await expect(page.locator('[data-agenda-events] li')).toHaveCount(6);
+  await expect(
+    page.locator('[data-agenda-events] [data-event-calendar]'),
+  ).toHaveCount(6);
   await page.clock.fastForward(16_000);
   if (info.project.name === 'mobile') {
     return;
@@ -186,16 +194,16 @@ test('warning details toggle, renew touch inactivity and dismiss without hiding 
 
   // Outside dismissal must preserve the same tap's intended action.
   await activate();
-  const location = page.locator('.morning-intro [data-location-open]');
+  // The disclosure overlays the lake header, so use an exposed forecast day.
+  const tomorrow = page.locator('[data-future-buttons] button').nth(1);
   if (info.project.name === 'mobile') {
-    await location.tap();
+    await tomorrow.tap();
   } else {
-    await location.click();
+    await tomorrow.click();
   }
 
   await expect(panel).toBeHidden();
-  await expect(page.locator('[data-location-dialog]')).toBeVisible();
-  await page.locator('[data-location-close]').click();
+  await expect(tomorrow).toHaveAttribute('aria-pressed', 'true');
   await activate();
   await page.keyboard.press('Escape');
   await expect(panel).toBeHidden();

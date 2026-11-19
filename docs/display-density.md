@@ -1,5 +1,47 @@
 # Readability and shared navigation
 
+## Journal alpin Morning
+
+The Morning view uses a wide weather column and the narrower **Aujourd’hui**
+timeline. The left holds the household clock, the weather location, current
+conditions, advice, the split hourly chart and the seven-day selector. The
+timeline combines private appointments and time-aligned household weather
+checkpoints. Timed appointments shown today or in the tomorrow preview receive
+the forecast at their start time when fresh household weather has coverage.
+All-day appointments have no default forecast time. A future forecast or a
+device-local weather location keeps its
+checkpoints with the forecast so those forecasts cannot be mistaken for the
+weather at a household appointment.
+
+The lake art uses three conditions (clear, cloudy and snowy) across night, dawn,
+day and dusk. Fresh WMO readings select the condition group. Provider sunrise
+and sunset select the light phase when available. Rain, fog and snow have
+separate static overlays, and only the selected approximately 512 × 250 WebP
+is requested.
+Missing and stale readings use neutral cloudy art and keep their status text.
+The dark fallback preserves legibility if a file is unavailable. No new
+cache, image provider, runtime image generation, or looping scenery motion.
+The full-width warning band sits above both columns. The shared frame dock is
+anchored at the lower right in every mode so forecast controls remain accessible.
+
+Observance symbols are separate from the weather. Selected household calendar
+entries can show a lantern, an active Ramadan entry shows a crescent, and an
+official school break shows a kite. Dedicated symbols cover Christmas, New
+Year, Easter and July 14 when supported by calendar data. July 4 appears only
+for an explicitly named U.S. Independence Day in the selected observance
+calendar on that date. A decorative symbol cannot change the day profile.
+
+The twelve public assets in [weather-window](../public/weather-window) were
+generated with built-in ImageGen using the preceding lake concept as a camera
+reference. The generated atlas was cropped and encoded as individual WebPs
+without metadata. [Generation prompt and matrix](journal-alpin-art.md).
+
+Reviewed upstream `dashboard/js/views/home.js`, `dashboard/js/views/calendar.js`
+and `dashboard/css/views/home.css` at
+`f1e0820918c926396e0ccafb4839568825f63edc` (MIT). The emphasis on a glanceable
+clock and next event follows upstream ideas. Dayframe uses its own chronological
+timeline, generated art and authenticated data. No upstream code or art copied.
+
 ## Current policy — 28 October 2026
 
 The household explicitly favors the larger type for reading at a distance. The

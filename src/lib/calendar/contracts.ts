@@ -5,10 +5,32 @@ export type AgendaEvent = {
   end: string;
   allDay: boolean;
 };
+export type AgendaObservance = {
+  title: string;
+  start: string;
+  end: string;
+  tentative?: boolean;
+};
+export const agendaObservanceLimit = 2;
+export const agendaObservanceTitleLimit = 120;
+export function isCivilDate(value: unknown): value is string {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/v.test(value)) {
+    return false;
+  }
+
+  const instant = Date.parse(value);
+  return (
+    Number.isFinite(instant) &&
+    new Date(instant).toISOString().slice(0, 10) === value
+  );
+}
+
 export type Agenda = {
   connected: boolean;
   massageConnected?: boolean;
   events: AgendaEvent[];
+  observances?: AgendaObservance[];
+  observanceUnavailable?: boolean;
   timezone: string;
   fetchedAt: number;
 };
@@ -97,7 +119,7 @@ export function agendaWindowEvents(
   ];
 }
 
-function tomorrowAgendaEvents(
+export function tomorrowAgendaEvents(
   events: AgendaEvent[],
   tomorrowStart: number,
   timezone: string,
@@ -110,28 +132,4 @@ function tomorrowAgendaEvents(
         : localDate(Date.parse(event.start), timezone)) === tomorrow,
   );
   return remainingAgendaEvents(startsTomorrow, tomorrowStart, timezone);
-}
-
-export function agendaPreview(
-  events: AgendaEvent[],
-  now: number,
-  timezone: string,
-) {
-  const today = remainingAgendaEvents(events, now, timezone);
-  const tomorrowStart = dayEnd(now, timezone);
-  // The day divider occupies one of the existing six rows. Leave room for an event
-  // (or the explicit empty message) rather than showing a divider on its own.
-  // An empty today uses one row for its status, leaving four preview appointments.
-  const shouldShowTomorrow = today.length <= 4;
-  return {
-    today,
-    tomorrow: shouldShowTomorrow
-      ? tomorrowAgendaEvents(events, tomorrowStart, timezone).slice(
-          0,
-          5 - Math.max(1, today.length),
-        )
-      : [],
-    shouldShowTomorrow,
-    tomorrowStart,
-  };
 }

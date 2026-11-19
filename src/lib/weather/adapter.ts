@@ -8,6 +8,7 @@ export type Hour = {
   code: number | undefined;
   isDay: boolean;
 };
+export type Daylight = {sunrise?: number; sunset?: number};
 export type Weather = {
   location: string;
   timezone: string;
@@ -29,6 +30,7 @@ export type Weather = {
     code?: number;
     probability?: number;
     precipitation?: number;
+    daylight?: Daylight;
   }>;
 };
 
@@ -55,7 +57,7 @@ export function weatherUrl() {
     hourly:
       'temperature_2m,precipitation_probability,precipitation,weather_code,is_day',
     daily:
-      'temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max,precipitation_sum',
+      'temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max,precipitation_sum,sunrise,sunset',
   }).toString();
   return url.href;
 }
@@ -129,6 +131,33 @@ export function hourLabel(time: number) {
   return hourFormatter.format(time);
 }
 
+function solarTime(
+  values: unknown,
+  unit: unknown,
+  row: {length: number; index: number; date: string},
+) {
+  if (
+    unit !== 'unixtime' ||
+    !Array.isArray(values) ||
+    values.length !== row.length
+  ) {
+    return undefined;
+  }
+
+  const seconds: unknown = values[row.index];
+  if (
+    typeof seconds !== 'number' ||
+    !Number.isSafeInteger(seconds) ||
+    seconds < 1_577_836_800 ||
+    seconds > 4_102_444_800
+  ) {
+    return undefined;
+  }
+
+  const time = seconds * 1000;
+  return dateKey(time) === row.date ? time : undefined;
+}
+
 // Unix timestamps avoid parsing offset-free provider strings in the browser's timezone.
 export function parseWeather(input: unknown, fetchedAt: number): Weather {
   const root = record(input);
@@ -139,6 +168,7 @@ export function parseWeather(input: unknown, fetchedAt: number): Weather {
   const current = record(root.current);
   const hourly = record(root.hourly);
   const daily = record(root.daily);
+  const dailyUnits = record(root.daily_units);
   const offset = number(root.utc_offset_seconds, -43_200, 50_400);
   // Provider daily boundaries use the request's fixed offset, even across DST.
   // Hourly timestamps still use Intl for the actual IANA offset at each instant.
@@ -242,7 +272,8 @@ export function parseWeather(input: unknown, fetchedAt: number): Weather {
     ['temperature_2m_max', 'temperature_2m_min'],
     1,
     7,
-  ).map(({time, get}) => {
+  ).map(({time, get}, index, dailyRows) => {
+    const date = providerDate(time);
     const high = number(get('temperature_2m_max'), -100, 70);
     const low = number(get('temperature_2m_min'), -100, 70);
     if (high < low) {
@@ -271,13 +302,13 @@ export function parseWeather(input: unknown, fetchedAt: number): Weather {
       if (field === 'weather_code') {
         extra.code = code(value);
       } else if (field === 'precipitation_sum' && value !== null) {
-        if (record(root.daily_units).precipitation_sum !== 'mm') {
+        if (dailyUnits.precipitation_sum !== 'mm') {
           throw new Error('Unexpected daily precipitation unit');
         }
 
         extra.precipitation = number(value, 0, 2000);
       } else if (field === 'precipitation_probability_max' && value !== null) {
-        if (record(root.daily_units).precipitation_probability_max !== '%') {
+        if (dailyUnits.precipitation_probability_max !== '%') {
           throw new Error('Unexpected daily probability unit');
         }
 
@@ -285,7 +316,16 @@ export function parseWeather(input: unknown, fetchedAt: number): Weather {
       }
     }
 
-    return {date: providerDate(time), high, low, ...extra};
+    // Solar times are optional, including older caches and polar days.
+    const row = {index, date, length: dailyRows.length};
+    const sunrise = solarTime(daily.sunrise, dailyUnits.sunrise, row);
+    const sunset = solarTime(daily.sunset, dailyUnits.sunset, row);
+    const daylight =
+      (sunrise !== undefined || sunset !== undefined) &&
+      (sunrise === undefined || sunset === undefined || sunrise < sunset)
+        ? {sunrise, sunset}
+        : undefined;
+    return {date, high, low, ...extra, ...(daylight && {daylight})};
   });
   const time = number(current.time, 1_577_836_800, 4_102_444_800) * 1000;
   if (

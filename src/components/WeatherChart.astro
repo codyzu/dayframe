@@ -25,8 +25,9 @@
         <p id="chart-description" class="sr-only">
           En haut, température en degrés Celsius. En bas, maximum des
           probabilités horaires de chaque tranche de deux heures, de 0 à 100 %.
-          Le trait pointillé indique l’heure actuelle. Le tableau détaillé suit
-          le graphique.
+          Le trait pointillé indique l’heure actuelle. Les traits cuivre
+          indiquent le lever et le coucher du soleil lorsqu’ils sont dans la
+          plage du graphique. Le tableau détaillé suit le graphique.
         </p>
         <div class="relative pb-2 pt-4">
           <svg
@@ -83,6 +84,30 @@
           preserveAspectRatio="none"
           aria-hidden="true"
         >
+          <g
+            stroke="var(--colors-temperature)"
+            stroke-dasharray="1 4"
+            stroke-linecap="round"
+          >
+            <line
+              data-daylight-marker="sunrise"
+              x1="0"
+              x2="0"
+              y1="0"
+              y2="100"
+              vector-effect="non-scaling-stroke"
+              style="display:none"
+            />
+            <line
+              data-daylight-marker="sunset"
+              x1="0"
+              x2="0"
+              y1="0"
+              y2="100"
+              vector-effect="non-scaling-stroke"
+              style="display:none"
+            />
+          </g>
           <line
             data-weather-now-line
             x1="0"
@@ -109,6 +134,31 @@
         aria-hidden="true"
       ></div>
     </div>
+    <ul
+      data-chart-daylight
+      class="flex flex-wrap justify-between gap-x-4 gap-y-1 text-sm text-secondary"
+      aria-label="Heures de lever et coucher du soleil"
+      hidden
+    >
+      <li
+        data-daylight-entry="sunrise"
+        class="flex items-center gap-1.5"
+        hidden
+      >
+        <span
+          class="solar-icon i-meteocons-sunrise-fill size-6 shrink-0"
+          aria-hidden="true"
+        ></span>
+        Lever du soleil <time class="font-bold tabular-nums"></time>
+      </li>
+      <li data-daylight-entry="sunset" class="flex items-center gap-1.5" hidden>
+        <span
+          class="solar-icon i-meteocons-sunset-fill size-6 shrink-0"
+          aria-hidden="true"
+        ></span>
+        Coucher du soleil <time class="font-bold tabular-nums"></time>
+      </li>
+    </ul>
     <div class="sr-only">
       <table>
         <caption>Prévisions horaires, heure locale</caption>
@@ -145,6 +195,10 @@
   </template>
 </div>
 <style>
+  /* Solar symbols are legend keys. Reuse the bundled static versions. */
+  .solar-icon {
+    background-image: var(--dayframe-static-icon);
+  }
   .hourly-layout {
     --rain-label-space: 1.25rem;
     --rain-scale-width: 3rem;

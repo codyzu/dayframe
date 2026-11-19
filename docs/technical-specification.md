@@ -148,6 +148,14 @@ separated by a labelled day divider. Preserve the existing six-row space budget,
 large typography and private runtime-only data boundary. Do not duplicate events
 spanning both days or silently skip ahead beyond tomorrow. See [calendar behavior](calendar.md#tomorrow-preview--30-october-2026).
 
+**Journal alpin (#30):** The ten-row **Aujourd’hui** timeline accommodates up
+to six appointments and four weather checkpoints. An unambiguous matching event
+and checkpoint share a row. Tomorrow remains a spare-space preview. Official
+holidays and school breaks are distinguished from optional household observances,
+whose display is independent of the schedule. The weather column adds bundled
+lake scenes and current-day sunrise/sunset to the hourly chart. See
+[layout and artwork](display-density.md#journal-alpin-morning).
+
 Conditional or later additions: strong winds, freezing conditions, sunrise/sunset,
 short multi-day forecast, and calendar events. Avoid cluttering the primary 10-inch display with humidity, pressure, UV, or long forecasts by default.
 

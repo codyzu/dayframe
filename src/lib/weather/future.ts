@@ -3,6 +3,12 @@ import {conditionFor} from './conditions.ts';
 import {type WeatherState} from './service.ts';
 import {trendGeometry, precipitationLabel} from './trend.ts';
 
+const shortDay = new Intl.DateTimeFormat('fr-FR', {
+  timeZone: 'UTC',
+  weekday: 'short',
+  day: 'numeric',
+});
+
 // Calendar arithmetic on ISO dates, never 24-hour steps through local DST.
 export function forecastDates(now: number) {
   const today = Date.parse(`${dateKey(now)}T12:00:00Z`);
@@ -215,7 +221,7 @@ export function mountFutureWeather(root: HTMLElement, onSelect: () => void) {
               ? 'Aujourd’hui'
               : index === 1
                 ? 'Demain'
-                : forecastDateLabel(date, false),
+                : shortDay.format(Date.parse(`${date}T12:00:00Z`)),
           );
           button.setAttribute(
             'aria-label',

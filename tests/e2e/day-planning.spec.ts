@@ -57,13 +57,11 @@ test('Wednesday private routines, quarter-hour weather and escaped labels fit th
     route.fulfill({json: weatherFixture(wednesday)}),
   );
   await page.goto('/?display=frame');
-  await expect(page.locator('[data-checkpoint-heading]')).toHaveText(
-    'Les repères · Mercredi',
-  );
-  await expect(page.locator('[data-checkpoints] article')).toHaveCount(4);
-  await expect(page.getByRole('heading', {name: '16h15'})).toBeVisible();
-  await expect(page.locator('[data-checkpoints] img')).toHaveCount(0);
-  await expect(page.locator('[data-checkpoints]')).toContainText(
+  const points = page.locator('[data-agenda-events] [data-checkpoint]');
+  await expect(points).toHaveCount(4);
+  await expect(points.filter({hasText: '16:15'})).toBeVisible();
+  await expect(page.locator('[data-agenda-events] img')).toHaveCount(0);
+  await expect(page.locator('[data-agenda-events]')).toContainText(
     '<img src=x onerror=alert(1)>',
   );
   if (info.project.name !== 'mobile') {
@@ -79,7 +77,7 @@ test('Wednesday private routines, quarter-hour weather and escaped labels fit th
     route.fulfill({status: 401, json: {error: {message: 'Denied'}}}),
   );
   await page.clock.fastForward(301_000);
-  await expect(page.locator('[data-checkpoints]')).not.toContainText(
+  await expect(page.locator('[data-agenda-events]')).not.toContainText(
     'Matin synthétique',
   );
 });
@@ -128,12 +126,17 @@ test('vacation and holiday appear beside six upcoming appointments, suppress rou
   );
   await page.goto('/?display=frame');
   const note = page.locator('[data-agenda] [data-day-observance]');
-  await expect(note).toContainText('Férié : La Toussaint');
-  await expect(note).toContainText(
-    'Vacances de la Toussaint · jusqu’au 1 novembre',
-  );
-  await expect(page.locator('[data-agenda-events] li')).toHaveCount(6);
-  await expect(page.locator('[data-checkpoints]')).not.toContainText(
+  await expect(note).toContainText('La Toussaint');
+  await expect(note).toContainText('Jour férié');
+  await expect(note).toContainText('École fermée');
+  await expect(note).toContainText('Vacances de la Toussaint');
+  await expect(
+    note.getByText('Vacances de la Toussaint').locator('..'),
+  ).toHaveAttribute('title', /jusqu’au 1 novembre/v);
+  await expect(
+    page.locator('[data-agenda-events] [data-event-calendar]'),
+  ).toHaveCount(6);
+  await expect(page.locator('[data-agenda-events]')).not.toContainText(
     'Matin synthétique',
   );
   if (info.project.name !== 'mobile') {
@@ -156,7 +159,7 @@ test('vacation and holiday appear beside six upcoming appointments, suppress rou
   await page.clock.setSystemTime(new Date('2026-11-02T07:30:00Z'));
   await page.clock.runFor(1000);
   await expect(note).not.toContainText('Vacances de la Toussaint');
-  await expect(note).not.toContainText('Férié :');
+  await expect(note).not.toContainText('Jour férié');
   await page.clock.setSystemTime(new Date('2027-01-01T07:30:00Z'));
   await page.clock.runFor(1000);
   await expect(note).toContainText('Calendrier scolaire indisponible');

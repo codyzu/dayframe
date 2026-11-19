@@ -5,7 +5,7 @@ import {base64url} from 'jose';
 import worker, {type Env} from '../worker/index.ts';
 import {administration} from '../worker/administration.ts';
 import {normalizeEvents} from '../worker/calendar.ts';
-import {dayEnd} from '../src/lib/calendar/contracts.ts';
+import {dayEnd, localDate, type Agenda} from '../src/lib/calendar/contracts.ts';
 import {administrationRuntime} from './fixtures/administration-runtime.ts';
 import {
   photoAuthority,
@@ -28,6 +28,7 @@ let isOmitScope = false;
 let eventPages = 0;
 let eventsPerCalendar = 1;
 let shouldIncludeTomorrow = false;
+let isObservanceUnavailable = false;
 // eslint-disable-next-line max-params -- Named synthetic request inputs keep the authorization matrix compact.
 async function request(
   path: string,
@@ -104,6 +105,7 @@ beforeEach(async () => {
   eventPages = 0;
   eventsPerCalendar = 1;
   shouldIncludeTomorrow = false;
+  isObservanceUnavailable = false;
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -139,12 +141,64 @@ beforeEach(async () => {
           items: [
             {id: 'shared@example.test', summary: 'Family'},
             {id: 'other', summary: 'Personal'},
+            {id: 'observances', summary: 'Fêtes du foyer'},
           ],
         });
       }
 
       if (url.pathname.endsWith('/events')) {
         eventPages++;
+        if (url.pathname === '/calendar/v3/calendars/observances/events') {
+          expect(url.searchParams.get('fields')).toBe(
+            'items(status,summary,start(date),end(date)),nextPageToken',
+          );
+          if (isObservanceUnavailable) {
+            return Response.json(
+              {error: 'private provider response'},
+              {status: 403},
+            );
+          }
+
+          const now = Date.now();
+          const timezone = 'Europe/Paris';
+          const today = localDate(now, timezone);
+          const tomorrow = localDate(dayEnd(now, timezone), timezone);
+          const afterTomorrow = localDate(
+            dayEnd(dayEnd(now, timezone), timezone),
+            timezone,
+          );
+          const allDay = {start: {date: today}, end: {date: tomorrow}};
+          return Response.json({
+            items: [
+              {...allDay, summary: 'Fête annulée', status: 'cancelled'},
+              {
+                summary: 'Événement horaire',
+                start: {dateTime: new Date(now + 60_000).toISOString()},
+                end: {dateTime: new Date(now + 120_000).toISOString()},
+              },
+              {
+                summary: 'Demain',
+                start: {date: tomorrow},
+                end: {date: afterTomorrow},
+              },
+              {
+                ...allDay,
+                start: {date: '0000-02-30'},
+                summary: 'Date invalide',
+              },
+              {
+                ...allDay,
+                summary: 'Fête observée',
+                status: 'tentative',
+                description: 'private provider response',
+              },
+              {...allDay, summary: '  FÊTE OBSERVÉE  '},
+              {...allDay, summary: 'Commémoration', status: 'confirmed'},
+              {...allDay, summary: 'En plus'},
+            ],
+          });
+        }
+
         expect(url.pathname).toMatch(/shared%40example.test|other/v);
         expect(url.searchParams.get('singleEvents')).toBe('true');
         expect(url.searchParams.get('timeZone')).toBe('Europe/Paris');
@@ -478,4 +532,68 @@ it('fetches and caches both days with independent per-day source limits', async 
   });
   await request('/api/calendar/events', 'GET', display);
   expect(eventPages).toBe(4);
+});
+
+it('serves only bounded all-day observances and leaves appointments available when that source fails', async () => {
+  const selection = {id: 'shared@example.test', massageId: 'other'};
+  await finish();
+  for (const observanceId of [
+    'unshared',
+    selection.id,
+    selection.massageId,
+    42,
+  ]) {
+    const response = await request('/api/calendar', 'PATCH', admin, {
+      ...selection,
+      observanceId,
+    });
+    expect(response.status).toBe(400);
+  }
+
+  const select = async (observanceId?: string) => {
+    const response = await request('/api/calendar', 'PATCH', admin, {
+      ...selection,
+      observanceId,
+    });
+    expect(response.status).toBe(200);
+  };
+
+  await select('observances');
+  // Legacy settings clients that omit this new field must preserve the choice.
+  await select();
+  const response = await request('/api/calendar/events', 'GET', display);
+  expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+  const body = (await response.json()) as Agenda;
+  const now = body.fetchedAt;
+  const timezone = 'Europe/Paris';
+  const today = localDate(now, timezone);
+  const tomorrow = localDate(dayEnd(now, timezone), timezone);
+  expect(body.events.map((event) => event.calendar)).toEqual([
+    'family',
+    'massages',
+  ]);
+  expect(body.observances).toEqual([
+    {title: 'Fête observée', start: today, end: tomorrow, tentative: true},
+    {title: 'Commémoration', start: today, end: tomorrow},
+  ]);
+  await request('/api/calendar/events', 'GET', display);
+  expect(eventPages).toBe(3);
+
+  isObservanceUnavailable = true;
+  await select('observances');
+  const failed = (await (
+    await request('/api/calendar/events', 'GET', display)
+  ).json()) as Agenda;
+  expect(failed.observanceUnavailable).toBe(true);
+  expect(failed.observances).toBeUndefined();
+  expect(failed.events).toHaveLength(2);
+  expect(JSON.stringify(failed)).not.toContain('private provider response');
+
+  await select('');
+  const cleared = (await (
+    await request('/api/calendar/events', 'GET', display)
+  ).json()) as Agenda;
+  expect(cleared.observances).toBeUndefined();
+  expect(cleared.observanceUnavailable).toBeUndefined();
+  expect(eventPages).toBe(8);
 });

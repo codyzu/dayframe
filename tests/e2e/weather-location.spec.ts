@@ -330,11 +330,10 @@ test('current location is opt-in, preserves coordinates, estimates a city, and p
   await expect(
     page.getByRole('button', {name: 'Changer le lieu météo'}),
   ).toHaveAccessibleDescription(/Météo · Près de New York.*Sur cet appareil/sv);
-  const header = page.locator('.morning-intro');
+  const header = page.locator('[data-lake-window]');
   const geometry = await header.evaluate((element) => {
-    const brand = element
-      .querySelector(':scope h1 > span')!
-      .getBoundingClientRect();
+    const headerBounds = element.getBoundingClientRect();
+    const date = element.querySelector('[data-date]')!.getBoundingClientRect();
     const pill = element
       .querySelector('[data-location-open]')!
       .getBoundingClientRect();
@@ -342,12 +341,18 @@ test('current location is opt-in, preserves coordinates, estimates a city, and p
       .querySelector('[data-location-label]')!
       .getBoundingClientRect();
     return {
-      gap: pill.left - brand.right,
+      isInside:
+        pill.left >= headerBounds.left && pill.right <= headerBounds.right,
+      overlapsDate:
+        pill.right > date.left &&
+        pill.bottom > date.top &&
+        pill.top < date.bottom,
       height: pill.height,
       labelHeight: label.height,
     };
   });
-  expect(geometry.gap).toBeGreaterThanOrEqual(8);
+  expect(geometry.isInside).toBe(true);
+  expect(geometry.overlapsDate).toBe(false);
   expect(geometry.height).toBeGreaterThanOrEqual(44);
   expect(geometry.labelHeight).toBeLessThanOrEqual(geometry.height);
   await page.reload();
@@ -464,7 +469,7 @@ test('closing the picker discards a late city response and saved legacy GPS stay
   await expect(page.locator('[data-location-label]')).toHaveText('Ma position');
 });
 
-test('a long town name keeps the header on one line at narrow phone widths @mobile', async ({
+test('a long town name keeps the location control within narrow phone widths @mobile', async ({
   page,
 }) => {
   await page.setViewportSize({width: 320, height: 800});
@@ -485,15 +490,12 @@ test('a long town name keeps the header on one line at narrow phone widths @mobi
     'Saint-Rémy-en-Bouzemont-Saint-Genest-et-Isson',
   );
   expect(
-    await page.locator('.morning-intro').evaluate((element) => {
-      const brand = element
-        .querySelector(':scope h1 > span')!
-        .getBoundingClientRect();
+    await page.locator('[data-lake-window]').evaluate((element) => {
       const pill = element
         .querySelector('[data-location-open]')!
         .getBoundingClientRect();
       return (
-        pill.left >= brand.right + 8 &&
+        pill.left >= 8 &&
         pill.right <= innerWidth - 8 &&
         document.documentElement.scrollWidth <= innerWidth
       );

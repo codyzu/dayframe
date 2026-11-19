@@ -35,50 +35,60 @@ export function dayHours(weather: Weather, now: number) {
   });
 }
 
+// Timed events provide an absolute instant, including during a repeated DST hour.
+export function hourlyForecastAt(hours: readonly Hour[], instant: number) {
+  const index = hours.findLastIndex((hour) => hour.time <= instant);
+  const before = index === -1 ? undefined : hours.at(index);
+  if (!before || instant - before.time >= 3_600_000) {
+    return undefined;
+  }
+
+  const fraction = (instant - before.time) / 3_600_000;
+  if (fraction === 0) {
+    return {forecast: before, probabilityPeriod: hourLabel(before.time)};
+  }
+
+  const after = hours.at(index + 1);
+  if (!after || after.time - before.time !== 3_600_000) {
+    return undefined;
+  }
+
+  return {
+    forecast: {
+      ...before,
+      temperature:
+        before.temperature +
+        (after.temperature - before.temperature) * fraction,
+      probability: Math.max(before.probability, after.probability),
+      precipitation: Math.max(before.precipitation, after.precipitation),
+    },
+    probabilityPeriod: `${hourLabel(before.time)}–${hourLabel(after.time)}`,
+  };
+}
+
 export function checkpointForecasts(
-  weather: Weather,
+  weather: Weather | undefined,
   now: number,
   checkpoints = schoolCheckpoints,
 ) {
-  const hours = weather.hourly.filter(
-    (hour) => dateKey(hour.time) === dateKey(now),
-  );
+  const today = dateKey(now);
+  const hours =
+    weather?.hourly.filter((hour) => dateKey(hour.time) === today) ?? [];
   const isWeekendDay = isWeekend(now);
   return checkpoints.map((checkpoint) => {
     const beforeLabel = `${checkpoint.time.slice(0, 2)}:00`;
     const before = hours.find((hour) => hourLabel(hour.time) === beforeLabel);
-    const after =
-      before && hours.find((hour) => hour.time === before.time + 3_600_000);
     const fraction = Number(checkpoint.time.slice(3)) / 60;
-    const isNeedsInterpolation = fraction > 0;
-    // No extrapolation or borrowing another day's weather when data is missing.
-    const forecast =
-      before && (!isNeedsInterpolation || after)
-        ? {
-            ...before,
-            temperature: isNeedsInterpolation
-              ? before.temperature +
-                (after!.temperature - before.temperature) * fraction
-              : before.temperature,
-            probability: isNeedsInterpolation
-              ? Math.max(before.probability, after!.probability)
-              : before.probability,
-            precipitation: isNeedsInterpolation
-              ? Math.max(before.precipitation, after!.precipitation)
-              : before.precipitation,
-          }
-        : undefined;
+    const at = before ? before.time + fraction * 3_600_000 : undefined;
+    const reading = at === undefined ? undefined : hourlyForecastAt(hours, at);
     return {
       ...checkpoint,
       label: isWeekendDay
         ? (checkpoint.weekendLabel ?? checkpoint.label)
         : checkpoint.label,
-      forecast,
-      at: before ? before.time + fraction * 3_600_000 : undefined,
-      probabilityPeriod:
-        isNeedsInterpolation && before && after
-          ? `${hourLabel(before.time)}–${hourLabel(after.time)}`
-          : beforeLabel,
+      forecast: reading?.forecast,
+      at,
+      probabilityPeriod: reading?.probabilityPeriod ?? beforeLabel,
     };
   });
 }

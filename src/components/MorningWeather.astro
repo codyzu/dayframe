@@ -3,16 +3,14 @@ import FutureWeather from './FutureWeather.astro';
 import Agenda from './Agenda.astro';
 import WeatherCheckpoints from './WeatherCheckpoints.astro';
 import WeatherChart from './WeatherChart.astro';
+import WeatherWindow from './WeatherWindow.astro';
 ---
 
-<div
-  data-weather
-  class="group/weather min-w-0 grid gap-1 data-[alert=true]:data-[observance=true]:gap-0.5"
->
+<div data-weather class="group/weather min-w-0 flex flex-1 flex-col">
   <aside
     data-weather-alerts
     data-level="unknown"
-    class="relative z-1 rounded-2xl border border-border bg-surface px-4 text-primary data-[level=yellow]:bg-[#fff0b3] data-[level=orange]:bg-[#ffdab3] data-[level=orange]:border-[#9a4200] data-[level=red]:bg-[#8c1823] data-[level=red]:border-[#8c1823] data-[level=red]:text-white"
+    class="relative z-2 border-b border-border bg-surface px-4 text-primary data-[level=yellow]:bg-[#fff0b3] data-[level=orange]:bg-[#ffdab3] data-[level=orange]:border-[#9a4200] data-[level=red]:bg-[#8c1823] data-[level=red]:border-[#8c1823] data-[level=red]:text-white"
     aria-label="Vigilance météorologique"
     aria-live="polite"
   >
@@ -86,229 +84,165 @@ import WeatherChart from './WeatherChart.astro';
     </details>
     <p data-alert-detail class="text-base leading-tight"></p>
   </aside>
-  <FutureWeather />
-  <div
-    data-weather-cards
-    class="grid gap-3 min-[1000px]:grid-cols-[0.85fr_1.8fr]"
-  >
-    <section
-      class="morning-pane min-w-0 flex flex-col justify-between px-4 py-2 group-data-[observance=true]/weather:py-1.5"
-      aria-labelledby="weather-title"
-    >
-      <h2
-        class="text-[length:var(--font-weather-heading)] font-bold leading-tight"
-        id="weather-title"
-        data-weather-heading
-        aria-live="polite"
+  <div class="journal-layout grid flex-1 min-w-0 min-[1000px]:grid-cols-[3fr_2fr]">
+    <div class="min-w-0 flex flex-col min-[1000px]:border-r min-[1000px]:border-border">
+      <WeatherWindow />
+      <section
+        class="border-b border-border bg-[#eaeee2] px-4 py-3 text-primary min-[1000px]:px-8"
+        aria-labelledby="advice-title"
       >
-        En ce moment
-      </h2>
-      <p
-        data-forecast-date
-        hidden
-        class="text-[length:var(--font-weather-detail)] text-secondary"
-      ></p>
-      <div class="flex items-center justify-between gap-1">
-        <div>
-          <span
-            class="block text-[length:var(--font-weather-temperature)] font-bold tracking-[-0.06em] leading-none"
-            data-temperature
-          >
-            —°
-          </span>
-          <p
-            data-temperature-label
-            hidden
-            class="text-[length:var(--font-weather-detail)] text-secondary"
-          >
-            Maximum prévu
-          </p>
-        </div>
-        <span
-          class="weather-icon i-meteocons-not-available-fill inline-block size-[var(--icon-weather-current)] shrink-0 drop-shadow-[0_1px_1px_#182c3580]"
-          data-current-icon
-          aria-hidden="true"
-        ></span>
-      </div>
-      <p
-        class="text-[length:var(--font-weather-description)] font-bold leading-tight"
-        data-condition
+        <h2 id="advice-title" data-advice-heading class="sr-only">
+          Conseil du jour
+        </h2>
+        <p
+          class="text-[length:var(--font-weather-summary)] group-data-[stale=true]/weather:text-[length:var(--font-weather-detail)] leading-tight"
+          data-advice
+        >
+          Préparons la journée.
+        </p>
+        <p
+          class="mt-1 text-[length:var(--font-weather-detail)] leading-snug text-secondary"
+          data-summary
+        >
+          La météo se met à jour automatiquement.
+        </p>
+      </section>
+      <section
+        class="min-w-0 px-4 py-3 min-[1000px]:px-8"
+        aria-labelledby="forecast-title"
       >
-        Chargement de la météo…
-      </p>
-      <p
-        class="mt-2 text-[length:var(--font-weather-detail)] text-secondary leading-relaxed"
-        data-extremes
-      >
-        Ressenti — · Max. — / Min. —
-      </p>
-      <p
-        class="mt-2 text-[length:var(--font-weather-detail)] text-secondary"
-        data-rain
-      >
-        Prévisions en cours de chargement.
-      </p>
-      <time
-        data-reading-age
-        hidden
-        class="block mt-1 text-sm text-secondary data-[stale=true]:font-bold"
-      ></time>
-    </section>
-    <section
-      class="morning-pane min-w-0 px-4 py-2 group-data-[observance=true]/weather:py-1.5"
-      aria-labelledby="forecast-title"
-    >
-      <div class="flex flex-wrap items-baseline justify-between gap-2 mb-2">
         <h2
           class="text-[length:var(--font-weather-heading)] font-bold leading-tight"
           id="forecast-title"
-          data-checkpoint-heading
         >
-          Les repères de la journée
+          Au fil de la journée
         </h2>
+        <div data-separate-checkpoints class="mt-2" hidden>
+          <h3
+            class="mb-2 text-[length:var(--font-weather-detail)] font-bold leading-tight"
+            data-checkpoint-heading
+          >
+            Les repères de la journée
+          </h3>
+          <WeatherCheckpoints />
+        </div>
+        <WeatherChart />
+      </section>
+      <div class="mt-auto min-w-0">
+        <FutureWeather />
       </div>
-      <WeatherCheckpoints />
-      <WeatherChart />
-    </section>
-  </div>
-  <div
-    data-weather-lower
-    class="grid gap-3 min-[1000px]:grid-cols-[0.85fr_1.8fr]"
-  >
-    <section
-      class="rounded-2xl border border-border bg-advice-soft text-advice-ink px-4 py-2"
-      aria-labelledby="advice-title"
-    >
-      <h2
-        id="advice-title"
-        data-advice-heading
-        class="text-[length:var(--font-weather-detail)] leading-tight"
+      <div
+        data-weather-footer
+        class="flex flex-wrap justify-between gap-2 px-4 pb-2 text-xs leading-tight text-secondary min-[1000px]:px-8"
       >
-        Conseil du jour
-      </h2>
-      <p
-        class="mt-1 text-[length:var(--font-weather-summary)] group-data-[stale=true]/weather:text-[length:var(--font-weather-detail)] font-bold leading-tight"
-        data-advice
-      >
-        Préparons la journée.
-      </p>
-      <p
-        class="mt-1 text-[length:var(--font-weather-detail)] leading-snug"
-        data-summary
-      >
-        La météo se met à jour automatiquement.
-      </p>
-    </section>
+        <p class="sr-only" data-weather-status role="status">
+          Connexion à Open-Meteo…
+        </p>
+        <a
+          class="inline-flex items-center min-h-4 underline underline-offset-3"
+          href="https://open-meteo.com/"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Météo : Open-Meteo · CC BY 4.0
+        </a>
+        <details class="weather-notes">
+          <summary class="cursor-pointer min-h-4 flex items-center underline underline-offset-3">
+            À propos des prévisions
+          </summary>
+          <div class="surface p-4 text-base leading-relaxed">
+            <p>
+              Repères météo habituels configurables selon le jour. Un repère
+              peut accompagner un rendez-vous correspondant dans le programme du
+              jour.
+            </p>
+            <p data-day-context></p>
+            <p>
+              Calendrier scolaire :{' '}
+              <a
+                class="underline"
+                href="https://data.education.gouv.fr/explore/dataset/fr-en-calendrier-scolaire/"
+              >
+                Ministère de l’Éducation nationale
+              </a>{' '}
+              · jours fériés :{' '}
+              <a class="underline" href="https://calendrier.api.gouv.fr/">
+                DINUM
+              </a>{' '}
+              · Licence Ouverte.
+            </p>
+            <p>
+              Vigilance :{' '}
+              <a class="underline" href="https://vigilance.meteofrance.fr/">
+                Météo-France
+              </a>
+              via{' '}
+              <a class="underline" href="https://meteoalarm.org/en/live/">
+                Meteoalarm
+              </a>
+              ·{' '}
+              <a
+                class="underline"
+                href="https://creativecommons.org/licenses/by/4.0/"
+              >
+                CC BY 4.0
+              </a>
+              · sélection Haute-Savoie et libellés adaptés. Les horaires de
+              vigilance restent indépendants des prévisions Open-Meteo.
+              <a class="underline" href="/api/weather-alerts">
+                Informations originales
+              </a>
+              .
+            </p>
+            <p lang="en" class="text-sm">
+              Time delays between this website and the{' '}
+              <a class="underline" href="https://meteoalarm.org/en/live/">
+                www.meteoalarm.org
+              </a>
+              website are possible. For the most up-to-date awareness
+              information as published by the participating National
+              Meteorological and Hydrological Services, please refer to{' '}
+              <a class="underline" href="https://meteoalarm.org/en/live/">
+                www.meteoalarm.org
+              </a>
+              .
+            </p>
+            <p>
+              Entre deux heures : température interpolée ; icône de l’heure
+              précédente ; pluie = maximum des deux probabilités horaires
+              voisines, pas une probabilité à la minute.
+            </p>
+            <p>
+              Barres de pluie : maximum des probabilités horaires de chaque
+              tranche de deux heures, pas la probabilité de pluie sur toute la
+              tranche. Courbe : température en °C.
+            </p>
+            <p>
+              Données{' '}
+              <a
+                class="underline"
+                href="https://open-meteo.com/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open-Meteo
+              </a>{' '}
+              ·{' '}
+              <a
+                class="underline"
+                href="https://creativecommons.org/licenses/by/4.0/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                CC BY 4.0
+              </a>{' '}
+              · présentation adaptée.
+            </p>
+          </div>
+        </details>
+      </div>
+    </div>
     <Agenda />
-  </div>
-  <div
-    data-weather-footer
-    class="flex flex-wrap justify-between gap-2 text-[0.625rem] leading-tight text-secondary"
-  >
-    <p class="sr-only" data-weather-status role="status">
-      Connexion à Open-Meteo…
-    </p>
-    <a
-      class="inline-flex items-center min-h-4 underline underline-offset-3"
-      href="https://open-meteo.com/"
-      target="_blank"
-      rel="noreferrer"
-    >
-      Météo : Open-Meteo · CC BY 4.0
-    </a>
-    <details class="weather-notes">
-      <summary class="cursor-pointer min-h-4 flex items-center underline underline-offset-3">
-        À propos des prévisions
-      </summary>
-      <div class="surface p-4 text-base leading-relaxed">
-        <p>
-          Repères habituels configurables selon le jour. Les événements Google
-          restent indépendants de ces habitudes.
-        </p>
-        <p data-day-context></p>
-        <p>
-          Calendrier scolaire :{' '}
-          <a
-            class="underline"
-            href="https://data.education.gouv.fr/explore/dataset/fr-en-calendrier-scolaire/"
-          >
-            Ministère de l’Éducation nationale
-          </a>{' '}
-          · jours fériés :{' '}
-          <a class="underline" href="https://calendrier.api.gouv.fr/">
-            DINUM
-          </a>{' '}
-          · Licence Ouverte.
-        </p>
-        <p>
-          Vigilance :{' '}
-          <a class="underline" href="https://vigilance.meteofrance.fr/">
-            Météo-France
-          </a>
-          via{' '}
-          <a class="underline" href="https://meteoalarm.org/en/live/">
-            Meteoalarm
-          </a>
-          ·{' '}
-          <a
-            class="underline"
-            href="https://creativecommons.org/licenses/by/4.0/"
-          >
-            CC BY 4.0
-          </a>
-          · sélection Haute-Savoie et libellés adaptés. Les horaires de
-          vigilance restent indépendants des prévisions Open-Meteo.
-          <a class="underline" href="/api/weather-alerts">
-            Informations originales
-          </a>
-          .
-        </p>
-        <p lang="en" class="text-sm">
-          Time delays between this website and the{' '}
-          <a class="underline" href="https://meteoalarm.org/en/live/">
-            www.meteoalarm.org
-          </a>
-          website are possible. For the most up-to-date awareness information as
-          published by the participating National Meteorological and
-          Hydrological Services, please refer to{' '}
-          <a class="underline" href="https://meteoalarm.org/en/live/">
-            www.meteoalarm.org
-          </a>
-          .
-        </p>
-        <p>
-          Entre deux heures : température interpolée ; icône de l’heure
-          précédente ; pluie = maximum des deux probabilités horaires voisines,
-          pas une probabilité à la minute.
-        </p>
-        <p>
-          Barres de pluie : maximum des probabilités horaires de chaque tranche
-          de deux heures, pas la probabilité de pluie sur toute la tranche.
-          Courbe : température en °C.
-        </p>
-        <p>
-          Données{' '}
-          <a
-            class="underline"
-            href="https://open-meteo.com/"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Open-Meteo
-          </a>{' '}
-          ·{' '}
-          <a
-            class="underline"
-            href="https://creativecommons.org/licenses/by/4.0/"
-            target="_blank"
-            rel="noreferrer"
-          >
-            CC BY 4.0
-          </a>{' '}
-          · présentation adaptée.
-        </p>
-      </div>
-    </details>
   </div>
 </div>
 <style>
@@ -324,12 +258,6 @@ import WeatherChart from './WeatherChart.astro';
     display: none;
   }
 
-  [data-weather][data-forecast='true']
-    [data-weather-cards]
-    > section:first-child {
-    border-color: var(--colors-primary);
-    background: var(--colors-elevated);
-  }
   [data-weather-alerts][data-level='unknown'] {
     display: flex;
     align-items: baseline;
@@ -342,45 +270,21 @@ import WeatherChart from './WeatherChart.astro';
   [data-weather-alerts][data-level='unknown'] [data-alert-detail] {
     display: none;
   }
-  /* Fill the frame's available height; the lower cards can grow beneath their
-     content while the navigation floats above them without changing layout. */
-  @media (min-width: 1000px) {
-    [data-weather] {
-      flex: 1;
-      grid-template-rows: auto auto auto minmax(min-content, 1fr) auto;
-    }
-    [data-weather][data-alert='true'] {
-      --icon-weather-current: 6.25rem;
-    }
-    [data-weather][data-alert='true'] [data-weather-cards] > section {
-      padding-block: 0.375rem;
-    }
-    [data-weather][data-alert='true'][data-observance='true']
-      [data-weather-cards]
-      > section {
-      padding-block: 0.25rem;
-    }
-    [data-weather-alerts] {
-      grid-row: 1;
-    }
-    [data-future-days] {
-      grid-row: 2;
-    }
-    [data-weather-cards] {
-      grid-row: 3;
-    }
-    [data-weather-lower] {
-      grid-row: 4;
-      /* Match the pane column gap while keeping the other section gaps compact. */
-      margin-block-start: 0.5rem;
-    }
-    [data-weather][data-alert='true'][data-observance='true']
-      [data-weather-lower] {
-      margin-block-start: 0.625rem;
-    }
-    [data-weather-footer] {
-      grid-row: 5;
-    }
+  .journal-layout {
+    --colors-surface: #faf7ef;
+    --colors-elevated: #fffdf7;
+    --colors-background: #eaece2;
+    --colors-primary: #203a33;
+    --colors-secondary: #435e55;
+    --colors-border: #cbd6c9;
+    --colors-temperature: #8d442c;
+    --colors-rain: #195d76;
+    background: var(--colors-surface);
+    color: var(--colors-primary);
+  }
+
+  [data-advice] {
+    font-family: Georgia, serif;
   }
 
   /* A disclosure overlays secondary methodology without moving the frame's primary content. */
@@ -393,10 +297,5 @@ import WeatherChart from './WeatherChart.astro';
     right: 0;
     width: min(36rem, 85vw);
     z-index: 8;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    [data-current-icon] {
-      background-image: var(--dayframe-static-icon);
-    }
   }
 </style>

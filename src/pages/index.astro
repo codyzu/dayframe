@@ -2,7 +2,6 @@
 import {startupGuard} from '../../scripts/offline-build.mjs';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import MorningWeather from '../components/MorningWeather.astro';
-import WeatherLocation from '../components/WeatherLocation.astro';
 import PhotoSlideshow from '../components/PhotoSlideshow.astro';
 import PhotoControls from '../components/PhotoControls.astro';
 import ModeNavigation from '../components/ModeNavigation.astro';
@@ -24,51 +23,11 @@ import ModeNavigation from '../components/ModeNavigation.astro';
     data-mode="morning"
     tabindex="-1"
   >
-    <svg
-      class="alpine-header"
-      viewBox="0 0 800 180"
-      preserveAspectRatio="none"
-      aria-hidden="true"
-    >
-      <circle
-        cx="610"
-        cy="44"
-        r="32"
-        fill="var(--colors-advice)"
-        class="min-[1000px]:hidden"
-      />
-      <path
-        d="M0 180 160 65 235 123 360 25 460 125 560 65 800 170V180Z"
-        class="fill-alpine-far"
-      />
-      <path
-        d="m0 180 260-55 120 30 150-60 110 55 160-60v90Z"
-        class="fill-alpine-near"
-      />
-    </svg>
     <section
-      class="morning-panel min-w-0 flex flex-1 flex-col py-4 font-semibold"
+      class="min-w-0 flex flex-1 flex-col font-semibold"
       data-mode-panel="morning"
       aria-labelledby="morning-title"
     >
-      <div class="morning-intro flex flex-wrap items-center gap-x-6 gap-y-2 mb-2">
-        <h1
-          data-location-greeting
-          class="display-title flex min-w-0 items-center gap-2 font-bold"
-          id="morning-title"
-        >
-          <span>Bonjour,</span>
-          <WeatherLocation />
-        </h1>
-        <div class="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 min-[1000px]:ml-auto min-[1000px]:w-auto min-[1000px]:shrink-0 min-[1000px]:flex-nowrap">
-          <p class="text-2xl text-secondary first-letter:uppercase" data-date>
-            Chargement de la date…
-          </p>
-          <time class="clock ml-auto" data-clock aria-label="Heure locale">
-            --:--
-          </time>
-        </div>
-      </div>
       <MorningWeather />
     </section>
     <PhotoSlideshow />
@@ -139,19 +98,7 @@ import ModeNavigation from '../components/ModeNavigation.astro';
     --font-weather-summary: 2rem;
     --font-chart-time: 1.125rem;
     --font-navigation: 1.1875rem;
-    --icon-weather-current: 8.25rem;
     --font-checkpoint: 1.5rem;
-  }
-  .alpine-header {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 65%;
-    height: 90px;
-    pointer-events: none;
-  }
-  .morning-intro {
-    position: relative;
   }
   /* One anchored dock keeps navigation geometry identical in every mode.
      Safe-area offsets and mode/visibility selectors belong to this page. */
@@ -172,10 +119,11 @@ import ModeNavigation from '../components/ModeNavigation.astro';
     );
   }
   .dashboard[data-mode='morning'] {
-    padding-bottom: calc(
-      var(--display-dock-height, 14rem) +
-        max(0.75rem, env(safe-area-inset-bottom)) + 0.5rem
-    );
+    padding: 0 0
+      calc(
+        var(--display-dock-height, 14rem) +
+          max(0.75rem, env(safe-area-inset-bottom)) + 0.5rem
+      );
   }
   .dashboard[data-mode='night'] {
     background: var(--colors-night);
@@ -188,9 +136,6 @@ import ModeNavigation from '../components/ModeNavigation.astro';
     --colors-secondary: var(--colors-night-ink);
     --colors-border: #625b4e;
   }
-  .dashboard[data-mode='night'] .alpine-header {
-    visibility: hidden;
-  }
   .dashboard[data-mode='night'] [data-mode-panel='night'] {
     padding-bottom: 3rem;
   }
@@ -200,37 +145,17 @@ import ModeNavigation from '../components/ModeNavigation.astro';
     :global(html:has(.dashboard[data-mode='morning'])) {
       scroll-padding-bottom: 0.5rem;
     }
-    .dashboard[data-mode='morning'][data-alerts='true'] .clock {
-      font-size: 3rem;
-    }
     .dashboard {
       padding: 0.75rem 2rem;
     }
     .dashboard[data-mode='morning'] {
-      padding-bottom: 0.75rem;
-    }
-    .morning-panel {
       padding: 0;
     }
-    .alpine-header {
-      right: 22%;
-      width: 52%;
-      mask-image: linear-gradient(
-        to right,
-        transparent,
-        black 35%,
-        transparent
-      );
-    }
-    .morning-intro {
-      flex-wrap: nowrap;
-      margin-bottom: 0;
-    }
-    .display-title {
-      font-size: 2rem;
-    }
-    .clock {
-      font-size: 4rem;
+    /* Keep the shared dock clear of Morning's interactive forecast strip. */
+    .display-dock {
+      right: 1rem;
+      left: auto;
+      transform: none;
     }
   }
 </style>

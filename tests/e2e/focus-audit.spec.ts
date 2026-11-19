@@ -81,11 +81,11 @@ test('dashboard vacation layout, all modes and forecast controls have complete f
     ),
   );
   await page.goto('/?display=frame');
-  await expect(page.locator('[data-checkpoint-heading]')).toContainText(
-    /calendrier à confirmer|Toussaint/v,
+  await expect(page.locator('[data-day-observance]')).toContainText(
+    /calendrier scolaire indisponible|toussaint/iv,
   );
   await page.clock.fastForward(1000);
-  await expect(page.locator('[data-checkpoint-heading]')).toContainText(
+  await expect(page.locator('[data-day-observance]')).toContainText(
     'Toussaint',
   );
   const failures = await auditFocus(page, page.locator('body'), info, {

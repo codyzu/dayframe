@@ -1,4 +1,4 @@
-import {hourLabel, type Hour} from './adapter.ts';
+import {hourLabel, type Daylight, type Hour} from './adapter.ts';
 import {chartGeometry} from './chart.ts';
 import {conditionFor} from './conditions.ts';
 import {type checkpointForecasts} from './morning.ts';
@@ -50,7 +50,41 @@ export function renderCheckpoints(
   );
 }
 
-export function renderChart(root: HTMLElement, hours: Hour[]) {
+function renderDaylight(
+  chart: HTMLElement,
+  x: (time: number) => number,
+  daylight?: Daylight,
+) {
+  chart.querySelector<HTMLUListElement>('[data-chart-daylight]')!.hidden =
+    daylight === undefined;
+  for (const key of ['sunrise', 'sunset'] as const) {
+    const entry = chart.querySelector<HTMLLIElement>(
+      `[data-daylight-entry="${CSS.escape(key)}"]`,
+    )!;
+    const marker = chart.querySelector<SVGLineElement>(
+      `[data-daylight-marker="${CSS.escape(key)}"]`,
+    )!;
+    const instant = daylight?.[key];
+    entry.hidden = instant === undefined;
+    const position = instant === undefined ? -1 : x(instant);
+    marker.style.display = position >= 0 && position <= 600 ? '' : 'none';
+    if (instant === undefined) {
+      continue;
+    }
+
+    const time = entry.querySelector('time')!;
+    time.dateTime = new Date(instant).toISOString();
+    time.textContent = hourLabel(instant);
+    marker.setAttribute('x1', String(position));
+    marker.setAttribute('x2', String(position));
+  }
+}
+
+export function renderChart(
+  root: HTMLElement,
+  hours: Hour[],
+  daylight?: Daylight,
+) {
   const chart = root.querySelector<HTMLElement>('[data-chart]')!;
   const content = chart.querySelector<HTMLElement>('[data-chart-content]')!;
   const empty = chart.querySelector<HTMLElement>('[data-chart-empty]')!;
@@ -65,6 +99,7 @@ export function renderChart(root: HTMLElement, hours: Hour[]) {
   }
 
   const {low, high, x, path, rain, peak} = geometry;
+  renderDaylight(chart, x, daylight);
   chart.querySelector('[data-chart-range]')!.textContent =
     `${rounded(low)} à ${rounded(high)}C`;
   chart.querySelector('[data-chart-curve]')!.setAttribute('d', path);

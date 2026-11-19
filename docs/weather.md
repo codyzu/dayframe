@@ -2,9 +2,34 @@
 
 The browser requests Open-Meteo directly for the public Annecy example coordinates in `src/lib/dashboard/config.ts`. Change location, latitude, longitude and timezone together when adapting the example. These are checked-in defaults, not persisted settings; M4 adds private configuration. No geolocation permission, account, API key, proxy, or new Cloudflare service is used. The provider sees the display's IP address and requested public coordinates; requests omit credentials and referrer.
 
-`src/lib/weather/adapter.ts` requests seven forecast days, five current fields, five hourly fields and four daily fields: temperature, apparent temperature, condition code, day/night, precipitation amount/probability, and daily extremes, condition code and maximum precipitation probability as applicable. The normalized model includes location, timezone, metric units, fetch time and absolute hourly timestamps. The adapter rejects wrong units/timezone, missing numeric values, invalid ranges, misaligned arrays, gaps, unordered times, inverted extremes, and outdated/incomplete forecasts. Unknown condition codes retain temperatures and use an explicit fallback.
+`src/lib/weather/adapter.ts` requests seven forecast days, five current fields,
+five hourly fields and seven daily fields. Daily values include temperature
+extremes, condition code, maximum precipitation probability, total precipitation,
+sunrise and sunset. The normalized model includes location, timezone, metric
+units, fetch time and absolute hourly timestamps. The adapter rejects wrong
+units/timezone, missing required values, invalid ranges, misaligned required
+arrays, gaps, unordered times, inverted extremes, and outdated/incomplete
+forecasts. Unknown condition codes retain temperatures and use an explicit
+fallback.
 
 Unix hourly timestamps are formatted with the IANA timezone, independently of the browser's timezone. Daily dates follow the provider's fixed `utc_offset_seconds` convention so the autumn DST change cannot repeat a date. See [Open-Meteo time parameters](https://open-meteo.com/en/docs). Daily extrema only appear when their date matches today's local date.
+
+## Solar times on the hourly chart
+
+The chart lists today's sunrise and sunset as local times in the selected
+weather location and marks events within the plotted hours. Events outside the
+chart retain their time labels without a misplaced mark. Browsing another day
+hides today's marks and labels. Sunrise and sunset are optional absolute Unix
+timestamps. The adapter accepts each only when its IANA date matches the daily
+entry, and drops an inverted pair. Old caches and missing, malformed or polar
+daylight fields retain valid temperature and rain data.
+
+The Morning scene changes to dawn from 40 minutes before sunrise through
+30 minutes after, and to dusk from 30 minutes before sunset through 40 minutes
+after. When solar data is absent, the weather reading's day flag or a rough
+local time range selects the illustration. Approximate times are never shown on
+the plot. The default provider request and cache stay the same apart from the
+two optional daily fields.
 
 ## Refresh and recovery
 
@@ -76,15 +101,15 @@ data migration or offline-retention change.
 
 ## Provider terms and request budget
 
-Rechecked 27 October 2026: the [free API terms](https://open-meteo.com/en/terms) allow personal noncommercial use below 10,000 calls/day, 5,000/hour and 600/minute. The [pricing page](https://open-meteo.com/en/pricing) also lists 300,000/month and variable-weighted calls. The [data licence](https://open-meteo.com/en/licence) requires attribution, a licence link, and disclosure of adaptation. The UI links Open-Meteo and CC BY 4.0 beside the data; rounding, French descriptions, charts and derived advice are disclosed here and as “présentation adaptée” on screen. No provider uptime guarantee is assumed.
+Rechecked 19 November 2026: the [free API terms](https://open-meteo.com/en/terms) allow personal noncommercial use below 10,000 calls/day, 5,000/hour and 600/minute. The [pricing page](https://open-meteo.com/en/pricing) also lists 300,000/month and variable-weighted calls. The [data licence](https://open-meteo.com/en/licence) requires attribution, a licence link, and disclosure of adaptation. The UI links Open-Meteo and CC BY 4.0 beside the data; rounding, French descriptions, charts and derived advice are disclosed here and as “présentation adaptée” on screen. No provider uptime guarantee is assumed.
 
 With ordinary fresh conditions, an uninterrupted display makes about **48 HTTP
 requests/day**. Persistent stale HTTP 200s and failures settle at the same cadence,
 with at most **52 requests in the first 24 hours** including the 1/5/15-minute
 recovery steps (request latency only reduces this count). Three displays therefore
-budget 156 HTTP requests/day or 4,836 in 31 days. Conservatively count the 14
-current/hourly/daily variable slots as 1.4 calls/request: **219 weighted calls/day,
-6,771/month** rounded up, below the published 10,000/day and 300,000/month limits.
+budget 156 HTTP requests/day or 4,836 in 31 days. Conservatively count the 17
+current/hourly/daily variable slots as 1.7 calls/request: **266 weighted calls/day,
+8,222/month** rounded up, below the published 10,000/day and 300,000/month limits.
 Seven days is below the provider's two-week duration multiplier. Opening, selecting
 and closing forecasts makes **zero additional requests**. Unusually old but still
 fresh replies can bring forward the normal freshness deadline; reloads and new

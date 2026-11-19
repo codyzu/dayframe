@@ -3,7 +3,11 @@ import {
   type DayPlanning,
   type OfficialCalendar,
 } from '../dashboard/day-planning.ts';
+import {runtimeConfig} from '../dashboard/config.ts';
+import {type DatedCheckpoints} from '../calendar/timeline.ts';
 import {dateKey, type Hour, type Weather} from './adapter.ts';
+import {daylightFor} from './daylight.ts';
+import {renderWeatherWindow} from './window.ts';
 import {conditionFor} from './conditions.ts';
 import {summarize} from './summary.ts';
 import {
@@ -38,6 +42,7 @@ export function mountWeather(
   root: HTMLElement,
   onUpdate?: (state: WeatherState) => void,
   isLocalLocation = false,
+  onCheckpoints?: (points: DatedCheckpoints | undefined) => void,
 ) {
   const future = mountFutureWeather(root, () => {
     renderedMinute = undefined;
@@ -54,6 +59,13 @@ export function mountWeather(
   let chartHours: Hour[] = [];
   let renderedMinute: number | undefined;
   let renderedFailure: boolean | undefined;
+  let timelineSignature = '';
+  let publishedWeather: Weather | undefined;
+  const separateCheckpoints = root.querySelector<HTMLElement>(
+    '[data-separate-checkpoints]',
+  )!;
+  root.dataset.localWeather = String(isLocalLocation);
+  onCheckpoints?.(undefined);
   function text(selector: string, value: string) {
     const element = root.querySelector(selector);
     if (element && element.textContent !== value) {
@@ -74,6 +86,26 @@ export function mountWeather(
           note: 'Repères météo du lieu choisi sur cet appareil. Le programme de la maison reste inchangé.',
         }
       : routineForDay(now, planning, calendar);
+
+  function publishCheckpoints(weather: Weather | undefined, now: number) {
+    if (isLocalLocation || !onCheckpoints) {
+      return;
+    }
+
+    const timeline = {
+      date: dateKey(now),
+      timezone: runtimeConfig.timezone,
+      points: checkpointForecasts(weather, now, routine(now).points),
+    };
+    const signature = JSON.stringify(timeline);
+    if (signature === timelineSignature && publishedWeather === weather) {
+      return;
+    }
+
+    timelineSignature = signature;
+    publishedWeather = weather;
+    onCheckpoints({...timeline, hours: weather?.hourly});
+  }
 
   function render({weather, failed}: WeatherState) {
     notifyWeatherUpdate({weather, failed});
@@ -101,6 +133,11 @@ export function mountWeather(
 
     renderedMinute = minute;
     renderedFailure = failed;
+    const usable = weather && !isWeatherStale(weather, now, failed);
+    renderWeatherWindow(root, weather, now, Boolean(usable));
+    separateCheckpoints.hidden = !(isFuture || isLocalLocation);
+    publishCheckpoints(usable ? weather : undefined, now);
+
     const dayLabel =
       selectedDate === forecastDates(now)[1]
         ? 'demain'
@@ -241,10 +278,12 @@ export function mountWeather(
       today !== renderedDay
     ) {
       renderedRoutine = signature;
-      renderCheckpoints(
-        root,
-        checkpointForecasts(weather, now, dayRoutine.points),
-      );
+      if (isFuture || isLocalLocation) {
+        renderCheckpoints(
+          root,
+          checkpointForecasts(weather, now, dayRoutine.points),
+        );
+      }
     }
 
     if (weather !== renderedWeather || today !== renderedDay) {
@@ -252,7 +291,11 @@ export function mountWeather(
       renderedDay = today;
       chartHours = dayHours(weather, now);
 
-      renderChart(root, chartHours);
+      renderChart(
+        root,
+        chartHours,
+        isFuture ? undefined : daylightFor(weather, now),
+      );
     }
 
     const line = root.querySelector<SVGElement>('[data-weather-now-line]');
