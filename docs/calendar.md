@@ -29,7 +29,9 @@ exceptions (`singleEvents=true`); cancelled and self-declined entries are omitte
 A long title truncates visually, retaining its complete bounded title in DOM text and
 the title attribute. The card does not show descriptions, attendees or locations.
 **Aujourd’hui** combines timed appointments with the household weather checkpoints
-in local time order. A matching Family entry and checkpoint share one row only
+in local time order. Checkpoints drop out after their scheduled minute, while
+ongoing appointments stay visible and the weather chart still covers the full
+day. A matching Family entry and checkpoint share one row only
 when their start minute and activity match unambiguously. Unrelated events at the
 same time stay distinct. Every timed appointment shown for today or tomorrow
 uses the household forecast at its start time, when fresh hourly coverage is

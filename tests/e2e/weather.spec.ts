@@ -64,7 +64,7 @@ test('live day/night data, accessible graph and 30-minute refresh @mobile', asyn
     .evaluateAll((elements) =>
       elements.map((element) => getComputedStyle(element).backgroundImage),
     );
-  expect(icons.length).toBe(4);
+  expect(icons).toHaveLength(3);
   expect(icons.every((icon) => icon.includes('data:image/svg+xml'))).toBe(true);
   expect(
     await page.evaluate(
@@ -88,7 +88,7 @@ test('live day/night data, accessible graph and 30-minute refresh @mobile', asyn
   await expect(page.locator('table tbody tr')).toHaveCount(17);
   await expect(
     page.locator('[data-agenda-events] [data-checkpoint]'),
-  ).toHaveCount(4);
+  ).toHaveCount(3);
   await expect(page.locator('[data-current-icon]')).toHaveCSS(
     'background-image',
     /data:image\/svg\+xml/v,
@@ -343,7 +343,7 @@ test('exhausted cached forecasts hide the chart and recover into the same shell'
   await expect(page.locator('[data-chart-empty]')).toBeVisible();
   await expect(graph).toHaveCount(0);
   const checkpoints = page.locator('[data-agenda-events] [data-checkpoint]');
-  await expect(checkpoints).toHaveCount(4);
+  await expect(checkpoints).toHaveCount(3);
   for (const row of await checkpoints.all()) {
     await expect(row.locator('[data-event-weather]')).toBeHidden();
   }

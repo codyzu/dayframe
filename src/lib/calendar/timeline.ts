@@ -102,6 +102,8 @@ export function agendaTimeline(
 ) {
   const todayCapacity = 10;
   const date = localDate(now, timezone);
+  const localTime = agendaClock(now, timezone);
+  const minute = Math.floor(now / 60_000);
   const appointments = remainingAgendaEvents(events, now, timezone);
   const rows: TimelineEntry[] = appointments.map((event) => ({
     event,
@@ -112,6 +114,14 @@ export function agendaTimeline(
   }));
 
   for (const point of points) {
+    const hasPassed =
+      point.at === undefined
+        ? point.time < localTime
+        : Math.floor(point.at / 60_000) < minute;
+    if (hasPassed) {
+      continue;
+    }
+
     const matching = rows.filter(
       ({event, point: previous}) =>
         event && !previous && isMatchingPoint(event, point),

@@ -23,14 +23,12 @@ test.beforeEach(async ({page}) => {
   );
 });
 
-test('four usable checkpoints, full-day chart, advice and an honest empty agenda @all-browsers', async ({
+test('remaining checkpoints, full-day chart, advice and an honest empty agenda @all-browsers', async ({
   page,
 }) => {
   await page.goto('/?display=frame');
   const checkpoints = page.locator('[data-agenda-events] [data-checkpoint]');
-  await expect(checkpoints).toHaveCount(4);
   await expect(checkpoints.locator('[data-event-time]')).toHaveText([
-    '08:00',
     '11:30',
     '16:30',
     '18:00',
