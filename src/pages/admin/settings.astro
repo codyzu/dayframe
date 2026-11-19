@@ -242,7 +242,7 @@ const fields = [
       </p>
       <p class="mt-2 text-sm">
         Les autorisations Google couvrent les agendas accessibles au compte.
-        Seuls les deux agendas choisis seront affichés.{' '}
+        Seuls les agendas choisis seront affichés.{' '}
         <a href="/calendar-privacy" class="underline">
           Confidentialité de l’agenda
         </a>
@@ -269,6 +269,18 @@ const fields = [
             data-massage-select
             class="min-h-12 w-full min-w-0 rounded-lg border border-border bg-elevated px-3 text-primary"
           ></select>
+        </label>
+        <label class="flex w-full flex-col gap-2">
+          Fêtes observées · facultatif
+          <select
+            data-observance-select
+            aria-describedby="observance-calendar-help"
+            class="min-h-12 w-full min-w-0 rounded-lg border border-border bg-elevated px-3"
+          ></select>
+          <span id="observance-calendar-help" class="text-sm text-secondary">
+            Choisissez un agenda Google dédié aux fêtes observées. Seuls ses
+            événements à la journée en cours sont affichés.
+          </span>
         </label>
         <button
           data-calendar-save

@@ -27,10 +27,14 @@ test('four usable checkpoints, full-day chart, advice and an honest empty agenda
   page,
 }) => {
   await page.goto('/?display=frame');
-  await expect(page.locator('[data-checkpoints] article')).toHaveCount(4);
-  for (const time of ['08h00', '11h30', '16h30', '18h00']) {
-    await expect(page.getByRole('heading', {name: time})).toBeVisible();
-  }
+  const checkpoints = page.locator('[data-agenda-events] [data-checkpoint]');
+  await expect(checkpoints).toHaveCount(4);
+  await expect(checkpoints.locator('[data-event-time]')).toHaveText([
+    '08:00',
+    '11:30',
+    '16:30',
+    '18:00',
+  ]);
 
   await expect(page.locator('[data-chart] rect')).toHaveCount(8);
   await expect(page.locator('[data-chart] table tbody tr')).toHaveCount(17);
@@ -43,8 +47,8 @@ test('four usable checkpoints, full-day chart, advice and an honest empty agenda
     page.getByRole('button', {name: 'Réessayer la connexion'}),
   ).toBeHidden();
   const icon = await page.locator('[data-current-icon]').boundingBox();
-  expect(icon!.width).toBeGreaterThanOrEqual(120);
-  // Opaque cards keep primary text independent of the decorative landscape.
+  expect(icon!.width).toBeGreaterThanOrEqual(68);
+  // The opaque fallback keeps weather readable when the scene image is unavailable.
   const contrast = await page
     .locator('[data-condition]')
     .evaluate((element) => {

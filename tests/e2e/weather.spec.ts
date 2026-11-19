@@ -60,7 +60,7 @@ test('live day/night data, accessible graph and 30-minute refresh @mobile', asyn
     page.getByRole('link', {name: 'Météo : Open-Meteo · CC BY 4.0'}),
   ).toBeVisible();
   const icons = await page
-    .locator('[data-checkpoints] [class*="i-meteocons-"]')
+    .locator('[data-agenda-events] [data-event-weather-icon]')
     .evaluateAll((elements) =>
       elements.map((element) => getComputedStyle(element).backgroundImage),
     );
@@ -86,7 +86,9 @@ test('live day/night data, accessible graph and 30-minute refresh @mobile', asyn
   expect(calls).toBe(2);
   await expect(rainBars).toHaveCount(8);
   await expect(page.locator('table tbody tr')).toHaveCount(17);
-  await expect(page.locator('[data-checkpoints] article')).toHaveCount(4);
+  await expect(
+    page.locator('[data-agenda-events] [data-checkpoint]'),
+  ).toHaveCount(4);
   await expect(page.locator('[data-current-icon]')).toHaveCSS(
     'background-image',
     /data:image\/svg\+xml/v,
@@ -207,7 +209,7 @@ test('unchanged clock and forecast nodes stay stable while the time marker advan
   await expect(page.locator('[data-temperature]')).toHaveText('12°');
   const curve = await page.locator('[data-chart] path').first().elementHandle();
   const checkpoint = await page
-    .locator('[data-checkpoints] article')
+    .locator('[data-agenda-events] [data-checkpoint]')
     .first()
     .elementHandle();
   const marker = page.locator('[data-weather-now-line]');
@@ -340,12 +342,11 @@ test('exhausted cached forecasts hide the chart and recover into the same shell'
   );
   await expect(page.locator('[data-chart-empty]')).toBeVisible();
   await expect(graph).toHaveCount(0);
-  await expect(page.locator('[data-point-temperature]')).toHaveText([
-    '—°',
-    '—°',
-    '—°',
-    '—°',
-  ]);
+  const checkpoints = page.locator('[data-agenda-events] [data-checkpoint]');
+  await expect(checkpoints).toHaveCount(4);
+  for (const row of await checkpoints.all()) {
+    await expect(row.locator('[data-event-weather]')).toBeHidden();
+  }
 
   isOffline = false;
   await page.clock.fastForward(60_000);
@@ -648,6 +649,10 @@ test('day strip synchronizes weather, graph and advice without changing the real
   });
   await page.goto('/?display=frame');
   await expect(page.locator('[data-temperature]')).toHaveText('12°');
+  const daylight = page.locator('[data-chart-daylight]');
+  await expect(daylight.locator('time')).toHaveText(['07:52', '18:47']);
+  const sunrise = page.locator('[data-daylight-marker="sunrise"]');
+  await expect(sunrise).toHaveAttribute('x1', '70');
   const days = page.locator('[data-future-days] button');
   await expect(days).toHaveCount(7);
   await expect(days.first()).toContainText('Aujourd’hui');
@@ -686,7 +691,17 @@ test('day strip synchronizes weather, graph and advice without changing the real
   );
   await expect(page.locator('[data-point-label]').first()).toHaveText('Matin');
   await expect(page.locator('[data-chart-range]')).toHaveText('2° à 2°C');
+  await expect(daylight).toBeHidden();
+  await expect(sunrise).toHaveCSS('display', 'none');
   await expect(page.locator('[data-weather-now-label]')).toBeHidden();
+  if (info.project.name !== 'mobile') {
+    expect(
+      await page.evaluate(
+        () => globalThis.document.documentElement.scrollHeight,
+      ),
+    ).toBeLessThanOrEqual(800);
+  }
+
   await expect(page.locator('[data-date]')).toHaveText('vendredi 16 octobre');
   await expect(page.locator('[data-current-icon]')).toHaveCSS(
     'background-image',
@@ -704,6 +719,7 @@ test('day strip synchronizes weather, graph and advice without changing the real
   );
   await expect(page.locator('[data-temperature-label]')).toBeHidden();
   await expect(page.locator('[data-weather-now-label]')).toBeVisible();
+  await expect(daylight).toBeVisible();
   await expect(page.locator('[data-advice-heading]')).toHaveText(
     'Conseil du jour',
   );

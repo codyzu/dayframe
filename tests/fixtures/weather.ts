@@ -67,6 +67,8 @@ export function sevenDayFixture(now = fixtureNow) {
       ...raw.daily_units,
       precipitation_probability_max: '%',
       precipitation_sum: 'mm',
+      sunrise: 'unixtime',
+      sunset: 'unixtime',
     },
     hourly: Object.fromEntries(
       Object.entries(raw.hourly).map(([key, values]) => [
@@ -83,6 +85,8 @@ export function sevenDayFixture(now = fixtureNow) {
       weather_code: days.map(() => 61),
       precipitation_probability_max: days.map(() => 65),
       precipitation_sum: days.map(() => 3),
+      sunrise: days.map((time) => time + 7 * 3600 + 52 * 60),
+      sunset: days.map((time) => time + 18 * 3600 + 47 * 60),
     },
   };
 }

@@ -137,10 +137,10 @@ test('only current weather animates and all Meteocons respect motion preference 
     /i-meteocons-partly-cloudy-day-fill/v,
   );
   const icons = page.locator(
-    '[data-current-icon], [data-checkpoints] [class*="i-meteocons-"]',
+    '[data-current-icon], [data-agenda-events] [data-event-weather-icon]',
   );
   await expect(
-    page.locator('[data-checkpoints] [class*="i-meteocons-"]').first(),
+    page.locator('[data-agenda-events] [data-event-weather-icon]').first(),
   ).toBeVisible();
   const images = async () =>
     icons.evaluateAll((elements) =>

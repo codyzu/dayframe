@@ -1,18 +1,23 @@
 # Google Calendar on Morning
 
-20 October 2026. A single household Google connection supplies up to two selected calendars:
-**Family** and **Massages**, both readable by the connected account. Continue editing events in Google
-Calendar. Dayframe requests read-only event and calendar-list scopes; it has no write
-scope or event-creation endpoint.
+A single household Google connection supplies the **Family** and **Massages**
+appointment calendars and, optionally, a separate calendar for observed holidays.
+The connected account must be able to read each selected calendar. Continue
+editing events in Google Calendar. Dayframe requests read-only event and
+calendar-list scopes; it has no write scope or event-creation endpoint.
 
 ## Connect and operate
 
 In `/admin/settings`, choose **Connecter Google Calendar**, authorize an account that
 can read Family, then choose **Family** under **Agenda à afficher** and press
 **Afficher ces agendas**. Choose the shared massage calendar under **Massages · violet** before saving. Leave
-that second selection empty to remove it. The two selections must be distinct. No
-additional OAuth consent is needed when both are already shared with the connected
-account. Calendar names need not be unique: the saved selection uses
+that second selection empty to remove it. Under **Fêtes observées · facultatif**,
+choose a dedicated calendar for observances the household wants on the frame,
+such as Eid, or leave it empty. To use a different region or community's dates,
+subscribe to that calendar or share it with the connected Google account before
+selecting it here. All selections must be distinct. No additional OAuth consent
+is needed for calendars already shared with the connected account. Calendar
+names need not be unique: the saved selection uses
 Google's verified calendar ID. Both existing administrators can manage the connection;
 neither administrator needs to sign in on the frame. A normal Dayframe/Cloudflare
 Access sign-in is separate from Google Calendar consent.
@@ -23,7 +28,20 @@ events. All-day end dates are exclusive. Google expands recurring appointments a
 exceptions (`singleEvents=true`); cancelled and self-declined entries are omitted.
 A long title truncates visually, retaining its complete bounded title in DOM text and
 the title attribute. The card does not show descriptions, attendees or locations.
-School/weather checkpoints remain habitual labels, independent of appointments.
+**Aujourd’hui** combines timed appointments with the household weather checkpoints
+in local time order. A matching Family entry and checkpoint share one row only
+when their start minute and activity match unambiguously. Unrelated events at the
+same time stay distinct. Every timed appointment shown for today or tomorrow
+uses the household forecast at its start time, when fresh hourly coverage is
+available. Between hours, temperature is interpolated and rain uses the higher
+of the adjacent hourly probabilities. All-day events have no forecast time.
+A device-local weather override keeps its weather separate from the household
+calendar. Forecast browsing does not change the dates or events in the timeline.
+
+Official public holidays, school closures and optional observances have named
+labels above the timeline. Observances do not alter school or schedule rules.
+An all-day event whose title begins or ends with an explicit birthday keyword
+gets a cake icon, such as `Anniversaire de Camille` or `Camille’s birthday`.
 
 **Déconnecter Google Calendar** immediately deletes the server-side connection, pending
 OAuth flow and cached events, then attempts Google token revocation. If Google is offline,
@@ -44,7 +62,7 @@ The two requested scopes are:
 - `https://www.googleapis.com/auth/calendar.calendarlist.readonly`
 
 Google's permission applies to accessible calendars; Dayframe limits fetching to the
-two selected IDs. Do not request the owned-only events scope: a shared Family calendar may be
+selected IDs. Do not request the owned-only events scope: a shared Family calendar may be
 owned by the other spouse.
 
 Configure four **Worker runtime secrets**, never public/build environment variables:
@@ -92,8 +110,9 @@ callback, token refresh or event request overwriting a newer disconnect/selectio
 No generic server fetch endpoint or caller-selected provider URL exists.
 
 Successful event responses are cached centrally for up to four minutes, including empty
-results. The private Durable Object stores only the bounded today/tomorrow candidate events and their
-fetch time/timezone; the latest cache remains in private storage until replaced or
+results. The private Durable Object stores the bounded today/tomorrow candidate
+appointments, today's bounded observances, and their fetch time/timezone. The
+latest cache remains in private storage until replaced or
 removed by selection/disconnect. Provider requests have timeouts, fixed Google origins,
 redirect rejection, bounded response bodies and at most ten sequential pages. Reads use
 [Google's events list](https://developers.google.com/workspace/calendar/api/v3/reference/events/list)
@@ -152,15 +171,12 @@ checks and five-minute browser privacy lease. Failure reading either calendar cl
 the full agenda; no stale or misleading partial success is shown. Fetch pagination is
 bounded to ten pages per selected calendar. No new permissions, package or service.
 
-## Tomorrow preview — 30 October 2026
+## Tomorrow preview
 
-Morning’s **À venir** card keeps today’s remaining events first. A thin horizontal
-rule labelled **Demain · weekday** introduces tomorrow’s earliest new appointments
-when at least two of the six existing row slots remain. The divider consumes one
-slot; five or six events today suppress the preview. With no remaining events today,
-the explicit today-empty status consumes another slot, leaving up to four tomorrow
-appointments. Font sizes, calendar colours/source labels and static presentation
-are retained. An empty tomorrow is labelled explicitly whenever its section fits;
+Morning’s **Aujourd’hui** column gives today's appointments and checkpoints the
+first ten timeline rows. A divider labelled **Demain · weekday** uses one spare
+row, then up to four of tomorrow’s earliest new appointments can fill the rest.
+An empty tomorrow is labelled explicitly whenever its section fits;
 the preview never skips ahead to another day. All-day events precede timed entries.
 Events spanning both days appear under today only, then become today’s entries
 after midnight revalidation.
@@ -181,3 +197,28 @@ root MIT `LICENSE` and `dashboard/js/views/{home,calendar}.js`. Its short remain
 lists and next-morning hint are useful ideas; this bounded two-day French agenda
 and private timezone-aware reader are independently authored. No upstream code or
 assets copied. Local/release verification is recorded in the implementation plan.
+
+## Household observances
+
+The dedicated calendar contributes at most two distinct, all-day titles active
+on today's household civil date, using the calendar's exclusive end date. A
+title is bounded to 120 characters. Google’s explicit `tentative` event status
+appears as **Date à confirmer**. The frame does not calculate sighting dates or
+infer that an observance closes school. The official French public holiday and
+school calendars remain the authorities for those separate signals.
+
+The optional source shares the existing four-minute server cache and five-minute
+browser privacy lease. It adds no request when unselected. If fetching it fails,
+the current observances are cleared and the frame can report the source as
+unavailable while continuing to display appointments. Calendar names, provider
+IDs and event descriptions are not sent to the frame. Selecting an empty value
+clears that source and invalidates the cache. Older settings clients which omit
+the optional field retain the saved selection. Existing connections upgrade
+without migration or OAuth changes. Rolling back to the previous build stops
+displaying observances. Use the selection control before rolling back to remove
+the saved source as well.
+
+Reviewed upstream `dashboard/js/views/calendar.js` and the MIT `LICENSE` at
+`f1e0820918c926396e0ccafb4839568825f63edc`. Dayframe retains the distinction
+between all-day and timed entries and uses independent private Google calendar
+reads. No upstream code or assets copied.

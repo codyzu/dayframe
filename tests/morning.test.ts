@@ -3,6 +3,7 @@ import {hourLabel, parseWeather} from '../src/lib/weather/adapter.ts';
 import {
   checkpointForecasts,
   dayHours,
+  hourlyForecastAt,
   isWeekend,
   morningAdvice,
   twoHourRain,
@@ -16,6 +17,17 @@ import {fixtureNow, weatherFixture} from './fixtures/weather.ts';
 const fixture = () => parseWeather(weatherFixture(), fixtureNow);
 
 describe('family day forecasts', () => {
+  it('selects timed forecasts by instant during a repeated local hour', () => {
+    const first = Date.parse('2026-10-25T02:00:00+02:00');
+    const second = Date.parse('2026-10-25T02:00:00+01:00');
+    const hour = fixture().hourly[0];
+    const hours = [
+      {...hour, time: first, temperature: 6},
+      {...hour, time: second, temperature: 9},
+    ];
+    expect(hourlyForecastAt(hours, second)?.forecast.temperature).toBe(9);
+    expect(hourlyForecastAt(hours, second + 30 * 60_000)).toBeUndefined();
+  });
   it('retains 06–22 local hourly coverage, including both pickups at 06:30', () => {
     const early = Date.parse('2026-10-16T04:30:00Z');
     const hours = dayHours(fixture(), early);

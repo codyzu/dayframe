@@ -3,7 +3,7 @@
   class="min-w-0 max-w-full overflow-x-auto p-2 scroll-p-2"
   aria-label="Choisir le jour de la météo"
 >
-  <div class="trend-strip relative min-w-[70rem] h-[83px] rounded-2xl bg-surface">
+  <div class="trend-strip relative min-w-[43rem] h-[83px] rounded-2xl bg-surface">
     <div
       class="absolute top-1 left-2 w-22 whitespace-nowrap text-[13px] font-bold leading-tight"
       aria-hidden="true"
@@ -25,7 +25,7 @@
 <template data-future-day-template>
   <button
     type="button"
-    class="future-day relative min-w-0 min-h-12 flex items-start justify-center pt-1 border-r border-r-border/40 border-b-3 border-b-transparent bg-transparent text-primary text-lg font-bold leading-tight hover:bg-elevated aria-pressed:bg-background aria-pressed:border-b-accent aria-pressed:hover:bg-background focus-visible:outline-accent rounded-sm last:border-r-0 last:rounded-r-2xl"
+    class="future-day relative min-w-0 min-h-12 flex items-start justify-center pt-1 border-r border-r-border/40 border-b-3 border-b-transparent bg-transparent text-primary text-base font-bold leading-tight hover:bg-elevated aria-pressed:bg-background aria-pressed:border-b-accent aria-pressed:hover:bg-background focus-visible:outline-accent rounded-sm last:border-r-0 last:rounded-r-2xl"
   >
     <span data-future-date></span>
     <span data-future-condition class="sr-only"></span>
@@ -36,7 +36,7 @@
      and text halos keep the compact overlapping measures legible at all widths. */
   .trend-plot :global(text) {
     font-family: inherit;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
     paint-order: stroke;
     stroke: var(--colors-surface);
@@ -44,14 +44,9 @@
     stroke-linejoin: round;
   }
   .trend-plot :global([data-amount]) {
-    font-size: 16px;
+    font-size: 14px;
   }
   .trend-plot :global([data-selected='true'] text) {
     stroke: var(--colors-background);
-  }
-  @media (min-width: 1000px) {
-    .trend-strip {
-      min-width: 0;
-    }
   }
 </style>

@@ -3,10 +3,12 @@ import {mountAlerts} from '../weather/alerts.ts';
 import {ApiError, photoRequest} from '../photos/client.ts';
 import {mountSlideshow} from '../photos/slideshow.ts';
 import {mountWeather} from '../weather/view.ts';
+import {renderLakeCalendar} from '../weather/window.ts';
 import {mountLocationPicker} from '../weather/location-picker.ts';
 import {validateLocation} from '../weather/location.ts';
 import {mountPhotoWeather} from '../photos/weather.ts';
 import {mountAgenda} from '../calendar/view.ts';
+import {localDate} from '../calendar/contracts.ts';
 import {
   dayContext,
   observanceText,
@@ -55,7 +57,15 @@ function initializeDashboard(root: HTMLElement) {
   );
 
   const slideshow = mountSlideshow(photoRoot, footer);
-  const agenda = mountAgenda(root.querySelector<HTMLElement>('[data-agenda]')!);
+  const lake = weatherRoot.querySelector<HTMLElement>('[data-lake-window]')!;
+  let observedTitles: readonly string[] = [];
+  const agenda = mountAgenda(
+    root.querySelector<HTMLElement>('[data-agenda]')!,
+    (isObserved, titles) => {
+      observedTitles = isObserved ? (titles ?? []) : [];
+      lakeCalendar();
+    },
+  );
   let settings = defaultSettings;
   const picker = mountLocationPicker(
     root,
@@ -72,6 +82,7 @@ function initializeDashboard(root: HTMLElement) {
     weatherRoot,
     updatePhotoWeather,
     Boolean(picker.selected),
+    agenda.setCheckpoints,
   );
   const state = createModeState();
   const updateOverrideKey = 'dayframe.update-override';
@@ -99,7 +110,21 @@ function initializeDashboard(root: HTMLElement) {
   let official: OfficialCalendar | undefined;
   let calendarRefreshAt = 0;
   let calendarPending: AbortController | undefined;
-  const observance = root.querySelector<HTMLElement>('[data-day-observance]')!;
+  function lakeCalendar() {
+    const now = Date.now();
+    const context = dayContext(
+      now,
+      settings.timezone,
+      settings.planning,
+      official,
+    );
+    renderLakeCalendar(lake, {
+      officialHoliday: context.holiday,
+      isSchoolBreak: context.vacation !== undefined,
+      observedTitles,
+      date: localDate(now, settings.timezone),
+    });
+  }
 
   async function refreshCalendar() {
     if (
@@ -174,13 +199,9 @@ function initializeDashboard(root: HTMLElement) {
       settings.planning,
       official,
     );
-    const dayNote = observanceText(context);
-    if (observance.textContent !== dayNote) {
-      observance.textContent = dayNote;
-      observance.hidden = dayNote === '';
-      observance.title = dayNote;
-      weatherRoot.dataset.observance = String(dayNote !== '');
-    }
+    weatherRoot.dataset.observance = String(observanceText(context) !== '');
+    agenda.setDayContext(context, settings.timezone);
+    lakeCalendar();
 
     const mode = state.mode(Date.now(), performance.now());
     const hasOverride =
@@ -286,6 +307,7 @@ function initializeDashboard(root: HTMLElement) {
         weatherRoot,
         updatePhotoWeather,
         Boolean(picker.selected),
+        agenda.setCheckpoints,
       );
       weather.configure(settings.planning, official);
     }

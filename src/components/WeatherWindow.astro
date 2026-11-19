@@ -1,0 +1,294 @@
+---
+import WeatherLocation from './WeatherLocation.astro';
+---
+
+<section
+  class="lake-window relative isolate min-w-0 flex flex-col justify-center gap-3 bg-[#183541] px-4 py-5 text-[#fffaf0] min-[1000px]:px-8"
+  data-lake-window
+  aria-labelledby="weather-title"
+>
+  <div
+    class="lake-picture pointer-events-none absolute inset-0 -z-1"
+    aria-hidden="true"
+  >
+    <div class="lake-weather absolute inset-0"></div>
+    <div class="lake-shade absolute inset-0"></div>
+    <svg
+      class="lake-emblems absolute bottom-5 right-5"
+      viewBox="-4 0 124 66"
+      width="124"
+      height="66"
+      fill="none"
+      aria-hidden="true"
+    >
+      <g
+        data-emblem="lantern"
+        transform="translate(70 8)"
+        stroke="#ffdc91"
+        stroke-width="2.4"
+        stroke-linejoin="round"
+      >
+        <path d="M22 9c0-7 10-7 10 0M21 9h12l5 8H16zM18 17l-2 30h22l-2-30M14 51h26" />
+        <path d="M27 24c7 9 6 17 0 17s-7-8 0-17Z" fill="#ffbb62" />
+      </g>
+      <g data-emblem="ramadan" transform="translate(35 8)">
+        <path
+          d="M28 5C12 7 6 24 15 36c8 11 22 11 32 2C27 43 17 22 28 5Z"
+          fill="#ffdf9d"
+        />
+        <path d="M39 10l2 5 5 1-4 3 1 5-4-3-5 3 1-5-4-3 6-1z" fill="#ffecb6" />
+      </g>
+      <g
+        data-emblem="christmas"
+        transform="translate(73 9)"
+        fill="#cce5cb"
+        stroke="#d9ebca"
+        stroke-width="2"
+        stroke-linejoin="round"
+      >
+        <path d="m23 7 9 12h-4l10 13h-6l11 13H3l11-13H8l10-13h-4z" />
+        <path d="M23 44v9" stroke="#ffdc91" />
+        <path
+          d="m23 1 2 4 4 1-4 1-2 4-2-4-4-1 4-1z"
+          fill="#ffdc91"
+          stroke="none"
+        />
+      </g>
+      <g
+        data-emblem="new-year"
+        transform="translate(73 9)"
+        stroke="#ffdc91"
+        stroke-width="2.4"
+        stroke-linecap="round"
+      >
+        <path d="M23 3v12m0 13v13M3 22h12m16 0h12M8 8l9 9m12 12 9 9M8 36l9-9M29 17l9-9" />
+        <path d="M7 39v7m-4-3h8M41 0v7m-4-4h8" stroke="#e4edf7" />
+      </g>
+      <g
+        data-emblem="easter"
+        transform="translate(73 10)"
+        stroke="#ffdfb0"
+        stroke-width="2.3"
+      >
+        <path
+          d="M9 33C9 21 17 8 23 8s14 13 14 25a14 14 0 1 1-28 0Z"
+          fill="#d291a4"
+        />
+        <path d="m10 31 7 4 6-4 6 4 7-4m-24-7h22" />
+      </g>
+      <g data-emblem="france" transform="translate(72 17)">
+        <path d="M4 5v39" stroke="#ffdb97" stroke-width="2.5" />
+        <path d="M6 6h12v25H6z" fill="#789fdd" />
+        <path d="M18 6h12v25H18z" fill="#fff4e1" />
+        <path d="M30 6h12v25H30z" fill="#e58891" />
+      </g>
+      <g data-emblem="usa" transform="translate(72 17)">
+        <path d="M4 5v39" stroke="#ffdb97" stroke-width="2.5" />
+        <path d="M6 6h38v25H6z" fill="#fff4e1" />
+        <path
+          d="M6 8h38m-38 7h38m-38 7h38m-38 7h38"
+          stroke="#dd7a85"
+          stroke-width="3"
+        />
+        <path d="M6 6h17v14H6z" fill="#547bb0" />
+        <path
+          d="m14 8 1.6 3.5 4 .6-2.8 2.9.7 3.8-3.5-1.8-3.5 1.8.7-3.8-2.8-2.9 4-.6z"
+          fill="#fff4e1"
+        />
+      </g>
+      <g
+        data-emblem="school-break"
+        transform="translate(-4 10) scale(.8)"
+        stroke="#ffdfaa"
+        stroke-width="2.2"
+        stroke-linejoin="round"
+        stroke-linecap="round"
+      >
+        <path d="m27 3 17 13-16 23-15-23Z" fill="#90c0b3" />
+        <path d="m27 3 1 36M13 16h31m-16 23c-6 5-1 11-8 16m5-9-7-2m6 6 5 1" />
+      </g>
+    </svg>
+  </div>
+
+  <div class="lake-header flex flex-wrap items-center gap-x-3 gap-y-1">
+    <h1
+      id="morning-title"
+      data-location-greeting
+      class="flex min-w-0 items-center text-xl font-bold text-primary"
+    >
+      <span class="sr-only">Bonjour,</span>
+      <WeatherLocation />
+    </h1>
+    <p data-date class="text-base font-bold first-letter:uppercase">
+      Chargement de la date…
+    </p>
+  </div>
+  <time
+    data-clock
+    class="lake-clock block tabular-nums leading-none"
+    aria-label="Heure locale"
+  >
+    --:--
+  </time>
+
+  <div class="min-w-0">
+    <h2
+      id="weather-title"
+      data-weather-heading
+      aria-live="polite"
+      class="lake-weather-heading font-bold leading-tight"
+    >
+      En ce moment
+    </h2>
+    <p data-forecast-date hidden class="text-sm font-bold"></p>
+    <div class="flex min-w-0 items-center gap-2.5">
+      <span
+        data-current-icon
+        class="weather-icon i-meteocons-not-available-fill inline-block size-17 shrink-0 min-[1000px]:size-19"
+        aria-hidden="true"
+      ></span>
+      <div class="shrink-0">
+        <span
+          data-temperature
+          class="block text-[clamp(2.3rem,5vw,3.8rem)] leading-none font-bold tracking-[-0.06em]"
+        >
+          —°
+        </span>
+        <p data-temperature-label hidden class="text-xs">
+          Maximum prévu
+        </p>
+      </div>
+      <div class="min-w-0">
+        <p
+          data-condition
+          class="text-xl font-bold leading-tight min-[1000px]:text-2xl"
+        >
+          Chargement de la météo…
+        </p>
+        <p
+          data-extremes
+          class="mt-0.5 text-sm leading-tight min-[1000px]:text-base"
+        >
+          Ressenti — · Max. — / Min. —
+        </p>
+      </div>
+    </div>
+    <div class="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-sm">
+      <p data-rain>Prévisions en cours de chargement.</p>
+      <time data-reading-age hidden></time>
+    </div>
+  </div>
+</section>
+
+<style>
+  .lake-picture {
+    background-image: var(--lake-image);
+    background-size: cover;
+    background-position: center;
+  }
+
+  .lake-shade {
+    /* Keep the clock readable over light skies and white snow alike. */
+    background:
+      linear-gradient(90deg, #102530e8, #102530b8 55%, #10253035),
+      linear-gradient(0deg, #10253088, transparent 75%);
+  }
+
+  [data-lake-effect='rain'] .lake-weather {
+    background: repeating-linear-gradient(
+      110deg,
+      transparent 0 36px,
+      #d3ecf73d 37px,
+      transparent 39px 69px
+    );
+    mask-image: linear-gradient(115deg, transparent 46%, #0008 62%, #000 95%);
+  }
+
+  [data-lake-effect='fog'] .lake-weather {
+    background: radial-gradient(ellipse at 86% 70%, #e1eef59a, transparent 62%);
+  }
+
+  [data-lake-effect='snow'] .lake-weather {
+    background:
+      radial-gradient(circle, #f2f8fac4 1px, transparent 2px) 0 0 / 29px 43px,
+      radial-gradient(circle, #f2f8fa8c 1px, transparent 2px) 15px 11px / 57px
+        37px;
+    mask-image: linear-gradient(90deg, transparent 48%, #000);
+  }
+
+  .lake-emblems {
+    filter: drop-shadow(0 0 8px #241b12) drop-shadow(0 0 12px #ffb65066);
+  }
+
+  [data-emblem] {
+    display: none;
+  }
+
+  [data-lake-accent='lantern'] [data-emblem='lantern'],
+  [data-lake-ramadan='true'] [data-emblem='ramadan'],
+  [data-lake-accent='christmas'] [data-emblem='christmas'],
+  [data-lake-accent='new-year'] [data-emblem='new-year'],
+  [data-lake-accent='easter'] [data-emblem='easter'],
+  [data-lake-accent='france'] [data-emblem='france'],
+  [data-lake-accent='usa'] [data-emblem='usa'],
+  [data-lake-school-break='true'] [data-emblem='school-break'] {
+    display: block;
+  }
+
+  .lake-clock {
+    font-family: Georgia, serif;
+    font-size: clamp(4.75rem, 10vw, 8.5rem);
+    letter-spacing: -0.075em;
+  }
+
+  :global([data-weather][data-forecast='false'][data-stale='false'])
+    .lake-weather-heading {
+    /* Current conditions already carry their own visible label. */
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  @media (min-width: 1000px) {
+    .lake-window {
+      min-height: 20rem;
+    }
+    :global([data-weather][data-alert='true']) .lake-window,
+    :global([data-weather][data-forecast='true']) .lake-window,
+    :global([data-weather][data-local-weather='true']) .lake-window {
+      min-height: 0;
+      padding-block: 0.75rem;
+    }
+    :global([data-weather][data-forecast='true']) .lake-clock,
+    :global([data-weather][data-local-weather='true']) .lake-clock {
+      position: absolute;
+      top: 0.65rem;
+      right: 2rem;
+      font-size: 3.5rem;
+    }
+    :global([data-weather][data-forecast='true']) .lake-header,
+    :global([data-weather][data-local-weather='true']) .lake-header {
+      min-height: 3.5rem;
+      padding-right: 9rem;
+    }
+  }
+
+  /* Keep narrow weather text clear of decorative symbols. */
+  @media (max-width: 639px) {
+    .lake-emblems {
+      top: 4.4rem;
+      bottom: auto;
+      width: 5.5rem;
+      height: auto;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-current-icon] {
+      background-image: var(--dayframe-static-icon);
+    }
+  }
+</style>

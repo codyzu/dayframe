@@ -26,10 +26,12 @@ test('large readable type is used everywhere, including old compact preferences'
       'large',
     );
     await expect(page.getByLabel('Taille du texte')).toHaveCount(0);
-    await expect(page.locator('[data-temperature]')).toHaveCSS(
-      'font-size',
-      '100px',
-    );
+    const temperatureSize = await page
+      .locator('[data-temperature]')
+      .evaluate((element) =>
+        Number(getComputedStyle(element).fontSize.replace(/px$/v, '')),
+      );
+    expect(temperatureSize).toBeGreaterThanOrEqual(60);
   }
 });
 

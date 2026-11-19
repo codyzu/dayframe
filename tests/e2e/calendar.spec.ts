@@ -27,6 +27,14 @@ test('Morning shows escaped, bounded events, stays within the frame and clears d
               massageConnected: true,
               timezone: 'Europe/Paris',
               fetchedAt: now,
+              observances: [
+                {
+                  title: 'Fête synthétique',
+                  start: '2026-10-16',
+                  end: '2026-10-17',
+                  tentative: true,
+                },
+              ],
               events: [
                 ...[0, 1, 2].map((index) => ({
                   calendar: 'massages',
@@ -38,7 +46,7 @@ test('Morning shows escaped, bounded events, stays within the frame and clears d
                   allDay: false,
                 })),
                 {
-                  title: 'Journée familiale',
+                  title: 'Camille · Anniversaire',
                   start: '2026-10-16',
                   end: '2026-10-17',
                   allDay: true,
@@ -63,7 +71,9 @@ test('Morning shows escaped, bounded events, stays within the frame and clears d
   );
   await page.goto('/?display=frame');
   await page.getByRole('button', {name: 'Matin', exact: true}).click();
-  await expect(page.locator('[data-agenda-events] li')).toHaveCount(6);
+  await expect(
+    page.locator('[data-agenda-events] [data-event-calendar]'),
+  ).toHaveCount(6);
   await expect(page.locator('[data-event-calendar=massages]')).toHaveCount(3);
   expect(
     await page
@@ -75,15 +85,25 @@ test('Morning shows escaped, bounded events, stays within the frame and clears d
     globalThis.document.fonts.ready.then(() => undefined),
   );
   await expect(page.locator('[data-event-time]').first()).toHaveText('Journée');
-  await expect(page.locator('[data-event-title]').nth(1)).toContainText(
-    '<img src=x',
-  );
+  await expect(page.getByRole('img', {name: 'Anniversaire'})).toBeVisible();
+  await expect(
+    page.locator('[data-event-calendar] [data-event-title]').nth(1),
+  ).toContainText('<img src=x');
   const next = page.locator('[data-event-title][data-next]');
   await expect(next).toHaveText(
     '<img src=x onerror=alert(1)> Rendez-vous à l’école',
   );
   await expect(next).toHaveCSS('font-weight', '700');
   await expect(page.locator('[data-agenda] img')).toHaveCount(0);
+  const observance = page.locator('[data-day-observance]');
+  await expect(observance).toContainText('Fête synthétique');
+  await expect(observance).toContainText('Fête observée');
+  await expect(observance).toContainText('Date à confirmer');
+  await expect(observance).not.toContainText('École fermée');
+  await expect(page.locator('[data-lake-window]')).toHaveAttribute(
+    'data-lake-accent',
+    'lantern',
+  );
   if (info.project.name !== 'mobile') {
     await expect
       .poll(async () =>
@@ -100,21 +120,87 @@ test('Morning shows escaped, bounded events, stays within the frame and clears d
     ),
   ).toBe(true);
   expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain(
-    'Journée familiale',
+    'Camille · Anniversaire',
+  );
+  expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain(
+    'Fête synthétique',
   );
   await page.clock.fastForward(61_000);
-  await expect(page.locator('[data-event-time]').nth(1)).toHaveText('En cours');
+  await expect(
+    page.locator('[data-event-calendar] [data-event-time]').nth(1),
+  ).toHaveText('En cours');
   isDenied = true;
   await page.clock.fastForward(180_000);
-  await expect(page.locator('[data-agenda-events] li')).toHaveCount(0);
+  await expect(
+    page.locator('[data-agenda-events] [data-event-calendar]'),
+  ).toHaveCount(0);
   await expect(page.locator('[data-agenda-status]')).toBeVisible();
+  await expect(observance).not.toContainText('Fête synthétique');
+  await expect(page.getByRole('img', {name: 'Anniversaire'})).toHaveCount(0);
   await page.unroute('**/api/calendar/events');
   await page.route('**/api/calendar/events', async (route) => route.abort());
   await page.clock.fastForward(300_000);
-  await expect(page.locator('[data-agenda-events] li')).toHaveCount(0);
+  await expect(
+    page.locator('[data-agenda-events] [data-event-calendar]'),
+  ).toHaveCount(0);
 });
 
-test('admin selects the shared calendar, disconnects and starts Google authorization @mobile', async ({
+test('Morning shows weather for timed appointments and only merges a matching checkpoint', async ({
+  page,
+}) => {
+  await page.route('**/api/calendar/events', async (route) =>
+    route.fulfill({
+      json: {
+        connected: true,
+        timezone: 'Europe/Paris',
+        fetchedAt: fixtureNow,
+        events: [
+          ...['Sortie d’école', 'Sortie au cinéma'].map((title) => ({
+            title,
+            start: '2026-10-16T14:30:00Z',
+            end: '2026-10-16T15:00:00Z',
+            allDay: false,
+          })),
+          {
+            title: 'Salle de sport',
+            start: '2026-10-17T04:00:00Z',
+            end: '2026-10-17T05:00:00Z',
+            allDay: false,
+          },
+        ],
+      },
+    }),
+  );
+  await page.goto('/?display=frame');
+  await expect(page.getByRole('heading', {name: 'Aujourd’hui'})).toBeVisible();
+  const today = page.locator('[data-agenda-events]');
+  const pickup = today
+    .locator('[data-event-calendar]')
+    .filter({hasText: 'Sortie d’école'});
+  const cinema = today
+    .locator('[data-event-calendar]')
+    .filter({hasText: 'Sortie au cinéma'});
+  await expect(pickup.locator('[data-event-time]')).toHaveText('16:30');
+  await expect(pickup.locator('[data-event-title]')).toHaveCSS(
+    'font-weight',
+    '700',
+  );
+  await expect(
+    pickup.getByRole('img', {
+      name: /Probabilité de pluie : maximum horaire 65 %/v,
+    }),
+  ).toBeVisible();
+  await expect(cinema.locator('[data-event-weather]')).toBeVisible();
+  await expect(cinema).not.toHaveAttribute('data-checkpoint');
+  await expect(today.locator('[data-checkpoint="16:30"]')).toHaveCount(1);
+  const gym = page.locator('[data-agenda-tomorrow-events] li').filter({
+    hasText: 'Salle de sport',
+  });
+  await expect(gym.locator('[data-event-time]')).toHaveText('06:00');
+  await expect(gym.getByRole('img', {name: /source 06:00/v})).toBeVisible();
+});
+
+test('admin selects shared calendars including an optional observance calendar, disconnects and starts Google authorization @mobile', async ({
   page,
 }) => {
   await page.route('**/api/session', async (route) =>
@@ -129,15 +215,18 @@ test('admin selects the shared calendar, disconnects and starts Google authoriza
   let isConnected = true;
   let selected: {id: string; name: string} | undefined;
   let massageSelected: {id: string; name: string} | undefined;
+  let observanceSelected: {id: string; name: string} | undefined;
   await page.route('**/api/calendar', async (route) => {
     if (route.request().method() === 'PATCH') {
       expect(route.request().headers()['x-dayframe-request']).toBe('1');
       expect(route.request().postDataJSON()).toEqual({
         id: 'family',
         massageId: 'massage',
+        observanceId: 'observances',
       });
       selected = {id: 'family', name: 'Notre famille'};
       massageSelected = {id: 'massage', name: 'Cabinet'};
+      observanceSelected = {id: 'observances', name: 'Fêtes du foyer'};
     }
 
     if (route.request().method() === 'DELETE') {
@@ -150,6 +239,7 @@ test('admin selects the shared calendar, disconnects and starts Google authoriza
         connected: isConnected,
         selected,
         massageSelected,
+        observanceSelected,
       },
     });
   });
@@ -159,6 +249,7 @@ test('admin selects the shared calendar, disconnects and starts Google authoriza
         calendars: [
           {id: 'family', name: 'Notre famille'},
           {id: 'massage', name: 'Cabinet'},
+          {id: 'observances', name: 'Fêtes du foyer'},
         ],
       },
     }),
@@ -182,9 +273,12 @@ test('admin selects the shared calendar, disconnects and starts Google authoriza
     .getByLabel('Agenda à afficher', {exact: false})
     .selectOption('family');
   await page.getByLabel('Massages · violet').selectOption('massage');
+  await page
+    .getByLabel('Fêtes observées · facultatif', {exact: false})
+    .selectOption('observances');
   await page.getByRole('button', {name: 'Afficher ces agendas'}).click();
   await expect(page.locator('[data-calendar-status]')).toHaveText(
-    'Agenda affiché : Notre famille · Massages : Cabinet',
+    'Agenda affiché : Notre famille · Massages : Cabinet · Fêtes observées : Fêtes du foyer',
   );
   await page.getByRole('button', {name: 'Déconnecter Google Calendar'}).click();
   await expect(page.locator('[data-calendar-status]')).toHaveText(
@@ -268,7 +362,9 @@ for (const count of [0, 4, 6]) {
     );
     await page.goto('/?display=frame');
     await page.getByRole('button', {name: 'Matin', exact: true}).click();
-    await expect(page.locator('[data-agenda-events] li')).toHaveCount(count);
+    await expect(
+      page.locator('[data-agenda-events] [data-event-calendar]'),
+    ).toHaveCount(count);
     if (count === 4) {
       await expect(page.locator('[data-day-observance]')).toContainText(
         'Journée synthétique',
@@ -276,7 +372,7 @@ for (const count of [0, 4, 6]) {
       await expect(page.locator('[data-weather-alerts]')).toBeVisible();
     }
 
-    const capacity = count > 4 ? 0 : 5 - Math.max(1, count);
+    const capacity = Math.min(4, Math.max(0, 5 - count));
     await expect(page.locator('[data-agenda-tomorrow-events] li')).toHaveCount(
       capacity,
     );
@@ -320,9 +416,9 @@ for (const count of [0, 4, 6]) {
     ).not.toContain('Demain 2');
     isDenied = true;
     await page.clock.fastForward(241_000);
-    await expect(page.locator('[data-agenda] [data-event-title]')).toHaveCount(
-      0,
-    );
+    await expect(
+      page.locator('[data-agenda] [data-event-calendar] [data-event-title]'),
+    ).toHaveCount(0);
     await expect(page.locator('[data-agenda-tomorrow]')).toBeHidden();
   });
 }
@@ -372,7 +468,9 @@ test('Morning keeps an empty tomorrow explicit and reclassifies dates at midnigh
     .click({force: true});
   await page.clock.fastForward(1000);
   await expect(
-    page.locator('[data-agenda-events] [data-event-title]'),
+    page.locator(
+      '[data-agenda-events] [data-event-calendar] [data-event-title]',
+    ),
   ).toHaveText('Samedi');
   await expect(page.locator('[data-agenda-tomorrow-title]')).toHaveText(
     'Demain · dimanche',

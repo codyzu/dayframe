@@ -1,10 +1,12 @@
 import {ApiError, photoRequest} from '../photos/client.ts';
 
+type CalendarOption = {id: string; name: string};
 type CalendarStatus = {
   configured: boolean;
   connected: boolean;
-  selected: {id: string; name: string} | undefined;
-  massageSelected?: {id: string; name: string};
+  selected?: CalendarOption;
+  massageSelected?: CalendarOption;
+  observanceSelected?: CalendarOption;
 };
 const adminRoot = document.querySelector<HTMLElement>('[data-calendar-admin]');
 if (adminRoot) {
@@ -24,14 +26,20 @@ function mount(root: HTMLElement) {
   const massageSelect = root.querySelector<HTMLSelectElement>(
     '[data-massage-select]',
   )!;
+  const observanceSelect = root.querySelector<HTMLSelectElement>(
+    '[data-observance-select]',
+  )!;
+  const selects = [select, massageSelect, observanceSelect];
   const save = root.querySelector<HTMLButtonElement>('[data-calendar-save]')!;
   let isBusy = false;
   let state: CalendarStatus | undefined;
   function lock() {
     controls.disabled = isBusy || !state?.configured;
     disconnect.hidden = !state?.connected;
-    select.disabled = !state?.connected;
-    massageSelect.disabled = !state?.connected;
+    for (const field of selects) {
+      field.disabled = !state?.connected;
+    }
+
     save.disabled = !state?.connected;
     connect.textContent = state?.connected
       ? 'Reconnecter Google Calendar'
@@ -52,8 +60,9 @@ function mount(root: HTMLElement) {
         error instanceof Error ? error.message : 'Agenda indisponible.';
       if (error instanceof ApiError && [401, 403].includes(error.status)) {
         state = undefined;
-        select.replaceChildren();
-        massageSelect.replaceChildren();
+        for (const field of selects) {
+          field.replaceChildren();
+        }
       }
     } finally {
       isBusy = false;
@@ -66,10 +75,13 @@ function mount(root: HTMLElement) {
     state = (await response.json()) as CalendarStatus;
     select.replaceChildren(new Option('Choisir votre agenda partagé', ''));
     massageSelect.replaceChildren(new Option('Aucun agenda de massages', ''));
+    observanceSelect.replaceChildren(
+      new Option('Aucun agenda de fêtes observées', ''),
+    );
     status.textContent = state.configured
       ? state.connected
         ? state.selected
-          ? `Agenda affiché : ${state.selected.name}${state.massageSelected ? ` · Massages : ${state.massageSelected.name}` : ''}`
+          ? `Agenda affiché : ${state.selected.name}${state.massageSelected ? ` · Massages : ${state.massageSelected.name}` : ''}${state.observanceSelected ? ` · Fêtes observées : ${state.observanceSelected.name}` : ''}`
           : 'Google connecté. Choisissez l’agenda à afficher.'
         : 'Aucun agenda connecté.'
       : 'La configuration Google Calendar reste à terminer sur le serveur.';
@@ -80,15 +92,17 @@ function mount(root: HTMLElement) {
     {
       const calendarResponse = await photoRequest('/api/calendar/calendars');
       const body = (await calendarResponse.json()) as {
-        calendars: Array<{id: string; name: string}>;
+        calendars: CalendarOption[];
       };
       for (const calendar of body.calendars) {
-        select.add(new Option(calendar.name, calendar.id));
-        massageSelect.add(new Option(calendar.name, calendar.id));
+        for (const field of selects) {
+          field.add(new Option(calendar.name, calendar.id));
+        }
       }
 
       select.value = state.selected?.id ?? '';
       massageSelect.value = state.massageSelected?.id ?? '';
+      observanceSelect.value = state.observanceSelected?.id ?? '';
     }
   }
 
@@ -117,6 +131,7 @@ function mount(root: HTMLElement) {
         body: JSON.stringify({
           id: select.value,
           ...(massageSelect.value !== '' && {massageId: massageSelect.value}),
+          observanceId: observanceSelect.value,
         }),
       });
       await load();

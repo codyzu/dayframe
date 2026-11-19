@@ -2,8 +2,13 @@
 import {CompactEncrypt, compactDecrypt, base64url} from 'jose';
 import {
   dayEnd,
+  agendaObservanceLimit,
+  agendaObservanceTitleLimit,
   agendaWindowEvents,
+  isCivilDate,
+  localDate,
   type AgendaEvent,
+  type AgendaObservance,
 } from '../src/lib/calendar/contracts.ts';
 import {validateSettings} from '../src/lib/dashboard/settings.ts';
 import {administration, type AdministrationBinding} from './administration.ts';
@@ -30,6 +35,7 @@ type Connection = {
   token: string;
   calendar?: SelectedCalendar;
   massageCalendar?: SelectedCalendar;
+  observanceCalendar?: SelectedCalendar;
 };
 type RecordState = {
   revision: string;
@@ -40,6 +46,8 @@ type RecordState = {
     fetchedAt: number;
     timezone: string;
     days?: 2;
+    observances?: AgendaObservance[];
+    observanceUnavailable?: true;
   };
 };
 type Tokens = {access: string; refresh: string; expires: number};
@@ -305,23 +313,22 @@ export function normalizeEvents(
 async function calendarEvents(
   access: string,
   id: string,
-  now: number,
-  timezone: string,
+  range: {start: number; end: number; timezone: string; observancesOnly?: true},
 ) {
   const url = new URL(
     `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(id)}/events`,
   );
-  const tomorrowEnd = dayEnd(dayEnd(now, timezone), timezone);
   url.search = new URLSearchParams({
-    timeMin: new Date(now).toISOString(),
-    timeMax: new Date(tomorrowEnd).toISOString(),
-    timeZone: timezone,
+    timeMin: new Date(range.start).toISOString(),
+    timeMax: new Date(range.end).toISOString(),
+    timeZone: range.timezone,
     singleEvents: 'true',
     orderBy: 'startTime',
     showDeleted: 'false',
     maxResults: '250',
-    fields:
-      'items(status,summary,start,end,attendees(self,responseStatus)),nextPageToken',
+    fields: range.observancesOnly
+      ? 'items(status,summary,start(date),end(date)),nextPageToken'
+      : 'items(status,summary,start,end,attendees(self,responseStatus)),nextPageToken',
   }).toString();
   const items: GoogleEvent[] = [];
   for (let i = 0; i < 10; i++) {
@@ -351,6 +358,73 @@ async function calendarEvents(
   return items;
 }
 
+function normalizeObservances(items: GoogleEvent[], today: string) {
+  const titles = new Set<string>();
+  const observances: AgendaObservance[] = [];
+  for (const item of items) {
+    const start = item?.start?.date;
+    const end = item?.end?.date;
+    if (
+      item?.status === 'cancelled' ||
+      !isCivilDate(start) ||
+      !isCivilDate(end) ||
+      start > today ||
+      end <= today ||
+      typeof item.summary !== 'string'
+    ) {
+      continue;
+    }
+
+    const title = item.summary.trim().slice(0, agendaObservanceTitleLimit);
+    const key = title.normalize('NFC').toLocaleLowerCase('fr');
+    if (title === '' || titles.has(key)) {
+      continue;
+    }
+
+    titles.add(key);
+    observances.push({
+      title,
+      start,
+      end,
+      ...(item.status === 'tentative' && {tentative: true}),
+    });
+    if (observances.length === agendaObservanceLimit) {
+      break;
+    }
+  }
+
+  return observances;
+}
+
+async function readObservances(
+  access: string,
+  selected: SelectedCalendar | undefined,
+  now: number,
+  timezone: string,
+): Promise<{observances?: AgendaObservance[]; observanceUnavailable?: true}> {
+  if (!selected) {
+    return {};
+  }
+
+  try {
+    const today = localDate(now, timezone);
+    const midnight = Date.parse(today);
+    // Google's bounds are instants, while all-day entries use civil dates in
+    // the provider calendar's zone. Cover that date across UTC offsets, then
+    // retain only observances active on the household's date.
+    const items = await calendarEvents(access, selected.id, {
+      start: midnight - 14 * 3_600_000,
+      end: midnight + 36 * 3_600_000,
+      timezone,
+      observancesOnly: true,
+    });
+    return {observances: normalizeObservances(items, today)};
+  } catch {
+    // A revoked or unavailable optional calendar does not erase appointments.
+    return {observanceUnavailable: true};
+  }
+}
+
 async function agenda(env: CalendarEnv, state: RecordState) {
   const settingsResponse = await administration(
     env.ADMINISTRATION!,
@@ -375,9 +449,23 @@ async function agenda(env: CalendarEnv, state: RecordState) {
     cache.timezone !== timezone ||
     now - cache.fetchedAt >= 240_000 ||
     now < cache.fetchedAt ||
-    dayEnd(cache.fetchedAt, timezone) <= now
+    dayEnd(cache.fetchedAt, timezone) <= now ||
+    (state.connection.observanceCalendar &&
+      !cache.observances &&
+      !cache.observanceUnavailable)
   ) {
     const access = await accessToken(env, state);
+    const observances = readObservances(
+      access,
+      state.connection.observanceCalendar,
+      now,
+      timezone,
+    );
+    const range = {
+      start: now,
+      end: dayEnd(dayEnd(now, timezone), timezone),
+      timezone,
+    };
     const events: AgendaEvent[] = [];
     for (const [calendar, selected] of [
       ['family', state.connection.calendar],
@@ -387,7 +475,7 @@ async function agenda(env: CalendarEnv, state: RecordState) {
         continue;
       }
 
-      const items = await calendarEvents(access, selected.id, now, timezone);
+      const items = await calendarEvents(access, selected.id, range);
 
       events.push(
         ...normalizeEvents(items, now, timezone).map((event) => ({
@@ -402,6 +490,7 @@ async function agenda(env: CalendarEnv, state: RecordState) {
       events,
       fetchedAt: now,
       timezone,
+      ...(await observances),
     };
     state.cache = cache;
     await saveState(env, state);
@@ -445,6 +534,64 @@ function callbackResponse(result: string) {
   });
 }
 
+async function selectCalendars(
+  request: Request,
+  env: CalendarEnv,
+  state: RecordState,
+) {
+  if (request.headers.get('Content-Type') !== 'application/json') {
+    return failure(415, 'INVALID_TYPE', 'JSON requis.');
+  }
+
+  const body = JSON.parse(
+    new TextDecoder().decode(await readBounded(request, 2048)),
+  ) as {id?: unknown; massageId?: unknown; observanceId?: unknown};
+  if (
+    typeof body?.id !== 'string' ||
+    (body.massageId !== undefined && typeof body.massageId !== 'string') ||
+    (body.observanceId !== undefined && typeof body.observanceId !== 'string')
+  ) {
+    return failure(400, 'INVALID_CALENDAR', 'Choisissez un agenda.');
+  }
+
+  const accessible = await calendars(env, state);
+  const selected = accessible.find((entry) => entry.id === body.id);
+  const massageSelected = accessible.find(
+    (entry) => entry.id === body.massageId,
+  );
+  // Older settings pages omit this field. An explicit empty string clears it.
+  const observanceSelected =
+    body.observanceId === undefined
+      ? state.connection!.observanceCalendar
+      : accessible.find((entry) => entry.id === body.observanceId);
+  const ids = [selected, massageSelected, observanceSelected]
+    .filter((entry) => entry !== undefined)
+    .map((entry) => entry.id);
+  if (
+    !selected ||
+    (!massageSelected && (body.massageId ?? '') !== '') ||
+    (!observanceSelected && (body.observanceId ?? '') !== '') ||
+    new Set(ids).size !== ids.length
+  ) {
+    return failure(
+      400,
+      'INVALID_CALENDAR',
+      'Choisissez des agendas accessibles et différents.',
+    );
+  }
+
+  state.connection!.calendar = selected;
+  state.connection!.massageCalendar = massageSelected;
+  state.connection!.observanceCalendar = observanceSelected;
+  delete state.cache;
+  await saveState(env, state);
+  return privateJson({
+    selected,
+    massageSelected: massageSelected ?? null,
+    observanceSelected: observanceSelected ?? null,
+  });
+}
+
 export async function calendarApi(
   request: Request,
   env: CalendarEnv,
@@ -464,6 +611,7 @@ export async function calendarApi(
         connected: Boolean(state?.connection),
         selected: state?.connection?.calendar ?? null,
         massageSelected: state?.connection?.massageCalendar ?? null,
+        observanceSelected: state?.connection?.observanceCalendar ?? null,
       });
     }
 
@@ -489,44 +637,7 @@ export async function calendarApi(
     }
 
     if (path === '/api/calendar' && request.method === 'PATCH') {
-      if (request.headers.get('Content-Type') !== 'application/json') {
-        return failure(415, 'INVALID_TYPE', 'JSON requis.');
-      }
-
-      const body = JSON.parse(
-        new TextDecoder().decode(await readBounded(request, 2048)),
-      ) as {id?: unknown; massageId?: unknown};
-      if (
-        typeof body.id !== 'string' ||
-        (body.massageId !== undefined && typeof body.massageId !== 'string')
-      ) {
-        return failure(400, 'INVALID_CALENDAR', 'Choisissez un agenda.');
-      }
-
-      const accessible = await calendars(env, state);
-      const selected = accessible.find((entry) => entry.id === body.id);
-      const massageSelected = accessible.find(
-        (entry) => entry.id === body.massageId,
-      );
-      if (
-        !selected ||
-        selected?.id === massageSelected?.id ||
-        (!massageSelected &&
-          body.massageId !== undefined &&
-          body.massageId !== '')
-      ) {
-        return failure(
-          400,
-          'INVALID_CALENDAR',
-          'Choisissez deux agendas accessibles et différents.',
-        );
-      }
-
-      state.connection!.calendar = selected;
-      state.connection!.massageCalendar = massageSelected;
-      delete state.cache;
-      await saveState(env, state);
-      return privateJson({selected, massageSelected: massageSelected ?? null});
+      return await selectCalendars(request, env, state);
     }
 
     if (path === '/api/calendar' && request.method === 'DELETE') {
