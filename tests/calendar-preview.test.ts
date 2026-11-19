@@ -48,7 +48,7 @@ it('reserves today and a labelled divider before filling spare rows chronologica
   for (let count = 0; count <= 6; count++) {
     const preview = agendaTimeline(
       [...tomorrow.toReversed(), ...today.slice(0, count)],
-      now,
+      Date.parse('2026-10-16T05:59:00Z'),
       timezone,
       points,
     );
@@ -133,7 +133,7 @@ it('merges a named family pickup at the same instant, but keeps unrelated and am
   const work = {...pickup, calendar: 'massages'} as const;
   const pickupPoint = {...points[2], label: 'Sortie', at: Date.parse(start)};
   const selected = agendaTimeline([pickup, unrelated, work], now, timezone, [
-    points[0],
+    points[1],
     pickupPoint,
   ]);
   expect(
@@ -151,6 +151,40 @@ it('merges a named family pickup at the same instant, but keeps unrelated and am
   expect(ambiguous.today.filter(({event, point}) => event && point)).toEqual(
     [],
   );
+});
+
+it('retires past checkpoints without removing an ongoing appointment', () => {
+  const start = '2026-10-16T06:00:00Z';
+  const ongoing = {...makeEvent(start), title: 'Repère'};
+  const morning = {...points[0], at: Date.parse(start)};
+  const later = points[1];
+  const evening = {...points[3], at: Date.parse('2026-10-16T16:00:00Z')};
+
+  const during = agendaTimeline(
+    [ongoing],
+    Date.parse('2026-10-16T06:00:59Z'),
+    timezone,
+    [morning, later, evening],
+  );
+  expect(during.today[0]).toMatchObject({event: ongoing, point: morning});
+  expect(
+    agendaTimeline([ongoing], Date.parse('2026-10-16T06:01:00Z'), timezone, [
+      morning,
+      later,
+      evening,
+    ]).today,
+  ).toEqual([
+    {event: ongoing, time: '08:00'},
+    {point: later, time: '11:30'},
+    {point: evening, time: '18:00'},
+  ]);
+  expect(
+    agendaTimeline([], Date.parse('2026-10-16T09:31:00Z'), timezone, [
+      morning,
+      later,
+      evening,
+    ]).today,
+  ).toEqual([{point: evening, time: '18:00'}]);
 });
 
 it('marks explicitly titled all-day birthdays while leaving errands and timed events alone', () => {

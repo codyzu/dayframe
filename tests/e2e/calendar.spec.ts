@@ -293,7 +293,11 @@ test('admin selects shared calendars including an optional observance calendar, 
 });
 
 // Vitest covers every row count. Render empty, constrained and full cards here.
-for (const count of [0, 4, 6]) {
+for (const [count, capacity] of [
+  [0, 4],
+  [4, 2],
+  [6, 0],
+]) {
   test(`Morning previews tomorrow within spare rows after ${count} events today @mobile`, async ({
     page,
   }, info) => {
@@ -372,7 +376,6 @@ for (const count of [0, 4, 6]) {
       await expect(page.locator('[data-weather-alerts]')).toBeVisible();
     }
 
-    const capacity = Math.min(4, Math.max(0, 5 - count));
     await expect(page.locator('[data-agenda-tomorrow-events] li')).toHaveCount(
       capacity,
     );
