@@ -37,7 +37,7 @@
     </p>
   </section>
   <template data-agenda-template>
-    <li class="flex items-baseline gap-3 min-w-0 rounded-sm border-l-4 border-transparent pl-1 pr-2 text-primary text-[length:var(--font-weather-detail)] leading-tight data-[event-calendar=family]:border-l-[#b26278] data-[event-calendar=massages]:border-l-[#8565a9]">
+    <li class="group/event flex items-baseline gap-2 min-[1000px]:gap-3 min-w-0 pl-2 text-primary text-[length:var(--font-weather-detail)] leading-tight">
       <span
         data-event-time
         class="shrink-0 font-bold tabular-nums min-w-22"
@@ -45,7 +45,7 @@
       <span data-event-title class="min-w-0 flex-1 truncate"></span>
       <span
         data-event-source
-        class="shrink-0 text-sm font-normal text-secondary"
+        class="self-center flex h-6 w-22 min-[1000px]:w-26 shrink-0 items-center justify-center rounded-md text-base font-bold leading-none group-data-[event-calendar=family]/event:bg-[#f5dadd] group-data-[event-calendar=family]/event:text-[#683342] group-data-[event-calendar=massages]/event:bg-[#e8def5] group-data-[event-calendar=massages]/event:text-[#523772]"
       ></span>
     </li>
   </template>

@@ -61,7 +61,7 @@ acceptance remains #18.
 
 Morning uses semibold supporting text at the existing large sizes. The clock,
 temperatures, appointment times and advice headline remain prominent. Agenda rows
-use narrow calendar color markers alongside the written calendar names. Routine
+show the calendar name in a fixed-width tinted label at the right edge. Routine
 advice uses a pale warm surface so official vigilance stands out when present.
 The four main panes on the frame have 12 px gaps in both directions and 16 px
 corners. The smaller checkpoint tiles have 12 px corners.
