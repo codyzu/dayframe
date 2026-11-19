@@ -78,6 +78,11 @@ test('Morning shows escaped, bounded events, stays within the frame and clears d
   await expect(page.locator('[data-event-title]').nth(1)).toContainText(
     '<img src=x',
   );
+  const next = page.locator('[data-event-title][data-next]');
+  await expect(next).toHaveText(
+    '<img src=x onerror=alert(1)> Rendez-vous à l’école',
+  );
+  await expect(next).toHaveCSS('font-weight', '700');
   await expect(page.locator('[data-agenda] img')).toHaveCount(0);
   if (info.project.name !== 'mobile') {
     await expect

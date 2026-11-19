@@ -6,102 +6,108 @@
     En attente des prévisions…
   </p>
   <div data-chart-content class="w-full" hidden>
-    <div class="flex justify-between gap-2 text-sm text-secondary mb-1">
-      <span data-chart-range class="font-bold text-temperature"></span>
-      <span class="text-rain">Pluie · max. horaire / 2 h</span>
-    </div>
-    <div class="mx-3 grid grid-cols-[minmax(0,1fr)_3.5rem] gap-x-2">
-      <div class="relative h-[100px]" data-chart-plot>
+    <div class="hourly-layout">
+      <div class="temperature-key text-secondary leading-tight">
+        <p class="text-sm font-bold text-temperature">Température</p>
+        <p data-chart-range></p>
+      </div>
+      <div class="rain-key text-secondary leading-tight">
+        <p class="text-sm font-bold text-rain">Pluie</p>
+        <p>Probabilité</p>
+      </div>
+      <div
+        class="hourly-plot relative grid grid-rows-2"
+        data-chart-plot
+        role="img"
+        aria-label="Température et probabilité de précipitations"
+        aria-describedby="chart-description"
+      >
+        <p id="chart-description" class="sr-only">
+          En haut, température en degrés Celsius. En bas, maximum des
+          probabilités horaires de chaque tranche de deux heures, de 0 à 100 %.
+          Le trait pointillé indique l’heure actuelle. Le tableau détaillé suit
+          le graphique.
+        </p>
+        <div class="relative pb-2 pt-4">
+          <svg
+            class="block size-full overflow-visible border-b border-border/60"
+            viewBox="0 0 600 100"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            <path
+              data-chart-curve
+              fill="none"
+              stroke="var(--colors-temperature)"
+              stroke-width="3.5"
+              stroke-linecap="round"
+              vector-effect="non-scaling-stroke"
+            />
+          </svg>
+        </div>
+        <div class="rain-track relative border-t border-border/45">
+          <svg
+            class="rain-marks absolute inset-x-0 bottom-0 w-full overflow-visible border-b border-border/60"
+            viewBox="0 20 600 80"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            <line
+              x1="0"
+              x2="600"
+              y1="20"
+              y2="20"
+              stroke="var(--colors-border)"
+              stroke-dasharray="3 5"
+              vector-effect="non-scaling-stroke"
+            />
+            <g data-chart-rain></g>
+          </svg>
+          <div
+            data-rain-peak
+            class="absolute z-1 -translate-x-1/2 whitespace-nowrap rounded bg-surface px-1 text-[length:var(--font-chart-time)] leading-none font-bold tabular-nums text-rain"
+            hidden
+          ></div>
+          <div
+            data-rain-scale
+            class="rain-scale absolute inset-y-0 left-full text-sm font-bold text-rain"
+            aria-hidden="true"
+          >
+            <span class="absolute right-0 -translate-y-1/2">100 %</span>
+            <span class="absolute bottom-0 right-0 translate-y-1/2">0 %</span>
+          </div>
+        </div>
         <svg
-          class="absolute inset-0 size-full overflow-visible"
+          class="now-marker pointer-events-none absolute inset-x-0 bottom-0 w-full"
           viewBox="0 0 600 100"
           preserveAspectRatio="none"
-          role="img"
-          aria-labelledby="chart-title chart-description"
+          aria-hidden="true"
         >
-          <title id="chart-title">Température et probabilité de précipitations</title>
-          <desc id="chart-description">
-            Courbe cuivre : température en degrés Celsius. Barres bleues :
-            maximum des probabilités horaires de chaque tranche de deux heures,
-            de 0 à 100 %, et non probabilité sur toute la tranche. Trait
-            pointillé : maintenant, si dans la période. Tableau horaire détaillé
-            disponible après le graphique.
-          </desc>
-          <line
-            x1="0"
-            x2="600"
-            y1="100"
-            y2="100"
-            stroke="var(--colors-border)"
-            stroke-width="2"
-          />
-          <line
-            x1="0"
-            x2="600"
-            y1="60"
-            y2="60"
-            stroke="var(--colors-border)"
-            stroke-dasharray="4 6"
-            vector-effect="non-scaling-stroke"
-          />
-          <g data-chart-rain></g>
-          <path
-            data-chart-curve
-            fill="none"
-            stroke="var(--colors-surface)"
-            stroke-width="8"
-            stroke-linejoin="round"
-            vector-effect="non-scaling-stroke"
-          />
-          <path
-            data-chart-curve
-            fill="none"
-            stroke="var(--colors-temperature)"
-            stroke-width="4"
-            stroke-linejoin="round"
-            vector-effect="non-scaling-stroke"
-          />
           <line
             data-weather-now-line
             x1="0"
             x2="0"
-            y1="20"
+            y1="0"
             y2="100"
-            stroke="var(--colors-primary)"
-            stroke-width="2"
-            stroke-dasharray="4 4"
+            stroke="var(--colors-secondary)"
+            stroke-dasharray="3 4"
             vector-effect="non-scaling-stroke"
             style="display:none"
           />
         </svg>
-        <div
-          data-rain-peak
-          class="whitespace-nowrap absolute -translate-x-1/2 rounded bg-surface px-1 text-[length:var(--font-chart-time)] leading-none font-bold tabular-nums text-rain"
-          hidden
-        ></div>
         <span
           data-weather-now-label
-          class="absolute top-0 data-[rain-peak-high=true]:top-auto data-[rain-peak-high=true]:bottom-0 text-sm bg-surface px-1 font-bold"
+          class="absolute top-0 whitespace-nowrap bg-surface px-1 text-sm font-semibold leading-none"
           hidden
         >
           Maintenant
         </span>
       </div>
       <div
-        class="relative text-[length:var(--font-chart-time)] leading-tight font-bold tabular-nums text-rain"
-        data-rain-scale
+        data-chart-times
+        class="hourly-times relative mt-1 h-6"
         aria-hidden="true"
-      >
-        {[100, 50, 0].map((probability) => (
-          <span
-            class="absolute right-0 -translate-y-1/2"
-            style={{top: `${100 - probability * 0.8}%`}}
-          >
-            {probability} %
-          </span>
-        ))}
-      </div>
-      <div data-chart-times class="relative h-6 mt-1" aria-hidden="true"></div>
+      ></div>
     </div>
     <div class="sr-only">
       <table>
@@ -139,10 +145,69 @@
   </template>
 </div>
 <style>
-  /* A warning shares the frame height; shorten the plot, not its labels. */
+  .hourly-layout {
+    --rain-label-space: 1.25rem;
+    --rain-scale-width: 3rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--rain-scale-width);
+    grid-template-areas: 'keys keys' 'plot .' 'times .';
+    padding-inline: 0.75rem 0;
+  }
+  .temperature-key {
+    grid-area: temperature;
+  }
+  .rain-key {
+    grid-area: rain;
+  }
+  .hourly-plot {
+    grid-area: plot;
+    height: 7.75rem;
+  }
+  .hourly-times {
+    grid-area: times;
+  }
+  .rain-track {
+    /* A full-height bar still leaves room for its 100% label. */
+    --rain-height: calc(100% - var(--rain-label-space));
+  }
+  .rain-marks {
+    height: var(--rain-height);
+  }
+  .now-marker {
+    height: calc(100% - 1rem);
+  }
+  .rain-scale {
+    width: var(--rain-scale-width);
+  }
+  .rain-scale > span:first-child {
+    top: var(--rain-label-space);
+  }
+  @media (max-width: 639px) {
+    .temperature-key,
+    .rain-key {
+      grid-area: keys;
+      padding-bottom: 0.5rem;
+    }
+    .rain-key {
+      justify-self: end;
+    }
+  }
+  @media (min-width: 640px) {
+    .hourly-layout {
+      grid-template-columns: 7.5rem minmax(0, 1fr) var(--rain-scale-width);
+      grid-template-areas: 'temperature plot .' 'rain plot .' '. times .';
+      grid-template-rows: 1fr 1fr auto;
+      padding-inline-start: 0;
+    }
+    .temperature-key,
+    .rain-key {
+      align-self: center;
+    }
+  }
+  /* A warning shares the frame height; shorten the plots, not their labels. */
   @media (min-width: 1000px) {
-    :global([data-weather][data-alert='true']) [data-chart-plot] {
-      height: 70px;
+    :global([data-weather][data-alert='true']) .hourly-plot {
+      height: 5.875rem;
     }
   }
 </style>

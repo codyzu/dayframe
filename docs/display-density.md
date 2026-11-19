@@ -65,6 +65,10 @@ show the calendar name in a fixed-width tinted label at the right edge. Routine
 advice uses a pale warm surface so official vigilance stands out when present.
 The four main panes on the frame have 12 px gaps in both directions and 16 px
 corners. The smaller checkpoint tiles have 12 px corners.
+On the frame, the date sits beside the clock with the landscape fading before
+the digits. The hourly plot puts temperature above rain probability with a shared
+time axis and current-time marker. The agenda gives the next timed appointment
+more weight, including tomorrow when it is the next appointment shown.
 
 The paper and ink palette and emphasis on the clock and temperature follow ideas
 from Wes Bos's dashboard. Reviewed `dashboard/css/tokens.css` and

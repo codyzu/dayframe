@@ -685,9 +685,7 @@ test('day strip synchronizes weather, graph and advice without changing the real
     '2°',
   );
   await expect(page.locator('[data-point-label]').first()).toHaveText('Matin');
-  await expect(page.locator('[data-chart-range]')).toHaveText(
-    'Température · 2° à 2°C',
-  );
+  await expect(page.locator('[data-chart-range]')).toHaveText('2° à 2°C');
   await expect(page.locator('[data-weather-now-label]')).toBeHidden();
   await expect(page.locator('[data-date]')).toHaveText('vendredi 16 octobre');
   await expect(page.locator('[data-current-icon]')).toHaveCSS(

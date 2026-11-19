@@ -146,7 +146,7 @@ test('rain scale and one peak label stay readable for dry, wet and maximum forec
     probability = value;
     await page.goto('/?display=frame');
     const scale = page.locator('[data-rain-scale]');
-    await expect(scale.locator('span')).toHaveText(['100 %', '50 %', '0 %']);
+    await expect(scale.locator('span')).toHaveText(['100 %', '0 %']);
     const peak = page.locator('[data-rain-peak]');
     await expect(peak).toHaveCount(1);
     await expect(peak).toHaveText(`${value} %`);
@@ -159,13 +159,15 @@ test('rain scale and one peak label stay readable for dry, wet and maximum forec
     expect(label.x).toBeGreaterThanOrEqual(plot.x);
     expect(label.x + label.width).toBeLessThanOrEqual(plot.x + plot.width);
     expect(label.y).toBeGreaterThanOrEqual(plot.y);
-    expect(label.y + label.height).toBeLessThanOrEqual(
-      plot.y + 100 - value * 0.8,
-    );
-    const now = (await page.locator('[data-chart-plot] > span').boundingBox())!;
-    expect(
-      label.y + label.height <= now.y || now.y + now.height <= label.y,
-    ).toBe(true);
+    const anchor =
+      value === 0
+        ? scale.locator('span').last()
+        : page.locator('[data-chart-rain] rect').last();
+    const barTop = (await anchor.boundingBox())!;
+    const anchorY = barTop.y + (value === 0 ? barTop.height / 2 : 0);
+    const curve = (await page.locator('[data-chart-curve]').boundingBox())!;
+    expect(Math.abs(label.y + label.height - anchorY)).toBeLessThanOrEqual(1);
+    expect(curve.y + curve.height).toBeLessThan(label.y);
     expect(
       await peak.evaluate((element) =>
         Number(getComputedStyle(element).fontSize.replace('px', '')),

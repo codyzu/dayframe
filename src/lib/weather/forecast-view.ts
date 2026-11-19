@@ -66,10 +66,8 @@ export function renderChart(root: HTMLElement, hours: Hour[]) {
 
   const {low, high, x, path, rain, peak} = geometry;
   chart.querySelector('[data-chart-range]')!.textContent =
-    `Température · ${rounded(low)} à ${rounded(high)}C`;
-  for (const curve of chart.querySelectorAll('[data-chart-curve]')) {
-    curve.setAttribute('d', path);
-  }
+    `${rounded(low)} à ${rounded(high)}C`;
+  chart.querySelector('[data-chart-curve]')!.setAttribute('d', path);
 
   chart.querySelector('[data-chart-rain]')!.replaceChildren(
     ...rain.map((bar) => {
@@ -96,12 +94,9 @@ export function renderChart(root: HTMLElement, hours: Hour[]) {
       `${hourLabel(peak.start)}–${hourLabel(peak.end)} : maximum horaire ${peak.probability} %`,
     );
     peakLabel.style.left = `clamp(2rem, ${x((peak.start + peak.end) / 2) / 6}%, calc(100% - 2rem))`;
-    peakLabel.style.top = `${80 - peak.probability * 0.8}%`;
+    peakLabel.style.bottom = `calc(var(--rain-height) * ${peak.probability / 100})`;
   }
 
-  chart.querySelector<HTMLElement>(
-    '[data-weather-now-label]',
-  )!.dataset.rainPeakHigh = String(Boolean(peak && peak.probability >= 75));
   chart.querySelector('[data-chart-times]')!.replaceChildren(
     ...hours
       .filter((hour) => Number(hourLabel(hour.time).slice(0, 2)) % 2 === 0)

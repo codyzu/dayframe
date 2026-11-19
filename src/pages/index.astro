@@ -30,7 +30,13 @@ import ModeNavigation from '../components/ModeNavigation.astro';
       preserveAspectRatio="none"
       aria-hidden="true"
     >
-      <circle cx="610" cy="44" r="32" fill="var(--colors-advice)" />
+      <circle
+        cx="610"
+        cy="44"
+        r="32"
+        fill="var(--colors-advice)"
+        class="min-[1000px]:hidden"
+      />
       <path
         d="M0 180 160 65 235 123 360 25 460 125 560 65 800 170V180Z"
         class="fill-alpine-far"
@@ -54,12 +60,14 @@ import ModeNavigation from '../components/ModeNavigation.astro';
           <span>Bonjour,</span>
           <WeatherLocation />
         </h1>
-        <p class="text-2xl text-secondary first-letter:uppercase" data-date>
-          Chargement de la date…
-        </p>
-        <time class="clock ml-auto" data-clock aria-label="Heure locale">
-          --:--
-        </time>
+        <div class="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 min-[1000px]:ml-auto min-[1000px]:w-auto min-[1000px]:shrink-0 min-[1000px]:flex-nowrap">
+          <p class="text-2xl text-secondary first-letter:uppercase" data-date>
+            Chargement de la date…
+          </p>
+          <time class="clock ml-auto" data-clock aria-label="Heure locale">
+            --:--
+          </time>
+        </div>
       </div>
       <MorningWeather />
     </section>
@@ -203,6 +211,16 @@ import ModeNavigation from '../components/ModeNavigation.astro';
     }
     .morning-panel {
       padding: 0;
+    }
+    .alpine-header {
+      right: 22%;
+      width: 52%;
+      mask-image: linear-gradient(
+        to right,
+        transparent,
+        black 35%,
+        transparent
+      );
     }
     .morning-intro {
       flex-wrap: nowrap;

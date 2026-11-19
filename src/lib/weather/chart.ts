@@ -12,7 +12,7 @@ export function chartGeometry(hours: Hour[]) {
   const x = (time: number) =>
     ((time - hours[0].time) / (hours.at(-1)!.time - hours[0].time)) * 600;
   const y = (temperature: number) =>
-    92 - ((temperature - (low - 3)) / (high - low + 6)) * 64;
+    92 - ((temperature - (low - 1)) / (high - low + 2)) * 84;
   // Horizontal cubic handles give a smooth bounded curve, without overshoot.
   let path = `M${x(hours[0].time)},${y(hours[0].temperature)}`;
   for (let index = 1; index < hours.length; index++) {

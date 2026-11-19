@@ -68,6 +68,9 @@ export function mountAgenda(root: HTMLElement) {
       hour: '2-digit',
       minute: '2-digit',
     });
+    const nextAppointment = events.find(
+      (event) => !event.allDay && Date.parse(event.start) > now,
+    );
     const rows = (entries: AgendaEvent[]) =>
       entries.map((event) => {
         const row = template.content.firstElementChild!.cloneNode(
@@ -82,7 +85,9 @@ export function mountAgenda(root: HTMLElement) {
             ? 'En cours'
             : formatter.format(Date.parse(event.start));
         row.dataset.eventCalendar = source;
-        row.querySelector('[data-event-title]')!.textContent = event.title;
+        const title = row.querySelector('[data-event-title]')!;
+        title.textContent = event.title;
+        title.toggleAttribute('data-next', event === nextAppointment);
         row.querySelector('[data-event-source]')!.textContent = label;
         row.title = `${label} · ${event.title}`;
         return row;

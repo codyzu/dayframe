@@ -151,7 +151,10 @@ spanning both days or silently skip ahead beyond tomorrow. See [calendar behavio
 Conditional or later additions: strong winds, freezing conditions, sunrise/sunset,
 short multi-day forecast, and calendar events. Avoid cluttering the primary 10-inch display with humidity, pressure, UV, or long forecasts by default.
 
-The visual direction follows the approved mockups: scenic Annecy-style background, tasteful translucent surfaces, legible typography, color weather icons, and a combined hourly chart. The background must never compromise contrast.
+The visual direction follows the approved mockups: a scenic Annecy-style header,
+legible typography, and color weather icons. The hourly chart gives temperature
+and precipitation probability separate tracks on a shared time axis. The
+background must never compromise contrast.
 
 **Owner-approved design, 5 November 2026 (#23):** A compact header combines the
 greeting/location picker, actual household date and clock. An always-visible
