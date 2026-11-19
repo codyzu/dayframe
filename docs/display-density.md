@@ -57,6 +57,19 @@ reachable. This accepted overlap refines the no-clipping policy above only for
 the temporary dock. The owner approved the #23 screenshot review; physical
 acceptance remains #18.
 
+## Morning visual hierarchy
+
+Morning uses semibold supporting text at the existing large sizes. The clock,
+temperatures, appointment times and advice headline remain prominent. Agenda rows
+use narrow calendar color markers alongside the written calendar names. Routine
+advice uses a pale warm surface so official vigilance stands out when present.
+
+The paper and ink palette and emphasis on the clock and temperature follow ideas
+from Wes Bos's dashboard. Reviewed `dashboard/css/tokens.css` and
+`dashboard/css/views/home.css` at `e97c50ba459c49ea8237259f69b95cd28054b628`.
+Dayframe uses its own Manrope weights, neutral agenda rows and Astro components.
+The upstream revision has no root license, and this pass copies no code or assets.
+
 ## Controls
 
 Morning, Photos and Night use the same 24rem maximum navigation width (viewport

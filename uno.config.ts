@@ -45,6 +45,7 @@ export default defineConfig({
       temperature: '#915018',
       rain: '#176D91',
       advice: '#FFE49A',
+      'advice-soft': '#FBEDCE',
       'advice-ink': '#32270F',
       warning: '#793D14',
       mist: '#35454A',
