@@ -58,6 +58,7 @@ export default defineConfig({
   },
   shortcuts: {
     surface: 'rounded-3xl border border-border bg-surface text-primary',
+    'morning-pane': 'rounded-2xl border border-border bg-surface text-primary',
     eyebrow: 'mb-3 text-sm font-bold tracking-[2.1px] uppercase text-secondary',
     'display-title':
       'text-[30px] md:text-[clamp(30px,3.6vw,48px)] font-semibold leading-tight tracking-[-1.8px]',

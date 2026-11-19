@@ -89,10 +89,10 @@ import WeatherChart from './WeatherChart.astro';
   <FutureWeather />
   <div
     data-weather-cards
-    class="grid gap-4 min-[1000px]:grid-cols-[0.85fr_1.8fr]"
+    class="grid gap-3 min-[1000px]:grid-cols-[0.85fr_1.8fr]"
   >
     <section
-      class="surface min-w-0 flex flex-col justify-between px-4 py-2 group-data-[observance=true]/weather:py-1.5"
+      class="morning-pane min-w-0 flex flex-col justify-between px-4 py-2 group-data-[observance=true]/weather:py-1.5"
       aria-labelledby="weather-title"
     >
       <h2
@@ -155,7 +155,7 @@ import WeatherChart from './WeatherChart.astro';
       ></time>
     </section>
     <section
-      class="surface min-w-0 px-4 py-2 group-data-[observance=true]/weather:py-1.5"
+      class="morning-pane min-w-0 px-4 py-2 group-data-[observance=true]/weather:py-1.5"
       aria-labelledby="forecast-title"
     >
       <div class="flex flex-wrap items-baseline justify-between gap-2 mb-2">
@@ -173,10 +173,10 @@ import WeatherChart from './WeatherChart.astro';
   </div>
   <div
     data-weather-lower
-    class="grid gap-4 min-[1000px]:grid-cols-[0.85fr_1.8fr]"
+    class="grid gap-3 min-[1000px]:grid-cols-[0.85fr_1.8fr]"
   >
     <section
-      class="rounded-3xl border border-border bg-advice-soft text-advice-ink px-4 py-2"
+      class="rounded-2xl border border-border bg-advice-soft text-advice-ink px-4 py-2"
       aria-labelledby="advice-title"
     >
       <h2
@@ -371,6 +371,12 @@ import WeatherChart from './WeatherChart.astro';
     }
     [data-weather-lower] {
       grid-row: 4;
+      /* Match the pane column gap while keeping the other section gaps compact. */
+      margin-block-start: 0.5rem;
+    }
+    [data-weather][data-alert='true'][data-observance='true']
+      [data-weather-lower] {
+      margin-block-start: 0.625rem;
     }
     [data-weather-footer] {
       grid-row: 5;
