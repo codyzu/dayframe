@@ -1,0 +1,12 @@
+/* Keep joined sequences in a single face. The browser chooses its color format. */
+/* eslint-disable css/no-invalid-at-rules -- The linter's @font-face grammar does not recognize the tech() source hint. */
+@font-face {
+  font-family: 'Fluent Emoji Flat';
+  src:
+    url('../assets/fonts/fluent-emoji-flat-colrv1.woff2') format(woff2)
+      tech(color-COLRv1),
+    url('../assets/fonts/fluent-emoji-flat-otsvg.woff2') format(woff2)
+      tech(color-SVG);
+  font-display: swap;
+}
+/* eslint-enable css/no-invalid-at-rules */

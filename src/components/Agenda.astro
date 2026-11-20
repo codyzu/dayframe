@@ -1,3 +1,7 @@
+---
+import '../styles/fluent-emoji.css';
+---
+
 <section
   data-agenda
   class="min-w-0 px-4 py-4 min-[1000px]:px-6 min-[1000px]:py-5"
@@ -104,6 +108,10 @@
 </section>
 
 <style>
+  [data-event-title] {
+    font-family: Manrope, 'Fluent Emoji Flat', system-ui, sans-serif;
+  }
+
   [data-event-weather-icon] {
     background-image: var(--dayframe-static-icon);
   }

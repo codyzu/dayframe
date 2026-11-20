@@ -266,3 +266,20 @@ Reviewed upstream `dashboard/js/views/calendar.js` and the MIT `LICENSE` at
 `f1e0820918c926396e0ccafb4839568825f63edc`. Dayframe retains the distinction
 between all-day and timed entries and uses independent private Google calendar
 reads. No upstream code or assets copied.
+
+### Emoji in appointment titles
+
+The Aujourd’hui and Demain rows keep the original calendar title as text.
+Manrope handles the lettering and Dayframe serves Fluent Emoji Flat for emoji
+before falling back to the system font. Each color format keeps joined sequences
+in one font file. GeckoView and Chromium can select COLRv1, and WebKit can
+select the OpenType SVG version. Astro fingerprints both assets, and Cloudflare
+gives their URLs a one-year immutable browser cache policy. A new font produces
+a new URL. The build reads the local assets without a separate font download.
+See the [third-party notices](../THIRD_PARTY_NOTICES.md) for font provenance.
+
+Upstream reference reviewed at `e97c50ba459c49ea8237259f69b95cd28054b628`:
+`dashboard/js/views/calendar.js` escapes titles and inserts them as text, and
+`dashboard/css/base.css` inherits the dashboard's text stack. Dayframe retains
+its existing text insertion and applies a local emoji fallback only to agenda
+appointment titles. No upstream dashboard code or artwork was imported.
