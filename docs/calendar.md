@@ -1,8 +1,8 @@
 # Google Calendar on Morning
 
 A single household Google connection supplies **Family** and the optional
-**Massages** and **Routines** appointment calendars, plus an optional separate
-calendar for observed holidays.
+**Massages** and **Routines** appointment calendars, plus up to two optional
+calendars for observed holidays.
 The connected account must be able to read each selected calendar. Continue
 editing events in Google Calendar. Dayframe requests read-only event and
 calendar-list scopes; it has no write scope or event-creation endpoint.
@@ -11,14 +11,15 @@ calendar-list scopes; it has no write scope or event-creation endpoint.
 
 In `/admin/settings`, choose **Connecter Google Calendar**, authorize an account that
 can read Family, then choose **Family** under **Agenda à afficher** and press
-**Afficher ces agendas**. Choose the shared massage calendar under **Massages · violet** before saving. Leave
+**Enregistrer les agendas**. Choose the shared massage calendar under **Massages · violet** before saving. Leave
 that selection empty to remove it. Under **Routines · facultatif**, select the
 Routines calendar and save with the same button. Clear the selection and save
-to remove it from the frame. Under **Fêtes observées · facultatif**,
-choose a dedicated calendar for observances the household wants on the frame,
-such as Eid, or leave it empty. To use a different region or community's dates,
-subscribe to that calendar or share it with the connected Google account before
-selecting it here. All selections must be distinct. No additional OAuth consent
+to remove it from the frame. Use **Fêtes observées · agenda 1** and
+**agenda 2** for your chosen Google holiday calendars, for example U.S. and
+Muslim holidays. Existing selections remain in the first slot. Leave either
+slot empty to omit that feed. Share or subscribe to the calendars with the
+connected Google account first. **Recharger la liste Google** reloads options
+without saving changes. All selections must be distinct. No additional OAuth consent
 is needed for calendars already shared with the connected account. Calendar
 names need not be unique: the saved selection uses
 Google's verified calendar ID. Both existing administrators can manage the connection;
@@ -240,23 +241,26 @@ assets copied. Local/release verification is recorded in the implementation plan
 
 ## Household observances
 
-The dedicated calendar contributes at most two distinct, all-day titles active
-on today's household civil date, using the calendar's exclusive end date. A
-title is bounded to 120 characters. Google’s explicit `tentative` event status
-appears as **Date à confirmer**. The frame does not calculate sighting dates or
-infer that an observance closes school. The official French public holiday and
-school calendars remain the authorities for those separate signals.
+The two calendars share a total limit of two distinct, all-day titles active
+on today's household civil date. When both sources have entries, each can
+contribute one before the other adds a second. A title is bounded to 120
+characters. Google’s explicit `tentative` status appears as **Date à confirmer**.
+The official French public holiday and school feeds still determine day-off
+schedules. Google observances are display only.
 
-The optional source shares the existing four-minute server cache and five-minute
-browser privacy lease. It adds no request when unselected. If fetching it fails,
-the current observances are cleared and the frame can report the source as
-unavailable while continuing to display appointments. Calendar names, provider
-IDs and event descriptions are not sent to the frame. Selecting an empty value
-clears that source and invalidates the cache. Older settings clients which omit
-the optional field retain the saved selection. Existing connections upgrade
-without migration or OAuth changes. Rolling back to the previous build stops
-displaying observances. Use the selection control before rolling back to remove
-the saved source as well.
+The sources share the four-minute server cache and five-minute browser privacy
+lease. An unselected slot adds no request. If a source fails, the frame can
+show a notice alongside the healthy source and appointments. Calendar names,
+provider IDs and event descriptions stay off the display. Empty selections clear
+their respective source and invalidate the cache. Older clients that omit the
+second slot retain the saved choice. No OAuth, storage migration, or paid
+service is needed. Clear the second slot before rolling back if it should also
+be removed from saved settings.
+
+This extension re-reviewed Wes Bos's `dashboard/js/views/home.js` and MIT
+`LICENSE` at `0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189`. Dayframe keeps the
+short current-day list and independently merges private read-only sources.
+No upstream code or assets copied.
 
 Reviewed upstream `dashboard/js/views/calendar.js` and the MIT `LICENSE` at
 `f1e0820918c926396e0ccafb4839568825f63edc`. Dayframe retains the distinction

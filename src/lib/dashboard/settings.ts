@@ -102,7 +102,7 @@ function validateScalarSettings(result: Settings) {
 
 function validateSchedule(schedule: Settings['schedule']) {
   const invalid = () => new Error('Horaires invalides ou en chevauchement.');
-  const occupied = new Set<number>();
+  const occupied = new Map<number, Settings['schedule'][number]>();
   for (const entry of schedule) {
     if (
       typeof entry !== 'object' ||
@@ -122,11 +122,14 @@ function validateSchedule(schedule: Settings['schedule']) {
     const duration = (minute(entry.end) - start + 1440) % 1440;
     for (let offset = 0; offset < duration; offset++) {
       const slot = (start + offset) % 1440;
-      if (occupied.has(slot)) {
-        throw invalid();
+      const other = occupied.get(slot);
+      if (other) {
+        throw new Error(
+          `Les plages ${other.start}–${other.end} et ${entry.start}–${entry.end} se chevauchent. Ajustez leurs horaires.`,
+        );
       }
 
-      occupied.add(slot);
+      occupied.set(slot, entry);
     }
   }
 }

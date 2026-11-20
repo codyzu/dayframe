@@ -145,7 +145,7 @@ test('admin edits and persists separate day profiles without replacing base sett
     page.locator('[data-day-schedule] [data-start]').first(),
   ).toHaveValue('08:00');
   await page.getByRole('button', {name: 'Enregistrer les réglages'}).click();
-  await expect(page.locator('[data-status]')).toHaveText(
+  await expect(page.locator('[data-settings-save-status]')).toHaveText(
     'Réglages enregistrés.',
   );
   await page.reload();

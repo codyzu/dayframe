@@ -1,13 +1,16 @@
 import {ApiError, photoRequest} from '../photos/client.ts';
 
 type CalendarOption = {id: string; name: string};
-type CalendarStatus = {
-  configured: boolean;
-  connected: boolean;
+type CalendarSelection = {
   selected?: CalendarOption;
   massageSelected?: CalendarOption;
   routineSelected?: CalendarOption;
   observanceSelected?: CalendarOption;
+  secondObservanceSelected?: CalendarOption;
+};
+type CalendarStatus = CalendarSelection & {
+  configured: boolean;
+  connected: boolean;
 };
 const adminRoot = document.querySelector<HTMLElement>('[data-calendar-admin]');
 if (adminRoot) {
@@ -33,10 +36,25 @@ function mount(root: HTMLElement) {
   const observanceSelect = root.querySelector<HTMLSelectElement>(
     '[data-observance-select]',
   )!;
-  const selects = [select, massageSelect, routineSelect, observanceSelect];
+  const secondObservanceSelect = root.querySelector<HTMLSelectElement>(
+    '[data-second-observance-select]',
+  )!;
+  const selects = [
+    select,
+    massageSelect,
+    routineSelect,
+    observanceSelect,
+    secondObservanceSelect,
+  ];
   const save = root.querySelector<HTMLButtonElement>('[data-calendar-save]')!;
+  const refresh = root.querySelector<HTMLButtonElement>(
+    '[data-calendar-refresh]',
+  )!;
   let isBusy = false;
   let state: CalendarStatus | undefined;
+  const values = () => JSON.stringify(selects.map((field) => field.value));
+  let savedValues = '';
+
   function lock() {
     controls.disabled = isBusy || !state?.configured;
     disconnect.hidden = !state?.connected;
@@ -45,9 +63,29 @@ function mount(root: HTMLElement) {
     }
 
     save.disabled = !state?.connected;
+    refresh.disabled = isBusy;
     connect.textContent = state?.connected
       ? 'Reconnecter Google Calendar'
       : 'Connecter Google Calendar';
+  }
+
+  function savedLabel(selection: CalendarSelection) {
+    const observances = [
+      selection.observanceSelected?.name,
+      selection.secondObservanceSelected?.name,
+    ]
+      .filter(Boolean)
+      .join(', ');
+    return [
+      `Agenda affiché : ${selection.selected?.name ?? ''}`,
+      selection.massageSelected &&
+        `Massages : ${selection.massageSelected.name}`,
+      selection.routineSelected &&
+        `Routines : ${selection.routineSelected.name}`,
+      observances !== '' && `Fêtes observées : ${observances}`,
+    ]
+      .filter(Boolean)
+      .join(' · ');
   }
 
   async function run(action: () => Promise<void>) {
@@ -74,32 +112,44 @@ function mount(root: HTMLElement) {
     }
   }
 
-  async function load() {
+  function connectionLabel(current: CalendarStatus) {
+    if (!current.configured) {
+      return 'La configuration Google Calendar reste à terminer sur le serveur.';
+    }
+
+    if (!current.connected) {
+      return 'Aucun agenda connecté.';
+    }
+
+    return current.selected
+      ? savedLabel(current)
+      : 'Google connecté. Choisissez l’agenda à afficher.';
+  }
+
+  function showDraftStatus() {
+    if (state) {
+      status.textContent =
+        values() === savedValues
+          ? connectionLabel(state)
+          : 'Modifications non enregistrées.';
+    }
+  }
+
+  async function load(isPreservingEdits = false) {
+    const draft =
+      isPreservingEdits && values() !== savedValues
+        ? selects.map((field) => field.value)
+        : undefined;
     const response = await photoRequest('/api/calendar');
     state = (await response.json()) as CalendarStatus;
     select.replaceChildren(new Option('Choisir votre agenda partagé', ''));
     massageSelect.replaceChildren(new Option('Aucun agenda de massages', ''));
     routineSelect.replaceChildren(new Option('Aucun agenda de routines', ''));
-    observanceSelect.replaceChildren(
-      new Option('Aucun agenda de fêtes observées', ''),
-    );
-    status.textContent = state.configured
-      ? state.connected
-        ? state.selected
-          ? [
-              `Agenda affiché : ${state.selected.name}`,
-              state.massageSelected &&
-                `Massages : ${state.massageSelected.name}`,
-              state.routineSelected &&
-                `Routines : ${state.routineSelected.name}`,
-              state.observanceSelected &&
-                `Fêtes observées : ${state.observanceSelected.name}`,
-            ]
-              .filter(Boolean)
-              .join(' · ')
-          : 'Google connecté. Choisissez l’agenda à afficher.'
-        : 'Aucun agenda connecté.'
-      : 'La configuration Google Calendar reste à terminer sur le serveur.';
+    for (const field of [observanceSelect, secondObservanceSelect]) {
+      field.replaceChildren(new Option('Aucun agenda de fêtes observées', ''));
+    }
+
+    status.textContent = connectionLabel(state);
     if (!state.connected) {
       return;
     }
@@ -119,6 +169,19 @@ function mount(root: HTMLElement) {
       massageSelect.value = state.massageSelected?.id ?? '';
       routineSelect.value = state.routineSelected?.id ?? '';
       observanceSelect.value = state.observanceSelected?.id ?? '';
+      secondObservanceSelect.value = state.secondObservanceSelected?.id ?? '';
+      savedValues = values();
+      if (draft) {
+        for (const [index, field] of selects.entries()) {
+          if (
+            [...field.options].some((option) => option.value === draft[index])
+          ) {
+            field.value = draft[index];
+          }
+        }
+
+        showDraftStatus();
+      }
     }
   }
 
@@ -141,7 +204,8 @@ function mount(root: HTMLElement) {
         throw new Error('Choisissez votre agenda partagé.');
       }
 
-      await photoRequest('/api/calendar', {
+      status.textContent = 'Enregistrement des agendas…';
+      const response = await photoRequest('/api/calendar', {
         method: 'PATCH',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
@@ -149,9 +213,13 @@ function mount(root: HTMLElement) {
           ...(massageSelect.value !== '' && {massageId: massageSelect.value}),
           routineId: routineSelect.value,
           observanceId: observanceSelect.value,
+          secondObservanceId: secondObservanceSelect.value,
         }),
       });
-      await load();
+      const selection = (await response.json()) as CalendarSelection;
+      state = {...state!, ...selection};
+      savedValues = values();
+      status.textContent = `Agendas enregistrés. ${savedLabel(selection)}`;
     });
   });
   disconnect.addEventListener('click', () => {
@@ -160,11 +228,13 @@ function mount(root: HTMLElement) {
       await load();
     });
   });
-  root
-    .querySelector('[data-calendar-refresh]')!
-    .addEventListener('click', () => {
-      void run(load);
-    });
+  refresh.addEventListener('click', () => {
+    void run(async () => load(true));
+  });
+  for (const field of selects) {
+    field.addEventListener('change', showDraftStatus);
+  }
+
   const result = new URL(location.href).searchParams.get('calendar');
   if (result !== null && result !== 'connected') {
     root.querySelector('[data-calendar-result]')!.textContent =

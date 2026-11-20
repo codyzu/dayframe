@@ -37,6 +37,7 @@ type Connection = {
   massageCalendar?: SelectedCalendar;
   routineCalendar?: SelectedCalendar;
   observanceCalendar?: SelectedCalendar;
+  secondObservanceCalendar?: SelectedCalendar;
 };
 type RecordState = {
   revision: string;
@@ -52,6 +53,7 @@ type RecordState = {
     routineUnavailable?: true;
     observances?: AgendaObservance[];
     observanceUnavailable?: true;
+    secondObservanceRead?: true;
   };
 };
 type Tokens = {access: string; refresh: string; expires: number};
@@ -418,6 +420,9 @@ async function calendarEvents(
   return items;
 }
 
+const observanceKey = (title: string) =>
+  title.normalize('NFC').toLocaleLowerCase('fr');
+
 function normalizeObservances(items: GoogleEvent[], today: string) {
   const titles = new Set<string>();
   const observances: AgendaObservance[] = [];
@@ -436,7 +441,7 @@ function normalizeObservances(items: GoogleEvent[], today: string) {
     }
 
     const title = item.summary.trim().slice(0, agendaObservanceTitleLimit);
-    const key = title.normalize('NFC').toLocaleLowerCase('fr');
+    const key = observanceKey(title);
     if (title === '' || titles.has(key)) {
       continue;
     }
@@ -483,6 +488,52 @@ async function readObservances(
     // A revoked or unavailable optional calendar does not erase appointments.
     return {observanceUnavailable: true};
   }
+}
+
+async function readSelectedObservances(
+  access: string,
+  connection: Connection,
+  now: number,
+  timezone: string,
+) {
+  const [primary, secondary] = await Promise.all([
+    readObservances(access, connection.observanceCalendar, now, timezone),
+    readObservances(access, connection.secondObservanceCalendar, now, timezone),
+  ]);
+  const first = primary.observances ?? [];
+  const second = secondary.observances ?? [];
+  const distinct: AgendaObservance[] = [];
+  // Give both calendars a chance to contribute before showing a second entry.
+  for (const entry of [
+    first.at(0),
+    second.at(0),
+    ...first.slice(1),
+    ...second.slice(1),
+  ]) {
+    if (!entry) {
+      continue;
+    }
+
+    const key = observanceKey(entry.title);
+    const index = distinct.findIndex(({title}) => observanceKey(title) === key);
+    if (index === -1) {
+      distinct.push(entry);
+    } else if (distinct[index].tentative === true && entry.tentative !== true) {
+      distinct[index] = entry;
+    }
+  }
+
+  return {
+    ...((primary.observances !== undefined ||
+      secondary.observances !== undefined) && {
+      observances: distinct.slice(0, agendaObservanceLimit),
+    }),
+    observanceUnavailable:
+      primary.observanceUnavailable ?? secondary.observanceUnavailable,
+    ...(connection.secondObservanceCalendar && {
+      secondObservanceRead: true as const,
+    }),
+  };
 }
 
 async function readRoutines(
@@ -540,14 +591,16 @@ async function agenda(env: CalendarEnv, state: RecordState) {
     now < cache.fetchedAt ||
     dayEnd(cache.fetchedAt, timezone) <= now ||
     (state.connection.routineCalendar !== undefined && !cache.routineRead) ||
+    (state.connection.secondObservanceCalendar !== undefined &&
+      !cache.secondObservanceRead) ||
     (state.connection.observanceCalendar &&
       !cache.observances &&
       !cache.observanceUnavailable)
   ) {
     const access = await accessToken(env, state);
-    const observances = readObservances(
+    const observances = readSelectedObservances(
       access,
-      state.connection.observanceCalendar,
+      state.connection,
       now,
       timezone,
     );
@@ -671,12 +724,14 @@ async function selectCalendars(
     massageId?: unknown;
     routineId?: unknown;
     observanceId?: unknown;
+    secondObservanceId?: unknown;
   };
   if (
     typeof body?.id !== 'string' ||
     !isOptionalCalendarId(body.massageId) ||
     !isOptionalCalendarId(body.routineId) ||
-    !isOptionalCalendarId(body.observanceId)
+    !isOptionalCalendarId(body.observanceId) ||
+    !isOptionalCalendarId(body.secondObservanceId)
   ) {
     return failure(400, 'INVALID_CALENDAR', 'Choisissez un agenda.');
   }
@@ -696,10 +751,16 @@ async function selectCalendars(
     body.observanceId,
     state.connection!.observanceCalendar,
   );
+  const secondObservanceSelected = optionalSelection(
+    accessible,
+    body.secondObservanceId,
+    state.connection!.secondObservanceCalendar,
+  );
   const optionalCalendars = [
     [body.massageId, massageSelected],
     [body.routineId, routineSelected],
     [body.observanceId, observanceSelected],
+    [body.secondObservanceId, secondObservanceSelected],
   ] as const;
   const ids = [selected, ...optionalCalendars.map(([, entry]) => entry)]
     .filter((entry) => entry !== undefined)
@@ -720,6 +781,7 @@ async function selectCalendars(
   state.connection!.massageCalendar = massageSelected;
   state.connection!.routineCalendar = routineSelected;
   state.connection!.observanceCalendar = observanceSelected;
+  state.connection!.secondObservanceCalendar = secondObservanceSelected;
   delete state.cache;
   await saveState(env, state);
   return privateJson({
@@ -727,6 +789,7 @@ async function selectCalendars(
     massageSelected: massageSelected ?? null,
     routineSelected: routineSelected ?? null,
     observanceSelected: observanceSelected ?? null,
+    secondObservanceSelected: secondObservanceSelected ?? null,
   });
 }
 
@@ -752,6 +815,7 @@ export async function calendarApi(
         massageSelected: connection?.massageCalendar ?? null,
         routineSelected: connection?.routineCalendar ?? null,
         observanceSelected: connection?.observanceCalendar ?? null,
+        secondObservanceSelected: connection?.secondObservanceCalendar ?? null,
       });
     }
 

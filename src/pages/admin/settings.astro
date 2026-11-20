@@ -153,15 +153,22 @@ const fields = [
             Utiliser le programme quotidien
           </button>
         </section>
-        <button
-          type="submit"
-          class="min-h-12 rounded-full bg-primary px-6 text-elevated"
-        >
-          Enregistrer les réglages
-        </button>
         <button data-export type="button" class="min-h-12 px-5 underline">
           Exporter les réglages
         </button>
+        <div class="sticky bottom-0 z-1 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border bg-background py-3">
+          <button
+            type="submit"
+            class="min-h-12 rounded-full bg-primary px-6 text-elevated disabled:opacity-50"
+          >
+            Enregistrer les réglages
+          </button>
+          <p
+            data-settings-save-status
+            role="status"
+            class="min-w-0 text-sm"
+          ></p>
+        </div>
       </fieldset>
     </form>
     <section
@@ -229,9 +236,9 @@ const fields = [
         </a>
       </p>
       <p data-calendar-result role="status" class="mt-3"></p>
-      <p data-calendar-status role="status" class="my-4">
-        Vérification de la connexion…
-      </p>
+      <button data-calendar-refresh type="button" class="min-h-11 underline">
+        Recharger la liste Google
+      </button>
       <fieldset disabled class="flex flex-wrap gap-3">
         <button
           data-calendar-connect
@@ -259,23 +266,31 @@ const fields = [
           ></select>
         </label>
         <label class="flex w-full flex-col gap-2">
-          Fêtes observées · facultatif
+          Fêtes observées · agenda 1 (facultatif)
           <select
             data-observance-select
             aria-describedby="observance-calendar-help"
             class="min-h-12 w-full min-w-0 rounded-lg border border-border bg-elevated px-3"
           ></select>
-          <span id="observance-calendar-help" class="text-sm text-secondary">
-            Choisissez un agenda Google dédié aux fêtes observées. Seuls ses
-            événements à la journée en cours sont affichés.
-          </span>
         </label>
+        <label class="flex w-full flex-col gap-2">
+          Fêtes observées · agenda 2 (facultatif)
+          <select
+            data-second-observance-select
+            aria-describedby="observance-calendar-help"
+            class="min-h-12 w-full min-w-0 rounded-lg border border-border bg-elevated px-3"
+          ></select>
+        </label>
+        <p id="observance-calendar-help" class="w-full text-sm text-secondary">
+          Seules les fêtes de la journée sont affichées. Les jours fériés
+          français et les vacances scolaires se règlent dans « Selon le jour ».
+        </p>
         <button
           data-calendar-save
           type="button"
-          class="min-h-12 px-4 underline disabled:opacity-50"
+          class="min-h-12 rounded-full bg-primary px-6 text-elevated disabled:opacity-50"
         >
-          Afficher ces agendas
+          Enregistrer les agendas
         </button>
         <button
           data-calendar-disconnect
@@ -285,14 +300,10 @@ const fields = [
         >
           Déconnecter Google Calendar
         </button>
+        <p data-calendar-status role="status" class="w-full text-sm">
+          Vérification de la connexion…
+        </p>
       </fieldset>
-      <button
-        data-calendar-refresh
-        type="button"
-        class="min-h-11 mt-3 underline"
-      >
-        Actualiser Google Calendar
-      </button>
     </section>
     <template data-period-template>
       <div class="flex flex-wrap items-end gap-3 rounded-lg bg-surface p-3">

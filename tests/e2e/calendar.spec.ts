@@ -254,6 +254,7 @@ test('admin selects shared calendars including routines and observances, disconn
   let massageSelected: {id: string; name: string} | undefined;
   let routineSelected: {id: string; name: string} | undefined;
   let observanceSelected: {id: string; name: string} | undefined;
+  let secondObservanceSelected: {id: string; name: string} | undefined;
   await page.route('**/api/calendar', async (route) => {
     if (route.request().method() === 'PATCH') {
       expect(route.request().headers()['x-dayframe-request']).toBe('1');
@@ -262,11 +263,16 @@ test('admin selects shared calendars including routines and observances, disconn
         massageId: 'massage',
         routineId: 'routines',
         observanceId: 'observances',
+        secondObservanceId: 'other-observances',
       });
       selected = {id: 'family', name: 'Notre famille'};
       massageSelected = {id: 'massage', name: 'Cabinet'};
       routineSelected = {id: 'routines', name: 'Routines du foyer'};
       observanceSelected = {id: 'observances', name: 'Fêtes du foyer'};
+      secondObservanceSelected = {
+        id: 'other-observances',
+        name: 'Autres fêtes',
+      };
     }
 
     if (route.request().method() === 'DELETE') {
@@ -281,6 +287,7 @@ test('admin selects shared calendars including routines and observances, disconn
         massageSelected,
         routineSelected,
         observanceSelected,
+        secondObservanceSelected,
       },
     });
   });
@@ -292,6 +299,7 @@ test('admin selects shared calendars including routines and observances, disconn
           {id: 'massage', name: 'Cabinet'},
           {id: 'routines', name: 'Routines du foyer'},
           {id: 'observances', name: 'Fêtes du foyer'},
+          {id: 'other-observances', name: 'Autres fêtes'},
         ],
       },
     }),
@@ -318,12 +326,22 @@ test('admin selects shared calendars including routines and observances, disconn
   const routines = page.getByLabel('Routines · facultatif');
   await routines.selectOption('routines');
   await page
-    .getByLabel('Fêtes observées · facultatif', {exact: false})
+    .getByLabel(/Fêtes observées · agenda 1/v)
     .selectOption('observances');
-  await page.getByRole('button', {name: 'Afficher ces agendas'}).click();
-  await expect(page.locator('[data-calendar-status]')).toHaveText(
-    'Agenda affiché : Notre famille · Massages : Cabinet · Routines : Routines du foyer · Fêtes observées : Fêtes du foyer',
+  const secondObservance = page.getByLabel(/Fêtes observées · agenda 2/v);
+  const status = page.locator('[data-calendar-status]');
+  await secondObservance.selectOption('other-observances');
+  await expect(status).toHaveText('Modifications non enregistrées.');
+  await page.getByRole('button', {name: 'Recharger la liste Google'}).click();
+  await expect(secondObservance).toHaveValue('other-observances');
+  await expect(status).toHaveText('Modifications non enregistrées.');
+  await page.getByRole('button', {name: 'Enregistrer les agendas'}).click();
+  await expect(status).toContainText('Agendas enregistrés.');
+  await expect(status).toContainText(
+    'Fêtes observées : Fêtes du foyer, Autres fêtes',
   );
+  await page.reload();
+  await expect(secondObservance).toHaveValue('other-observances');
   await expect(routines).toHaveValue('routines');
   await page.getByRole('button', {name: 'Déconnecter Google Calendar'}).click();
   await expect(page.locator('[data-calendar-status]')).toHaveText(

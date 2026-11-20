@@ -145,12 +145,29 @@ beforeEach(async () => {
             {id: 'other', summary: 'Personal'},
             {id: 'routine-source', summary: 'Routines'},
             {id: 'observances', summary: 'Fêtes du foyer'},
+            {id: 'observances-two', summary: 'Autres fêtes'},
           ],
         });
       }
 
       if (url.pathname.endsWith('/events')) {
         eventPages++;
+        if (url.pathname === '/calendar/v3/calendars/observances-two/events') {
+          expect(url.searchParams.get('fields')).toBe(
+            'items(status,summary,start(date),end(date)),nextPageToken',
+          );
+          const now = Date.now();
+          const timezone = 'Europe/Paris';
+          const start = {date: localDate(now, timezone)};
+          const end = {date: localDate(dayEnd(now, timezone), timezone)};
+          return Response.json({
+            items: [
+              {start, end, summary: 'Autre fête'},
+              {start, end, summary: 'FÊTE OBSERVÉE'},
+            ],
+          });
+        }
+
         if (url.pathname === '/calendar/v3/calendars/observances/events') {
           expect(url.searchParams.get('fields')).toBe(
             'items(status,summary,start(date),end(date)),nextPageToken',
@@ -657,7 +674,7 @@ it('keeps appointments available and withholds provider details when Routines ca
   expect(eventPages).toBe(3);
 });
 
-it('serves only bounded all-day observances and leaves appointments available when that source fails', async () => {
+it('merges two bounded all-day observance calendars and isolates source failures', async () => {
   const selection = {id: 'shared@example.test', massageId: 'other'};
   await finish();
   for (const observanceId of [
@@ -673,10 +690,18 @@ it('serves only bounded all-day observances and leaves appointments available wh
     expect(response.status).toBe(400);
   }
 
-  const select = async (observanceId?: string) => {
+  const duplicate = await request('/api/calendar', 'PATCH', admin, {
+    ...selection,
+    observanceId: 'observances',
+    secondObservanceId: 'observances',
+  });
+  expect(duplicate.status).toBe(400);
+
+  const select = async (observanceId?: string, secondObservanceId?: string) => {
     const response = await request('/api/calendar', 'PATCH', admin, {
       ...selection,
       observanceId,
+      secondObservanceId,
     });
     expect(response.status).toBe(200);
   };
@@ -702,21 +727,40 @@ it('serves only bounded all-day observances and leaves appointments available wh
   await request('/api/calendar/events', 'GET', display);
   expect(eventPages).toBe(3);
 
+  await select('observances', 'observances-two');
+  await select();
+  expect(await (await request('/api/calendar')).json()).toMatchObject({
+    observanceSelected: {id: 'observances'},
+    secondObservanceSelected: {id: 'observances-two'},
+  });
+  const both = (await (
+    await request('/api/calendar/events', 'GET', display)
+  ).json()) as Agenda;
+  expect(both.observances).toEqual([
+    {title: 'FÊTE OBSERVÉE', start: today, end: tomorrow},
+    {title: 'Autre fête', start: today, end: tomorrow},
+  ]);
+  expect(JSON.stringify(both)).not.toContain('observances-two');
+
   isObservanceUnavailable = true;
   await select('observances');
   const failed = (await (
     await request('/api/calendar/events', 'GET', display)
   ).json()) as Agenda;
   expect(failed.observanceUnavailable).toBe(true);
-  expect(failed.observances).toBeUndefined();
+  expect(failed.observances?.map(({title}) => title)).toEqual([
+    'Autre fête',
+    'FÊTE OBSERVÉE',
+  ]);
   expect(failed.events).toHaveLength(2);
   expect(JSON.stringify(failed)).not.toContain('private provider response');
 
-  await select('');
+  const pagesBeforeClear = eventPages;
+  await select('', '');
   const cleared = (await (
     await request('/api/calendar/events', 'GET', display)
   ).json()) as Agenda;
   expect(cleared.observances).toBeUndefined();
   expect(cleared.observanceUnavailable).toBeUndefined();
-  expect(eventPages).toBe(8);
+  expect(eventPages - pagesBeforeClear).toBe(2);
 });

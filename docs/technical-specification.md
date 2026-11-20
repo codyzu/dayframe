@@ -153,7 +153,8 @@ to nine appointments across Family, Massages and optional Routines. Tomorrow
 remains a spare-space preview.
 Routines follow their Google event schedule on all days. Official
 holidays and school breaks are distinguished from optional household observances,
-whose display is independent of the schedule. The weather column adds bundled
+whose display is independent of the schedule. Up to two optional Google calendars
+contribute observances, with at most two distinct notices per day. The weather column adds bundled
 lake scenes and current-day sunrise/sunset to the hourly chart. See
 [layout and artwork](display-density.md#journal-alpin-morning).
 

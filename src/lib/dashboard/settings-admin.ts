@@ -20,6 +20,9 @@ function mount(root: HTMLElement) {
     .querySelector('a[href="/cdn-cgi/access/logout"]')
     ?.addEventListener('click', invalidateOfflinePhotos);
   const status = root.querySelector<HTMLElement>('[data-status]')!;
+  const saveStatus = root.querySelector<HTMLElement>(
+    '[data-settings-save-status]',
+  )!;
   const form = root.querySelector<HTMLFormElement>('form')!;
   const controls = root.querySelector<HTMLFieldSetElement>('[data-controls]')!;
   const periods = root.querySelector<HTMLElement>('[data-schedule]')!;
@@ -37,6 +40,7 @@ function mount(root: HTMLElement) {
   )!;
   let planning: DayPlanning = structuredClone(emptyPlanning);
   let activeProfile: DayProfile = 'dayOff';
+  let savedDraft = '';
   const readPeriods = (container: HTMLElement) =>
     [...container.children].map((row) => ({
       start: row.querySelector<HTMLInputElement>('[data-start]')!.value,
@@ -80,11 +84,14 @@ function mount(root: HTMLElement) {
     } else if (dayPeriods.children.length < 24) {
       addPeriod({start: '00:00', end: '01:00', mode: 'photos'}, dayPeriods);
     }
+
+    updateSaveStatus();
   });
   root
     .querySelector('[data-reset-day-periods]')!
     .addEventListener('click', () => {
       dayPeriods.replaceChildren();
+      updateSaveStatus();
     });
   let isBusy = false;
   let isAuthorized = false;
@@ -99,7 +106,7 @@ function mount(root: HTMLElement) {
     revoke.disabled = isBusy || !isAuthorized;
   };
 
-  async function run(action: () => Promise<void>) {
+  async function run(action: () => Promise<void>, feedback = status) {
     if (isBusy) {
       return;
     }
@@ -109,10 +116,11 @@ function mount(root: HTMLElement) {
     try {
       await action();
     } catch (error) {
-      status.textContent =
+      feedback.textContent =
         error instanceof Error ? error.message : 'Action indisponible.';
       if (error instanceof ApiError && [401, 403].includes(error.status)) {
         isAuthorized = false;
+        savedDraft = '';
         hideToken();
         credential.textContent = '';
         form.reset();
@@ -138,28 +146,45 @@ function mount(root: HTMLElement) {
     row.querySelector<HTMLSelectElement>('[data-mode]')!.value = entry.mode;
     row.querySelector('[data-remove]')!.addEventListener('click', () => {
       row.remove();
+      updateSaveStatus();
     });
     container.append(row);
   }
 
-  function readForm() {
+  function readDraft() {
     retainProfile();
     planning.schoolCalendar = schoolCalendar.checked;
-    const values = Object.fromEntries(new FormData(form));
+    const values = Object.fromEntries(
+      [
+        ...form.querySelectorAll<HTMLInputElement | HTMLSelectElement>(
+          '[name]',
+        ),
+      ].map((field) => [field.name, field.value]),
+    ) as Record<string, string | number>;
+    return {...values, schedule: readPeriods(periods), planning};
+  }
+
+  function updateSaveStatus() {
+    if (!isBusy && isAuthorized) {
+      saveStatus.textContent =
+        JSON.stringify(readDraft()) === savedDraft
+          ? ''
+          : 'Modifications non enregistrées.';
+    }
+  }
+
+  function readForm(draft: ReturnType<typeof readDraft>) {
+    const values: Record<string, unknown> = {...draft};
     for (const key of [
       'latitude',
       'longitude',
       'slideshowIntervalSeconds',
       'overrideTimeoutSeconds',
     ]) {
-      (values as Record<string, unknown>)[key] = Number(values[key]);
+      values[key] = Number(values[key]);
     }
 
-    return validateSettings({
-      ...values,
-      schedule: readPeriods(periods),
-      planning,
-    });
+    return validateSettings(values);
   }
 
   async function initialize() {
@@ -204,36 +229,56 @@ function mount(root: HTMLElement) {
       ? `Clé valable jusqu’au ${new Date(state.expiresAt).toLocaleDateString('fr-FR')}. Remplacez-la pour reconnecter le cadre.`
       : 'Aucun cadre connecté.';
     isAuthorized = true;
+    savedDraft = JSON.stringify(readDraft());
+    saveStatus.textContent = '';
     status.textContent = `Connecté : ${session.subject}`;
   }
 
+  form.addEventListener(
+    'invalid',
+    () => {
+      saveStatus.textContent =
+        'Vérifiez les champs signalés avant d’enregistrer.';
+    },
+    {capture: true},
+  );
+  form.addEventListener('input', (event) => {
+    if (event.target !== profile) {
+      updateSaveStatus();
+    }
+  });
   form.addEventListener('submit', (event) => {
     event.preventDefault();
-    // Read before disabling the fieldset: disabled controls are absent from FormData.
     let settings: Settings;
+    const draft = readDraft();
     try {
-      settings = readForm();
+      settings = readForm(draft);
     } catch (error) {
-      status.textContent = (error as Error).message;
+      saveStatus.textContent = (error as Error).message;
       return;
     }
 
     void run(async () => {
+      saveStatus.textContent = 'Enregistrement…';
       await photoRequest('/api/config', {
         method: 'PATCH',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(settings),
       });
-      status.textContent = 'Réglages enregistrés.';
-    });
+      savedDraft = JSON.stringify(draft);
+      saveStatus.textContent = 'Réglages enregistrés.';
+    }, saveStatus);
   });
   root.querySelector('[data-reload]')!.addEventListener('click', () => {
     void run(initialize);
   });
   root.querySelector('[data-add-period]')!.addEventListener('click', () => {
-    if (periods.children.length < 24) {
-      addPeriod({start: '00:00', end: '01:00', mode: 'photos'});
+    if (periods.children.length >= 24) {
+      return;
     }
+
+    addPeriod({start: '00:00', end: '01:00', mode: 'photos'});
+    updateSaveStatus();
   });
   issue.addEventListener('click', () => {
     if (

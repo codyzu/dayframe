@@ -85,7 +85,7 @@ function noticesForToday(
 
   if (data?.observanceUnavailable) {
     notices.push({
-      label: 'Calendrier des fêtes observées indisponible.',
+      label: 'Un agenda de fêtes observées est indisponible.',
       tags: [],
     });
   }

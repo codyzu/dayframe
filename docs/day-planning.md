@@ -24,6 +24,12 @@ The admin's **Jours de repos** preset is Morning 08:00–11:00, Photos 11:00–2
 explicit; existing persisted schedules do not change automatically. Ordinary Wednesday
 mode times remain the daily schedule unless customized separately.
 
+The household settings form keeps **Enregistrer les réglages** and its feedback
+at the bottom of the viewport while editing. Changes are marked as unsaved until
+the server confirms the save. If adjacent periods overlap, adjust both boundaries
+before saving. The overlap message identifies both ranges. Google Calendar
+selections are saved separately with **Enregistrer les agendas**.
+
 Legacy `planning.checkpoints` values still validate and survive settings saves
 and exports for rollback. Dayframe no longer uses them for display or scheduling.
 Selected Google calendars, including Routines, follow their own event schedules

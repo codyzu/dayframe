@@ -21,10 +21,14 @@ test('both administrators persist settings, export, validate schedules and recov
   await page.getByLabel('Lieu', {exact: true}).fill('Maison de test');
   await page.getByLabel('Durée d’une photo').fill('45');
   await page.getByLabel('Cadrage par défaut').selectOption('contain');
+  const daily = page.locator('[data-schedule]');
+  await daily.locator('[data-end]').first().fill('10:30');
+  await daily.locator('[data-start]').nth(1).fill('10:30');
+  const saveStatus = page.locator('[data-settings-save-status]');
+  await expect(saveStatus).toHaveText('Modifications non enregistrées.');
+  await expect(saveStatus).toBeInViewport();
   await page.getByRole('button', {name: 'Enregistrer les réglages'}).click();
-  await expect(page.locator('[data-status]')).toHaveText(
-    'Réglages enregistrés.',
-  );
+  await expect(saveStatus).toHaveText('Réglages enregistrés.');
   const {promise: configurationGate, resolve: releaseConfiguration} =
     Promise.withResolvers<void>();
   await page.route('**/api/config/display', async (route) => {
@@ -55,6 +59,8 @@ test('both administrators persist settings, export, validate schedules and recov
   await expect(page.getByLabel('Lieu', {exact: true})).toHaveValue(
     'Maison de test',
   );
+  await expect(daily.locator('[data-end]').first()).toHaveValue('10:30');
+  await expect(daily.locator('[data-start]').nth(1)).toHaveValue('10:30');
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', {name: 'Exporter les réglages'}).click();
   expect((await downloadPromise).suggestedFilename()).toBe(
@@ -62,7 +68,12 @@ test('both administrators persist settings, export, validate schedules and recov
   );
   await page.locator('[data-start]').nth(1).fill('09:59');
   await page.getByRole('button', {name: 'Enregistrer les réglages'}).click();
-  await expect(page.locator('[data-status]')).toContainText('chevauchement');
+  await expect(saveStatus).toHaveText(
+    /06:00–10:30.*09:59–23:00.*se chevauchent/v,
+  );
+  await expect(saveStatus).toBeInViewport();
+  await page.reload();
+  await expect(daily.locator('[data-start]').nth(1)).toHaveValue('10:30');
   expect(
     await page.evaluate(
       () =>
