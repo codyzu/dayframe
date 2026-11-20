@@ -85,11 +85,11 @@ saved Standard preferences must not shrink the type. Keep the frame launch URL
 | 23:00–06:00 | Night |
 
 The daily schedule remains the fallback. Optional private day profiles provide different
-mode periods and weather checkpoints by weekday and for days off. Weekends and known
+mode periods by weekday and for days off. Weekends and known
 Grenoble/Zone A school vacations or metropolitan public holidays can use a day-off
 profile: Morning 08:00–11:00, Photos 11:00–23:00, Night 23:00–08:00. School vacations
-and public holidays suspend habitual activity checkpoints and appear in the upcoming
-appointments panel; Google events remain visible. Existing saved settings require
+and public holidays appear in the upcoming appointments panel. Google events remain
+visible. Existing saved settings require
 explicit configuration. See [day planning](day-planning.md) for precedence, official
 sources, unknown/stale coverage and current implementation/deployment limits.
 
@@ -149,12 +149,22 @@ large typography and private runtime-only data boundary. Do not duplicate events
 spanning both days or silently skip ahead beyond tomorrow. See [calendar behavior](calendar.md#tomorrow-preview--30-october-2026).
 
 **Journal alpin (#30):** The ten-row **Aujourd’hui** timeline accommodates up
-to six appointments and four weather checkpoints. An unambiguous matching event
-and checkpoint share a row. Tomorrow remains a spare-space preview. Official
+to nine appointments across Family, Massages and optional Routines. Tomorrow
+remains a spare-space preview.
+Routines follow their Google event schedule on all days. Official
 holidays and school breaks are distinguished from optional household observances,
 whose display is independent of the schedule. The weather column adds bundled
 lake scenes and current-day sunrise/sunset to the hourly chart. See
 [layout and artwork](display-density.md#journal-alpin-morning).
+
+**Weather advice for events (#33):** Retire configurable weather repères. Keep
+general weather advice and the hourly forecast independent of the agenda.
+For fresh household forecasts, the summary can mention one upcoming timed Family
+or Routines event with rain risk. Opt in via a standalone `#meteo` (accepting accents)
+or `#weather` tag in the Google event description, case-insensitively. Only the
+eligibility flag crosses the Worker boundary. Preserve legacy settings for rollback
+and clear private titles when the agenda lease expires. See
+[weather advice](weather.md#weather-advice-for-calendar-events).
 
 Conditional or later additions: strong winds, freezing conditions, sunrise/sunset,
 short multi-day forecast, and calendar events. Avoid cluttering the primary 10-inch display with humidity, pressure, UV, or long forecasts by default.
@@ -166,7 +176,7 @@ background must never compromise contrast.
 
 **Owner-approved design, 5 November 2026 (#23):** A compact header combines the
 greeting/location picker, actual household date and clock. An always-visible
-seven-day strip selects the conditions, four checkpoints, hourly graph and advice
+seven-day strip selects the conditions, hourly graph and advice
 in place, with explicit future-date identification and an idle return to today.
 Remove the separate brand row, duplicated weather location and navigation hints.
 Keep the existing floating dock; temporary agenda overlap is accepted. See
@@ -177,7 +187,7 @@ Physical-device acceptance remains separate from the owner-approved screenshot r
 **Owner-approved design, 6 November 2026 (#24):** Replace the repeated day tiles with a
 maximum-temperature line and adjacent daily total-precipitation bars in mm,
 keeping the picker's existing desktop height. Retain day selection and detailed
-hourly/checkpoint percentages. The owner approved the screenshot review and
+hourly percentages. The owner approved the screenshot review and
 requested deployment; see [weekly trend behavior](weather.md#weekly-trend-picker--6-november-2026).
 
 ### 4.2 Weather provider
@@ -186,8 +196,8 @@ requested deployment; see [weekly trend behavior](weather.md#weekly-trend-picker
 a town/postal-code search and an opt-in current-position lookup. A validated
 browser-local preference affects only weather, with an explicit household reset.
 Weather uses the selected place's timezone; household clock, schedule and calendar
-retain their configured timezone. Custom locations use neutral weather checkpoints
-and retain explicit unsupported-vigilance states. Household-wide edits remain in
+retain their configured timezone. Custom locations retain explicit
+unsupported-vigilance states. Household-wide edits remain in
 authenticated administration. See [device weather location](weather-location.md)
 for persistence, privacy, request bounds and acceptance evidence.
 

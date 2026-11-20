@@ -29,6 +29,7 @@ let eventPages = 0;
 let eventsPerCalendar = 1;
 let shouldIncludeTomorrow = false;
 let isObservanceUnavailable = false;
+let isRoutineUnavailable = false;
 // eslint-disable-next-line max-params -- Named synthetic request inputs keep the authorization matrix compact.
 async function request(
   path: string,
@@ -106,6 +107,7 @@ beforeEach(async () => {
   eventsPerCalendar = 1;
   shouldIncludeTomorrow = false;
   isObservanceUnavailable = false;
+  isRoutineUnavailable = false;
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -141,6 +143,7 @@ beforeEach(async () => {
           items: [
             {id: 'shared@example.test', summary: 'Family'},
             {id: 'other', summary: 'Personal'},
+            {id: 'routine-source', summary: 'Routines'},
             {id: 'observances', summary: 'Fêtes du foyer'},
           ],
         });
@@ -199,7 +202,12 @@ beforeEach(async () => {
           });
         }
 
-        expect(url.pathname).toMatch(/shared%40example.test|other/v);
+        expect(url.pathname).toMatch(
+          /shared%40example.test|other|routine-source/v,
+        );
+        expect(url.searchParams.get('fields')?.includes('description')).toBe(
+          url.pathname !== '/calendar/v3/calendars/other/events',
+        );
         expect(url.searchParams.get('singleEvents')).toBe('true');
         expect(url.searchParams.get('timeZone')).toBe('Europe/Paris');
         expect(url.searchParams.get('timeMax')).toBe(
@@ -207,15 +215,26 @@ beforeEach(async () => {
             dayEnd(dayEnd(Date.now(), 'Europe/Paris'), 'Europe/Paris'),
           ).toISOString(),
         );
-        const start = new Date(Date.now() + 60_000).toISOString();
-        const end = new Date(Date.now() + 120_000).toISOString();
+        if (
+          isRoutineUnavailable &&
+          url.pathname === '/calendar/v3/calendars/routine-source/events'
+        ) {
+          return Response.json(
+            {error: 'private routine provider response'},
+            {status: 403},
+          );
+        }
+
+        const now = Date.parse(url.searchParams.get('timeMin')!);
+        const start = new Date(now + 60_000).toISOString();
+        const end = new Date(now + 120_000).toISOString();
         return Response.json({
           items: [
             ...Array.from({length: eventsPerCalendar}, () => ({
               summary: '<script>Private title</script>',
               start: {dateTime: start},
               end: {dateTime: end},
-              description: 'not returned',
+              description: 'Private directions<br><b>#M&eacute;t&eacute;o</b>',
               location: 'not returned',
             })),
             ...(shouldIncludeTomorrow
@@ -460,7 +479,47 @@ it('uses Paris dates, exclusive all-day ends, ongoing events and DST boundaries'
   ).toEqual(['All day', 'Ongoing', 'Tomorrow']);
 });
 
-it('verifies both calendars, bounds each independently and invalidates both caches on selection changes', async () => {
+it('recognizes standalone weather tags in plain text and formatted descriptions', () => {
+  const start = '2026-10-20T08:00:00Z';
+  const end = '2026-10-20T09:00:00Z';
+  const cases = [
+    ['Bring a raincoat (#WeAtHeR).', true],
+    ['#METEO', true],
+    ['météo<br><b>#météo</b>', true],
+    ['<b>#wea</b>ther', true],
+    ['<div>&#35;me\u{301}te&#x301;o&nbsp;</div>', true],
+    ['<a title="#meteo">météo</a><!-- #weather -->', false],
+    ['x<b>#weather</b> u<!-- comment -->#meteo', false],
+    ['https://example.test/#weather #meteoscope #weather_today', false],
+    ['x#weather ##meteo #weather-report', false],
+    [undefined, false],
+  ] as const;
+  for (const [description, tagged] of cases) {
+    const [event] = normalizeEvents(
+      [{description, start: {dateTime: start}, end: {dateTime: end}}],
+      Date.parse(start),
+      'Europe/Paris',
+      true,
+    );
+    expect(event.weatherRelevant, description).toBe(tagged ? true : undefined);
+  }
+
+  const [allDay] = normalizeEvents(
+    [
+      {
+        description: '#meteo',
+        start: {date: '2026-10-20'},
+        end: {date: '2026-10-21'},
+      },
+    ],
+    Date.parse(start),
+    'Europe/Paris',
+    true,
+  );
+  expect(allDay.weatherRelevant).toBeUndefined();
+});
+
+it('validates appointment sources, retains Routines for older settings clients and clears its cached events when removed', async () => {
   eventsPerCalendar = 4;
   await finish();
   for (const massageId of ['unshared', 'shared@example.test', 42]) {
@@ -474,20 +533,46 @@ it('verifies both calendars, bounds each independently and invalidates both cach
     ).toBe(400);
   }
 
+  const selection = {id: 'shared@example.test', massageId: 'other'};
+  for (const routineId of ['unshared', selection.id, selection.massageId, 42]) {
+    const response = await request('/api/calendar', 'PATCH', admin, {
+      ...selection,
+      routineId,
+    });
+    expect(response.status).toBe(400);
+  }
+
+  const routineId = 'routine-source';
+  const status = await request('/api/calendar', 'PATCH', admin, {
+    ...selection,
+    routineId,
+    observanceId: routineId,
+  });
+  expect(status.status).toBe(400);
   expect(
     (
       await request('/api/calendar', 'PATCH', admin, {
-        id: 'shared@example.test',
-        massageId: 'other',
+        ...selection,
+        routineId,
       })
     ).status,
   ).toBe(200);
+  await request('/api/calendar', 'PATCH', admin, selection);
+  expect(await (await request('/api/calendar')).json()).toMatchObject({
+    routineSelected: {id: routineId, name: 'Routines'},
+  });
   const first = await request('/api/calendar/events', 'GET', display);
-  const body = (await first.json()) as {
-    events: Array<{calendar: string}>;
-    massageConnected: boolean;
-  };
+  const firstBody = await first.text();
+  expect(firstBody).not.toMatch(
+    /routine-source|Private directions|description|t&eacute;/v,
+  );
+  const stored = await (
+    await administration(platform.binding, '/calendar-state', undefined, 'GET')
+  ).text();
+  expect(stored).not.toMatch(/Private directions|description|t&eacute;/v);
+  const body = JSON.parse(firstBody) as Agenda;
   expect(body.massageConnected).toBe(true);
+  expect(body.routineConnected).toBe(true);
   expect(body.events.map((event) => event.calendar)).toEqual([
     'family',
     'family',
@@ -495,14 +580,29 @@ it('verifies both calendars, bounds each independently and invalidates both cach
     'massages',
     'massages',
     'massages',
+    'routines',
+    'routines',
+    'routines',
   ]);
-  expect(eventPages).toBe(2);
-  await request('/api/calendar/events', 'GET', display);
-  expect(eventPages).toBe(2);
-  await request('/api/calendar', 'PATCH', admin, {id: 'shared@example.test'});
-  const next = await request('/api/calendar/events', 'GET', display);
-  expect(((await next.json()) as {events: unknown[]}).events).toHaveLength(3);
+  expect(
+    body.events
+      .filter((event) => event.weatherRelevant)
+      .map((event) => event.calendar),
+  ).toEqual(['family', 'family', 'family', 'routines', 'routines', 'routines']);
   expect(eventPages).toBe(3);
+  await request('/api/calendar/events', 'GET', display);
+  expect(eventPages).toBe(3);
+  await request('/api/calendar', 'PATCH', admin, {
+    ...selection,
+    routineId: '',
+  });
+  const next = await request('/api/calendar/events', 'GET', display);
+  const nextBody = (await next.json()) as Agenda;
+  expect(nextBody.routineConnected).toBe(false);
+  expect(nextBody.events.map((event) => event.calendar)).not.toContain(
+    'routines',
+  );
+  expect(eventPages).toBe(5);
 });
 
 it('fetches and caches both days with independent per-day source limits', async () => {
@@ -512,26 +612,49 @@ it('fetches and caches both days with independent per-day source limits', async 
   await request('/api/calendar', 'PATCH', admin, {
     id: 'shared@example.test',
     massageId: 'other',
+    routineId: 'routine-source',
   });
   const first = await request('/api/calendar/events', 'GET', display);
   const body = (await first.json()) as {events: Array<{title: string}>};
-  expect(body.events).toHaveLength(12);
+  expect(body.events).toHaveLength(18);
   expect(
     body.events.filter((event) => event.title.startsWith('Tomorrow')),
-  ).toHaveLength(6);
+  ).toHaveLength(9);
   await request('/api/calendar/events', 'GET', display);
-  expect(eventPages).toBe(2);
-  // A pre-release today-only cache must trigger an immediate two-day refetch.
+  expect(eventPages).toBe(3);
+  // A cache created before weather tags were read must refresh immediately.
   const state = (await (
     await administration(platform.binding, '/calendar-state', undefined, 'GET')
-  ).json()) as {revision: string; cache: {days?: number}};
-  delete state.cache.days;
+  ).json()) as {revision: string; cache: {weatherTagsRead?: true}};
+  delete state.cache.weatherTagsRead;
   await administration(platform.binding, '/calendar-state', {
     expected: state.revision,
     value: {...state, revision: crypto.randomUUID()},
   });
   await request('/api/calendar/events', 'GET', display);
-  expect(eventPages).toBe(4);
+  expect(eventPages).toBe(6);
+});
+
+it('keeps appointments available and withholds provider details when Routines cannot be read', async () => {
+  isRoutineUnavailable = true;
+  await finish();
+  await request('/api/calendar', 'PATCH', admin, {
+    id: 'shared@example.test',
+    massageId: 'other',
+    routineId: 'routine-source',
+  });
+  const response = await request('/api/calendar/events', 'GET', display);
+  const responseBody = await response.text();
+  expect(responseBody).not.toContain('private routine provider response');
+  const body = JSON.parse(responseBody) as Agenda;
+  expect(response.status).toBe(200);
+  expect(body.routineUnavailable).toBe(true);
+  expect(body.events.map((event) => event.calendar)).toEqual([
+    'family',
+    'massages',
+  ]);
+  await request('/api/calendar/events', 'GET', display);
+  expect(eventPages).toBe(3);
 });
 
 it('serves only bounded all-day observances and leaves appointments available when that source fails', async () => {

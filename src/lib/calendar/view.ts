@@ -4,8 +4,10 @@ import {observanceText, type dayContext} from '../dashboard/day-planning.ts';
 import {photoRequest} from '../photos/client.ts';
 import {conditionFor} from '../weather/conditions.ts';
 import {
+  agendaAppointmentLimit,
   agendaObservanceLimit,
   localDate,
+  appointmentCalendars,
   type Agenda,
   type AgendaEvent,
 } from './contracts.ts';
@@ -15,10 +17,13 @@ import {
   comparableTitle,
   isAgendaObservance,
   isBirthdayEntry,
-  type DatedCheckpoints,
-  type ForecastPoint,
-  type TimelineEntry,
 } from './timeline.ts';
+
+export type AgendaForecast = {
+  date: string;
+  timezone: string;
+  hours: readonly Hour[];
+};
 
 type DayContext = ReturnType<typeof dayContext>;
 type Notice = {
@@ -85,6 +90,10 @@ function noticesForToday(
     });
   }
 
+  if (data?.routineUnavailable) {
+    notices.push({label: 'Calendrier des routines indisponible.', tags: []});
+  }
+
   return {notices, observedTitles: observed.map(({title}) => title)};
 }
 
@@ -120,12 +129,12 @@ function noticeRows(
 }
 
 function appointmentForecast(
-  event: AgendaEvent | undefined,
+  event: AgendaEvent,
   hours: readonly Hour[],
   date: string,
   timezone: string,
 ) {
-  if (!event || event.allDay) {
+  if (event.allDay) {
     return undefined;
   }
 
@@ -137,7 +146,7 @@ function appointmentForecast(
 
 function displayWeather(
   row: HTMLElement,
-  point: Pick<ForecastPoint, 'forecast' | 'probabilityPeriod'> | undefined,
+  point: ReturnType<typeof hourlyForecastAt>,
 ) {
   const hour = point?.forecast;
   const weather = row.querySelector<HTMLElement>('[data-event-weather]')!;
@@ -162,33 +171,35 @@ function displayWeather(
   );
 }
 
+const agendaLabels = {
+  family: 'Famille',
+  massages: 'Massages',
+  routines: 'Routines',
+};
+
 function agendaRow(
   template: HTMLTemplateElement,
-  {event, point, time, appointmentWeather}: TimelineEntry,
-  isNext: boolean,
+  event: AgendaEvent,
+  {
+    time,
+    appointmentWeather,
+    isNext,
+  }: {
+    time: string;
+    appointmentWeather: ReturnType<typeof hourlyForecastAt>;
+    isNext: boolean;
+  },
 ) {
   const row = template.content.firstElementChild!.cloneNode(
     true,
   ) as HTMLElement;
-  const source = event ? (event.calendar ?? 'family') : undefined;
-  const label =
-    source === 'massages'
-      ? 'Massages'
-      : source === 'family'
-        ? 'Famille'
-        : 'Repère';
-  const name = event?.title ?? point!.label;
-  if (source !== undefined) {
-    row.dataset.eventCalendar = source;
-  }
-
+  const source = event.calendar ?? 'family';
+  const label = agendaLabels[source];
+  const name = event.title;
+  row.dataset.eventCalendar = source;
   row
     .querySelector('[data-birthday-icon]')!
-    .toggleAttribute('hidden', !event || !isBirthdayEntry(event));
-
-  if (point) {
-    row.dataset.checkpoint = point.time;
-  }
+    .toggleAttribute('hidden', !isBirthdayEntry(event));
 
   row.toggleAttribute('data-next', isNext);
   row.querySelector('[data-event-time]')!.textContent = time;
@@ -197,14 +208,14 @@ function agendaRow(
   title.toggleAttribute('data-next', isNext);
   row.querySelector('[data-event-source]')!.textContent = label;
   row.title = `${label} · ${name}`;
-  displayWeather(row, appointmentWeather ?? point);
+  displayWeather(row, appointmentWeather);
   return row;
 }
 
 function validateResponse(body: Agenda, now: number) {
   if (
     !Array.isArray(body.events) ||
-    body.events.length > 12 ||
+    body.events.length > agendaAppointmentLimit ||
     typeof body.connected !== 'boolean' ||
     typeof body.fetchedAt !== 'number' ||
     body.fetchedAt > now + 5000 ||
@@ -213,7 +224,7 @@ function validateResponse(body: Agenda, now: number) {
     body.events.some(
       (event) =>
         (event.calendar !== undefined &&
-          !['family', 'massages'].includes(event.calendar)) ||
+          !appointmentCalendars.includes(event.calendar)) ||
         typeof event.title !== 'string' ||
         typeof event.allDay !== 'boolean' ||
         !Number.isFinite(Date.parse(event.start)) ||
@@ -242,6 +253,7 @@ function validateResponse(body: Agenda, now: number) {
 export function mountAgenda(
   root: HTMLElement,
   onObservance?: (isObserved: boolean, titles?: readonly string[]) => void,
+  onEventsChanged?: () => void,
 ) {
   const status = root.querySelector<HTMLElement>('[data-agenda-status]')!;
   const list = root.querySelector<HTMLElement>('[data-agenda-events]')!;
@@ -267,7 +279,7 @@ export function mountAgenda(
   let previous = '';
   let renderedRows = '';
   let isActive = false;
-  let checkpoints: DatedCheckpoints | undefined;
+  let forecast: AgendaForecast | undefined;
   let day: DayContext | undefined;
   let householdTimezone = 'Europe/Paris';
   let statusMessage = status.textContent?.trim() ?? '';
@@ -276,45 +288,45 @@ export function mountAgenda(
   function clear(message: string) {
     data = undefined;
     statusMessage = message;
+    onEventsChanged?.();
     render();
+  }
+
+  function hasFreshAgenda(agenda: Agenda, now: number) {
+    return (
+      now < lease &&
+      performance.now() < leaseMonotonic &&
+      now >= agenda.fetchedAt &&
+      localDate(now, agenda.timezone) ===
+        localDate(agenda.fetchedAt, agenda.timezone)
+    );
   }
 
   function render() {
     const now = Date.now();
     const timezone = data?.timezone ?? householdTimezone;
     const date = localDate(now, timezone);
-    const matchingWeather =
-      checkpoints?.timezone === timezone && checkpoints.date === date
-        ? checkpoints
-        : undefined;
-    const preview = agendaTimeline(
-      data?.events ?? [],
-      now,
-      timezone,
-      matchingWeather?.points,
-    );
-    const hours = matchingWeather?.hours ?? [];
-    const weatherToday = preview.today.map(({event}) =>
-      appointmentForecast(event, hours, date, timezone),
-    );
-    const weatherTomorrow = preview.tomorrow.map((event) =>
-      appointmentForecast(event, hours, date, timezone),
-    );
+    const hours =
+      forecast?.timezone === timezone && forecast.date === date
+        ? forecast.hours
+        : [];
+    const preview = agendaTimeline(data?.events ?? [], now, timezone);
+    const weatherFor = (event: AgendaEvent) =>
+      appointmentForecast(event, hours, date, timezone);
+    const weatherToday = preview.today.map((event) => weatherFor(event));
+    const weatherTomorrow = preview.tomorrow.map((event) => weatherFor(event));
     const {notices, observedTitles} = noticesForToday(data, day, date);
     const observed = JSON.stringify(observedTitles);
-    const next = [
-      ...preview.today.flatMap(({event}) => (event ? [event] : [])),
-      ...preview.tomorrow,
-    ].find((event) => !event.allDay && Date.parse(event.start) > now);
+    const next = [...preview.today, ...preview.tomorrow].find(
+      (event) => !event.allDay && Date.parse(event.start) > now,
+    );
     const timeFor = (event: AgendaEvent, isUpcoming = false) =>
       event.allDay
         ? 'Journée'
         : !isUpcoming && Date.parse(event.start) <= now
           ? 'En cours'
           : agendaClock(Date.parse(event.start), timezone);
-    const times = preview.today.map(({event, time}) =>
-      event ? timeFor(event) : time,
-    );
+    const times = preview.today.map((event) => timeFor(event));
     const rowsSignature = JSON.stringify({
       preview,
       times,
@@ -346,30 +358,22 @@ export function mountAgenda(
     if (rowsSignature !== renderedRows) {
       renderedRows = rowsSignature;
       list.replaceChildren(
-        ...preview.today.map((entry, index) =>
-          agendaRow(
-            template,
-            {
-              ...entry,
-              time: times[index],
-              appointmentWeather: weatherToday[index],
-            },
-            Boolean(entry.event && entry.event === next),
-          ),
+        ...preview.today.map((event, index) =>
+          agendaRow(template, event, {
+            time: times[index],
+            appointmentWeather: weatherToday[index],
+            isNext: event === next,
+          }),
         ),
       );
       list.hidden = preview.today.length === 0;
       tomorrowList.replaceChildren(
         ...preview.tomorrow.map((event, index) =>
-          agendaRow(
-            template,
-            {
-              event,
-              time: timeFor(event, true),
-              appointmentWeather: weatherTomorrow[index],
-            },
-            event === next,
-          ),
+          agendaRow(template, event, {
+            time: timeFor(event, true),
+            appointmentWeather: weatherTomorrow[index],
+            isNext: event === next,
+          }),
         ),
       );
     }
@@ -378,9 +382,7 @@ export function mountAgenda(
     tomorrow.hidden = !data?.connected || !preview.shouldShowTomorrow;
     tomorrowList.hidden = preview.tomorrow.length === 0;
     tomorrowEmpty.hidden = preview.tomorrow.length > 0;
-    status.hidden = Boolean(
-      data?.connected && preview.today.some(({event}) => event),
-    );
+    status.hidden = Boolean(data?.connected && preview.today.length > 0);
     status.textContent = data?.connected
       ? 'Aucun autre événement aujourd’hui.'
       : statusMessage;
@@ -416,6 +418,7 @@ export function mountAgenda(
         statusMessage = 'Aucun agenda connecté.';
         lease = body.fetchedAt + 300_000;
         leaseMonotonic = performance.now() + Math.max(0, lease - Date.now());
+        onEventsChanged?.();
         render();
       } else {
         clear('Aucun agenda connecté.');
@@ -432,8 +435,15 @@ export function mountAgenda(
   }
 
   return {
-    setCheckpoints(value: DatedCheckpoints | undefined) {
-      checkpoints = value;
+    adviceEvents(timezone: string) {
+      return data?.connected &&
+        data.timezone === timezone &&
+        hasFreshAgenda(data, Date.now())
+        ? data.events
+        : [];
+    },
+    setForecast(value: AgendaForecast | undefined) {
+      forecast = value;
       if (isActive) {
         render();
       }
@@ -444,14 +454,7 @@ export function mountAgenda(
     },
     tick(isVisible: boolean) {
       isActive = isVisible;
-      if (
-        data &&
-        (Date.now() >= lease ||
-          performance.now() >= leaseMonotonic ||
-          Date.now() < data.fetchedAt ||
-          localDate(Date.now(), data.timezone) !==
-            localDate(data.fetchedAt, data.timezone))
-      ) {
+      if (data && !hasFreshAgenda(data, Date.now())) {
         clear('Agenda à actualiser.');
         nextRefresh = 0;
       }
@@ -467,7 +470,7 @@ export function mountAgenda(
     },
     deny() {
       pending?.abort();
-      checkpoints = undefined;
+      forecast = undefined;
       day = undefined;
       clear('Accès privé requis pour l’agenda.');
       nextRefresh = 0;

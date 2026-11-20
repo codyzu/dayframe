@@ -1,10 +1,9 @@
 import {describe, expect, it} from 'vitest';
+import {type AgendaEvent} from '../src/lib/calendar/contracts.ts';
 import {hourLabel, parseWeather} from '../src/lib/weather/adapter.ts';
 import {
-  checkpointForecasts,
   dayHours,
   hourlyForecastAt,
-  isWeekend,
   morningAdvice,
   twoHourRain,
 } from '../src/lib/weather/morning.ts';
@@ -28,7 +27,7 @@ describe('family day forecasts', () => {
     expect(hourlyForecastAt(hours, second)?.forecast.temperature).toBe(9);
     expect(hourlyForecastAt(hours, second + 30 * 60_000)).toBeUndefined();
   });
-  it('retains 06–22 local hourly coverage, including both pickups at 06:30', () => {
+  it('retains 06–22 local hourly coverage as the day advances', () => {
     const early = Date.parse('2026-10-16T04:30:00Z');
     const hours = dayHours(fixture(), early);
     expect(hours).toHaveLength(17);
@@ -46,45 +45,17 @@ describe('family day forecasts', () => {
     weather.hourly[11].probability = 20;
     weather.hourly[12].probability = 80;
     weather.hourly[11].code = 3;
-    const points = checkpointForecasts(weather, fixtureNow);
-    expect(points.map((point) => point.time)).toEqual([
-      '08:00',
-      '11:30',
-      '16:30',
-      '18:00',
-    ]);
-    expect(points[0].forecast).toEqual(weather.hourly[8]);
-    expect(points[1].forecast).toMatchObject({
-      temperature: 12.5,
-      probability: 80,
-      code: 3,
+    const instant = Date.parse('2026-10-16T11:30:00+02:00');
+    expect(hourlyForecastAt(weather.hourly, instant)).toEqual({
+      forecast: {
+        ...weather.hourly[11],
+        temperature: 12.5,
+        probability: 80,
+      },
+      probabilityPeriod: '11:00–12:00',
     });
-    expect(points[1].probabilityPeriod).toBe('11:00–12:00');
-    expect(points[2].forecast?.temperature).toBe(
-      (weather.hourly[16].temperature + weather.hourly[17].temperature) / 2,
-    );
     weather.hourly.splice(12, 1);
-    expect(
-      checkpointForecasts(weather, fixtureNow)[1].forecast,
-    ).toBeUndefined();
-    expect(
-      checkpointForecasts(weather, fixtureNow + 3 * 86_400_000).every(
-        (point) => point.forecast === undefined,
-      ),
-    ).toBe(true);
-  });
-  it('uses neutral weekend labels and supports configurable checkpoints', () => {
-    const saturday = Date.parse('2026-10-17T06:30:00Z');
-    expect(isWeekend(saturday)).toBe(true);
-    expect(isWeekend(fixtureNow)).toBe(false);
-    expect(
-      checkpointForecasts(fixture(), saturday).map((point) => point.label),
-    ).toEqual(['Matin', 'Midi', 'Après-midi', 'Soir']);
-    expect(
-      checkpointForecasts(fixture(), fixtureNow, [
-        {time: '09:00', label: 'Départ', weekendLabel: 'Départ'},
-      ]),
-    ).toHaveLength(1);
+    expect(hourlyForecastAt(weather.hourly, instant)).toBeUndefined();
   });
   it('aggregates eight two-hour bins by max, never sum or probability union', () => {
     const weather = fixture();
@@ -98,76 +69,77 @@ describe('family day forecasts', () => {
     expect(hourLabel(bars.at(-1)!.end)).toBe('22:00');
     expect(bars.every((bar) => bar.end - bar.start === 7_200_000)).toBe(true);
   });
-  it('selects the same local checkpoints over spring and autumn DST dates', () => {
+  it('preserves the chart hours over spring and autumn DST dates', () => {
     for (const iso of ['2026-03-29T06:30:00Z', '2026-10-25T06:30:00Z']) {
       const now = Date.parse(iso);
       const weather = parseWeather(weatherFixture(now), now);
       expect(dayHours(weather, now)).toHaveLength(17);
-      const points = checkpointForecasts(weather, now);
-      expect(points.every((point) => point.forecast)).toBe(true);
-      expect(hourLabel(points[1].forecast!.time)).toBe('11:00');
     }
   });
 });
 
 describe('short deterministic French advice', () => {
-  it('describes the first rain risk before a naturally labelled later checkpoint', () => {
+  const pickup: AgendaEvent = {
+    title: 'Sortie d’école',
+    calendar: 'routines',
+    start: '2026-10-16T16:30:00+02:00',
+    end: '2026-10-16T17:00:00+02:00',
+    allDay: false,
+    weatherRelevant: true,
+  };
+
+  it('gives rain timing and clothing advice without calendar data', () => {
     expect(morningAdvice(fixture(), fixtureNow)).toEqual({
       title: 'Prenez un parapluie.',
-      detail: 'Pluie possible vers 15h00, et aussi pour la sortie à 16h30.',
+      detail: 'Pluie possible vers 15h00. Une veste sera aussi utile.',
     });
   });
-  it('describes current hourly rain risk before a later checkpoint, ignoring passed checkpoints', () => {
-    const weather = fixture();
-    // Synthetic counterpart of the live Annecy diagnosis: wet now and later.
-    for (const hour of weather.hourly) {
-      hour.probability = 80;
-    }
 
-    expect(morningAdvice(weather, fixtureNow).detail).toBe(
-      'Pluie possible dès maintenant, et aussi pour la sortie à 16h30.',
+  it('mentions the earliest upcoming tagged event today with rain at its start', () => {
+    const events: AgendaEvent[] = [
+      {
+        ...pickup,
+        title: 'Activité ultérieure',
+        start: '2026-10-16T18:00:00+02:00',
+      },
+      {
+        ...pickup,
+        title: 'Rendez-vous sans tag',
+        start: '2026-10-16T15:00:00+02:00',
+        weatherRelevant: undefined,
+      },
+      {...pickup, title: 'Matinée sèche', start: '2026-10-16T11:00:00+02:00'},
+      {
+        ...pickup,
+        title: 'Massage',
+        calendar: 'massages',
+        start: '2026-10-16T15:30:00+02:00',
+      },
+      pickup,
+    ];
+    expect(morningAdvice(fixture(), fixtureNow, events).detail).toBe(
+      'Pluie possible vers 15h00. Pour « Sortie d’école » à 16h30, prévoyez un parapluie.',
     );
-    const now = Date.parse('2026-10-16T14:45:00Z');
-    expect(morningAdvice(weather, now).detail).toBe(
-      'Pluie possible dès maintenant, et aussi pour les activités à 18h00.',
-    );
-  });
-  it('omits redundant checkpoints within the first wet hour and keeps jacket advice', () => {
-    const weather = fixture();
-    for (const hour of weather.hourly) {
-      hour.probability = hourLabel(hour.time) >= '16:00' ? 80 : 0;
-    }
 
-    expect(
-      morningAdvice(weather, fixtureNow, [{time: '16:30', label: 'Départ'}])
-        .detail,
-    ).toBe('Pluie possible vers 16h00. Une veste sera aussi utile.');
-    expect(
-      morningAdvice(weather, fixtureNow, [{time: '17:00', label: 'Départ'}])
-        .detail,
-    ).toBe('Pluie possible vers 16h00, et aussi pour le départ à 17h00.');
-    // Interpolation can mark 16:30 wet using the 17:00 sample. It must
-    // not move the summary's first-risk time earlier than that sample.
-    for (const hour of weather.hourly) {
-      hour.probability = hourLabel(hour.time) === '17:00' ? 80 : 0;
-    }
-
-    expect(morningAdvice(weather, fixtureNow).detail).toBe(
-      'Pluie possible vers 17h00. Une veste sera aussi utile.',
+    const later = Date.parse('2026-10-16T16:45:00+02:00');
+    expect(morningAdvice(fixture(), later, events).detail).toContain(
+      '« Activité ultérieure » à 18h00',
     );
   });
-  it.each([
-    ['Après-midi', 'cet après-midi'],
-    ['Soir', 'ce soir'],
-    ['Atelier créatif', 'pour « Atelier créatif »'],
-  ])(
-    'uses the actual checkpoint label %s without assuming a school pickup',
-    (label, context) => {
-      expect(
-        morningAdvice(fixture(), fixtureNow, [{time: '17:00', label}]).detail,
-      ).toBe(`Pluie possible vers 15h00, et aussi ${context} à 17h00.`);
-    },
-  );
+
+  it('keeps severe weather advice ahead of tagged events and ignores all-day and tomorrow entries', () => {
+    const weather = fixture();
+    const tomorrow = {...pickup, start: '2026-10-17T16:30:00+02:00'};
+    const allDay = {...pickup, allDay: true};
+    expect(morningAdvice(weather, fixtureNow, [tomorrow, allDay])).toEqual(
+      morningAdvice(weather, fixtureNow),
+    );
+    weather.current.code = 95;
+    expect(morningAdvice(weather, fixtureNow, [pickup])).toEqual(
+      morningAdvice(weather, fixtureNow),
+    );
+  });
+
   it('handles cold, dry variation, light clothing, amount thresholds and hazardous conditions', () => {
     const weather = fixture();
     for (const hour of weather.hourly) {

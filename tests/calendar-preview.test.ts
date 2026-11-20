@@ -4,11 +4,7 @@ import {
   dayEnd,
   type AgendaEvent,
 } from '../src/lib/calendar/contracts.ts';
-import {
-  agendaTimeline,
-  isBirthdayEntry,
-  type ForecastPoint,
-} from '../src/lib/calendar/timeline.ts';
+import {agendaTimeline, isBirthdayEntry} from '../src/lib/calendar/timeline.ts';
 
 const timezone = 'Europe/Paris';
 const now = Date.parse('2026-10-16T06:30:00Z');
@@ -22,42 +18,28 @@ const makeEvent = (
   end: new Date(Date.parse(start) + 3_600_000).toISOString(),
   allDay: false,
 });
-const today = Array.from({length: 6}, (_, i) =>
+const today = Array.from({length: 9}, (_, i) =>
   makeEvent(
     `2026-10-16T${String(i + 9).padStart(2, '0')}:00:00Z`,
-    i < 3 ? 'family' : 'massages',
+    i < 3 ? 'family' : i < 6 ? 'massages' : 'routines',
   ),
 );
-const tomorrow = Array.from({length: 6}, (_, i) =>
+const tomorrow = Array.from({length: 9}, (_, i) =>
   makeEvent(
     `2026-10-17T${String(i + 9).padStart(2, '0')}:00:00Z`,
-    i < 3 ? 'family' : 'massages',
+    i < 3 ? 'family' : i < 6 ? 'massages' : 'routines',
   ),
 );
-const points: ForecastPoint[] = ['08:00', '11:30', '16:30', '18:00'].map(
-  (time) => ({
-    time,
-    label: 'Repère',
-    forecast: undefined,
-    at: undefined,
-    probabilityPeriod: time,
-  }),
-);
-
 it('reserves today and a labelled divider before filling spare rows chronologically', () => {
-  for (let count = 0; count <= 6; count++) {
+  for (let count = 0; count <= 9; count++) {
     const preview = agendaTimeline(
       [...tomorrow.toReversed(), ...today.slice(0, count)],
       Date.parse('2026-10-16T05:59:00Z'),
       timezone,
-      points,
     );
-    expect(preview.today.flatMap(({event}) => (event ? [event] : []))).toEqual(
-      today.slice(0, count),
-    );
-    expect(preview.today.filter(({point}) => point)).toHaveLength(4);
-    expect(preview.shouldShowTomorrow).toBe(count <= 4);
-    const capacity = Math.min(4, Math.max(0, 5 - count));
+    expect(preview.today).toEqual(today.slice(0, count));
+    expect(preview.shouldShowTomorrow).toBe(count < 9);
+    const capacity = Math.min(4, 9 - Math.max(1, count));
     expect(preview.tomorrow).toEqual(tomorrow.slice(0, capacity));
   }
 
@@ -119,72 +101,22 @@ it('uses household local dates across DST, year changes and midnight', () => {
     expect(
       agendaTimeline([entry], Date.parse(date), timezone).tomorrow,
     ).toEqual([entry]);
-    expect(agendaTimeline([entry], start, timezone).today[0].event).toEqual(
-      entry,
-    );
+    expect(agendaTimeline([entry], start, timezone).today[0]).toEqual(entry);
     expect(agendaTimeline([entry], start, timezone).tomorrow).toEqual([]);
   }
 });
 
-it('merges a named family pickup at the same instant, but keeps unrelated and ambiguous appointments distinct', () => {
-  const start = '2026-10-16T14:30:00Z';
-  const pickup = {...makeEvent(start), title: 'Sortie d’école'};
-  const unrelated = {...makeEvent(start), title: 'Sortie au cinéma'};
-  const work = {...pickup, calendar: 'massages'} as const;
-  const pickupPoint = {...points[2], label: 'Sortie', at: Date.parse(start)};
-  const selected = agendaTimeline([pickup, unrelated, work], now, timezone, [
-    points[1],
-    pickupPoint,
-  ]);
-  expect(
-    selected.today.map(({event, point}) => [event?.title, point?.label]),
-  ).toEqual([
-    [undefined, 'Repère'],
-    ['Sortie d’école', 'Sortie'],
-    ['Sortie au cinéma', undefined],
-    ['Sortie d’école', undefined],
-  ]);
-  const ambiguous = agendaTimeline([pickup, {...pickup}], now, timezone, [
-    pickupPoint,
-  ]);
-  expect(ambiguous.today).toHaveLength(3);
-  expect(ambiguous.today.filter(({event, point}) => event && point)).toEqual(
-    [],
-  );
-});
-
-it('retires past checkpoints without removing an ongoing appointment', () => {
+it('keeps simultaneous events and preserves ongoing appointments until they end', () => {
   const start = '2026-10-16T06:00:00Z';
-  const ongoing = {...makeEvent(start), title: 'Repère'};
-  const morning = {...points[0], at: Date.parse(start)};
-  const later = points[1];
-  const evening = {...points[3], at: Date.parse('2026-10-16T16:00:00Z')};
-
-  const during = agendaTimeline(
-    [ongoing],
-    Date.parse('2026-10-16T06:00:59Z'),
-    timezone,
-    [morning, later, evening],
-  );
-  expect(during.today[0]).toMatchObject({event: ongoing, point: morning});
-  expect(
-    agendaTimeline([ongoing], Date.parse('2026-10-16T06:01:00Z'), timezone, [
-      morning,
-      later,
-      evening,
-    ]).today,
-  ).toEqual([
-    {event: ongoing, time: '08:00'},
-    {point: later, time: '11:30'},
-    {point: evening, time: '18:00'},
+  const family = {...makeEvent(start), title: 'Rendez-vous'};
+  const routine = {...makeEvent(start, 'routines'), title: 'Départ'};
+  expect(agendaTimeline([routine, family], now, timezone).today).toEqual([
+    family,
+    routine,
   ]);
   expect(
-    agendaTimeline([], Date.parse('2026-10-16T09:31:00Z'), timezone, [
-      morning,
-      later,
-      evening,
-    ]).today,
-  ).toEqual([{point: evening, time: '18:00'}]);
+    agendaTimeline([family], Date.parse(family.end), timezone).today,
+  ).toEqual([]);
 });
 
 it('marks explicitly titled all-day birthdays while leaving errands and timed events alone', () => {

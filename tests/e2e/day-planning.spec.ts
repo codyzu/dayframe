@@ -1,6 +1,9 @@
 import {alertsFixture} from '../fixtures/alerts.ts';
 import {expect, test, photoOrigin} from '../fixtures/browser.ts';
-import {defaultSettings} from '../../src/lib/dashboard/settings.ts';
+import {
+  defaultSettings,
+  validateSettings,
+} from '../../src/lib/dashboard/settings.ts';
 import {
   dayOffSchedule,
   type OfficialCalendar,
@@ -9,18 +12,10 @@ import {weatherFixture} from '../fixtures/weather.ts';
 
 test.use({ignoreHTTPSErrors: true});
 
-const wednesday = Date.parse('2026-11-04T07:30:00Z');
 const planning = {
   schoolCalendar: true,
   schedules: {dayOff: dayOffSchedule},
-  checkpoints: {
-    wednesday: [
-      {time: '09:30', label: 'Matin synthétique'},
-      {time: '12:30', label: 'Après-midi synthétique'},
-      {time: '16:15', label: 'Retour'},
-      {time: '19:00', label: '<img src=x onerror=alert(1)>'},
-    ],
-  },
+  checkpoints: {},
 };
 const official = (now: number): OfficialCalendar => ({
   year: 2026,
@@ -33,56 +28,7 @@ const official = (now: number): OfficialCalendar => ({
   holidays: {'2026-11-01': 'La Toussaint', '2026-11-11': 'Armistice 1918'},
 });
 
-test('Wednesday private routines, quarter-hour weather and escaped labels fit the frame @mobile', async ({
-  page,
-}, info) => {
-  await page.clock.install({time: wednesday});
-  await page.route('**/api/config/display', async (route) =>
-    route.fulfill({json: {...defaultSettings, planning}}),
-  );
-  await page.route('**/api/day-context', async (route) =>
-    route.fulfill({json: {calendar: official(wednesday)}}),
-  );
-  await page.route('**/api/calendar/events', async (route) =>
-    route.fulfill({
-      json: {
-        connected: false,
-        events: [],
-        timezone: 'Europe/Paris',
-        fetchedAt: wednesday,
-      },
-    }),
-  );
-  await page.route('https://api.open-meteo.com/**', async (route) =>
-    route.fulfill({json: weatherFixture(wednesday)}),
-  );
-  await page.goto('/?display=frame');
-  const points = page.locator('[data-agenda-events] [data-checkpoint]');
-  await expect(points).toHaveCount(4);
-  await expect(points.filter({hasText: '16:15'})).toBeVisible();
-  await expect(page.locator('[data-agenda-events] img')).toHaveCount(0);
-  await expect(page.locator('[data-agenda-events]')).toContainText(
-    '<img src=x onerror=alert(1)>',
-  );
-  if (info.project.name !== 'mobile') {
-    expect(
-      await page.evaluate(
-        () => globalThis.document.documentElement.scrollHeight,
-      ),
-    ).toBeLessThanOrEqual(800);
-  }
-
-  // An authorization denial removes private habit labels as well as events.
-  await page.route('**/api/config/display', async (route) =>
-    route.fulfill({status: 401, json: {error: {message: 'Denied'}}}),
-  );
-  await page.clock.fastForward(301_000);
-  await expect(page.locator('[data-agenda-events]')).not.toContainText(
-    'Matin synthétique',
-  );
-});
-
-test('vacation and holiday appear beside six upcoming appointments, suppress routines and preserve day-off boundaries @mobile', async ({
+test('vacation and holiday appear beside six upcoming appointments and preserve day-off boundaries @mobile', async ({
   page,
 }, info) => {
   const now = Date.parse('2026-11-01T07:00:00Z');
@@ -136,9 +82,6 @@ test('vacation and holiday appear beside six upcoming appointments, suppress rou
   await expect(
     page.locator('[data-agenda-events] [data-event-calendar]'),
   ).toHaveCount(6);
-  await expect(page.locator('[data-agenda-events]')).not.toContainText(
-    'Matin synthétique',
-  );
   if (info.project.name !== 'mobile') {
     expect(
       await page.evaluate(
@@ -174,6 +117,19 @@ test('admin edits and persists separate day profiles without replacing base sett
   await page.request.get(`${photoOrigin}/__test/login`, {
     ignoreHTTPSErrors: true,
   });
+  const checkpoints = {wednesday: [{time: '16:15', label: 'Ancien repère'}]};
+  const seed = await page.request.patch(`${photoOrigin}/api/config`, {
+    headers: {
+      Origin: photoOrigin,
+      'X-Dayframe-Request': '1',
+      'Content-Type': 'application/json',
+    },
+    data: {
+      ...defaultSettings,
+      planning: {...defaultSettings.planning, checkpoints},
+    },
+  });
+  expect(seed.ok()).toBe(true);
   await page.goto(`${photoOrigin}/admin/settings`);
   await expect(page.locator('[data-controls]')).toBeEnabled();
   await page.locator('[data-school-calendar]').check();
@@ -182,9 +138,8 @@ test('admin edits and persists separate day profiles without replacing base sett
     page.locator('[data-day-schedule] [data-start]').first(),
   ).toHaveValue('08:00');
   await page.locator('[data-day-profile]').selectOption('wednesday');
-  await page.locator('[data-add-checkpoint]').click();
-  await page.locator('[data-point-time]').fill('16:15');
-  await page.locator('[data-point-label]').fill('Retour synthétique');
+  await page.locator('[data-add-day-period]').click();
+  await page.locator('[data-day-schedule] [data-start]').first().fill('06:30');
   await page.locator('[data-day-profile]').selectOption('dayOff');
   await expect(
     page.locator('[data-day-schedule] [data-start]').first(),
@@ -196,10 +151,13 @@ test('admin edits and persists separate day profiles without replacing base sett
   await page.reload();
   await expect(page.locator('[data-school-calendar]')).toBeChecked();
   await page.locator('[data-day-profile]').selectOption('wednesday');
-  await expect(page.locator('[data-point-time]')).toHaveValue('16:15');
-  await expect(page.locator('[data-point-label]')).toHaveValue(
-    'Retour synthétique',
-  );
+  await expect(
+    page.locator('[data-day-schedule] [data-start]').first(),
+  ).toHaveValue('06:30');
+  await expect(page.getByText('Ancien repère')).toHaveCount(0);
+  const stored = await page.request.get(`${photoOrigin}/api/config`);
+  const storedSettings = validateSettings(await stored.json());
+  expect(storedSettings.planning.checkpoints).toEqual(checkpoints);
   await expect(
     page.locator('[data-schedule] [data-start]').first(),
   ).toHaveValue('06:00');

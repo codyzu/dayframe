@@ -20,18 +20,14 @@ Priority:
 4. Weekends: `dayOff` if no specific profile exists.
 5. The existing daily schedule.
 
-Specific schedules/checkpoints can fall back independently. The admin's **Jours de repos**
-preset is Morning 08:00–11:00, Photos 11:00–23:00, Night 23:00–08:00. Saving a preset is
+The admin's **Jours de repos** preset is Morning 08:00–11:00, Photos 11:00–23:00, Night 23:00–08:00. Saving a preset is
 explicit; existing persisted schedules do not change automatically. Ordinary Wednesday
 mode times remain the daily schedule unless customized separately.
 
-`planning.checkpoints` holds up to four ordered private weather checkpoints per profile,
-with a neutral label and forecast time. These are habitual weather reference
-points. Activities and their durations stay in Google Family calendar. Temperature interpolation handles any minute (including
-quarter hours); rain remains the conservative maximum of neighboring hourly values.
-Labels are escaped before insertion into weather markup. Vacation/holiday profiles
-replace Wednesday activities; Google Family and Massages events remain independent and
-are still shown. No Google events or permissions are created or changed.
+Legacy `planning.checkpoints` values still validate and survive settings saves
+and exports for rollback. Dayframe no longer uses them for display or scheduling.
+Selected Google calendars, including Routines, follow their own event schedules
+on days off.
 
 The upcoming-appointments panel displays the current public holiday and/or vacation,
 including both when they overlap. Vacation labels show the inclusive final vacation
@@ -91,10 +87,9 @@ cache for at most 30 days; the screen labels old data. The browser checks hourly
 failures after a minute, and retries stale responses after five minutes. It holds dates
 in memory and re-evaluates day/profile on the existing tick, including midnight, DST,
 resume and backward clock corrections. Wrong-year, future-dated, expired or incomplete
-coverage is unknown; it does not assert a school day or show habitual activities as
-confirmed. Weekends remain known independently of the official feeds. No private habit
-is written to persistent browser storage. Auth denial resets private planning and clears
-rendered checkpoint labels; lifecycle aborts prevent late data writes.
+coverage is unknown. Weekends remain known independently of the official feeds.
+Auth denial resets private planning and clears event-specific advice. Lifecycle aborts
+prevent late data writes.
 
 No new binding, migration, dependency, paid service, billing change, hardware/native
 change or scheduled Worker job. A household normally causes two government reads per

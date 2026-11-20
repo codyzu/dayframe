@@ -1,7 +1,8 @@
 # Google Calendar on Morning
 
-A single household Google connection supplies the **Family** and **Massages**
-appointment calendars and, optionally, a separate calendar for observed holidays.
+A single household Google connection supplies **Family** and the optional
+**Massages** and **Routines** appointment calendars, plus an optional separate
+calendar for observed holidays.
 The connected account must be able to read each selected calendar. Continue
 editing events in Google Calendar. Dayframe requests read-only event and
 calendar-list scopes; it has no write scope or event-creation endpoint.
@@ -11,7 +12,9 @@ calendar-list scopes; it has no write scope or event-creation endpoint.
 In `/admin/settings`, choose **Connecter Google Calendar**, authorize an account that
 can read Family, then choose **Family** under **Agenda à afficher** and press
 **Afficher ces agendas**. Choose the shared massage calendar under **Massages · violet** before saving. Leave
-that second selection empty to remove it. Under **Fêtes observées · facultatif**,
+that selection empty to remove it. Under **Routines · facultatif**, select the
+Routines calendar and save with the same button. Clear the selection and save
+to remove it from the frame. Under **Fêtes observées · facultatif**,
 choose a dedicated calendar for observances the household wants on the frame,
 such as Eid, or leave it empty. To use a different region or community's dates,
 subscribe to that calendar or share it with the connected Google account before
@@ -28,12 +31,9 @@ events. All-day end dates are exclusive. Google expands recurring appointments a
 exceptions (`singleEvents=true`); cancelled and self-declined entries are omitted.
 A long title truncates visually, retaining its complete bounded title in DOM text and
 the title attribute. The card does not show descriptions, attendees or locations.
-**Aujourd’hui** combines timed appointments with the household weather checkpoints
-in local time order. Checkpoints drop out after their scheduled minute, while
-ongoing appointments stay visible and the weather chart still covers the full
-day. A matching Family entry and checkpoint share one row only
-when their start minute and activity match unambiguously. Unrelated events at the
-same time stay distinct. Every timed appointment shown for today or tomorrow
+**Aujourd’hui** shows remaining and ongoing appointments. All-day events appear
+first, followed by timed events in local start order. Events at the same time stay
+distinct. Every timed appointment shown for today or tomorrow
 uses the household forecast at its start time, when fresh hourly coverage is
 available. Between hours, temperature is interpolated and rain uses the higher
 of the adjacent hourly probabilities. All-day events have no forecast time.
@@ -42,6 +42,8 @@ calendar. Forecast browsing does not change the dates or events in the timeline.
 
 Official public holidays, school closures and optional observances have named
 labels above the timeline. Observances do not alter school or schedule rules.
+Routines appear on weekends, public holidays and school breaks. Manage school-only
+exceptions in Google Calendar so the frame follows the actual event schedule.
 An all-day event whose title begins or ends with an explicit birthday keyword
 gets a cake icon, such as `Anniversaire de Camille` or `Camille’s birthday`.
 
@@ -50,6 +52,42 @@ OAuth flow and cached events, then attempts Google token revocation. If Google i
 local disconnect still succeeds; remove Dayframe in the Google account's third-party
 connections to ensure provider-side revocation. Reconnect after a revoked/expired Google
 grant and select Family again. Changing the selected calendar clears the server cache.
+
+## Routines calendar
+
+Routines entries use a green source label in the same chronological timeline.
+The ten-row budget gives remaining appointments priority, with tomorrow using
+spare space. A busy day can show up to
+nine appointments across the three selected sources. The private reader retains
+up to eighteen appointment candidates across today and tomorrow. If Routines is
+unavailable, Dayframe reports it and can still show Family and Massages.
+
+Existing selections work without migration or new OAuth consent. Older settings
+pages that omit the Routines selection preserve it. After upgrading, reload any
+display still running the previous version before enabling Routines. Clear the
+selection before rolling back if the stored selection should be removed.
+
+Reviewed Wes Bos's upstream `dashboard/js/views/home.js`,
+`dashboard/js/views/calendar.js` and MIT `LICENSE` at
+`0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189`. Retained the short today list and
+visible calendar identity as ideas. Dayframe puts real, authorized Google events
+in one timeline, independently of upstream's mock event lanes and chore list.
+No upstream code or assets copied.
+
+## Weather-sensitive events
+
+Add `#meteo`, `#météo` or `#weather` to the description of a timed event in
+Family or Routines. Use a standalone tag, for example on its own line. Case
+and accents do not matter. For a repeating event, applying the edit to the series
+sets the tag for its occurrences. Moving or cancelling an occurrence in Google
+Calendar changes or removes its weather advice.
+
+Dayframe reads the description in the private Worker and retains only an
+eligibility flag, alongside the existing event fields. The description is
+neither stored in the agenda cache nor sent to the display. No new consent
+is needed. The flag shares the agenda's existing cache and privacy lease.
+See [weather advice](weather.md#weather-advice-for-calendar-events) for when the
+summary mentions an event.
 
 ## Private runtime setup
 
@@ -175,8 +213,8 @@ bounded to ten pages per selected calendar. No new permissions, package or servi
 
 ## Tomorrow preview
 
-Morning’s **Aujourd’hui** column gives today's appointments and checkpoints the
-first ten timeline rows. A divider labelled **Demain · weekday** uses one spare
+Morning’s **Aujourd’hui** column gives today's appointments priority within
+the ten-row budget. A divider labelled **Demain · weekday** uses one spare
 row, then up to four of tomorrow’s earliest new appointments can fill the rest.
 An empty tomorrow is labelled explicitly whenever its section fits;
 the preview never skips ahead to another day. All-day events precede timed entries.
@@ -185,8 +223,8 @@ after midnight revalidation.
 
 The same authorized reader now queries through the end of tomorrow in the household
 timezone, using local date boundaries across 23/25-hour days rather than adding
-24 hours. It retains at most three events per calendar per day (twelve candidates
-across two calendars). The browser receives those candidates and applies the shared
+24 hours. It retains at most three events per calendar per day (up to eighteen
+candidates across three calendars). The browser receives those candidates and applies the shared
 row budget so finished events can free preview space between refreshes. A two-day
 cache marker invalidates older today-only caches immediately on their next read.
 The four-minute server refresh, five-minute browser privacy lease, midnight/hiding/

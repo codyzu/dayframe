@@ -1,53 +1,12 @@
 import {hourLabel, type Daylight, type Hour} from './adapter.ts';
 import {chartGeometry} from './chart.ts';
 import {conditionFor} from './conditions.ts';
-import {type checkpointForecasts} from './morning.ts';
 
 const rounded = (value: number) => `${Math.round(value)}°`;
 
 function cloneTemplate<T extends Element>(root: ParentNode, selector: string) {
   const template = root.querySelector<HTMLTemplateElement>(selector)!;
   return document.importNode(template.content.firstElementChild!, true) as T;
-}
-
-export function renderCheckpoints(
-  root: HTMLElement,
-  forecasts: ReturnType<typeof checkpointForecasts>,
-) {
-  root.querySelector('[data-checkpoints]')!.replaceChildren(
-    ...forecasts.map((point) => {
-      const card = cloneTemplate<HTMLElement>(
-        root,
-        '[data-checkpoint-template]',
-      );
-      const hour = point.forecast;
-      const condition = conditionFor(hour?.code, hour?.isDay ?? true);
-      card.setAttribute('aria-label', `${point.time} ${point.label}`);
-      card.querySelector('[data-point-time]')!.textContent = point.time.replace(
-        ':',
-        'h',
-      );
-      const label = card.querySelector<HTMLElement>('[data-point-label]')!;
-      label.textContent = point.label;
-      label.title = point.label;
-      card.querySelector('[data-point-icon]')!.classList.add(condition.icon);
-      card.querySelector('[data-point-temperature]')!.textContent = hour
-        ? rounded(hour.temperature)
-        : '—°';
-      const rain = card.querySelector('[data-point-rain]')!;
-      rain.textContent = `Pluie ${hour ? `${hour.probability} %` : '—'}`;
-      rain.setAttribute(
-        'aria-label',
-        hour
-          ? `Pluie : maximum horaire ${hour.probability} % ; source ${point.probabilityPeriod}`
-          : 'Prévision indisponible',
-      );
-      card.querySelector('[data-point-condition]')!.textContent = hour
-        ? condition.label
-        : 'Prévision indisponible';
-      return card;
-    }),
-  );
 }
 
 function renderDaylight(

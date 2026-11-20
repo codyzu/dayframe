@@ -16,24 +16,26 @@ test.beforeEach(async ({page}) => {
     }),
   );
   await page.route('**/api/config/display', async (route) =>
-    route.fulfill({json: defaultSettings}),
+    route.fulfill({
+      json: {
+        ...defaultSettings,
+        planning: {
+          ...defaultSettings.planning,
+          checkpoints: {friday: [{time: '16:30', label: 'Ancien repère'}]},
+        },
+      },
+    }),
   );
   await page.route('https://api.open-meteo.com/**', async (route) =>
     route.fulfill({json: weatherFixture()}),
   );
 });
 
-test('remaining checkpoints, full-day chart, advice and an honest empty agenda @all-browsers', async ({
+test('full-day chart and weather advice work with an empty agenda @all-browsers', async ({
   page,
 }) => {
   await page.goto('/?display=frame');
-  const checkpoints = page.locator('[data-agenda-events] [data-checkpoint]');
-  await expect(checkpoints.locator('[data-event-time]')).toHaveText([
-    '11:30',
-    '16:30',
-    '18:00',
-  ]);
-
+  await expect(page.locator('[data-agenda-events] li')).toHaveCount(0);
   await expect(page.locator('[data-chart] rect')).toHaveCount(8);
   await expect(page.locator('[data-chart] table tbody tr')).toHaveCount(17);
   await expect(page.locator('[data-advice]')).toHaveText(

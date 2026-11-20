@@ -119,11 +119,10 @@ const fields = [
             Vacances et jours fériés officiels · Grenoble, zone A
           </label>
           <p class="text-sm text-secondary">
-            Les jours fériés, vacances et week-ends utilisent « Jours de repos
-            ». Les autres jours suivent leur programme spécifique, ou le
-            programme quotidien. Les vacances remplacent les repères météo du
-            mercredi par ceux des jours de repos. Les événements Google restent
-            affichés.
+            Les jours fériés et les vacances utilisent « Jours de repos ». Les
+            week-ends le suivent sauf si leurs horaires sont personnalisés. Les
+            autres jours suivent leur programme spécifique, ou le programme
+            quotidien. Les événements Google restent affichés.
           </p>
           <label class="min-w-0 flex flex-col gap-2">
             Programme à personnaliser
@@ -152,24 +151,6 @@ const fields = [
             class="min-h-11 px-3 underline"
           >
             Utiliser le programme quotidien
-          </button>
-          <h3 class="text-xl font-semibold">Repères météo de ce jour</h3>
-          <p class="text-sm text-secondary">
-            Jusqu’à quatre horaires : nom et horaire. Ce sont des habitudes
-            privées, pas de nouveaux événements Google. Les horaires météo des
-            jours de repos remplacent ceux du mercredi pendant les vacances et
-            jours fériés. Sans personnalisation, les repères restent génériques.
-          </p>
-          <div data-day-checkpoints class="space-y-3"></div>
-          <button data-add-checkpoint type="button" class="min-h-11 underline">
-            Ajouter un repère météo
-          </button>
-          <button
-            data-reset-checkpoints
-            type="button"
-            class="min-h-11 px-3 underline"
-          >
-            Utiliser les repères habituels
           </button>
         </section>
         <button
@@ -270,6 +251,13 @@ const fields = [
             class="min-h-12 w-full min-w-0 rounded-lg border border-border bg-elevated px-3 text-primary"
           ></select>
         </label>
+        <label class="flex w-full flex-col gap-2 text-[#315b52]">
+          Routines · facultatif
+          <select
+            data-routine-select
+            class="min-h-12 w-full min-w-0 rounded-lg border border-border bg-elevated px-3 text-primary"
+          ></select>
+        </label>
         <label class="flex w-full flex-col gap-2">
           Fêtes observées · facultatif
           <select
@@ -306,32 +294,6 @@ const fields = [
         Actualiser Google Calendar
       </button>
     </section>
-    <template data-checkpoint-template>
-      <div class="grid gap-3 rounded-lg bg-surface p-3 sm:grid-cols-[1fr_2fr_auto]">
-        <label class="flex flex-col gap-1">
-          Horaire
-          <input
-            data-point-time
-            type="time"
-            required
-            class="min-h-11 min-w-0 rounded bg-elevated px-2"
-          />
-        </label>
-        <label class="flex flex-col gap-1">
-          Nom
-          <input
-            data-point-label
-            type="text"
-            maxlength="40"
-            required
-            class="min-h-11 min-w-0 rounded bg-elevated px-2"
-          />
-        </label>
-        <button data-remove type="button" class="min-h-11 underline">
-          Retirer
-        </button>
-      </div>
-    </template>
     <template data-period-template>
       <div class="flex flex-wrap items-end gap-3 rounded-lg bg-surface p-3">
         <label class="flex flex-col gap-1">

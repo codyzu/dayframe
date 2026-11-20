@@ -165,7 +165,6 @@ test('settings buttons including generated rows and calendar actions have comple
   await page.goto('/admin/settings');
   await expect(page.locator('[data-issue]')).toBeEnabled();
   await page.locator('[data-add-day-period]').click();
-  await page.locator('[data-add-checkpoint]').click();
   page.once('dialog', async (dialog) => dialog.accept());
   await page.locator('[data-issue]').click();
   await expect(page.locator('[data-hide-token]')).toBeVisible();

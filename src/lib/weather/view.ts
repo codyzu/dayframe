@@ -1,28 +1,17 @@
-import {
-  emptyPlanning,
-  type DayPlanning,
-  type OfficialCalendar,
-} from '../dashboard/day-planning.ts';
-import {runtimeConfig} from '../dashboard/config.ts';
-import {type DatedCheckpoints} from '../calendar/timeline.ts';
+import {type AgendaEvent} from '../calendar/contracts.ts';
+import {type AgendaForecast} from '../calendar/view.ts';
 import {dateKey, type Hour, type Weather} from './adapter.ts';
 import {daylightFor} from './daylight.ts';
 import {renderWeatherWindow} from './window.ts';
 import {conditionFor} from './conditions.ts';
 import {summarize} from './summary.ts';
-import {
-  checkpointForecasts,
-  dayHours,
-  routineForDay,
-  morningAdvice,
-  forecastAdvice,
-} from './morning.ts';
+import {dayHours, morningAdvice, forecastAdvice} from './morning.ts';
 import {
   createWeatherService,
   type WeatherCache,
   type WeatherState,
 } from './service.ts';
-import {renderChart, renderCheckpoints} from './forecast-view.ts';
+import {renderChart} from './forecast-view.ts';
 import {
   isWeatherStale,
   weatherReadingLabel,
@@ -40,32 +29,33 @@ const rounded = (value: number) => `${Math.round(value)}°`;
 
 export function mountWeather(
   root: HTMLElement,
-  onUpdate?: (state: WeatherState) => void,
-  isLocalLocation = false,
-  onCheckpoints?: (points: DatedCheckpoints | undefined) => void,
+  {
+    onUpdate,
+    isLocalLocation,
+    onForecast,
+    getAdviceEvents,
+  }: {
+    onUpdate: (state: WeatherState) => void;
+    isLocalLocation: boolean;
+    onForecast: (forecast: AgendaForecast | undefined) => void;
+    getAdviceEvents: (timezone: string) => readonly AgendaEvent[];
+  },
 ) {
   const future = mountFutureWeather(root, () => {
     renderedMinute = undefined;
     render(latest);
   });
-  const notifyWeatherUpdate = onUpdate ?? (() => undefined);
-  let planning: DayPlanning = emptyPlanning;
-  let calendar: OfficialCalendar | undefined;
   let isActive = false;
   let latest: WeatherState = {failed: false};
   let renderedWeather: Weather | undefined;
   let renderedDay: string | undefined;
-  let renderedRoutine = '';
   let chartHours: Hour[] = [];
   let renderedMinute: number | undefined;
   let renderedFailure: boolean | undefined;
-  let timelineSignature = '';
   let publishedWeather: Weather | undefined;
-  const separateCheckpoints = root.querySelector<HTMLElement>(
-    '[data-separate-checkpoints]',
-  )!;
+  let publishedDate: string | undefined;
   root.dataset.localWeather = String(isLocalLocation);
-  onCheckpoints?.(undefined);
+  onForecast(undefined);
   function text(selector: string, value: string) {
     const element = root.querySelector(selector);
     if (element && element.textContent !== value) {
@@ -73,42 +63,43 @@ export function mountWeather(
     }
   }
 
-  const routine = (now: number) =>
-    isLocalLocation
-      ? {
-          points: [
-            {time: '08:00', label: 'Matin'},
-            {time: '11:30', label: 'Midi'},
-            {time: '16:30', label: 'Après-midi'},
-            {time: '18:00', label: 'Soir'},
-          ],
-          heading: 'Les repères · heure du lieu',
-          note: 'Repères météo du lieu choisi sur cet appareil. Le programme de la maison reste inchangé.',
-        }
-      : routineForDay(now, planning, calendar);
-
-  function publishCheckpoints(weather: Weather | undefined, now: number) {
-    if (isLocalLocation || !onCheckpoints) {
+  function publishForecast(weather: Weather | undefined, now: number) {
+    const date = dateKey(now);
+    if (
+      isLocalLocation ||
+      (publishedWeather === weather && publishedDate === date)
+    ) {
       return;
     }
 
-    const timeline = {
-      date: dateKey(now),
-      timezone: runtimeConfig.timezone,
-      points: checkpointForecasts(weather, now, routine(now).points),
-    };
-    const signature = JSON.stringify(timeline);
-    if (signature === timelineSignature && publishedWeather === weather) {
-      return;
-    }
-
-    timelineSignature = signature;
     publishedWeather = weather;
-    onCheckpoints({...timeline, hours: weather?.hourly});
+    publishedDate = date;
+    onForecast(
+      weather
+        ? {date, timezone: weather.timezone, hours: weather.hourly}
+        : undefined,
+    );
+  }
+
+  function renderAdvice(
+    advice: ReturnType<typeof morningAdvice>,
+    isStale: boolean,
+    staleLabel: string,
+  ) {
+    text('[data-advice]', isStale ? staleLabel : advice.title);
+    text('[data-summary]', isStale ? recoveryAdvice : advice.detail);
+  }
+
+  function todayAdvice(weather: Weather, now: number, isStale: boolean) {
+    return morningAdvice(
+      weather,
+      now,
+      isLocalLocation || isStale ? [] : getAdviceEvents(weather.timezone),
+    );
   }
 
   function render({weather, failed}: WeatherState) {
-    notifyWeatherUpdate({weather, failed});
+    onUpdate({weather, failed});
     const now = Date.now();
     const selectedDate = future.update({weather, failed}, now);
     const isFuture = selectedDate !== dateKey(now);
@@ -135,8 +126,7 @@ export function mountWeather(
     renderedFailure = failed;
     const usable = weather && !isWeatherStale(weather, now, failed);
     renderWeatherWindow(root, weather, now, Boolean(usable));
-    separateCheckpoints.hidden = !(isFuture || isLocalLocation);
-    publishCheckpoints(usable ? weather : undefined, now);
+    publishForecast(usable ? weather : undefined, now);
 
     const dayLabel =
       selectedDate === forecastDates(now)[1]
@@ -232,14 +222,13 @@ export function mountWeather(
       `${isFuture ? '' : `Ressenti ${rounded(weather.current.feelsLike)} · `}${daily ? `Max. ${rounded(daily.high)} / Min. ${rounded(daily.low)}` : 'Max. / Min. du jour indisponibles'}`,
     );
     const summary = summarize(weather, now);
-    const dayRoutine = routine(isFuture ? selectedTime : now);
-    const advice = isFuture
-      ? forecastAdvice(weather, selectedDate)
-      : morningAdvice(weather, now, dayRoutine.points);
-    text('[data-advice]', isStale ? staleLabel : advice.title);
-    text('[data-checkpoint-heading]', dayRoutine.heading);
-
-    text('[data-day-context]', dayRoutine.note);
+    renderAdvice(
+      isFuture
+        ? forecastAdvice(weather, selectedDate)
+        : todayAdvice(weather, now, isStale),
+      isStale,
+      staleLabel,
+    );
     text(
       '[data-rain]',
       isStale
@@ -250,7 +239,6 @@ export function mountWeather(
             : `Pluie ${daily.probability} %`
           : summary.current,
     );
-    text('[data-summary]', isStale ? recoveryAdvice : advice.detail);
     text(
       '[data-weather-status]',
       isStale ? `${staleLabel}. ${recoveryAdvice}` : '',
@@ -270,22 +258,6 @@ export function mountWeather(
     isFuture: boolean,
   ) {
     const today = dateKey(now);
-    const dayRoutine = routine(now);
-    const signature = JSON.stringify(dayRoutine.points);
-    if (
-      signature !== renderedRoutine ||
-      weather !== renderedWeather ||
-      today !== renderedDay
-    ) {
-      renderedRoutine = signature;
-      if (isFuture || isLocalLocation) {
-        renderCheckpoints(
-          root,
-          checkpointForecasts(weather, now, dayRoutine.points),
-        );
-      }
-    }
-
     if (weather !== renderedWeather || today !== renderedDay) {
       renderedWeather = weather;
       renderedDay = today;
@@ -345,7 +317,6 @@ export function mountWeather(
   }
 
   icon.classList.add('i-meteocons-not-available-fill');
-  root.querySelector('[data-checkpoints]')!.replaceChildren();
   renderChart(root, []);
   const service = createWeatherService((state) => {
     latest = state;
@@ -391,17 +362,20 @@ export function mountWeather(
     options,
   );
   return {
-    configure(next: DayPlanning, official?: OfficialCalendar) {
-      planning = next;
-      calendar = official;
-      renderedMinute = undefined;
-      renderedRoutine = '';
-      const container = root.querySelector('[data-checkpoints]');
-      if (container) {
-        container.replaceChildren();
+    refreshAdvice() {
+      const {weather, failed} = latest;
+      if (!weather || root.dataset.forecast === 'true') {
+        return;
       }
 
-      render(latest);
+      // Clear private advice even while this view is hidden or the page is paused.
+      const now = Date.now();
+      const isStale = isWeatherStale(weather, now, failed);
+      renderAdvice(
+        todayAdvice(weather, now, isStale),
+        isStale,
+        weatherReadingLabel(weather, now, failed),
+      );
     },
     setActive(isActiveValue: boolean) {
       if (isActive === isActiveValue) {

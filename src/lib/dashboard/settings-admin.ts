@@ -7,7 +7,6 @@ import {
   dayOffSchedule,
   type DayPlanning,
   type DayProfile,
-  type RoutinePoint,
 } from './day-planning.ts';
 import {validateSettings, type Settings} from './settings.ts';
 
@@ -33,7 +32,6 @@ function mount(root: HTMLElement) {
   const revoke = root.querySelector<HTMLButtonElement>('[data-revoke]')!;
   const profile = root.querySelector<HTMLSelectElement>('[data-day-profile]')!;
   const dayPeriods = root.querySelector<HTMLElement>('[data-day-schedule]')!;
-  const pointRows = root.querySelector<HTMLElement>('[data-day-checkpoints]')!;
   const schoolCalendar = root.querySelector<HTMLInputElement>(
     '[data-school-calendar]',
   )!;
@@ -53,44 +51,12 @@ function mount(root: HTMLElement) {
     } else {
       Reflect.deleteProperty(planning.schedules, activeProfile);
     }
-
-    const points = [...pointRows.children].map((row) => ({
-      time: row.querySelector<HTMLInputElement>('[data-point-time]')!.value,
-      label: row.querySelector<HTMLInputElement>('[data-point-label]')!.value,
-    }));
-    if (points.length > 0) {
-      planning.checkpoints[activeProfile] = points;
-    } else {
-      Reflect.deleteProperty(planning.checkpoints, activeProfile);
-    }
-  }
-
-  function addPoint(point: RoutinePoint) {
-    const template = root.querySelector<HTMLTemplateElement>(
-      '[data-checkpoint-template]',
-    )!;
-    const row = template.content.firstElementChild!.cloneNode(
-      true,
-    ) as HTMLElement;
-    row.querySelector<HTMLInputElement>('[data-point-time]')!.value =
-      point.time;
-    row.querySelector<HTMLInputElement>('[data-point-label]')!.value =
-      point.label;
-    row.querySelector('[data-remove]')!.addEventListener('click', () => {
-      row.remove();
-    });
-    pointRows.append(row);
   }
 
   function showProfile() {
     dayPeriods.replaceChildren();
-    pointRows.replaceChildren();
     for (const entry of planning.schedules[activeProfile] ?? []) {
       addPeriod(entry, dayPeriods);
-    }
-
-    for (const point of planning.checkpoints[activeProfile] ?? []) {
-      addPoint(point);
     }
 
     root.querySelector('[data-day-fallback]')!.textContent =
@@ -119,16 +85,6 @@ function mount(root: HTMLElement) {
     .querySelector('[data-reset-day-periods]')!
     .addEventListener('click', () => {
       dayPeriods.replaceChildren();
-    });
-  root.querySelector('[data-add-checkpoint]')!.addEventListener('click', () => {
-    if (pointRows.children.length < 4) {
-      addPoint({time: '', label: ''});
-    }
-  });
-  root
-    .querySelector('[data-reset-checkpoints]')!
-    .addEventListener('click', () => {
-      pointRows.replaceChildren();
     });
   let isBusy = false;
   let isAuthorized = false;
@@ -163,7 +119,6 @@ function mount(root: HTMLElement) {
         periods.replaceChildren();
         planning = structuredClone(emptyPlanning);
         dayPeriods.replaceChildren();
-        pointRows.replaceChildren();
       }
     } finally {
       isBusy = false;

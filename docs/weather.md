@@ -66,25 +66,38 @@ otherwise the first qualifying hour is named, with **demain** when appropriate.
 This describes forecast risk, not an observation or a promise of continuous rain.
 The chart independently retains 06h–22h and shows probabilities below 50% too.
 
-A future wet routine checkpoint from 16h onward can add a labelled clause:
-**Pluie possible dès maintenant, et aussi pour la sortie à 16h30.** The phrase
-uses the actual checkpoint label: **pour les activités**, **cet après-midi** or
-**ce soir** as appropriate; other custom labels remain quoted verbatim, such as
-**pour « Atelier créatif » à 17h00**. It must be outside the first wet hourly slot
-and must not have passed. Half-hour checkpoints still use the maximum of adjacent
-hourly rain values, but cannot override or advance the first forecast risk time.
-Advice remains bounded to two short sentences. Cold-protection details take
-priority over the optional checkpoint; a jacket hint fills the second sentence
-when neither cold protection nor a useful checkpoint applies. Hazardous conditions
-retain their existing priority, and stale data retains recovery guidance.
+### Weather advice for calendar events
+
+A fresh household forecast may mention one weather-sensitive event after the
+general rain timing. Dayframe chooses the earliest upcoming tagged Family or
+Routines event today with a rain risk at its start. Appointments between hours use
+the higher of the adjacent rain values. The event does not change the general
+first-risk time. For example, **Pluie possible vers 15h00. Pour « Sortie d’école »
+à 16h30, prévoyez un parapluie.**
+
+Use `#meteo`, `#météo`, or `#weather` in the event description to opt in. Cold
+protection and hazardous conditions take priority over event advice. Expired or
+denied calendar data, stale weather, forecast browsing and a device-local weather
+location all use general advice without event titles. Unavailable weather retains
+its recovery message. The hourly chart and forecasts at timed appointments remain
+available independently of tags.
+
+The former weather repères are retired across the agenda, future forecast,
+device-local weather and editor. Saved settings retain their legacy values
+for export or source rollback, with no migration required.
+
+For this change, reviewed upstream `dashboard/js/views/home.js` and MIT `LICENSE`
+at `0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189`. Dayframe retains a short advice
+pane and agenda as separate parts of the overview. Live weather and a private
+Google description tag replace mock weather and activity data. No upstream code
+or assets copied.
 
 Diagnostic check on 18 November 2026 around 09h10 Europe/Paris: a fresh request
 for the checked-in public Annecy coordinates returned 93% / 0.4 mm for 09h,
 remaining above the rain-risk probability threshold through 18h. This independently
 retrieved provider response reproduces the timing problem; it is not an inspection
 of the owner's browser cache or device location. Raw data is not committed.
-Permanent tests use synthetic wet-current-hour/later-checkpoint inputs and the
-existing synthetic future-onset scenario; ordinary checks never rely on live data.
+Advice tests use synthetic inputs and never rely on live data.
 
 Upstream review for this correction: `wesbos/photo-frame-dashboard` at
 `346b712b8f3c42e7407baae3c620116ebae9c85e`, root MIT `LICENSE`,
@@ -292,7 +305,7 @@ than upstream's hour-indexed mock weather. No upstream code or assets copied.
 
 The Morning view has an always-visible strip for today through day six. Each
 button shows its condition, labelled maximum/minimum and rain probability.
-Selecting a future date updates the conditions panel, four routine checkpoints,
+Selecting a future date updates the conditions panel,
 06:00–22:00 graph and deterministic clothing/rain advice together. Future
 conditions explicitly name the selected date and label the large temperature
 “Maximum prévu”; they do not show current feels-like or a current-time marker.
@@ -300,9 +313,8 @@ Today restores the live presentation. Missing daily or hourly fields remain
 unavailable; old two-day caches remain supported without borrowing another day.
 
 Future advice uses only the selected day's useful hourly coverage, independently
-of today's current temperature, apparent temperature or hazards. The selected
-calendar date also chooses weekday/day-off checkpoints. Device-local places retain
-their neutral checkpoints. Household clock/date, agenda and official vigilance
+of today's current temperature, apparent temperature or hazards. Household
+clock/date, agenda and official vigilance
 keep their independent time and validity rules.
 
 Selection is transient: today’s tile or Escape restores today; 60 seconds without

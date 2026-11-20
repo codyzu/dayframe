@@ -56,6 +56,25 @@ test('search persists only on this device, keeps household time and resets to ho
   browser,
 }, testInfo) => {
   const mutations: string[] = [];
+  await page.route('**/api/calendar/events', async (route) =>
+    route.fulfill({
+      json: {
+        connected: true,
+        timezone: 'Europe/Paris',
+        fetchedAt: fixtureNow,
+        events: [
+          {
+            calendar: 'routines',
+            title: 'Sortie d’école',
+            start: '2026-10-16T14:30:00Z',
+            end: '2026-10-16T15:00:00Z',
+            allDay: false,
+            weatherRelevant: true,
+          },
+        ],
+      },
+    }),
+  );
   page.on('request', (request) => {
     if (request.method() !== 'GET') {
       mutations.push(request.url());
@@ -63,6 +82,8 @@ test('search persists only on this device, keeps household time and resets to ho
   });
   await page.goto('/');
   await expect(page.locator('[data-temperature]')).toHaveText('12°');
+  const summary = page.locator('[data-summary]');
+  await expect(summary).toContainText('Sortie d’école');
   await page.getByRole('button', {name: 'Changer le lieu météo'}).click();
   const dialog = page.locator('[data-location-dialog]');
   await expect(dialog).toBeVisible();
@@ -77,8 +98,9 @@ test('search persists only on this device, keeps household time and resets to ho
     .click();
   await expect(page.locator('[data-temperature]')).toHaveText('24°');
   await expect(page.locator('[data-clock]').first()).toHaveText('08:30');
-  await expect(page.locator('[data-checkpoint-heading]')).toHaveText(
-    'Les repères · heure du lieu',
+  await expect(summary).not.toContainText('Sortie d’école');
+  await expect(page.locator('[data-agenda-events]')).toContainText(
+    'Sortie d’école',
   );
   await expect(page.locator('[data-alert-title]')).toHaveText(
     'Vigilance non configurée pour ce lieu',

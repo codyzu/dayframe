@@ -12,11 +12,16 @@ test.beforeEach(async ({page}) => {
     route.fulfill({json: defaultSettings}),
   );
 });
-test('Morning shows escaped, bounded events, stays within the frame and clears denied/offline data @mobile', async ({
+test('Morning escapes titles in the agenda and advice, fits the frame and clears denied data @mobile', async ({
   page,
 }, info) => {
   let isDenied = false;
   const now = fixtureNow;
+  await page.route('https://api.open-meteo.com/**', async (route) => {
+    const raw = weatherFixture();
+    raw.hourly.precipitation_probability.fill(80);
+    await route.fulfill({json: raw});
+  });
   await page.route('**/api/calendar/events', async (route) =>
     route.fulfill(
       isDenied
@@ -56,6 +61,7 @@ test('Morning shows escaped, bounded events, stays within the frame and clears d
                   start: new Date(now + 60_000).toISOString(),
                   end: new Date(now + 3_600_000).toISOString(),
                   allDay: false,
+                  weatherRelevant: true,
                 },
                 {
                   title:
@@ -95,6 +101,9 @@ test('Morning shows escaped, bounded events, stays within the frame and clears d
   );
   await expect(next).toHaveCSS('font-weight', '700');
   await expect(page.locator('[data-agenda] img')).toHaveCount(0);
+  const summary = page.locator('[data-summary]');
+  await expect(summary).toContainText('<img src=x');
+  await expect(summary.locator('img')).toHaveCount(0);
   const observance = page.locator('[data-day-observance]');
   await expect(observance).toContainText('Fête synthétique');
   await expect(observance).toContainText('Fête observée');
@@ -125,52 +134,63 @@ test('Morning shows escaped, bounded events, stays within the frame and clears d
   expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain(
     'Fête synthétique',
   );
-  await page.clock.fastForward(61_000);
-  await expect(
-    page.locator('[data-event-calendar] [data-event-time]').nth(1),
-  ).toHaveText('En cours');
   isDenied = true;
-  await page.clock.fastForward(180_000);
+  await page.evaluate(() => globalThis.dispatchEvent(new Event('online')));
+  await expect(summary).not.toContainText('<img src=x');
   await expect(
     page.locator('[data-agenda-events] [data-event-calendar]'),
   ).toHaveCount(0);
   await expect(page.locator('[data-agenda-status]')).toBeVisible();
   await expect(observance).not.toContainText('Fête synthétique');
   await expect(page.getByRole('img', {name: 'Anniversaire'})).toHaveCount(0);
-  await page.unroute('**/api/calendar/events');
-  await page.route('**/api/calendar/events', async (route) => route.abort());
-  await page.clock.fastForward(300_000);
-  await expect(
-    page.locator('[data-agenda-events] [data-event-calendar]'),
-  ).toHaveCount(0);
 });
 
-test('Morning shows weather for timed appointments and only merges a matching checkpoint', async ({
+test('calendar weather follows timed events and tagged advice expires with the private agenda', async ({
   page,
 }) => {
-  await page.route('**/api/calendar/events', async (route) =>
-    route.fulfill({
+  let shouldStall = false;
+  const stalled = Promise.withResolvers<void>();
+  const release = Promise.withResolvers<void>();
+  await page.route('**/api/calendar/events', async (route) => {
+    if (shouldStall) {
+      stalled.resolve();
+      await release.promise;
+      await route.abort();
+      return;
+    }
+
+    await route.fulfill({
       json: {
         connected: true,
         timezone: 'Europe/Paris',
         fetchedAt: fixtureNow,
         events: [
-          ...['Sortie d’école', 'Sortie au cinéma'].map((title) => ({
-            title,
+          {
+            title: 'Sortie d’école',
+            calendar: 'routines',
             start: '2026-10-16T14:30:00Z',
             end: '2026-10-16T15:00:00Z',
             allDay: false,
-          })),
+            weatherRelevant: true,
+          },
+          {
+            title: 'Sortie au cinéma',
+            calendar: 'family',
+            start: '2026-10-16T06:00:00Z',
+            end: '2026-10-16T08:00:00Z',
+            allDay: false,
+          },
           {
             title: 'Salle de sport',
+            calendar: 'routines',
             start: '2026-10-17T04:00:00Z',
             end: '2026-10-17T05:00:00Z',
             allDay: false,
           },
         ],
       },
-    }),
-  );
+    });
+  });
   await page.goto('/?display=frame');
   await expect(page.getByRole('heading', {name: 'Aujourd’hui'})).toBeVisible();
   const today = page.locator('[data-agenda-events]');
@@ -181,6 +201,7 @@ test('Morning shows weather for timed appointments and only merges a matching ch
     .locator('[data-event-calendar]')
     .filter({hasText: 'Sortie au cinéma'});
   await expect(pickup.locator('[data-event-time]')).toHaveText('16:30');
+  await expect(pickup.locator('[data-event-source]')).toHaveText('Routines');
   await expect(pickup.locator('[data-event-title]')).toHaveCSS(
     'font-weight',
     '700',
@@ -190,17 +211,33 @@ test('Morning shows weather for timed appointments and only merges a matching ch
       name: /Probabilité de pluie : maximum horaire 65 %/v,
     }),
   ).toBeVisible();
+  await expect(cinema.locator('[data-event-time]')).toHaveText('En cours');
   await expect(cinema.locator('[data-event-weather]')).toBeVisible();
-  await expect(cinema).not.toHaveAttribute('data-checkpoint');
-  await expect(today.locator('[data-checkpoint="16:30"]')).toHaveCount(1);
+  await expect(today.locator('li')).toHaveCount(2);
+  const summary = page.locator('[data-summary]');
+  await expect(summary).toContainText(
+    'Pour « Sortie d’école » à 16h30, prévoyez un parapluie.',
+  );
+  await expect(summary).not.toContainText('Sortie au cinéma');
   const gym = page.locator('[data-agenda-tomorrow-events] li').filter({
     hasText: 'Salle de sport',
   });
   await expect(gym.locator('[data-event-time]')).toHaveText('06:00');
   await expect(gym.getByRole('img', {name: /source 06:00/v})).toBeVisible();
+  try {
+    shouldStall = true;
+    await page.clock.fastForward(241_000);
+    await stalled.promise;
+    await page.clock.fastForward(60_000);
+    await expect(today.locator('li')).toHaveCount(0);
+    await expect(summary).not.toContainText('Sortie d’école');
+    await expect(summary).toContainText('Pluie possible');
+  } finally {
+    release.resolve();
+  }
 });
 
-test('admin selects shared calendars including an optional observance calendar, disconnects and starts Google authorization @mobile', async ({
+test('admin selects shared calendars including routines and observances, disconnects and starts Google authorization @mobile', async ({
   page,
 }) => {
   await page.route('**/api/session', async (route) =>
@@ -215,6 +252,7 @@ test('admin selects shared calendars including an optional observance calendar, 
   let isConnected = true;
   let selected: {id: string; name: string} | undefined;
   let massageSelected: {id: string; name: string} | undefined;
+  let routineSelected: {id: string; name: string} | undefined;
   let observanceSelected: {id: string; name: string} | undefined;
   await page.route('**/api/calendar', async (route) => {
     if (route.request().method() === 'PATCH') {
@@ -222,10 +260,12 @@ test('admin selects shared calendars including an optional observance calendar, 
       expect(route.request().postDataJSON()).toEqual({
         id: 'family',
         massageId: 'massage',
+        routineId: 'routines',
         observanceId: 'observances',
       });
       selected = {id: 'family', name: 'Notre famille'};
       massageSelected = {id: 'massage', name: 'Cabinet'};
+      routineSelected = {id: 'routines', name: 'Routines du foyer'};
       observanceSelected = {id: 'observances', name: 'Fêtes du foyer'};
     }
 
@@ -239,6 +279,7 @@ test('admin selects shared calendars including an optional observance calendar, 
         connected: isConnected,
         selected,
         massageSelected,
+        routineSelected,
         observanceSelected,
       },
     });
@@ -249,6 +290,7 @@ test('admin selects shared calendars including an optional observance calendar, 
         calendars: [
           {id: 'family', name: 'Notre famille'},
           {id: 'massage', name: 'Cabinet'},
+          {id: 'routines', name: 'Routines du foyer'},
           {id: 'observances', name: 'Fêtes du foyer'},
         ],
       },
@@ -273,13 +315,16 @@ test('admin selects shared calendars including an optional observance calendar, 
     .getByLabel('Agenda à afficher', {exact: false})
     .selectOption('family');
   await page.getByLabel('Massages · violet').selectOption('massage');
+  const routines = page.getByLabel('Routines · facultatif');
+  await routines.selectOption('routines');
   await page
     .getByLabel('Fêtes observées · facultatif', {exact: false})
     .selectOption('observances');
   await page.getByRole('button', {name: 'Afficher ces agendas'}).click();
   await expect(page.locator('[data-calendar-status]')).toHaveText(
-    'Agenda affiché : Notre famille · Massages : Cabinet · Fêtes observées : Fêtes du foyer',
+    'Agenda affiché : Notre famille · Massages : Cabinet · Routines : Routines du foyer · Fêtes observées : Fêtes du foyer',
   );
+  await expect(routines).toHaveValue('routines');
   await page.getByRole('button', {name: 'Déconnecter Google Calendar'}).click();
   await expect(page.locator('[data-calendar-status]')).toHaveText(
     'Aucun agenda connecté.',
@@ -295,14 +340,14 @@ test('admin selects shared calendars including an optional observance calendar, 
 // Vitest covers every row count. Render empty, constrained and full cards here.
 for (const [count, capacity] of [
   [0, 4],
-  [4, 2],
-  [6, 0],
+  [7, 2],
+  [9, 0],
 ]) {
   test(`Morning previews tomorrow within spare rows after ${count} events today @mobile`, async ({
     page,
   }, info) => {
     let isDenied = false;
-    if (count === 4) {
+    if (count === 7) {
       await page.route('**/api/weather-alerts', async (route) =>
         route.fulfill({
           contentType: 'application/atom+xml',
@@ -336,16 +381,18 @@ for (const [count, capacity] of [
       );
     }
 
+    const calendar = (index: number) =>
+      ['family', 'massages', 'routines'][Math.floor(index / 3)];
     const today = Array.from({length: count}, (_, index) => ({
       title: `Aujourd’hui ${index + 1}`,
-      calendar: index < 3 ? 'family' : 'massages',
+      calendar: calendar(index),
       start: new Date(fixtureNow + (index + 1) * 3_600_000).toISOString(),
       end: new Date(fixtureNow + (index + 2) * 3_600_000).toISOString(),
       allDay: false,
     }));
-    const tomorrow = Array.from({length: 6}, (_, index) => ({
+    const tomorrow = Array.from({length: 9}, (_, index) => ({
       title: index === 0 ? '<img src=x> Demain' : `Demain ${index + 1}`,
-      calendar: index < 3 ? 'family' : 'massages',
+      calendar: calendar(index),
       start: `2026-10-17T${String(index + 8).padStart(2, '0')}:00:00Z`,
       end: `2026-10-17T${String(index + 9).padStart(2, '0')}:00:00Z`,
       allDay: false,
@@ -369,7 +416,10 @@ for (const [count, capacity] of [
     await expect(
       page.locator('[data-agenda-events] [data-event-calendar]'),
     ).toHaveCount(count);
-    if (count === 4) {
+    if (count === 7) {
+      await expect(
+        page.locator('[data-event-calendar=routines]').first(),
+      ).toContainText('Aujourd’hui 7');
       await expect(page.locator('[data-day-observance]')).toContainText(
         'Journée synthétique',
       );

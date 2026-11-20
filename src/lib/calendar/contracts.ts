@@ -1,9 +1,15 @@
+export const appointmentCalendars = ['family', 'massages', 'routines'] as const;
+const appointmentsPerCalendar = 3;
+export const agendaAppointmentLimit =
+  2 * appointmentsPerCalendar * appointmentCalendars.length;
+
 export type AgendaEvent = {
-  calendar?: 'family' | 'massages';
+  calendar?: (typeof appointmentCalendars)[number];
   title: string;
   start: string;
   end: string;
   allDay: boolean;
+  weatherRelevant?: true;
 };
 export type AgendaObservance = {
   title: string;
@@ -28,6 +34,8 @@ export function isCivilDate(value: unknown): value is string {
 export type Agenda = {
   connected: boolean;
   massageConnected?: boolean;
+  routineConnected?: boolean;
+  routineUnavailable?: boolean;
   events: AgendaEvent[];
   observances?: AgendaObservance[];
   observanceUnavailable?: boolean;
@@ -81,7 +89,7 @@ export function remainingEvents(
         : Date.parse(event.end) > now &&
           localDate(Date.parse(event.start), timezone) <= today,
     )
-    .slice(0, 3);
+    .slice(0, appointmentsPerCalendar);
 }
 
 // Bound each calendar independently so a busy workday cannot crowd out family.
@@ -90,7 +98,7 @@ export function remainingAgendaEvents(
   now: number,
   timezone: string,
 ) {
-  return (['family', 'massages'] as const)
+  return appointmentCalendars
     .flatMap((calendar) =>
       remainingEvents(
         events.filter((event) => (event.calendar ?? 'family') === calendar),

@@ -1,7 +1,6 @@
 ---
 import FutureWeather from './FutureWeather.astro';
 import Agenda from './Agenda.astro';
-import WeatherCheckpoints from './WeatherCheckpoints.astro';
 import WeatherChart from './WeatherChart.astro';
 import WeatherWindow from './WeatherWindow.astro';
 ---
@@ -117,15 +116,6 @@ import WeatherWindow from './WeatherWindow.astro';
         >
           Au fil de la journée
         </h2>
-        <div data-separate-checkpoints class="mt-2" hidden>
-          <h3
-            class="mb-2 text-[length:var(--font-weather-detail)] font-bold leading-tight"
-            data-checkpoint-heading
-          >
-            Les repères de la journée
-          </h3>
-          <WeatherCheckpoints />
-        </div>
         <WeatherChart />
       </section>
       <div class="mt-auto min-w-0">
@@ -151,12 +141,6 @@ import WeatherWindow from './WeatherWindow.astro';
             À propos des prévisions
           </summary>
           <div class="surface p-4 text-base leading-relaxed">
-            <p>
-              Repères météo habituels configurables selon le jour. Un repère
-              peut accompagner un rendez-vous correspondant dans le programme du
-              jour.
-            </p>
-            <p data-day-context></p>
             <p>
               Calendrier scolaire :{' '}
               <a

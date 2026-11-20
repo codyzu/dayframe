@@ -5,13 +5,11 @@
 The Morning view uses a wide weather column and the narrower **Aujourd’hui**
 timeline. The left holds the household clock, the weather location, current
 conditions, advice, the split hourly chart and the seven-day selector. The
-timeline combines private appointments and time-aligned household weather
-checkpoints. Timed appointments shown today or in the tomorrow preview receive
-the forecast at their start time when fresh household weather has coverage.
-All-day appointments have no default forecast time. A future forecast or a
-device-local weather location keeps its
-checkpoints with the forecast so those forecasts cannot be mistaken for the
-weather at a household appointment.
+timeline lists private appointments and routines. Timed appointments shown today
+or in the tomorrow preview receive the forecast at their start time when fresh
+household weather has coverage. All-day appointments have no default forecast
+time. A device-local weather location keeps its forecast independent of household
+appointments.
 
 The lake art uses three conditions (clear, cloudy and snowy) across night, dawn,
 day and dusk. Fresh WMO readings select the condition group. Provider sunrise
@@ -54,7 +52,7 @@ no longer change typography. Old bookmarks remain valid, including the frame's
 `/?display=frame`; no browser storage is cleared or migrated.
 
 The page owns shared rem typography/icon tokens. This correction keeps the existing
-large temperature, description, checkpoint, advice, chart and navigation sizes.
+large temperature, description, advice, chart and navigation sizes.
 Night and photo clocks retain their large responsive sizing. The 1280 × 800 frame
 must continue fitting without clipping, including six appointments and warning/day-off
 states. Phones can scroll Morning content; bottom clearance keeps it reachable above

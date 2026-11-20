@@ -24,6 +24,7 @@ export type RoutinePoint = {time: string; label: string};
 export type DayPlanning = {
   schoolCalendar: boolean;
   schedules: Partial<Record<DayProfile, Period[]>>;
+  // Preserve saved weather checkpoints for settings exports and rollback.
   checkpoints: Partial<Record<DayProfile, RoutinePoint[]>>;
 };
 export const emptyPlanning: DayPlanning = {
@@ -103,9 +104,7 @@ export function dayContext(
   const profile: DayProfile =
     vacation !== undefined ||
     holiday !== undefined ||
-    (isWeekend &&
-      planning.schedules[weekday] === undefined &&
-      planning.checkpoints[weekday] === undefined)
+    (isWeekend && planning.schedules[weekday] === undefined)
       ? 'dayOff'
       : weekday;
   const isStale = isKnown && now - calendar.fetchedAt >= 86_400_000;

@@ -35,6 +35,7 @@ type Connection = {
   token: string;
   calendar?: SelectedCalendar;
   massageCalendar?: SelectedCalendar;
+  routineCalendar?: SelectedCalendar;
   observanceCalendar?: SelectedCalendar;
 };
 type RecordState = {
@@ -46,6 +47,9 @@ type RecordState = {
     fetchedAt: number;
     timezone: string;
     days?: 2;
+    weatherTagsRead?: true;
+    routineRead?: true;
+    routineUnavailable?: true;
     observances?: AgendaObservance[];
     observanceUnavailable?: true;
   };
@@ -54,6 +58,7 @@ type Tokens = {access: string; refresh: string; expires: number};
 type GoogleEvent = {
   status?: string;
   summary?: string;
+  description?: string;
   start?: {date?: string; dateTime?: string};
   end?: {date?: string; dateTime?: string};
   attendees?: Array<{self?: boolean; responseStatus?: string}>;
@@ -256,11 +261,55 @@ async function calendars(env: CalendarEnv, state: RecordState) {
   throw unavailable();
 }
 
+const descriptionEntities = new Map([
+  ['&eacute;', 'é'],
+  ['&nbsp;', ' '],
+  ['&num;', '#'],
+]);
+
+function decodeDescriptionEntity(entity: string) {
+  const lower = entity.toLowerCase();
+  const named = descriptionEntities.get(lower);
+  if (named !== undefined) {
+    return named;
+  }
+
+  const isHex = lower.startsWith('&#x');
+  const code = Number.parseInt(lower.slice(isHex ? 3 : 2, -1), isHex ? 16 : 10);
+  return code <= 0x10_ff_ff ? String.fromCodePoint(code) : entity;
+}
+
+const descriptionBlockTag =
+  /^<\/?(?:br|div|h[1-6]|hr|li|ol|p|table|td|tr|ul)(?=[\s\/>])/iv;
+
+function hasWeatherTag(description: unknown) {
+  if (typeof description !== 'string') {
+    return false;
+  }
+
+  // Google may wrap description text in HTML. Tags and attributes are not text.
+  const text = description
+    .replaceAll(
+      /<!--[\s\S]*?-->|<\/?[a-z](?:[^"'<>]|"[^"]*"|'[^']*')*>/giv,
+      (tag) => (descriptionBlockTag.test(tag) ? ' ' : ''),
+    )
+    .replaceAll(
+      /&(?:#(?:x[\da-f]{1,6}|\d{1,7})|eacute|nbsp|num);/giv,
+      (entity) => decodeDescriptionEntity(entity),
+    )
+    .normalize('NFD')
+    .replaceAll(/\p{Mark}/gv, '');
+  return /(?<![\w\p{Letter}\p{Number}#\-\/])#(?:meteo|weather)(?![\w\p{Letter}\p{Number}#\-\/])/iv.test(
+    text,
+  );
+}
+
 // eslint-disable-next-line complexity -- Validate provider event fields independently before returning the bounded display model.
 export function normalizeEvents(
   items: GoogleEvent[],
   now: number,
   timezone: string,
+  shouldReadWeatherTags = false,
 ) {
   const events: AgendaEvent[] = [];
   for (const item of items) {
@@ -296,6 +345,11 @@ export function normalizeEvents(
       start,
       end,
       allDay: isAllDay,
+      ...(shouldReadWeatherTags &&
+        !isAllDay &&
+        hasWeatherTag(item.description) && {
+          weatherRelevant: true,
+        }),
     });
   }
 
@@ -313,7 +367,13 @@ export function normalizeEvents(
 async function calendarEvents(
   access: string,
   id: string,
-  range: {start: number; end: number; timezone: string; observancesOnly?: true},
+  range: {
+    start: number;
+    end: number;
+    timezone: string;
+    observancesOnly?: true;
+    shouldReadWeatherTags?: boolean;
+  },
 ) {
   const url = new URL(
     `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(id)}/events`,
@@ -328,7 +388,7 @@ async function calendarEvents(
     maxResults: '250',
     fields: range.observancesOnly
       ? 'items(status,summary,start(date),end(date)),nextPageToken'
-      : 'items(status,summary,start,end,attendees(self,responseStatus)),nextPageToken',
+      : `items(status,summary,${range.shouldReadWeatherTags ? 'description,' : ''}start,end,attendees(self,responseStatus)),nextPageToken`,
   }).toString();
   const items: GoogleEvent[] = [];
   for (let i = 0; i < 10; i++) {
@@ -425,6 +485,34 @@ async function readObservances(
   }
 }
 
+async function readRoutines(
+  access: string,
+  selected: SelectedCalendar | undefined,
+  range: {start: number; end: number; timezone: string},
+): Promise<{
+  events: AgendaEvent[];
+  routineRead?: true;
+  routineUnavailable?: true;
+}> {
+  if (!selected) {
+    return {events: []};
+  }
+
+  try {
+    const items = await calendarEvents(access, selected.id, {
+      ...range,
+      shouldReadWeatherTags: true,
+    });
+    const events = normalizeEvents(items, range.start, range.timezone, true);
+    return {
+      events: events.map((event) => ({...event, calendar: 'routines'})),
+      routineRead: true,
+    };
+  } catch {
+    return {events: [], routineRead: true, routineUnavailable: true};
+  }
+}
+
 async function agenda(env: CalendarEnv, state: RecordState) {
   const settingsResponse = await administration(
     env.ADMINISTRATION!,
@@ -446,10 +534,12 @@ async function agenda(env: CalendarEnv, state: RecordState) {
   let {cache} = state;
   if (
     cache?.days !== 2 ||
+    !cache.weatherTagsRead ||
     cache.timezone !== timezone ||
     now - cache.fetchedAt >= 240_000 ||
     now < cache.fetchedAt ||
     dayEnd(cache.fetchedAt, timezone) <= now ||
+    (state.connection.routineCalendar !== undefined && !cache.routineRead) ||
     (state.connection.observanceCalendar &&
       !cache.observances &&
       !cache.observanceUnavailable)
@@ -466,6 +556,11 @@ async function agenda(env: CalendarEnv, state: RecordState) {
       end: dayEnd(dayEnd(now, timezone), timezone),
       timezone,
     };
+    const routines = readRoutines(
+      access,
+      state.connection.routineCalendar,
+      range,
+    );
     const events: AgendaEvent[] = [];
     for (const [calendar, selected] of [
       ['family', state.connection.calendar],
@@ -475,21 +570,27 @@ async function agenda(env: CalendarEnv, state: RecordState) {
         continue;
       }
 
-      const items = await calendarEvents(access, selected.id, range);
+      const shouldReadWeatherTags = calendar === 'family';
+      const items = await calendarEvents(access, selected.id, {
+        ...range,
+        shouldReadWeatherTags,
+      });
 
       events.push(
-        ...normalizeEvents(items, now, timezone).map((event) => ({
-          ...event,
-          calendar,
-        })),
+        ...normalizeEvents(items, now, timezone, shouldReadWeatherTags).map(
+          (event) => ({...event, calendar}),
+        ),
       );
     }
 
+    const {events: routineEvents, ...routineStatus} = await routines;
     cache = {
       days: 2,
-      events,
+      weatherTagsRead: true,
+      events: [...events, ...routineEvents],
       fetchedAt: now,
       timezone,
+      ...routineStatus,
       ...(await observances),
     };
     state.cache = cache;
@@ -498,9 +599,14 @@ async function agenda(env: CalendarEnv, state: RecordState) {
 
   return privateJson({
     connected: true,
-    ...cache,
     massageConnected: Boolean(state.connection.massageCalendar),
+    routineConnected: Boolean(state.connection.routineCalendar),
+    routineUnavailable: cache.routineUnavailable,
     events: agendaWindowEvents(cache.events, now, timezone),
+    observances: cache.observances,
+    observanceUnavailable: cache.observanceUnavailable,
+    timezone,
+    fetchedAt: cache.fetchedAt,
   });
 }
 
@@ -534,6 +640,21 @@ function callbackResponse(result: string) {
   });
 }
 
+function optionalSelection(
+  accessible: SelectedCalendar[],
+  id: string | undefined,
+  current: SelectedCalendar | undefined,
+) {
+  // Older settings pages omit new fields. An explicit empty string clears one.
+  return id === undefined
+    ? current
+    : accessible.find((entry) => entry.id === id);
+}
+
+function isOptionalCalendarId(value: unknown): value is string | undefined {
+  return value === undefined || typeof value === 'string';
+}
+
 async function selectCalendars(
   request: Request,
   env: CalendarEnv,
@@ -545,11 +666,17 @@ async function selectCalendars(
 
   const body = JSON.parse(
     new TextDecoder().decode(await readBounded(request, 2048)),
-  ) as {id?: unknown; massageId?: unknown; observanceId?: unknown};
+  ) as {
+    id?: unknown;
+    massageId?: unknown;
+    routineId?: unknown;
+    observanceId?: unknown;
+  };
   if (
     typeof body?.id !== 'string' ||
-    (body.massageId !== undefined && typeof body.massageId !== 'string') ||
-    (body.observanceId !== undefined && typeof body.observanceId !== 'string')
+    !isOptionalCalendarId(body.massageId) ||
+    !isOptionalCalendarId(body.routineId) ||
+    !isOptionalCalendarId(body.observanceId)
   ) {
     return failure(400, 'INVALID_CALENDAR', 'Choisissez un agenda.');
   }
@@ -559,18 +686,27 @@ async function selectCalendars(
   const massageSelected = accessible.find(
     (entry) => entry.id === body.massageId,
   );
-  // Older settings pages omit this field. An explicit empty string clears it.
-  const observanceSelected =
-    body.observanceId === undefined
-      ? state.connection!.observanceCalendar
-      : accessible.find((entry) => entry.id === body.observanceId);
-  const ids = [selected, massageSelected, observanceSelected]
+  const routineSelected = optionalSelection(
+    accessible,
+    body.routineId,
+    state.connection!.routineCalendar,
+  );
+  const observanceSelected = optionalSelection(
+    accessible,
+    body.observanceId,
+    state.connection!.observanceCalendar,
+  );
+  const optionalCalendars = [
+    [body.massageId, massageSelected],
+    [body.routineId, routineSelected],
+    [body.observanceId, observanceSelected],
+  ] as const;
+  const ids = [selected, ...optionalCalendars.map(([, entry]) => entry)]
     .filter((entry) => entry !== undefined)
     .map((entry) => entry.id);
   if (
     !selected ||
-    (!massageSelected && (body.massageId ?? '') !== '') ||
-    (!observanceSelected && (body.observanceId ?? '') !== '') ||
+    optionalCalendars.some(([id, entry]) => Boolean(id) && !entry) ||
     new Set(ids).size !== ids.length
   ) {
     return failure(
@@ -582,12 +718,14 @@ async function selectCalendars(
 
   state.connection!.calendar = selected;
   state.connection!.massageCalendar = massageSelected;
+  state.connection!.routineCalendar = routineSelected;
   state.connection!.observanceCalendar = observanceSelected;
   delete state.cache;
   await saveState(env, state);
   return privateJson({
     selected,
     massageSelected: massageSelected ?? null,
+    routineSelected: routineSelected ?? null,
     observanceSelected: observanceSelected ?? null,
   });
 }
@@ -606,12 +744,14 @@ export async function calendarApi(
     const isReady = configuration(env, request);
     if (path === '/api/calendar' && request.method === 'GET') {
       const state = env.ADMINISTRATION ? await readState(env) : undefined;
+      const connection = state?.connection;
       return privateJson({
         configured: isReady,
-        connected: Boolean(state?.connection),
-        selected: state?.connection?.calendar ?? null,
-        massageSelected: state?.connection?.massageCalendar ?? null,
-        observanceSelected: state?.connection?.observanceCalendar ?? null,
+        connected: Boolean(connection),
+        selected: connection?.calendar ?? null,
+        massageSelected: connection?.massageCalendar ?? null,
+        routineSelected: connection?.routineCalendar ?? null,
+        observanceSelected: connection?.observanceCalendar ?? null,
       });
     }
 

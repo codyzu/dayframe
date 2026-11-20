@@ -1,33 +1,8 @@
-import {
-  dayContext,
-  emptyPlanning,
-  type DayPlanning,
-  type OfficialCalendar,
-  type RoutinePoint,
-} from '../dashboard/day-planning.ts';
-import {runtimeConfig} from '../dashboard/config.ts';
+import {type AgendaEvent} from '../calendar/contracts.ts';
 import {adviceHours, temperatureOutlook} from './outlook.ts';
 import {dateKey, hourLabel, type Hour, type Weather} from './adapter.ts';
 
-export type Checkpoint = RoutinePoint & {weekendLabel?: string};
-export const schoolCheckpoints: readonly Checkpoint[] = [
-  {time: '08:00', label: 'École', weekendLabel: 'Matin'},
-  {time: '11:30', label: 'Midi', weekendLabel: 'Midi'},
-  {time: '16:30', label: 'Sortie', weekendLabel: 'Après-midi'},
-  {time: '18:00', label: 'Activités', weekendLabel: 'Soir'},
-];
-
-export function isWeekend(now: number) {
-  return ['Sat', 'Sun'].includes(
-    new Intl.DateTimeFormat('en-US', {
-      timeZone: runtimeConfig.timezone,
-      weekday: 'short',
-    }).format(now),
-  );
-}
-
 export function dayHours(weather: Weather, now: number) {
-  // Preserve the whole useful day even after a checkpoint has passed.
   const today = dateKey(now);
   return weather.hourly.filter((hour) => {
     const label = hourLabel(hour.time);
@@ -66,33 +41,6 @@ export function hourlyForecastAt(hours: readonly Hour[], instant: number) {
   };
 }
 
-export function checkpointForecasts(
-  weather: Weather | undefined,
-  now: number,
-  checkpoints = schoolCheckpoints,
-) {
-  const today = dateKey(now);
-  const hours =
-    weather?.hourly.filter((hour) => dateKey(hour.time) === today) ?? [];
-  const isWeekendDay = isWeekend(now);
-  return checkpoints.map((checkpoint) => {
-    const beforeLabel = `${checkpoint.time.slice(0, 2)}:00`;
-    const before = hours.find((hour) => hourLabel(hour.time) === beforeLabel);
-    const fraction = Number(checkpoint.time.slice(3)) / 60;
-    const at = before ? before.time + fraction * 3_600_000 : undefined;
-    const reading = at === undefined ? undefined : hourlyForecastAt(hours, at);
-    return {
-      ...checkpoint,
-      label: isWeekendDay
-        ? (checkpoint.weekendLabel ?? checkpoint.label)
-        : checkpoint.label,
-      forecast: reading?.forecast,
-      at,
-      probabilityPeriod: reading?.probabilityPeriod ?? beforeLabel,
-    };
-  });
-}
-
 export function twoHourRain(hours: Hour[]) {
   const result: Array<{start: number; end: number; probability: number}> = [];
   for (const hour of hours) {
@@ -116,26 +64,40 @@ export function twoHourRain(hours: Hour[]) {
   return result;
 }
 
-const rainCheckpointPhrases = new Map([
-  ['sortie', 'pour la sortie'],
-  ['activités', 'pour les activités'],
-  ['départ', 'pour le départ'],
-  ['retour', 'pour le retour'],
-  ['après-midi', 'cet après-midi'],
-  ['soir', 'ce soir'],
-]);
+const hasRainRisk = (hour: Hour) =>
+  hour.probability >= 50 || hour.precipitation >= 0.2;
 
-function rainCheckpointContext(point: Checkpoint) {
-  const context =
-    rainCheckpointPhrases.get(point.label.toLocaleLowerCase('fr-FR')) ??
-    `pour « ${point.label} »`;
-  return `${context} à ${point.time.replace(':', 'h')}`;
+function eventRainAdvice(
+  weather: Weather,
+  now: number,
+  events: readonly AgendaEvent[],
+) {
+  const today = dateKey(now);
+  const first = events
+    .filter(
+      ({weatherRelevant, allDay, calendar}) =>
+        weatherRelevant === true && !allDay && calendar !== 'massages',
+    )
+    .map(({title, start}) => ({title, time: Date.parse(start)}))
+    .filter(({time}) => time >= now && dateKey(time) === today)
+    .toSorted((a, b) => a.time - b.time)
+    .find(({time}) => {
+      const forecast = hourlyForecastAt(weather.hourly, time)?.forecast;
+      return forecast && hasRainRisk(forecast);
+    });
+
+  if (!first) {
+    return;
+  }
+
+  const time = hourLabel(first.time).replace(':', 'h');
+  return `Pour « ${first.title} » à ${time}, prévoyez un parapluie.`;
 }
 
 export function morningAdvice(
   weather: Weather,
   now: number,
-  checkpoints?: readonly Checkpoint[],
+  events: readonly AgendaEvent[] = [],
 ) {
   const future = adviceHours(weather, now);
   if (future.length === 0) {
@@ -145,20 +107,7 @@ export function morningAdvice(
     };
   }
 
-  const wet = future.find(
-    (hour) => hour.probability >= 50 || hour.precipitation >= 0.2,
-  );
-  const laterCheckpoint = checkpointForecasts(weather, now, checkpoints).find(
-    (point) =>
-      wet &&
-      point.time >= '16:00' &&
-      point.forecast &&
-      point.at !== undefined &&
-      point.at >= now &&
-      // A checkpoint in/before the first wet hourly slot adds no timing detail.
-      point.at >= wet.time + 3_600_000 &&
-      (point.forecast.probability >= 50 || point.forecast.precipitation >= 0.2),
-  );
+  const wet = future.find((hour) => hasRainRisk(hour));
   const feels = weather.current.feelsLike;
   const remainingLow = Math.min(...future.map((hour) => hour.temperature));
   const isCold = Math.min(feels, remainingLow) <= 3;
@@ -187,11 +136,11 @@ export function morningAdvice(
         ? 'Pluie possible dès maintenant.'
         : `Pluie possible ${dateKey(wet.time) === dateKey(now) ? '' : 'demain '}vers ${hourLabel(wet.time).replace(':', 'h')}.`,
     );
-    // Keep two short sentences: cold protection takes priority over a routine hint.
+    const eventAdvice = eventRainAdvice(weather, now, events);
     if (isCold) {
       details.push('Bonnet, gants et parapluie conseillés.');
-    } else if (laterCheckpoint) {
-      details[0] = `${details[0].slice(0, -1)}, et aussi ${rainCheckpointContext(laterCheckpoint)}.`;
+    } else if (eventAdvice !== undefined) {
+      details.push(eventAdvice);
     } else if (isJacket) {
       details.push('Une veste sera aussi utile.');
     }
@@ -204,38 +153,6 @@ export function morningAdvice(
   }
 
   return {title, detail: details.slice(0, 2).join(' ')};
-}
-
-export function routineForDay(
-  now: number,
-  planning: DayPlanning = emptyPlanning,
-  calendar?: OfficialCalendar,
-) {
-  const context = dayContext(now, runtimeConfig.timezone, planning, calendar);
-  const isUncertain = planning.schoolCalendar && !context.isKnown;
-  const defaults =
-    isUncertain || context.isDayOff || context.weekday === 'wednesday'
-      ? schoolCheckpoints.map((point) => ({
-          ...point,
-          label: point.weekendLabel ?? point.label,
-        }))
-      : schoolCheckpoints;
-  return {
-    points: isUncertain
-      ? defaults
-      : (planning.checkpoints[context.profile] ??
-        (context.isDayOff ? planning.checkpoints.dayOff : undefined) ??
-        defaults),
-    heading:
-      Object.keys(planning.checkpoints).length > 0 || planning.schoolCalendar
-        ? isUncertain
-          ? 'Les repères · calendrier à confirmer'
-          : `Les repères · ${context.label}`
-        : isWeekend(now)
-          ? 'Les repères du week-end'
-          : 'Les repères · jour d’école habituel',
-    note: context.note,
-  };
 }
 
 export function forecastAdvice(weather: Weather, date: string) {

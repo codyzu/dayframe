@@ -17,15 +17,9 @@ import {
   createScheduleResolver,
 } from '../src/lib/dashboard/schedule.ts';
 import {
-  routineForDay,
-  checkpointForecasts,
-} from '../src/lib/weather/morning.ts';
-import {
   normalizeHolidays,
   normalizeSchoolCalendar,
 } from '../worker/school-calendar.ts';
-import {parseWeather} from '../src/lib/weather/adapter.ts';
-import {weatherFixture} from './fixtures/weather.ts';
 
 const now = Date.parse('2026-10-21T06:30:00Z');
 const calendar: OfficialCalendar = {
@@ -66,13 +60,10 @@ it('keeps old saved schedules unchanged until explicitly configured', () => {
     'morning',
   );
 });
-it('gives vacations and holidays precedence over Wednesday activities, and shows both observances', () => {
+it('gives vacations and holidays precedence over Wednesday schedules, and shows both observances', () => {
   expect(dayContext(now, 'Europe/Paris', planning, calendar).profile).toBe(
     'dayOff',
   );
-  expect(
-    routineForDay(now, planning, calendar).points.map(({label}) => label),
-  ).not.toContain('Matin synthétique');
   const holiday = Date.parse('2026-11-11T08:00:00Z');
   expect(
     dayContext(holiday, 'Europe/Paris', planning, currentCalendar(holiday))
@@ -88,8 +79,9 @@ it('gives vacations and holidays precedence over Wednesday activities, and shows
   );
   const school = Date.parse('2026-11-04T08:00:00Z');
   expect(
-    routineForDay(school, planning, currentCalendar(school)).points,
-  ).toEqual(planning.checkpoints.wednesday);
+    dayContext(school, 'Europe/Paris', planning, currentCalendar(school))
+      .profile,
+  ).toBe('wednesday');
 });
 it('uses the later weekend/day-off mode boundaries across DST and on resume without resetting overrides', () => {
   const resolve = createScheduleResolver(
@@ -133,47 +125,38 @@ it('uses exclusive return dates and does not treat stale, future, wrong-year or 
     const context = dayContext(now, 'Europe/Paris', planning, official);
     expect(context.isKnown).toBe(false);
     expect(observanceText(context)).toContain('à confirmer');
-    expect(
-      routineForDay(now, planning, official).points.map(({label}) => label),
-    ).not.toContain('Matin synthétique');
   }
 
   expect(dayContext(now, 'America/New_York', planning, calendar).isKnown).toBe(
     false,
   );
 });
-it('supports explicit Saturday times while public holidays still use day-off times', () => {
+it('uses the weekend schedule unless explicitly overridden, ignoring legacy weather checkpoints', () => {
   const custom = {
     ...planning,
+    checkpoints: {saturday: [{time: '09:30', label: 'Matin synthétique'}]},
+  };
+  const saturday = Date.parse('2026-10-24T05:00:00Z');
+  const noVacation = {...calendar, vacations: []};
+  expect(
+    createScheduleResolver(
+      {...defaultSettings, planning: custom},
+      noVacation,
+    )(saturday),
+  ).toBe('night');
+  const saturdayOverride = {
+    ...custom,
     schedules: {
-      ...planning.schedules,
+      ...custom.schedules,
       saturday: [{start: '06:00', end: '10:00', mode: 'photos' as const}],
     },
   };
   expect(
     createScheduleResolver(
-      {...defaultSettings, planning: custom},
-      {...calendar, vacations: []},
-    )(Date.parse('2026-10-24T06:00:00Z')),
+      {...defaultSettings, planning: saturdayOverride},
+      noVacation,
+    )(saturday),
   ).toBe('photos');
-});
-it('interpolates quarter-hour pickup weather without borrowing another hour', () => {
-  const date = Date.parse('2026-11-04T07:00:00Z');
-  const weather = parseWeather(weatherFixture(date), date);
-  const points = checkpointForecasts(
-    weather,
-    date,
-    planning.checkpoints.wednesday,
-  );
-  const before = weather.hourly.find(
-    (hour) => hour.time === Date.parse('2026-11-04T15:00:00Z'),
-  )!;
-  const after = weather.hourly.find(
-    (hour) => hour.time === before.time + 3_600_000,
-  )!;
-  expect(points[2].forecast?.temperature).toBe(
-    before.temperature + (after.temperature - before.temperature) / 4,
-  );
 });
 
 describe('day planning validation', () => {

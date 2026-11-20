@@ -65,6 +65,9 @@ function initializeDashboard(root: HTMLElement) {
       observedTitles = isObserved ? (titles ?? []) : [];
       lakeCalendar();
     },
+    () => {
+      weather.refreshAdvice();
+    },
   );
   let settings = defaultSettings;
   const picker = mountLocationPicker(
@@ -78,12 +81,7 @@ function initializeDashboard(root: HTMLElement) {
   );
   Object.assign(runtimeConfig, validateLocation(picker.selected ?? settings));
   let isWeatherLocal = Boolean(picker.selected);
-  let weather = mountWeather(
-    weatherRoot,
-    updatePhotoWeather,
-    Boolean(picker.selected),
-    agenda.setCheckpoints,
-  );
+  let weather = setupWeather();
   const state = createModeState();
   const updateOverrideKey = 'dayframe.update-override';
   try {
@@ -153,7 +151,6 @@ function initializeDashboard(root: HTMLElement) {
 
       official = validateOfficialCalendar(body.calendar);
       state.calendar(official);
-      weather.configure(settings.planning, official);
       calendarRefreshAt =
         Date.now() +
         (Date.now() - official.fetchedAt >= 86_400_000 ? 300_000 : 3_600_000);
@@ -289,9 +286,17 @@ function initializeDashboard(root: HTMLElement) {
     }
 
     calendarRefreshAt = 0;
-    weather.configure(settings.planning, official);
     slideshow.configure(settings);
     applyWeatherLocation();
+  }
+
+  function setupWeather() {
+    return mountWeather(weatherRoot, {
+      onUpdate: updatePhotoWeather,
+      isLocalLocation: isWeatherLocal,
+      onForecast: agenda.setForecast,
+      getAdviceEvents: agenda.adviceEvents,
+    });
   }
 
   function applyWeatherLocation() {
@@ -303,13 +308,7 @@ function initializeDashboard(root: HTMLElement) {
       isWeatherLocal = Boolean(picker.selected);
       weather.dispose();
       Object.assign(runtimeConfig, next);
-      weather = mountWeather(
-        weatherRoot,
-        updatePhotoWeather,
-        Boolean(picker.selected),
-        agenda.setCheckpoints,
-      );
-      weather.configure(settings.planning, official);
+      weather = setupWeather();
     }
 
     root

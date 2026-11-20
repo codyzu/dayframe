@@ -132,6 +132,23 @@ test('only current weather animates and all Meteocons respect motion preference 
   page,
 }) => {
   await page.emulateMedia({reducedMotion: 'no-preference'});
+  await page.route('**/api/calendar/events', async (route) =>
+    route.fulfill({
+      json: {
+        connected: true,
+        timezone: 'Europe/Paris',
+        fetchedAt: fixtureNow,
+        events: [
+          {
+            title: 'Rendez-vous météo',
+            start: '2026-10-16T14:00:00Z',
+            end: '2026-10-16T15:00:00Z',
+            allDay: false,
+          },
+        ],
+      },
+    }),
+  );
   await page.goto('/');
   await expect(page.locator('[data-current-icon]')).toHaveClass(
     /i-meteocons-partly-cloudy-day-fill/v,

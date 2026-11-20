@@ -37,10 +37,9 @@ use the chosen location's timezone. The dashboard clock/date, display-mode sched
 day-off planning and appointments retain the household timezone. The picker
 explains this distinction and displays the active weather timezone.
 
-With a browser preference, weather checkpoints use neutral Matin, Midi,
-Après-midi and Soir labels at 08:00, 11:30, 16:30 and 18:00 in the selected
-weather timezone. Household school/activity labels must not imply that those
-activities happen in a travel destination. Reset restores household checkpoints.
+With a browser preference, the weather summary uses the selected place’s weather
+without household event context. Household appointments remain visible. Reset
+restores household advice and forecasts for timed appointments.
 The current departmental vigilance implementation supports only the exact default
 Annecy coordinates; all other coordinates retain the explicit unsupported-location
 state. Choosing another town in Haute-Savoie does not silently extend coverage.
@@ -69,7 +68,7 @@ the existing low-power geolocation options and five-minute maximum position age.
 No continuous tracking or background permission request is added.
 
 Changing location stops the old weather service before changing its context,
-clears previous readings/icons/checkpoints/charts, then starts a service for the
+clears previous readings, icons and charts, then starts a service for the
 new location. Old asynchronous results cannot repaint or populate the new cache.
 New-location failure shows unavailable weather or that location's valid cached
 forecast. It never relabels the previous town's conditions. Household configuration
@@ -133,8 +132,8 @@ coordinates even when timezone or city responses contain different coordinates.
 The Astro `WeatherLocation` component and `weather/location{,-picker}.ts` own the
 picker, validation and storage. The dashboard controller applies the device
 preference over weather fields only; `formatClock` receives the independent
-household timezone. The weather view supplies neutral checkpoints and clears
-old readings when remounted. Touch navigation already excludes modal dialogs.
+household timezone. The weather view clears old readings when remounted. Touch
+navigation already excludes modal dialogs.
 Utilities provide the layout and controls; the component's scoped backdrop rule
 matches the existing forecast modal. An absolutely positioned header button extends its touch area by 4 px above
 and below the existing badge without changing header flow height; its focus

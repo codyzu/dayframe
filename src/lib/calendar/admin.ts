@@ -6,6 +6,7 @@ type CalendarStatus = {
   connected: boolean;
   selected?: CalendarOption;
   massageSelected?: CalendarOption;
+  routineSelected?: CalendarOption;
   observanceSelected?: CalendarOption;
 };
 const adminRoot = document.querySelector<HTMLElement>('[data-calendar-admin]');
@@ -26,10 +27,13 @@ function mount(root: HTMLElement) {
   const massageSelect = root.querySelector<HTMLSelectElement>(
     '[data-massage-select]',
   )!;
+  const routineSelect = root.querySelector<HTMLSelectElement>(
+    '[data-routine-select]',
+  )!;
   const observanceSelect = root.querySelector<HTMLSelectElement>(
     '[data-observance-select]',
   )!;
-  const selects = [select, massageSelect, observanceSelect];
+  const selects = [select, massageSelect, routineSelect, observanceSelect];
   const save = root.querySelector<HTMLButtonElement>('[data-calendar-save]')!;
   let isBusy = false;
   let state: CalendarStatus | undefined;
@@ -75,13 +79,24 @@ function mount(root: HTMLElement) {
     state = (await response.json()) as CalendarStatus;
     select.replaceChildren(new Option('Choisir votre agenda partagé', ''));
     massageSelect.replaceChildren(new Option('Aucun agenda de massages', ''));
+    routineSelect.replaceChildren(new Option('Aucun agenda de routines', ''));
     observanceSelect.replaceChildren(
       new Option('Aucun agenda de fêtes observées', ''),
     );
     status.textContent = state.configured
       ? state.connected
         ? state.selected
-          ? `Agenda affiché : ${state.selected.name}${state.massageSelected ? ` · Massages : ${state.massageSelected.name}` : ''}${state.observanceSelected ? ` · Fêtes observées : ${state.observanceSelected.name}` : ''}`
+          ? [
+              `Agenda affiché : ${state.selected.name}`,
+              state.massageSelected &&
+                `Massages : ${state.massageSelected.name}`,
+              state.routineSelected &&
+                `Routines : ${state.routineSelected.name}`,
+              state.observanceSelected &&
+                `Fêtes observées : ${state.observanceSelected.name}`,
+            ]
+              .filter(Boolean)
+              .join(' · ')
           : 'Google connecté. Choisissez l’agenda à afficher.'
         : 'Aucun agenda connecté.'
       : 'La configuration Google Calendar reste à terminer sur le serveur.';
@@ -102,6 +117,7 @@ function mount(root: HTMLElement) {
 
       select.value = state.selected?.id ?? '';
       massageSelect.value = state.massageSelected?.id ?? '';
+      routineSelect.value = state.routineSelected?.id ?? '';
       observanceSelect.value = state.observanceSelected?.id ?? '';
     }
   }
@@ -131,6 +147,7 @@ function mount(root: HTMLElement) {
         body: JSON.stringify({
           id: select.value,
           ...(massageSelect.value !== '' && {massageId: massageSelect.value}),
+          routineId: routineSelect.value,
           observanceId: observanceSelect.value,
         }),
       });

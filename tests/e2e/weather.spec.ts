@@ -48,7 +48,7 @@ test('live day/night data, accessible graph and 30-minute refresh @mobile', asyn
     ),
   ).toBe(true);
   await expect(page.locator('[data-summary]')).toHaveText(
-    'Pluie possible dès maintenant, et aussi pour la sortie à 16h30.',
+    /^Pluie possible dès maintenant\./v,
   );
   const summary = page.locator('[data-summary]');
   const summaryBounds = (await summary.boundingBox())!;
@@ -59,13 +59,6 @@ test('live day/night data, accessible graph and 30-minute refresh @mobile', asyn
   await expect(
     page.getByRole('link', {name: 'Météo : Open-Meteo · CC BY 4.0'}),
   ).toBeVisible();
-  const icons = await page
-    .locator('[data-agenda-events] [data-event-weather-icon]')
-    .evaluateAll((elements) =>
-      elements.map((element) => getComputedStyle(element).backgroundImage),
-    );
-  expect(icons).toHaveLength(3);
-  expect(icons.every((icon) => icon.includes('data:image/svg+xml'))).toBe(true);
   expect(
     await page.evaluate(
       () =>
@@ -86,9 +79,6 @@ test('live day/night data, accessible graph and 30-minute refresh @mobile', asyn
   expect(calls).toBe(2);
   await expect(rainBars).toHaveCount(8);
   await expect(page.locator('table tbody tr')).toHaveCount(17);
-  await expect(
-    page.locator('[data-agenda-events] [data-checkpoint]'),
-  ).toHaveCount(3);
   await expect(page.locator('[data-current-icon]')).toHaveCSS(
     'background-image',
     /data:image\/svg\+xml/v,
@@ -196,7 +186,9 @@ test('blocked storage and unknown codes degrade safely @mobile', async ({
     'background-image',
     /data:image\/svg\+xml/v,
   );
-  await expect(page.locator('[data-summary]')).toContainText('16h30');
+  await expect(page.locator('[data-summary]')).toContainText(
+    'Pluie possible vers 15h00.',
+  );
 });
 
 test('unchanged clock and forecast nodes stay stable while the time marker advances', async ({
@@ -208,10 +200,6 @@ test('unchanged clock and forecast nodes stay stable while the time marker advan
   await page.goto('/');
   await expect(page.locator('[data-temperature]')).toHaveText('12°');
   const curve = await page.locator('[data-chart] path').first().elementHandle();
-  const checkpoint = await page
-    .locator('[data-agenda-events] [data-checkpoint]')
-    .first()
-    .elementHandle();
   const marker = page.locator('[data-weather-now-line]');
   const initialPosition = await marker.getAttribute('x1');
   await page.evaluate(() => {
@@ -244,9 +232,6 @@ test('unchanged clock and forecast nodes stay stable while the time marker advan
   await expect(page.locator('[data-clock]').first()).toHaveText('08:31');
   await expect(marker).not.toHaveAttribute('x1', initialPosition!);
   expect(await curve.evaluate((element) => element.isConnected)).toBe(true);
-  expect(await checkpoint.evaluate((element) => element.isConnected)).toBe(
-    true,
-  );
 });
 
 test('inactive weather keeps fetching and renders the latest data on return', async ({
@@ -342,11 +327,6 @@ test('exhausted cached forecasts hide the chart and recover into the same shell'
   );
   await expect(page.locator('[data-chart-empty]')).toBeVisible();
   await expect(graph).toHaveCount(0);
-  const checkpoints = page.locator('[data-agenda-events] [data-checkpoint]');
-  await expect(checkpoints).toHaveCount(3);
-  for (const row of await checkpoints.all()) {
-    await expect(row.locator('[data-event-weather]')).toBeHidden();
-  }
 
   isOffline = false;
   await page.clock.fastForward(60_000);
@@ -686,10 +666,6 @@ test('day strip synchronizes weather, graph and advice without changing the real
   await expect(page.locator('[data-advice]')).toHaveText(
     'Habillez-vous chaudement.',
   );
-  await expect(page.locator('[data-point-temperature]').first()).toHaveText(
-    '2°',
-  );
-  await expect(page.locator('[data-point-label]').first()).toHaveText('Matin');
   await expect(page.locator('[data-chart-range]')).toHaveText('2° à 2°C');
   await expect(daylight).toBeHidden();
   await expect(sunrise).toHaveCSS('display', 'none');
