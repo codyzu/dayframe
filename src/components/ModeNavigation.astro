@@ -12,7 +12,7 @@ const modes = [
 >
   {modes.map(({id, label}) => (
     <button
-      class="min-h-12 flex-1 rounded-full px-3 text-[length:var(--font-navigation)] text-secondary transition-colors hover:bg-background aria-pressed:bg-primary aria-pressed:text-surface aria-pressed:font-bold aria-pressed:hover:bg-primary"
+      class="min-h-12 flex-1 rounded-full px-3 text-[length:var(--font-navigation)] text-secondary transition-colors hover:bg-background aria-pressed:bg-[var(--colors-dock-active,var(--colors-primary))] aria-pressed:text-[color:var(--colors-dock-active-ink,var(--colors-surface))] aria-pressed:font-bold aria-pressed:hover:bg-[var(--colors-dock-active,var(--colors-primary))]"
       type="button"
       data-mode-button={id}
       aria-pressed={id === 'morning'}

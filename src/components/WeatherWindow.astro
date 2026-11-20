@@ -3,7 +3,7 @@ import WeatherLocation from './WeatherLocation.astro';
 ---
 
 <section
-  class="lake-window relative isolate min-w-0 flex flex-col justify-center gap-3 bg-[#183541] px-4 py-5 text-[#fffaf0] min-[1000px]:px-8"
+  class="lake-window relative isolate min-w-0 flex flex-col justify-center gap-3 bg-[#183541] px-4 py-5 text-primary min-[1000px]:px-8"
   data-lake-window
   aria-labelledby="weather-title"
 >
@@ -190,8 +190,8 @@ import WeatherLocation from './WeatherLocation.astro';
   .lake-shade {
     /* Keep the clock readable over light skies and white snow alike. */
     background:
-      linear-gradient(90deg, #102530e8, #102530b8 55%, #10253035),
-      linear-gradient(0deg, #10253088, transparent 75%);
+      linear-gradient(90deg, #102530f5, #102530dc 55%, #10253035),
+      linear-gradient(0deg, #102530a0, transparent 75%);
   }
 
   [data-lake-effect='rain'] .lake-weather {

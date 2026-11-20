@@ -9,12 +9,12 @@ import WeatherWindow from './WeatherWindow.astro';
   <aside
     data-weather-alerts
     data-level="unknown"
-    class="relative z-2 border-b border-border bg-surface px-4 text-primary data-[level=yellow]:bg-[#fff0b3] data-[level=orange]:bg-[#ffdab3] data-[level=orange]:border-[#9a4200] data-[level=red]:bg-[#8c1823] data-[level=red]:border-[#8c1823] data-[level=red]:text-white"
+    class="relative z-2 border-b border-border bg-surface px-4 text-primary data-[level=yellow]:bg-[#4d3e20] data-[level=orange]:bg-[#623619] data-[level=orange]:border-[#ffb47c] data-[level=red]:bg-[#8c1823] data-[level=red]:border-[#8c1823] data-[level=red]:text-white"
     aria-label="Vigilance météorologique"
     aria-live="polite"
   >
     <details class="alert-details relative min-w-0 flex-1 basis-full min-[1000px]:basis-auto">
-      <summary class="min-h-10 cursor-pointer list-none flex items-center justify-between gap-3 rounded-xl hover:bg-black/5">
+      <summary class="min-h-10 cursor-pointer list-none flex items-center justify-between gap-3 rounded-xl hover:bg-white/10">
         <span
           data-alert-title
           class="font-bold text-[length:var(--font-weather-detail)] leading-tight"
@@ -83,18 +83,18 @@ import WeatherWindow from './WeatherWindow.astro';
     </details>
     <p data-alert-detail class="text-base leading-tight"></p>
   </aside>
-  <div class="journal-layout grid flex-1 min-w-0 min-[1000px]:grid-cols-[3fr_2fr]">
+  <div class="grid flex-1 min-w-0 min-[1000px]:grid-cols-[3fr_2fr]">
     <div class="min-w-0 flex flex-col min-[1000px]:border-r min-[1000px]:border-border">
       <WeatherWindow />
       <section
-        class="border-b border-border bg-[#eaeee2] px-4 py-3 text-primary min-[1000px]:px-8"
+        class="border-b border-border bg-elevated px-4 py-3 text-primary min-[1000px]:px-8"
         aria-labelledby="advice-title"
       >
         <h2 id="advice-title" data-advice-heading class="sr-only">
           Conseil du jour
         </h2>
         <p
-          class="text-[length:var(--font-weather-summary)] group-data-[stale=true]/weather:text-[length:var(--font-weather-detail)] leading-tight"
+          class="text-accent text-[length:var(--font-weather-summary)] group-data-[stale=true]/weather:text-[length:var(--font-weather-detail)] leading-tight"
           data-advice
         >
           Préparons la journée.
@@ -254,19 +254,6 @@ import WeatherWindow from './WeatherWindow.astro';
   [data-weather-alerts][data-level='unknown'] [data-alert-detail] {
     display: none;
   }
-  .journal-layout {
-    --colors-surface: #faf7ef;
-    --colors-elevated: #fffdf7;
-    --colors-background: #eaece2;
-    --colors-primary: #203a33;
-    --colors-secondary: #435e55;
-    --colors-border: #cbd6c9;
-    --colors-temperature: #8d442c;
-    --colors-rain: #195d76;
-    background: var(--colors-surface);
-    color: var(--colors-primary);
-  }
-
   [data-advice] {
     font-family: Georgia, serif;
   }

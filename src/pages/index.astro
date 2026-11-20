@@ -118,6 +118,19 @@ import ModeNavigation from '../components/ModeNavigation.astro';
     );
   }
   .dashboard[data-mode='morning'] {
+    color-scheme: dark;
+    --colors-background: #111e28;
+    --colors-surface: #162631;
+    --colors-elevated: #253641;
+    --colors-primary: #fff6e8;
+    --colors-secondary: #bacbd1;
+    --colors-border: #50636e;
+    --colors-accent: #ffb47c;
+    --colors-temperature: #ffb47c;
+    --colors-rain: #8cd5e6;
+    --colors-dock-active: var(--colors-accent);
+    --colors-dock-active-ink: var(--colors-background);
+    color: var(--colors-primary);
     padding: 0 0
       calc(
         var(--display-dock-height, 14rem) +

@@ -4,7 +4,7 @@ import '../styles/fluent-emoji.css';
 
 <section
   data-agenda
-  class="min-w-0 px-4 py-4 min-[1000px]:px-6 min-[1000px]:py-5"
+  class="bg-surface min-w-0 px-4 py-4 min-[1000px]:px-6 min-[1000px]:py-5"
   aria-labelledby="agenda-title"
 >
   <h2 id="agenda-title" class="text-3xl leading-tight font-bold tracking-tight">
@@ -14,14 +14,14 @@ import '../styles/fluent-emoji.css';
   <p data-agenda-status class="mt-1 text-base text-secondary leading-snug">
     Aucun agenda connecté.
   </p>
-  <ol data-agenda-events hidden class="mt-2"></ol>
+  <ol data-agenda-events hidden class="mt-2 grid gap-1"></ol>
   <section data-agenda-tomorrow hidden aria-labelledby="agenda-tomorrow-title">
     <h3
       id="agenda-tomorrow-title"
       data-agenda-tomorrow-title
       class="mt-2 border-b border-border/60 px-1 pb-1 text-secondary text-lg font-bold leading-tight"
     ></h3>
-    <ol data-agenda-tomorrow-events hidden></ol>
+    <ol data-agenda-tomorrow-events hidden class="grid gap-1"></ol>
     <p
       data-agenda-tomorrow-empty
       hidden
@@ -31,7 +31,7 @@ import '../styles/fluent-emoji.css';
     </p>
   </section>
   <template data-agenda-template>
-    <li class="agenda-entry group/event grid min-h-14 min-w-0 grid-cols-[5.25rem_minmax(0,1fr)_auto] min-[421px]:grid-cols-[6.5rem_minmax(0,1fr)_auto] items-center gap-1 border-b border-border/50 px-1 py-0.5 text-primary leading-tight last:border-b-transparent data-[next]:rounded-md data-[next]:border-b-transparent data-[next]:bg-alpine-near/40">
+    <li class="agenda-entry grid min-h-14 min-w-0 grid-cols-[5.25rem_minmax(0,1fr)_auto] min-[421px]:grid-cols-[6.5rem_minmax(0,1fr)_auto] items-center gap-1 rounded-md border-s-7 border-[var(--agenda-accent)] bg-[var(--agenda-tint)] ps-1.5 pe-1 py-0.5 text-primary leading-tight data-[next]:ring-1 data-[next]:ring-inset data-[next]:ring-[var(--agenda-accent)]">
       <span class="flex min-w-0 flex-col items-start tabular-nums text-base">
         <span data-event-time class="font-bold"></span>
         <span
@@ -96,7 +96,7 @@ import '../styles/fluent-emoji.css';
         <span class="flex items-center justify-end gap-x-1 min-[421px]:flex-col min-[421px]:items-end">
           <span
             data-event-source
-            class="whitespace-nowrap rounded-sm px-1 text-[0.8125rem] font-bold text-secondary group-data-[event-calendar=family]/event:bg-alpine-near/45 group-data-[event-calendar=family]/event:text-primary group-data-[event-calendar=massages]/event:bg-[#e8def5] group-data-[event-calendar=massages]/event:text-[#523772] group-data-[event-calendar=routines]/event:bg-[#dceee5] group-data-[event-calendar=routines]/event:text-[#315b52]"
+            class="whitespace-nowrap rounded-sm bg-background px-1 text-[0.8125rem] font-bold text-primary"
           ></span>
           <span
             data-event-duration
@@ -108,20 +108,39 @@ import '../styles/fluent-emoji.css';
     </li>
   </template>
   <template data-observance-template>
-    <li class="min-w-0 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-md bg-advice-soft px-2 py-1 text-advice-ink">
+    <li class="min-w-0 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-md border-s-7 border-[#8ac9f1] bg-[#203749] px-2 py-1 text-primary">
       <span
         data-observance-name
         class="min-w-0 truncate text-base font-bold"
       ></span>
-      <span data-observance-tags class="flex flex-wrap gap-1"></span>
+      <span
+        data-observance-tags
+        class="ms-auto flex flex-wrap justify-end gap-1"
+      ></span>
     </li>
   </template>
   <template data-observance-tag-template>
-    <span class="rounded-sm bg-surface px-1.5 text-[0.8125rem] font-bold leading-relaxed data-[type=school]:bg-alpine-near/45 data-[type=observed]:bg-[#e8def5] data-[type=observed]:text-[#523772]"></span>
+    <span class="rounded-sm bg-surface px-1.5 text-[0.8125rem] font-bold leading-relaxed text-primary"></span>
   </template>
 </section>
 
 <style>
+  /* Category tints and bands travel together, including the next-event outline. */
+  .agenda-entry[data-event-calendar='family'] {
+    --agenda-accent: #ef9196;
+    --agenda-tint: #372631;
+  }
+
+  .agenda-entry[data-event-calendar='massages'] {
+    --agenda-accent: #c5a8e5;
+    --agenda-tint: #322c42;
+  }
+
+  .agenda-entry[data-event-calendar='routines'] {
+    --agenda-accent: #ffc36e;
+    --agenda-tint: #362d23;
+  }
+
   [data-event-title] {
     font-family: Manrope, 'Fluent Emoji Flat', system-ui, sans-serif;
   }

@@ -40,6 +40,25 @@ and `dashboard/css/views/home.css` at
 clock and next event follows upstream ideas. Dayframe uses its own chronological
 timeline, generated art and authenticated data. No upstream code or art copied.
 
+### Encre cuivrée local preview
+
+The Morning palette pairs deep blue with cream text, copper for temperature
+and active controls, and cyan for precipitation. The lake image uses a stronger
+scrim behind the clock and current conditions. Temperature and rain retain
+separate hourly tracks.
+
+Agenda rows use a dark tint and a wide edge band in rose for Famille, amber for
+Routines, violet for Massages and blue for observances. The existing category
+labels, stacked times and two-line title limit remain part of the layout. A
+matching outline marks the next appointment.
+
+The preview uses Dayframe's existing mode-scoped color tokens. Wes Bos's
+`dashboard/css/tokens.css` at `f1e0820918c926396e0ccafb4839568825f63edc`
+(MIT) was reviewed for its separation of surface, signal and person colors.
+Dayframe uses its own palette and category bands. No source or art was copied.
+The theme has no saved preference or data migration. Reverting the branch
+change restores the previous Morning palette.
+
 ## Current policy — 28 October 2026
 
 The household explicitly favors the larger type for reading at a distance. The
