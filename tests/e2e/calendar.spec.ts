@@ -235,7 +235,7 @@ test('calendar weather follows timed events and tagged advice expires with the p
     hasText: 'Salle de sport',
   });
   await expect(gym.locator('[data-event-time]')).toHaveText('06:00');
-  await expect(gym.locator('[data-event-end]')).toHaveText('–07:00');
+  await expect(gym.locator('[data-event-end]')).toHaveText('07:00');
   await expect(gym.getByRole('img', {name: /source 06:00/v})).toBeVisible();
   try {
     shouldStall = true;

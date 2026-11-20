@@ -64,7 +64,7 @@ it('identifies a timed appointment ending on a different local date', () => {
   const overnight = makeEvent('2026-10-16T21:30:00Z');
   expect(agendaTimes(overnight, now, timezone)).toEqual({
     start: '23:30',
-    end: '–00:30 (17/10)',
+    end: '00:30 (17/10)',
   });
 });
 

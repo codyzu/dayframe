@@ -42,7 +42,7 @@ export function agendaTimes(event: AgendaEvent, now: number, timezone: string) {
       : `${endClock} (${day}/${month})`;
   return isOngoing
     ? {start: 'En cours', end: `jusqu’à ${endLabel}`}
-    : {start: agendaClock(start, timezone), end: `–${endLabel}`};
+    : {start: agendaClock(start, timezone), end: endLabel};
 }
 
 export function agendaDisplayTitle(event: AgendaEvent) {
