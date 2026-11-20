@@ -30,8 +30,10 @@ Morning prioritizes up to three remaining events **per calendar** today in the h
 all-day entries first, then timed entries in start order, including ongoing/multi-day
 events. All-day end dates are exclusive. Google expands recurring appointments and
 exceptions (`singleEvents=true`); cancelled and self-declined entries are omitted.
-A long title truncates visually, retaining its complete bounded title in DOM text and
-the title attribute. The card does not show descriptions, attendees or locations.
+The calendar label sits at the trailing edge of each appointment row with its
+other badges. Titles use up to two lines before truncating visually. On narrow
+screens the weather and badges share the trailing column. The row retains the original bounded title in
+its title attribute. The card does not show descriptions, guest lists or locations.
 **Aujourd’hui** shows remaining and ongoing appointments. All-day events appear
 first, followed by timed events in local start order. Events at the same time stay
 distinct. Every timed appointment shown for today or tomorrow
@@ -283,3 +285,24 @@ Upstream reference reviewed at `e97c50ba459c49ea8237259f69b95cd28054b628`:
 `dashboard/css/base.css` inherits the dashboard's text stack. Dayframe retains
 its existing text insertion and applies a local emoji fallback only to agenda
 appointment titles. No upstream dashboard code or artwork was imported.
+
+### Compact appointment rows
+
+Appointment rows reserve two lines, with start above end in the time column.
+Times use the household timezone. An end on a different date includes that date.
+An ongoing appointment shows
+`En cours` and its end time, with a date if it ends after today. All-day entries
+retain `Journée`.
+
+On the Massages calendar only, a recognized French Cal.com title such as
+`Massage 60 minutes VIP entre Studio Exemple et Camille Martin` displays
+`Camille Martin` and the scheduled duration beside the colored calendar label.
+Duration comes from elapsed time between the event timestamps. Unrecognized
+and ambiguous titles keep their original text. The transformation runs in the
+display; the Google event, private response shape and retention are unchanged.
+Reverting the display code restores the previous rendering without a data migration.
+
+Upstream review at `f1e0820918c926396e0ccafb4839568825f63edc` covered
+`dashboard/js/views/calendar.js` and the MIT `LICENSE`. Its event cards show a
+time range beside escaped text. Dayframe uses the same presentation idea with
+the household timezone and a Massages-only rule. No source was copied.

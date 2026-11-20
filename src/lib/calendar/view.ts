@@ -12,7 +12,8 @@ import {
   type AgendaEvent,
 } from './contracts.ts';
 import {
-  agendaClock,
+  agendaDisplayTitle,
+  agendaTimes,
   agendaTimeline,
   comparableTitle,
   isAgendaObservance,
@@ -185,7 +186,7 @@ function agendaRow(
     appointmentWeather,
     isNext,
   }: {
-    time: string;
+    time: ReturnType<typeof agendaTimes>;
     appointmentWeather: ReturnType<typeof hourlyForecastAt>;
     isNext: boolean;
   },
@@ -195,19 +196,25 @@ function agendaRow(
   ) as HTMLElement;
   const source = event.calendar ?? 'family';
   const label = agendaLabels[source];
-  const name = event.title;
+  const display = agendaDisplayTitle(event);
   row.dataset.eventCalendar = source;
   row
     .querySelector('[data-birthday-icon]')!
     .toggleAttribute('hidden', !isBirthdayEntry(event));
 
   row.toggleAttribute('data-next', isNext);
-  row.querySelector('[data-event-time]')!.textContent = time;
+  row.querySelector('[data-event-time]')!.textContent = time.start;
+  const end = row.querySelector('[data-event-end]')!;
+  end.textContent = time.end;
+  end.toggleAttribute('hidden', time.end === '');
   const title = row.querySelector('[data-event-title]')!;
-  title.textContent = name;
+  title.textContent = display.title;
   title.toggleAttribute('data-next', isNext);
   row.querySelector('[data-event-source]')!.textContent = label;
-  row.title = `${label} · ${name}`;
+  const duration = row.querySelector('[data-event-duration]')!;
+  duration.textContent = display.duration;
+  duration.toggleAttribute('hidden', display.duration === '');
+  row.title = `${label} · ${event.title}`;
   displayWeather(row, appointmentWeather);
   return row;
 }
@@ -320,12 +327,7 @@ export function mountAgenda(
     const next = [...preview.today, ...preview.tomorrow].find(
       (event) => !event.allDay && Date.parse(event.start) > now,
     );
-    const timeFor = (event: AgendaEvent, isUpcoming = false) =>
-      event.allDay
-        ? 'Journée'
-        : !isUpcoming && Date.parse(event.start) <= now
-          ? 'En cours'
-          : agendaClock(Date.parse(event.start), timezone);
+    const timeFor = (event: AgendaEvent) => agendaTimes(event, now, timezone);
     const times = preview.today.map((event) => timeFor(event));
     const rowsSignature = JSON.stringify({
       preview,
@@ -370,7 +372,7 @@ export function mountAgenda(
       tomorrowList.replaceChildren(
         ...preview.tomorrow.map((event, index) =>
           agendaRow(template, event, {
-            time: timeFor(event, true),
+            time: timeFor(event),
             appointmentWeather: weatherTomorrow[index],
             isNext: event === next,
           }),

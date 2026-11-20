@@ -43,11 +43,16 @@ test('Morning escapes titles in the agenda and advice, fits the frame and clears
               events: [
                 ...[0, 1, 2].map((index) => ({
                   calendar: 'massages',
-                  title: `Massage ${index + 1}`,
+                  title:
+                    index === 0
+                      ? 'Massage 60 minutes VIP entre Studio Exemple et Camille Martin'
+                      : `Massage ${index + 1}`,
                   start: new Date(
                     now + (index === 0 ? 90_000 : (index + 1) * 3_600_000),
                   ).toISOString(),
-                  end: new Date(now + (index + 2) * 3_600_000).toISOString(),
+                  end: new Date(
+                    now + (index === 0 ? 3_690_000 : (index + 2) * 3_600_000),
+                  ).toISOString(),
                   allDay: false,
                 })),
                 {
@@ -81,6 +86,12 @@ test('Morning escapes titles in the agenda and advice, fits the frame and clears
     page.locator('[data-agenda-events] [data-event-calendar]'),
   ).toHaveCount(6);
   await expect(page.locator('[data-event-calendar=massages]')).toHaveCount(3);
+  const massage = page.locator('[data-event-calendar=massages]').first();
+  await expect(massage.locator('[data-event-title]')).toHaveText(
+    'Camille Martin',
+  );
+  await expect(massage.locator('[data-event-duration]')).toHaveText('60 min');
+  await expect(massage.locator('[data-event-source]')).toHaveText('Massages');
   expect(
     await page
       .locator('[data-event-calendar]')
@@ -212,6 +223,7 @@ test('calendar weather follows timed events and tagged advice expires with the p
     }),
   ).toBeVisible();
   await expect(cinema.locator('[data-event-time]')).toHaveText('En cours');
+  await expect(cinema.locator('[data-event-end]')).toHaveText('jusqu’à 10:00');
   await expect(cinema.locator('[data-event-weather]')).toBeVisible();
   await expect(today.locator('li')).toHaveCount(2);
   const summary = page.locator('[data-summary]');
@@ -223,6 +235,7 @@ test('calendar weather follows timed events and tagged advice expires with the p
     hasText: 'Salle de sport',
   });
   await expect(gym.locator('[data-event-time]')).toHaveText('06:00');
+  await expect(gym.locator('[data-event-end]')).toHaveText('–07:00');
   await expect(gym.getByRole('img', {name: /source 06:00/v})).toBeVisible();
   try {
     shouldStall = true;

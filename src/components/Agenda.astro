@@ -31,66 +31,80 @@ import '../styles/fluent-emoji.css';
     </p>
   </section>
   <template data-agenda-template>
-    <li class="agenda-entry group/event grid min-h-11 min-w-0 grid-cols-[4.5rem_minmax(0,1fr)_auto] items-center gap-1 border-b border-border/50 px-1 py-0.5 text-primary leading-tight last:border-b-transparent data-[next]:rounded-md data-[next]:border-b-transparent data-[next]:bg-alpine-near/40">
-      <span data-event-time class="font-bold tabular-nums text-base"></span>
-      <div class="min-w-0">
-        <div class="flex min-w-0 items-center gap-1">
-          <span
-            data-birthday-icon
-            hidden
-            role="img"
-            aria-label="Anniversaire"
-            class="shrink-0 text-accent"
-          >
-            <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20">
-              <path
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M4 21h16v-6a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v6Zm0-5c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2M8 12V8m4 4V8m4 4V8M8 5V4m4 1V3m4 2V4"
-              />
-            </svg>
-          </span>
-          <span
-            data-event-title
-            class="block truncate text-[length:var(--font-weather-detail)] data-[next]:font-bold"
-          ></span>
-        </div>
+    <li class="agenda-entry group/event grid min-h-14 min-w-0 grid-cols-[5.25rem_minmax(0,1fr)_auto] min-[421px]:grid-cols-[6.5rem_minmax(0,1fr)_auto] items-center gap-1 border-b border-border/50 px-1 py-0.5 text-primary leading-tight last:border-b-transparent data-[next]:rounded-md data-[next]:border-b-transparent data-[next]:bg-alpine-near/40">
+      <span class="flex min-w-0 flex-col items-start tabular-nums text-base">
+        <span data-event-time class="font-bold"></span>
         <span
-          data-event-source
-          class="block w-fit rounded-sm px-1 text-[0.8125rem] font-bold text-secondary group-data-[event-calendar=family]/event:bg-alpine-near/45 group-data-[event-calendar=family]/event:text-primary group-data-[event-calendar=massages]/event:bg-[#e8def5] group-data-[event-calendar=massages]/event:text-[#523772] group-data-[event-calendar=routines]/event:bg-[#dceee5] group-data-[event-calendar=routines]/event:text-[#315b52]"
-        ></span>
-      </div>
-      <span
-        data-event-weather
-        hidden
-        class="flex items-center gap-1 whitespace-nowrap tabular-nums text-base text-primary"
-      >
-        <span
-          data-event-weather-icon
-          class="size-8 shrink-0"
-          aria-hidden="true"
-        ></span>
-        <b data-event-temperature></b>
-        <svg
-          viewBox="0 0 16 20"
-          width="11"
-          height="14"
-          class="ml-1 shrink-0 text-rain"
-          aria-hidden="true"
-        >
-          <path
-            fill="currentColor"
-            d="M8 0C6 4 1 8.1 1 12.5A7 7 0 0 0 15 12.5C15 8.1 10 4 8 0Z"
-          />
-        </svg>
-        <span
-          data-event-rain
-          class="min-w-9 text-right font-bold text-rain"
+          data-event-end
+          hidden
+          class="text-secondary text-xs min-[421px]:text-sm"
         ></span>
       </span>
+      <div class="flex min-w-0 items-center gap-1">
+        <span
+          data-birthday-icon
+          hidden
+          role="img"
+          aria-label="Anniversaire"
+          class="shrink-0 text-accent"
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20">
+            <path
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M4 21h16v-6a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v6Zm0-5c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2M8 12V8m4 4V8m4 4V8M8 5V4m4 1V3m4 2V4"
+            />
+          </svg>
+        </span>
+        <span
+          data-event-title
+          class="min-w-0 line-clamp-2 break-words text-[length:var(--font-weather-detail)] data-[next]:font-bold"
+        ></span>
+      </div>
+      <div class="flex flex-col items-end justify-end gap-x-2 min-[421px]:flex-row min-[421px]:items-center">
+        <span
+          data-event-weather
+          hidden
+          class="flex items-center gap-1 whitespace-nowrap tabular-nums text-sm text-primary min-[421px]:text-base"
+        >
+          <span
+            data-event-weather-icon
+            class="size-6 shrink-0 min-[421px]:size-8"
+            aria-hidden="true"
+          ></span>
+          <b data-event-temperature></b>
+          <svg
+            viewBox="0 0 16 20"
+            width="11"
+            height="14"
+            class="ml-1 shrink-0 text-rain"
+            aria-hidden="true"
+          >
+            <path
+              fill="currentColor"
+              d="M8 0C6 4 1 8.1 1 12.5A7 7 0 0 0 15 12.5C15 8.1 10 4 8 0Z"
+            />
+          </svg>
+          <span
+            data-event-rain
+            class="min-w-9 text-right font-bold text-rain"
+          ></span>
+        </span>
+        <span class="flex items-center justify-end gap-x-1 min-[421px]:flex-col min-[421px]:items-end">
+          <span
+            data-event-source
+            class="whitespace-nowrap rounded-sm px-1 text-[0.8125rem] font-bold text-secondary group-data-[event-calendar=family]/event:bg-alpine-near/45 group-data-[event-calendar=family]/event:text-primary group-data-[event-calendar=massages]/event:bg-[#e8def5] group-data-[event-calendar=massages]/event:text-[#523772] group-data-[event-calendar=routines]/event:bg-[#dceee5] group-data-[event-calendar=routines]/event:text-[#315b52]"
+          ></span>
+          <span
+            data-event-duration
+            hidden
+            class="order-first whitespace-nowrap px-1 text-xs tabular-nums text-secondary min-[421px]:order-none min-[421px]:text-sm"
+          ></span>
+        </span>
+      </div>
     </li>
   </template>
   <template data-observance-template>
@@ -114,12 +128,5 @@ import '../styles/fluent-emoji.css';
 
   [data-event-weather-icon] {
     background-image: var(--dayframe-static-icon);
-  }
-
-  @media (max-width: 420px) {
-    /* Put the source and weather under long event names on narrow displays. */
-    [data-event-weather] {
-      grid-column: 2;
-    }
   }
 </style>

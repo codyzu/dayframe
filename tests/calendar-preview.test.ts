@@ -4,7 +4,12 @@ import {
   dayEnd,
   type AgendaEvent,
 } from '../src/lib/calendar/contracts.ts';
-import {agendaTimeline, isBirthdayEntry} from '../src/lib/calendar/timeline.ts';
+import {
+  agendaDisplayTitle,
+  agendaTimeline,
+  agendaTimes,
+  isBirthdayEntry,
+} from '../src/lib/calendar/timeline.ts';
 
 const timezone = 'Europe/Paris';
 const now = Date.parse('2026-10-16T06:30:00Z');
@@ -30,6 +35,39 @@ const tomorrow = Array.from({length: 9}, (_, i) =>
     i < 3 ? 'family' : i < 6 ? 'massages' : 'routines',
   ),
 );
+
+it('keeps the Cal.com client first and uses the booked duration only for recognized massage titles', () => {
+  const booking = {
+    ...makeEvent('2026-10-16T09:00:00Z', 'massages'),
+    end: '2026-10-16T10:15:00Z',
+    title: 'Massage 60 minutes VIP entre Studio Exemple et Camille Martin',
+  };
+  expect(agendaDisplayTitle(booking)).toEqual({
+    title: 'Camille Martin',
+    duration: '75 min',
+  });
+  expect(agendaDisplayTitle({...booking, calendar: 'family'}).title).toBe(
+    booking.title,
+  );
+  for (const title of [
+    'Massage libre',
+    'Massage VIP entre Atelier Corps et Esprit et Camille Martin',
+  ]) {
+    expect(agendaDisplayTitle({...booking, title})).toEqual({
+      title,
+      duration: '',
+    });
+  }
+});
+
+it('identifies a timed appointment ending on a different local date', () => {
+  const overnight = makeEvent('2026-10-16T21:30:00Z');
+  expect(agendaTimes(overnight, now, timezone)).toEqual({
+    start: '23:30',
+    end: '–00:30 (17/10)',
+  });
+});
+
 it('reserves today and a labelled divider before filling spare rows chronologically', () => {
   for (let count = 0; count <= 9; count++) {
     const preview = agendaTimeline(
