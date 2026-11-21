@@ -78,6 +78,12 @@ weather or appointments. Offline playback shows photos at all hours, including h
 that would select Night online. The online schedule remains unchanged. Empty/unavailable storage
 shows a useful retry state. A corrupt image is skipped without losing the collection.
 
+An opt-in exception applies to frames enrolled in the [massage welcome
+display](../calendar.md#client-facing-massage-welcome). Their offline startup
+offers reconnection and leaves saved photos hidden when the frame cannot verify
+the appointment window. A browser-local enrollment flag enables this check.
+The fallback stores no appointment times, titles, or new photo data.
+
 An observed private-API 401/403, explicit logout, reprovisioning or lease expiry
 invalidates playback immediately and clears the local private collection.
 Cleanup failures must leave playback denied and be retried; another open tab must not

@@ -5,6 +5,7 @@ import {
   forgetSavedPhoto,
   onOfflineInvalidation,
 } from '../photos/offline.ts';
+import {remembersMassageWelcome} from '../dashboard/massage-enrollment.ts';
 
 const stage = document.querySelector<HTMLElement>('[data-stage]')!;
 const status = document.querySelector<HTMLElement>('[data-status]')!;
@@ -72,6 +73,12 @@ function playbackInterval(value: number) {
 
 async function play() {
   if (pendingRun === generation || !isCurrent(generation)) {
+    return;
+  }
+
+  if (remembersMassageWelcome()) {
+    release();
+    showRetry('Reconnectez Dayframe pour vérifier l’accueil.');
     return;
   }
 

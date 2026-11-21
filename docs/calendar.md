@@ -306,3 +306,76 @@ Upstream review at `f1e0820918c926396e0ccafb4839568825f63edc` covered
 `dashboard/js/views/calendar.js` and the MIT `LICENSE`. Its event cards show a
 time range beside escaped text. Dayframe uses the same presentation idea with
 the household timezone and a Massages-only rule. No source was copied.
+
+## Client-facing massage welcome
+
+The existing `/?display=frame` kiosk address can use the selected **Massages**
+calendar to replace the household dashboard with the practice logo. The feature
+is off by default. From a signed-in phone at `/admin/settings`, open **Accueil
+des clients** and select **Activer l’accueil sur le cadre**. Keep the frame
+online long enough to receive the change and verify the installed offline
+fallback has updated before relying on it. The same household controls apply
+to any authorized kiosk using the frame address. Ordinary dashboard visits
+without `display=frame` keep their usual modes.
+
+Timed Massages entries trigger the welcome 10 minutes before the scheduled
+start until 30 minutes after the scheduled end. Cancelled, declined and all-day
+entries are ignored. Overlapping windows keep the welcome active. On the
+frame, tap to reveal the × (or Tab to focus it), then activate it for one minute
+of clock and current-weather display. The logo returns automatically if the
+window is still active. Both views hide family photos, the agenda and normal
+mode controls. The neutral background remains if the logo is unavailable.
+The native two-finger maintenance shortcut and liveness probe are retained.
+
+To end the welcome early, confirm **Terminer l’accueil sur le cadre** in
+`/admin/settings`. The dashboard resumes its scheduled mode, which may be
+Photos. This dismisses the buffered windows already active at confirmation.
+A later booking or a changed appointment can start the welcome again.
+The frame normally picks up the action on its next check, within 15 seconds
+while enabled or within one minute when first enabling from the ordinary schedule.
+
+### Calendar data and outages
+
+The authenticated welcome endpoint uses the existing read-only Google connection
+and requests only Massages start/end/status fields and the current attendee's
+response. Its bounded range extends from 30 minutes in the past to 24 hours ahead
+in UTC; the response contains only buffered timestamps and fetch time. The same
+private Administration object caches timings for up to four minutes and serializes
+settings and dismissals with the existing revision check. Calendar edits may
+take until the next refresh to appear. The browser keeps timings only in memory
+and requires a fresh snapshot to leave the protected screen.
+
+At a 15-second polling interval, one continuously visible enrolled frame adds
+at most about 5,760 scheduled Worker requests per day. The shared four-minute
+cache normally adds up to 360 Google refreshes per day for a one-page calendar.
+These estimates exclude retries, manual refreshes and existing feature traffic.
+The design reuses the [Workers Free limits](https://developers.cloudflare.com/workers/platform/limits/),
+[SQLite Durable Object allowance](https://developers.cloudflare.com/durable-objects/platform/pricing/)
+and [standard Calendar API usage](https://developers.google.com/workspace/calendar/api/guides/quota).
+
+An enrolled frame shows the neutral screen when timings are unavailable, stale
+or unauthorized. Once enrolled, it also suppresses saved-photo playback on an
+offline restart and offers to reconnect. Only a local enrollment flag is needed
+for this decision. No client title, calendar contents, interval, or new photo
+data is persisted by the browser. Existing saved photos and their retention
+limits are unchanged. An offline frame cannot learn a setting it has never
+received. Reconnect and verify enrollment after clearing browser storage or
+moving to a new profile.
+
+### Compatibility and rollback
+
+Existing schedules and settings exports require no migration. Disable the feature
+from phone admin and let the frame confirm the change online before reverting
+to an older build. This clears the local flag and restores ordinary offline
+behavior; it leaves the selected calendars and saved photos intact. There is
+no native APK change, new service or paid resource.
+
+The artwork comes from `assets/logo-vertical-dark.svg` and the cream surface token in
+`src/styles/design-tokens.ts` from the Les Mains de Sérénité website repo. The
+logo is from commit `6c4ce5a38a5cc22939cfaaf415087e80b443a179` and is used for
+the owner's requested display; its rights remain with the practice. Reviewed
+Wes Bos's `dashboard/js/app.js`, `dashboard/js/views/home.js`, and MIT `LICENSE`
+at `f1e0820918c926396e0ccafb4839568825f63edc`. The clock and weather follow the
+upstream glanceable layout idea. Dayframe implements its own calendar-based
+privacy gate and time-limited control with the existing kiosk panel contract.
+No upstream source or artwork was copied.

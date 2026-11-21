@@ -11,6 +11,13 @@ import {
   type AgendaObservance,
 } from '../src/lib/calendar/contracts.ts';
 import {validateSettings} from '../src/lib/dashboard/settings.ts';
+import {
+  activeMassageWindows,
+  arrivalBuffer,
+  departureBuffer,
+  type MassageSnapshot,
+  type MassageWindow,
+} from '../src/lib/dashboard/massage-windows.ts';
 import {administration, type AdministrationBinding} from './administration.ts';
 import {cookie, type Identity} from './auth/access.ts';
 import {failure, privateJson} from './private-response.ts';
@@ -43,6 +50,10 @@ type RecordState = {
   revision: string;
   pending?: Pending;
   connection?: Connection;
+  welcome?: {
+    snapshot?: MassageSnapshot;
+    dismissed?: MassageWindow[];
+  };
   cache?: {
     events: AgendaEvent[];
     fetchedAt: number;
@@ -374,6 +385,7 @@ async function calendarEvents(
     end: number;
     timezone: string;
     observancesOnly?: true;
+    timingOnly?: true;
     shouldReadWeatherTags?: boolean;
   },
 ) {
@@ -390,7 +402,9 @@ async function calendarEvents(
     maxResults: '250',
     fields: range.observancesOnly
       ? 'items(status,summary,start(date),end(date)),nextPageToken'
-      : `items(status,summary,${range.shouldReadWeatherTags ? 'description,' : ''}start,end,attendees(self,responseStatus)),nextPageToken`,
+      : range.timingOnly
+        ? 'items(status,start(dateTime),end(dateTime),attendees(self,responseStatus)),nextPageToken'
+        : `items(status,summary,${range.shouldReadWeatherTags ? 'description,' : ''}start,end,attendees(self,responseStatus)),nextPageToken`,
   }).toString();
   const items: GoogleEvent[] = [];
   for (let i = 0; i < 10; i++) {
@@ -777,6 +791,13 @@ async function selectCalendars(
     );
   }
 
+  if (
+    state.connection!.massageCalendar?.id !== massageSelected?.id &&
+    state.welcome
+  ) {
+    state.welcome = {};
+  }
+
   state.connection!.calendar = selected;
   state.connection!.massageCalendar = massageSelected;
   state.connection!.routineCalendar = routineSelected;
@@ -793,18 +814,163 @@ async function selectCalendars(
   });
 }
 
+async function massageSnapshot(env: CalendarEnv, state: RecordState) {
+  const now = Date.now();
+  const welcome = state.welcome!;
+  if (
+    welcome.snapshot &&
+    now >= welcome.snapshot.fetchedAt &&
+    now - welcome.snapshot.fetchedAt < 240_000
+  ) {
+    return welcome.snapshot;
+  }
+
+  const access = await accessToken(env, state);
+  const items = await calendarEvents(
+    access,
+    state.connection!.massageCalendar!.id,
+    {
+      start: now - departureBuffer,
+      end: now + 86_400_000,
+      timezone: 'UTC',
+      timingOnly: true,
+    },
+  );
+  const windows: MassageWindow[] = [];
+  for (const item of items) {
+    const start = Date.parse(item.start?.dateTime ?? '');
+    const end = Date.parse(item.end?.dateTime ?? '');
+    if (
+      item.status !== 'cancelled' &&
+      !item.attendees?.some(
+        (person) => person.self && person.responseStatus === 'declined',
+      ) &&
+      Number.isFinite(start) &&
+      Number.isFinite(end) &&
+      end > start
+    ) {
+      windows.push([start - arrivalBuffer, end + departureBuffer]);
+    }
+  }
+
+  const snapshot = {fetchedAt: now, windows};
+  welcome.snapshot = snapshot;
+  welcome.dismissed = welcome.dismissed?.filter(([, end]) => end > now);
+  await saveState(env, state);
+  return snapshot;
+}
+
+async function massageWelcomeApi(
+  request: Request,
+  env: CalendarEnv,
+  isReady: boolean,
+) {
+  if (!env.ADMINISTRATION) {
+    throw unavailable();
+  }
+
+  const state = await readState(env);
+  const hasSource = isReady && Boolean(state.connection?.massageCalendar);
+  if (request.method === 'PATCH') {
+    if (request.headers.get('Content-Type') !== 'application/json') {
+      return failure(415, 'INVALID_TYPE', 'JSON requis.');
+    }
+
+    const bytes = await readBounded(request, 32);
+    let value: unknown;
+    try {
+      value = JSON.parse(new TextDecoder().decode(bytes));
+    } catch {
+      return failure(400, 'INVALID_WELCOME', 'Réglage de l’accueil invalide.');
+    }
+
+    if (typeof value !== 'boolean') {
+      return failure(400, 'INVALID_WELCOME', 'Réglage de l’accueil invalide.');
+    }
+
+    if (value && !hasSource) {
+      return failure(
+        409,
+        'MASSAGE_CALENDAR_REQUIRED',
+        'Sélectionnez d’abord l’agenda Massages.',
+      );
+    }
+
+    if (value) {
+      state.welcome ??= {};
+    } else {
+      delete state.welcome;
+    }
+
+    await saveState(env, state);
+    return privateJson({enabled: value});
+  }
+
+  if (request.method === 'POST') {
+    if (!hasSource || !state.welcome) {
+      return failure(409, 'WELCOME_INACTIVE', 'Aucun accueil en cours.');
+    }
+
+    const snapshot = await massageSnapshot(env, state);
+    const active = activeMassageWindows(snapshot.windows, Date.now());
+    if (active.length === 0) {
+      return failure(409, 'WELCOME_INACTIVE', 'Aucun accueil en cours.');
+    }
+
+    state.welcome.dismissed = active;
+    await saveState(env, state);
+    return privateJson({ok: true});
+  }
+
+  if (request.method !== 'GET') {
+    return failure(405, 'METHOD_NOT_ALLOWED', 'Méthode non autorisée.');
+  }
+
+  if (!hasSource || !state.welcome) {
+    return privateJson({enabled: Boolean(state.welcome)});
+  }
+
+  try {
+    const snapshot = await massageSnapshot(env, state);
+    const dismissed = new Set(
+      state.welcome.dismissed?.map((window) => window.join(':')),
+    );
+    return privateJson({
+      enabled: true,
+      snapshot: {
+        ...snapshot,
+        windows: snapshot.windows.filter(
+          (window) => !dismissed.has(window.join(':')),
+        ),
+      },
+    });
+  } catch {
+    // A missing window list is deliberately different from a verified empty list.
+    return privateJson({enabled: true});
+  }
+}
+
 export async function calendarApi(
   request: Request,
   env: CalendarEnv,
   identity: Identity,
 ) {
   const path = new URL(request.url).pathname;
-  if (path !== '/api/calendar/events' && identity.role !== 'admin') {
+  const isWelcome = path === '/api/calendar/massage-welcome';
+  if (
+    path !== '/api/calendar/events' &&
+    !(isWelcome && request.method === 'GET') &&
+    identity.role !== 'admin'
+  ) {
     return failure(403, 'FORBIDDEN', 'Accès administrateur requis.');
   }
 
   try {
     const isReady = configuration(env, request);
+    if (isWelcome) {
+      return await massageWelcomeApi(request, env, isReady);
+    }
+
     if (path === '/api/calendar' && request.method === 'GET') {
       const state = env.ADMINISTRATION ? await readState(env) : undefined;
       const connection = state?.connection;
@@ -850,6 +1016,7 @@ export async function calendarApi(
       delete state.connection;
       delete state.pending;
       delete state.cache;
+      state.welcome &&= {};
       await saveState(env, state);
       if (old) {
         try {
@@ -979,6 +1146,7 @@ async function finishConnection(
     }),
   };
   delete state.cache;
+  state.welcome &&= {};
   await saveState(env, state);
   return callbackResponse('connected');
 }

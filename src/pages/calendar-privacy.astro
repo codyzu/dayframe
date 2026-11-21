@@ -8,11 +8,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       Dayframe
     </a>
     <h1 class="mt-5 text-3xl font-bold">Votre agenda dans Dayframe</h1>
-    <p class="mt-4 text-secondary">Dernière mise à jour : 19 novembre 2026.</p>
+    <p class="mt-4 text-secondary">Dernière mise à jour : 21 novembre 2026.</p>
     <p class="mt-5">
       Dayframe est un affichage familial privé. La connexion Google Calendar
-      sert uniquement à afficher les événements des agendas choisis sur l’écran
-      du matin.
+      affiche les événements des agendas choisis sur l’écran du matin et peut
+      déclencher l’accueil des clients sur le cadre.
     </p>
     <h2 class="mt-7 text-2xl font-semibold">Accès en lecture seule</h2>
     <p class="mt-3">
@@ -38,6 +38,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       titres, les dates et le statut de confirmation de deux fêtes au maximum
       pour la journée en cours.
     </p>
+    <p class="mt-3">
+      Si vous activez l’accueil des clients, Dayframe utilise les horaires de
+      l’agenda Massages pour afficher le logo du cabinet. Cette fonction ne lit
+      ni les titres ni les descriptions des rendez-vous. Les plages horaires
+      sont conservées dans le cache privé du serveur et restent uniquement en
+      mémoire sur le cadre.
+    </p>
     <h2 class="mt-7 text-2xl font-semibold">Stockage et accès privé</h2>
     <p class="mt-3">
       Les autorisations Google sont conservées chiffrées sur le serveur. Votre
@@ -58,8 +65,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       Google fournit les événements et Cloudflare héberge l’application et ses
       données privées. Dayframe n’utilise pas les données de Google Calendar
       pour la publicité, ne les vend pas et ne les utilise pas pour entraîner un
-      modèle d’intelligence artificielle. Elles servent uniquement à la fonction
-      d’agenda familial demandée.
+      modèle d’intelligence artificielle. Elles servent à l’affichage de
+      l’agenda familial et à l’accueil des clients si vous l’activez.
     </p>
     <p class="mt-3">
       L’utilisation et le transfert des informations reçues des API Google

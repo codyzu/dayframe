@@ -200,6 +200,18 @@ async function serveAsset(pathname: string, response: ServerResponse) {
 }
 
 function serveApi(pathname: string, response: ServerResponse) {
+  if (pathname === '/api/calendar/massage-welcome') {
+    response.setHeader('Content-Type', 'application/json');
+    response.end(
+      JSON.stringify(
+        state.massageWelcome === true
+          ? {enabled: true, snapshot: {fetchedAt: Date.now(), windows: []}}
+          : {enabled: false},
+      ),
+    );
+    return true;
+  }
+
   // Match Workers Static Assets HTML canonicalization in the real deployment.
   if (pathname === '/offline.html') {
     response.writeHead(307, {Location: '/offline'});

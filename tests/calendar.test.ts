@@ -30,6 +30,8 @@ let eventsPerCalendar = 1;
 let shouldIncludeTomorrow = false;
 let isObservanceUnavailable = false;
 let isRoutineUnavailable = false;
+let isMassageUnavailable = false;
+const welcomePath = '/api/calendar/massage-welcome';
 // eslint-disable-next-line max-params -- Named synthetic request inputs keep the authorization matrix compact.
 async function request(
   path: string,
@@ -108,6 +110,7 @@ beforeEach(async () => {
   shouldIncludeTomorrow = false;
   isObservanceUnavailable = false;
   isRoutineUnavailable = false;
+  isMassageUnavailable = false;
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -152,6 +155,38 @@ beforeEach(async () => {
 
       if (url.pathname.endsWith('/events')) {
         eventPages++;
+        if (url.searchParams.get('timeZone') === 'UTC') {
+          expect(url.pathname).toBe('/calendar/v3/calendars/other/events');
+          expect(url.searchParams.get('fields')).not.toMatch(
+            /summary|description|location/v,
+          );
+          if (isMassageUnavailable) {
+            return Response.json(
+              {error: 'Private provider error'},
+              {status: 503},
+            );
+          }
+
+          const now =
+            Date.parse(url.searchParams.get('timeMin')!) + 30 * 60_000;
+          const timed = (startMinutes: number, endMinutes: number) => ({
+            summary: 'Private appointment',
+            start: {
+              dateTime: new Date(now + startMinutes * 60_000).toISOString(),
+            },
+            end: {dateTime: new Date(now + endMinutes * 60_000).toISOString()},
+          });
+          return Response.json({
+            items: [
+              timed(-27, -10),
+              timed(5, 65),
+              timed(46, 90),
+              {...timed(0, 60), status: 'cancelled'},
+              {start: {date: '2026-10-16'}, end: {date: '2026-10-17'}},
+            ],
+          });
+        }
+
         if (url.pathname === '/calendar/v3/calendars/observances-two/events') {
           expect(url.searchParams.get('fields')).toBe(
             'items(status,summary,start(date),end(date)),nextPageToken',
@@ -329,7 +364,74 @@ it('protects every calendar route with role, network and mutation-origin checks'
   expect((await request('/api/calendar/events', 'POST', display)).status).toBe(
     403,
   );
+  expect((await request(welcomePath, 'GET', '')).status).toBe(401);
+  expect(
+    (
+      await request(welcomePath, 'GET', display, undefined, {
+        'CF-Connecting-IP': '203.0.113.10',
+      })
+    ).status,
+  ).toBe(401);
+  expect((await request(welcomePath, 'PATCH', display, true)).status).toBe(403);
+  expect((await request(welcomePath, 'POST', display)).status).toBe(403);
+  expect(
+    (
+      await request(welcomePath, 'POST', admin, undefined, {
+        Origin: 'https://evil.test',
+      })
+    ).status,
+  ).toBe(403);
   expect(googleCalls).toEqual([]);
+});
+
+it('uses only Massages timing and dismisses current overlapping windows for authorized frames', async () => {
+  await finish();
+  expect((await request(welcomePath, 'PATCH', admin, true)).status).toBe(409);
+  expect(
+    (
+      await request('/api/calendar', 'PATCH', admin, {
+        id: 'shared@example.test',
+        massageId: 'other',
+      })
+    ).status,
+  ).toBe(200);
+  expect(await (await request(welcomePath, 'GET', display)).json()).toEqual({
+    enabled: false,
+  });
+  expect((await request(welcomePath, 'PATCH', admin, true)).status).toBe(200);
+  isMassageUnavailable = true;
+  expect(await (await request(welcomePath, 'GET', display)).json()).toEqual({
+    enabled: true,
+  });
+  isMassageUnavailable = false;
+  const response = await request(welcomePath, 'GET', display);
+  expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+  const value = (await response.json()) as {
+    enabled: boolean;
+    snapshot: {fetchedAt: number; windows: number[][]};
+  };
+  const {fetchedAt} = value.snapshot;
+  const upcoming = [fetchedAt + 36 * 60_000, fetchedAt + 120 * 60_000];
+  expect(value).toEqual({
+    enabled: true,
+    snapshot: {
+      fetchedAt,
+      windows: [
+        [fetchedAt - 37 * 60_000, fetchedAt + 20 * 60_000],
+        [fetchedAt - 5 * 60_000, fetchedAt + 95 * 60_000],
+        upcoming,
+      ],
+    },
+  });
+  expect((await request(welcomePath, 'POST')).status).toBe(200);
+  expect(await (await request(welcomePath, 'GET', display)).json()).toEqual({
+    enabled: true,
+    snapshot: {fetchedAt, windows: [upcoming]},
+  });
+  expect((await request('/api/calendar', 'DELETE')).status).toBe(200);
+  expect(await (await request(welcomePath, 'GET', display)).json()).toEqual({
+    enabled: true,
+  });
 });
 it('uses PKCE, a browser-bound expiring single-use state, and validates granted scopes', async () => {
   const flow = await connect();

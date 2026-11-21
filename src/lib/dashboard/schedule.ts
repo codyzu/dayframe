@@ -92,6 +92,9 @@ export function createModeState(settings = defaultSettings) {
   }
 
   return {
+    clearOverride() {
+      override = undefined;
+    },
     mode(wall: number, monotonic: number) {
       advance(wall, monotonic);
       return override ?? resolve(wall);

@@ -3,6 +3,7 @@ import {expect, test, photoOrigin as origin} from '../fixtures/browser.ts';
 import {auditFocus} from '../fixtures/focus-audit.ts';
 import {fixtureNow, sevenDayFixture} from '../fixtures/weather.ts';
 import {defaultSettings} from '../../src/lib/dashboard/settings.ts';
+import {alertsFixture} from '../fixtures/alerts.ts';
 
 const photo = Buffer.from(
   'UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA',
@@ -24,6 +25,9 @@ test('dashboard vacation layout, all modes and forecast controls have complete f
   page,
 }, info) => {
   await page.request.get('/__test/login');
+  await page.route('**/api/weather-alerts', async (route) =>
+    route.fulfill({contentType: 'application/atom+xml', body: alertsFixture()}),
+  );
   await page.route('**/api/calendar/events', async (route) =>
     route.fulfill({
       json: {
@@ -88,6 +92,7 @@ test('dashboard vacation layout, all modes and forecast controls have complete f
   await expect(page.locator('[data-day-observance]')).toContainText(
     'Toussaint',
   );
+  await expect(page.locator('[data-weather-alerts]')).toBeHidden();
   const failures = await auditFocus(page, page.locator('body'), info, {
     name: 'morning',
   });
@@ -129,6 +134,7 @@ test('dashboard vacation layout, all modes and forecast controls have complete f
   });
   await page.reload();
   await expect(page.locator('[data-display-retry]')).toBeVisible();
+  await expect(page.locator('[data-weather-alerts]')).toBeHidden();
   failures.push(
     ...(await auditFocus(page, page.locator('body'), info, {
       name: 'display-retry',

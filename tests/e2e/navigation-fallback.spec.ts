@@ -98,6 +98,27 @@ test('real worker preserves root address on offline reload, excludes admin/setup
   }
 });
 
+test('offline kiosk restart keeps cached photos hidden after welcome is enabled', async ({
+  page,
+  request,
+}) => {
+  await control(request, {massageWelcome: true});
+  await installed(page);
+  await expect
+    .poll(async () =>
+      page.evaluate(() => localStorage.getItem('dayframe.massage-welcome')),
+    )
+    .toBe('enabled');
+  await seedOfflinePhotos(page);
+  await control(request, {networkOff: true});
+  await page.goto(origin + '/?display=frame');
+  await page.reload();
+  await expect(page.locator('[data-offline] [data-status]')).toHaveText(
+    'Reconnectez Dayframe pour vérifier l’accueil.',
+  );
+  await expect(page.locator('main img')).toHaveCount(0);
+});
+
 test('HTTP/auth errors and redirects retain ordinary handling; timeout and transport use fallback', async ({
   page,
   request,

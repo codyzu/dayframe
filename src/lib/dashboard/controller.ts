@@ -25,6 +25,7 @@ import {
 import {createModeState} from './schedule.ts';
 import {mountTouchNavigation} from './touch.ts';
 import {mountScreenTransition} from './transition.ts';
+import {mountMassageWelcome} from './massage-welcome.ts';
 
 const dashboard = document.querySelector<HTMLElement>('[data-dashboard]');
 if (dashboard) {
@@ -32,6 +33,7 @@ if (dashboard) {
 }
 
 function initializeDashboard(root: HTMLElement) {
+  const welcome = mountMassageWelcome(root, render);
   const transition = mountScreenTransition(root);
   const buttons =
     root.querySelectorAll<HTMLButtonElement>('[data-mode-button]');
@@ -200,7 +202,18 @@ function initializeDashboard(root: HTMLElement) {
     agenda.setDayContext(context, settings.timezone);
     lakeCalendar();
 
-    const mode = state.mode(Date.now(), performance.now());
+    const {
+      isProtected,
+      isPaused: isWelcomeClock,
+      shouldClearOverride,
+    } = welcome.apply();
+    if (shouldClearOverride) {
+      state.clearOverride();
+    }
+
+    const mode = isProtected
+      ? 'night'
+      : state.mode(Date.now(), performance.now());
     const hasOverride =
       state.snapshot(Date.now(), performance.now()) !== undefined;
     if (hadOverride && !hasOverride) {
@@ -236,13 +249,17 @@ function initializeDashboard(root: HTMLElement) {
     }
 
     const isMorningActive = mode === 'morning' && !document.hidden && !isPaused;
-    weather.setActive(isMorningActive);
+    weather.setActive(
+      isMorningActive || (isWelcomeClock && !document.hidden && !isPaused),
+    );
     agenda.tick(isMorningActive);
     alerts.tick(isMorningActive);
     slideshow.checkPrivacy();
     slideshow.setActive(mode === 'photos' && !document.hidden && !isPaused);
     const isNavigationVisible =
-      performance.now() < navigationUntil && Date.now() < navigationWall;
+      !isProtected &&
+      performance.now() < navigationUntil &&
+      Date.now() < navigationWall;
     const navigation = isNavigationVisible ? 'visible' : 'hidden';
     if (root.dataset.navigation !== navigation) {
       footer.style.visibility = isNavigationVisible ? '' : 'hidden';
@@ -292,7 +309,10 @@ function initializeDashboard(root: HTMLElement) {
 
   function setupWeather() {
     return mountWeather(weatherRoot, {
-      onUpdate: updatePhotoWeather,
+      onUpdate(next) {
+        updatePhotoWeather(next);
+        welcome.weather(next);
+      },
       isLocalLocation: isWeatherLocal,
       onForecast: agenda.setForecast,
       getAdviceEvents: agenda.adviceEvents,
@@ -372,6 +392,7 @@ function initializeDashboard(root: HTMLElement) {
       Math.abs(wall - previousWall - (monotonic - previousMonotonic)) > 5000
     ) {
       refreshAt = 0;
+      welcome.wake();
     }
 
     previousWall = wall;
@@ -389,10 +410,15 @@ function initializeDashboard(root: HTMLElement) {
       void refreshConfiguration();
     }
 
+    welcome.tick();
     timer = setTimeout(tick, 1000);
   }
 
   function interact() {
+    if (root.dataset.massageWelcome !== 'off') {
+      return;
+    }
+
     state.interact(Date.now(), performance.now());
     navigationUntil = performance.now() + 15_000;
     navigationWall = Date.now() + 15_000;
@@ -402,6 +428,10 @@ function initializeDashboard(root: HTMLElement) {
   root.addEventListener('pointerdown', interact);
   document.addEventListener('keydown', interact);
   function selectMode(mode: DisplayMode) {
+    if (root.dataset.massageWelcome !== 'off') {
+      return;
+    }
+
     void transition.select(mode, () => {
       state.interact(Date.now(), performance.now(), mode);
       navigationUntil = performance.now() + 15_000;
@@ -429,6 +459,7 @@ function initializeDashboard(root: HTMLElement) {
     dockObserver?.observe(footer);
     isPaused = false;
     calendarRefreshAt = 0;
+    welcome.wake();
     tick();
     void refreshConfiguration();
     slideshow.wake();
@@ -440,6 +471,7 @@ function initializeDashboard(root: HTMLElement) {
     if (document.hidden) {
       clearTimeout(timer);
       pending?.abort();
+      welcome.stop();
       calendarPending?.abort();
       slideshow.setActive(false);
       weather.setActive(false);
@@ -454,6 +486,7 @@ function initializeDashboard(root: HTMLElement) {
     isPaused = true;
     clearTimeout(timer);
     pending?.abort();
+    welcome.stop();
     calendarPending?.abort();
     slideshow.setActive(false);
     weather.setActive(false);

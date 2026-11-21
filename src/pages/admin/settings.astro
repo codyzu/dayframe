@@ -309,6 +309,37 @@ const fields = [
         </p>
       </fieldset>
     </section>
+    <section
+      class="rounded-2xl border border-border bg-surface p-5"
+      data-massage-admin
+      aria-labelledby="massage-admin-title"
+    >
+      <h2 id="massage-admin-title" class="text-2xl font-semibold">
+        Accueil des clients
+      </h2>
+      <p class="mt-2 text-secondary">
+        Sur le cadre, le logo remplace l’affichage habituel 10 minutes avant
+        chaque massage et jusqu’à 30 minutes après.
+      </p>
+      <label class="mt-4 flex min-h-12 items-center gap-3">
+        <input type="checkbox" class="size-5" data-massage-enabled disabled />
+        Activer l’accueil sur le cadre
+      </label>
+      <button
+        type="button"
+        class="min-h-12 rounded-xl border border-border px-4 py-2"
+        data-massage-end
+        disabled
+      >
+        Terminer l’accueil sur le cadre
+      </button>
+      <p
+        class="mt-3 text-sm text-secondary"
+        data-massage-status
+        role="status"
+      ></p>
+    </section>
+
     <template data-period-template>
       <div class="flex flex-wrap items-end gap-3 rounded-lg bg-surface p-3">
         <label class="flex flex-col gap-1">
@@ -346,5 +377,6 @@ const fields = [
   <script>
     import '../../lib/dashboard/settings-admin.ts';
     import '../../lib/calendar/admin.ts';
+    import '../../lib/dashboard/massage-admin.ts';
   </script>
 </BaseLayout>

@@ -1,0 +1,48 @@
+---
+import logo from '../assets/massage-welcome.svg?url';
+---
+
+<section
+  data-massage-panel
+  class="fixed inset-0 z-50 grid place-items-center bg-[#f6f3ee] px-6 text-center text-[#4a3a33]"
+  aria-label="Accueil massages"
+  tabindex="-1"
+  hidden
+>
+  <img
+    data-src={logo}
+    alt="Les Mains de Sérénité, Massothérapeute"
+    width="1480"
+    height="1080"
+    class="h-auto max-h-[78dvh] w-[min(84vw,42rem)] object-contain"
+    hidden
+  />
+  <div data-massage-clock hidden>
+    <time
+      data-clock
+      class="block text-[clamp(4rem,14vw,10rem)] font-semibold leading-none tabular-nums"
+    >
+      --:--
+    </time>
+    <p data-massage-weather class="mt-6 text-xl font-semibold md:text-3xl">
+      Météo indisponible
+    </p>
+  </div>
+  <button
+    type="button"
+    aria-label="Masquer le logo pendant une minute"
+    class="absolute right-4 top-4 grid size-14 place-items-center rounded-full border border-[#4a3a33] bg-[#f6f3ee] text-4xl leading-none"
+    data-revealed="false"
+    disabled
+  >
+    <span aria-hidden="true">×</span>
+  </button>
+</section>
+
+<style>
+  /* Keep the control in the keyboard order so focus can reveal it. */
+  button[data-revealed='false']:not(:focus-visible) {
+    opacity: 0;
+    pointer-events: none;
+  }
+</style>
