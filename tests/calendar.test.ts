@@ -761,11 +761,14 @@ it('caches the earliest nine events across sources for each day and refreshes le
       revision: string;
       cache: {weatherTagsRead?: true; sharedRowBudget?: true};
     };
-    delete state.cache[marker];
     const pagesBeforeRefresh = eventPages;
     await administration(platform.binding, '/calendar-state', {
       expected: state.revision,
-      value: {...state, revision: crypto.randomUUID()},
+      value: {
+        ...state,
+        revision: crypto.randomUUID(),
+        cache: {...state.cache, [marker]: undefined},
+      },
     });
     await request('/api/calendar/events', 'GET', display);
     expect(eventPages).toBe(pagesBeforeRefresh + 3);

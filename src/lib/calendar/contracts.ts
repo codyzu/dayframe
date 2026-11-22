@@ -89,13 +89,17 @@ export function remainingAgendaEvents(
         : Date.parse(event.end) > now &&
           localDate(Date.parse(event.start), timezone) <= today,
     )
-    .sort((a, b) =>
-      a.allDay === b.allDay
-        ? Date.parse(a.start) - Date.parse(b.start) ||
-          appointmentCalendars.indexOf(a.calendar ?? 'family') -
+    .toSorted((a, b) => {
+      if (a.allDay !== b.allDay) {
+        return Number(b.allDay) - Number(a.allDay);
+      }
+
+      const startOrder = Date.parse(a.start) - Date.parse(b.start);
+      return startOrder === 0
+        ? appointmentCalendars.indexOf(a.calendar ?? 'family') -
             appointmentCalendars.indexOf(b.calendar ?? 'family')
-        : Number(b.allDay) - Number(a.allDay),
-    )
+        : startOrder;
+    })
     .slice(0, appointmentsPerDay);
 }
 
