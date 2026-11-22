@@ -26,9 +26,9 @@ Google's verified calendar ID. Both existing administrators can manage the conne
 neither administrator needs to sign in on the frame. A normal Dayframe/Cloudflare
 Access sign-in is separate from Google Calendar consent.
 
-Morning prioritizes up to three remaining events **per calendar** today in the household's configured timezone:
-all-day entries first, then timed entries in start order, including ongoing/multi-day
-events. All-day end dates are exclusive. Google expands recurring appointments and
+Morning prioritizes up to nine remaining events today across the selected calendars
+in the household's configured timezone, including ongoing multi-day events.
+All-day end dates are exclusive. Google expands recurring appointments and
 exceptions (`singleEvents=true`); cancelled and self-declined entries are omitted.
 The calendar label sits at the trailing edge of each appointment row with its
 other badges. Titles use up to two lines before truncating visually. On narrow
@@ -218,7 +218,9 @@ bounded to ten pages per selected calendar. No new permissions, package or servi
 
 Morning’s **Aujourd’hui** column gives today's appointments priority within
 the ten-row budget. A divider labelled **Demain · weekday** uses one spare
-row, then up to four of tomorrow’s earliest new appointments can fill the rest.
+row, then up to eight of tomorrow’s earliest new appointments can fill the rest.
+When today is empty, its status message uses one row. All selected appointment
+calendars share the available rows in start order within each day.
 An empty tomorrow is labelled explicitly whenever its section fits;
 the preview never skips ahead to another day. All-day events precede timed entries.
 Events spanning both days appear under today only, then become today’s entries
@@ -226,20 +228,23 @@ after midnight revalidation.
 
 The same authorized reader now queries through the end of tomorrow in the household
 timezone, using local date boundaries across 23/25-hour days rather than adding
-24 hours. It retains at most three events per calendar per day (up to eighteen
-candidates across three calendars). The browser receives those candidates and applies the shared
-row budget so finished events can free preview space between refreshes. A two-day
-cache marker invalidates older today-only caches immediately on their next read.
+24 hours. It retains up to nine candidates per day across all selected calendars
+(eighteen total). The browser applies the shared row budget so finished events
+can free preview space between refreshes. The first read after upgrading refreshes
+caches made with per-calendar quotas. Saved selections and consent carry over.
+On rollback, the preceding version applies its own rules immediately and refills
+from Google on its next regular refresh.
 The four-minute server refresh, five-minute browser privacy lease, midnight/hiding/
 access-denial clearing, no-store responses and read-only OAuth scopes remain.
 There is no extra periodic request or new service, dependency or recurring cost.
 The public calendar privacy page describes the expanded candidate bound.
 
-Re-reviewed upstream main at `0bff55ef3fb2a3bfdab05bc8e3bd0c9d69f63189`, including
-root MIT `LICENSE` and `dashboard/js/views/{home,calendar}.js`. Its short remaining
-lists and next-morning hint are useful ideas; this bounded two-day French agenda
-and private timezone-aware reader are independently authored. No upstream code or
-assets copied. Local/release verification is recorded in the implementation plan.
+Reviewed upstream main at `346b712b8f3c42e7407baae3c620116ebae9c85e`, including
+the root MIT `LICENSE` and `dashboard/js/views/{home,calendar}.js`. Dayframe keeps
+the ideas of a short remaining list and a next-morning preview. Upstream gives
+each person a short lane on its home view. Dayframe uses a single shared list of
+authorized Google events with a fixed row budget and source labels. No upstream
+code or assets were copied.
 
 ## Household observances
 

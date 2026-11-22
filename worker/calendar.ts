@@ -60,6 +60,7 @@ type RecordState = {
     timezone: string;
     days?: 2;
     weatherTagsRead?: true;
+    sharedRowBudget?: true;
     routineRead?: true;
     routineUnavailable?: true;
     observances?: AgendaObservance[];
@@ -366,15 +367,7 @@ export function normalizeEvents(
     });
   }
 
-  return agendaWindowEvents(
-    events.toSorted((a, b) =>
-      a.allDay === b.allDay
-        ? Date.parse(a.start) - Date.parse(b.start)
-        : Number(b.allDay) - Number(a.allDay),
-    ),
-    now,
-    timezone,
-  );
+  return agendaWindowEvents(events, now, timezone);
 }
 
 async function calendarEvents(
@@ -600,6 +593,7 @@ async function agenda(env: CalendarEnv, state: RecordState) {
   if (
     cache?.days !== 2 ||
     !cache.weatherTagsRead ||
+    !cache.sharedRowBudget ||
     cache.timezone !== timezone ||
     now - cache.fetchedAt >= 240_000 ||
     now < cache.fetchedAt ||
@@ -654,7 +648,8 @@ async function agenda(env: CalendarEnv, state: RecordState) {
     cache = {
       days: 2,
       weatherTagsRead: true,
-      events: [...events, ...routineEvents],
+      sharedRowBudget: true,
+      events: agendaWindowEvents([...events, ...routineEvents], now, timezone),
       fetchedAt: now,
       timezone,
       ...routineStatus,

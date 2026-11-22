@@ -144,13 +144,14 @@ unavailable, stale and unsupported-location states must remain distinct. See
 
 **Calendar preview update, 30 October 2026:** The morning agenda prioritizes today’s
 remaining appointments and uses spare rows for tomorrow’s earliest new starts,
-separated by a labelled day divider. Preserve the existing six-row space budget,
-large typography and private runtime-only data boundary. Do not duplicate events
-spanning both days or silently skip ahead beyond tomorrow. See [calendar behavior](calendar.md#tomorrow-preview--30-october-2026).
+separated by a labelled day divider. Preserve large typography and the private
+runtime-only data boundary. Do not duplicate events spanning both days or
+silently skip ahead beyond tomorrow. See [calendar behavior](calendar.md#tomorrow-preview).
 
 **Journal alpin (#30):** The ten-row **Aujourd’hui** timeline accommodates up
-to nine appointments across Family, Massages and optional Routines. Tomorrow
-remains a spare-space preview.
+to nine appointments today across Family, Massages and optional Routines.
+The calendars share the row budget. Tomorrow can show up to eight new starts
+when there is room for them and the day divider.
 Routines follow their Google event schedule on all days. Official
 holidays and school breaks are distinguished from optional household observances,
 whose display is independent of the schedule. Up to two optional Google calendars

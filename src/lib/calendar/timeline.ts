@@ -1,5 +1,6 @@
 import {
   agendaObservanceTitleLimit,
+  agendaRowBudget,
   isCivilDate,
   dayEnd,
   localDate,
@@ -112,7 +113,7 @@ export function agendaTimeline(
   const today = remainingAgendaEvents(events, now, timezone);
   const tomorrowStart = dayEnd(now, timezone);
   // Preserve today's appointments (or the empty message) and the divider.
-  const spare = Math.min(4, 10 - Math.max(1, today.length) - 1);
+  const spare = agendaRowBudget - Math.max(1, today.length) - 1;
   return {
     today,
     tomorrow: tomorrowAgendaEvents(events, tomorrowStart, timezone).slice(

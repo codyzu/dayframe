@@ -1,7 +1,7 @@
 export const appointmentCalendars = ['family', 'massages', 'routines'] as const;
-const appointmentsPerCalendar = 3;
-export const agendaAppointmentLimit =
-  2 * appointmentsPerCalendar * appointmentCalendars.length;
+export const agendaRowBudget = 10;
+const appointmentsPerDay = agendaRowBudget - 1;
+export const agendaAppointmentLimit = 2 * appointmentsPerDay;
 
 export type AgendaEvent = {
   calendar?: (typeof appointmentCalendars)[number];
@@ -76,7 +76,7 @@ export function dayEnd(now: number, timezone: string) {
   return high;
 }
 
-export function remainingEvents(
+export function remainingAgendaEvents(
   events: AgendaEvent[],
   now: number,
   timezone: string,
@@ -89,32 +89,18 @@ export function remainingEvents(
         : Date.parse(event.end) > now &&
           localDate(Date.parse(event.start), timezone) <= today,
     )
-    .slice(0, appointmentsPerCalendar);
-}
-
-// Bound each calendar independently so a busy workday cannot crowd out family.
-export function remainingAgendaEvents(
-  events: AgendaEvent[],
-  now: number,
-  timezone: string,
-) {
-  return appointmentCalendars
-    .flatMap((calendar) =>
-      remainingEvents(
-        events.filter((event) => (event.calendar ?? 'family') === calendar),
-        now,
-        timezone,
-      ),
-    )
-    .toSorted((a, b) =>
+    .sort((a, b) =>
       a.allDay === b.allDay
-        ? Date.parse(a.start) - Date.parse(b.start)
+        ? Date.parse(a.start) - Date.parse(b.start) ||
+          appointmentCalendars.indexOf(a.calendar ?? 'family') -
+            appointmentCalendars.indexOf(b.calendar ?? 'family')
         : Number(b.allDay) - Number(a.allDay),
-    );
+    )
+    .slice(0, appointmentsPerDay);
 }
 
 // Tomorrow contains new starts only; ongoing/multi-day events already belong to today.
-// Keep three per source per day before the view applies its shared row budget.
+// Bound each day across all calendars before the view applies its shared row budget.
 export function agendaWindowEvents(
   events: AgendaEvent[],
   now: number,

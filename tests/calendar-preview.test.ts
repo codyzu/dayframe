@@ -24,16 +24,10 @@ const makeEvent = (
   allDay: false,
 });
 const today = Array.from({length: 9}, (_, i) =>
-  makeEvent(
-    `2026-10-16T${String(i + 9).padStart(2, '0')}:00:00Z`,
-    i < 3 ? 'family' : i < 6 ? 'massages' : 'routines',
-  ),
+  makeEvent(`2026-10-16T${String(i + 9).padStart(2, '0')}:00:00Z`),
 );
 const tomorrow = Array.from({length: 9}, (_, i) =>
-  makeEvent(
-    `2026-10-17T${String(i + 9).padStart(2, '0')}:00:00Z`,
-    i < 3 ? 'family' : i < 6 ? 'massages' : 'routines',
-  ),
+  makeEvent(`2026-10-17T${String(i + 9).padStart(2, '0')}:00:00Z`),
 );
 
 it('keeps the Cal.com client first and uses the booked duration only for recognized massage titles', () => {
@@ -77,7 +71,7 @@ it('reserves today and a labelled divider before filling spare rows chronologica
     );
     expect(preview.today).toEqual(today.slice(0, count));
     expect(preview.shouldShowTomorrow).toBe(count < 9);
-    const capacity = Math.min(4, 9 - Math.max(1, count));
+    const capacity = 9 - Math.max(1, count);
     expect(preview.tomorrow).toEqual(tomorrow.slice(0, capacity));
   }
 
@@ -87,7 +81,7 @@ it('reserves today and a labelled divider before filling spare rows chronologica
     timezone,
   );
   expect(afterFirst.today).toEqual([]);
-  expect(afterFirst.tomorrow).toHaveLength(4);
+  expect(afterFirst.tomorrow).toHaveLength(8);
 });
 
 it('includes tomorrow all-day entries first without duplicating ongoing multi-day events or skipping to another day', () => {

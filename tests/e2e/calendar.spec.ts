@@ -370,7 +370,7 @@ test('admin selects shared calendars including routines and observances, disconn
 
 // Vitest covers every row count. Render empty, constrained and full cards here.
 for (const [count, capacity] of [
-  [0, 4],
+  [0, 8],
   [7, 2],
   [9, 0],
 ]) {
@@ -423,7 +423,7 @@ for (const [count, capacity] of [
     }));
     const tomorrow = Array.from({length: 9}, (_, index) => ({
       title: index === 0 ? '<img src=x> Demain' : `Demain ${index + 1}`,
-      calendar: calendar(index),
+      calendar: 'family',
       start: `2026-10-17T${String(index + 8).padStart(2, '0')}:00:00Z`,
       end: `2026-10-17T${String(index + 9).padStart(2, '0')}:00:00Z`,
       allDay: false,

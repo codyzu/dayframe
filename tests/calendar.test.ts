@@ -696,18 +696,18 @@ it('validates appointment sources, retains Routines for older settings clients a
     'family',
     'family',
     'family',
+    'family',
     'massages',
     'massages',
     'massages',
-    'routines',
-    'routines',
+    'massages',
     'routines',
   ]);
   expect(
     body.events
       .filter((event) => event.weatherRelevant)
       .map((event) => event.calendar),
-  ).toEqual(['family', 'family', 'family', 'routines', 'routines', 'routines']);
+  ).toEqual(['family', 'family', 'family', 'family', 'routines']);
   expect(eventPages).toBe(3);
   await request('/api/calendar/events', 'GET', display);
   expect(eventPages).toBe(3);
@@ -724,7 +724,7 @@ it('validates appointment sources, retains Routines for older settings clients a
   expect(eventPages).toBe(5);
 });
 
-it('fetches and caches both days with independent per-day source limits', async () => {
+it('caches the earliest nine events across sources for each day and refreshes legacy caches', async () => {
   shouldIncludeTomorrow = true;
   eventsPerCalendar = 4;
   await finish();
@@ -736,22 +736,40 @@ it('fetches and caches both days with independent per-day source limits', async 
   const first = await request('/api/calendar/events', 'GET', display);
   const body = (await first.json()) as {events: Array<{title: string}>};
   expect(body.events).toHaveLength(18);
-  expect(
-    body.events.filter((event) => event.title.startsWith('Tomorrow')),
-  ).toHaveLength(9);
+  expect(body.events.slice(9).map(({title}) => title)).toEqual([
+    'Tomorrow 0',
+    'Tomorrow 0',
+    'Tomorrow 0',
+    'Tomorrow 1',
+    'Tomorrow 1',
+    'Tomorrow 1',
+    'Tomorrow 2',
+    'Tomorrow 2',
+    'Tomorrow 2',
+  ]);
   await request('/api/calendar/events', 'GET', display);
   expect(eventPages).toBe(3);
-  // A cache created before weather tags were read must refresh immediately.
-  const state = (await (
-    await administration(platform.binding, '/calendar-state', undefined, 'GET')
-  ).json()) as {revision: string; cache: {weatherTagsRead?: true}};
-  delete state.cache.weatherTagsRead;
-  await administration(platform.binding, '/calendar-state', {
-    expected: state.revision,
-    value: {...state, revision: crypto.randomUUID()},
-  });
-  await request('/api/calendar/events', 'GET', display);
-  expect(eventPages).toBe(6);
+  for (const marker of ['weatherTagsRead', 'sharedRowBudget'] as const) {
+    const state = (await (
+      await administration(
+        platform.binding,
+        '/calendar-state',
+        undefined,
+        'GET',
+      )
+    ).json()) as {
+      revision: string;
+      cache: {weatherTagsRead?: true; sharedRowBudget?: true};
+    };
+    delete state.cache[marker];
+    const pagesBeforeRefresh = eventPages;
+    await administration(platform.binding, '/calendar-state', {
+      expected: state.revision,
+      value: {...state, revision: crypto.randomUUID()},
+    });
+    await request('/api/calendar/events', 'GET', display);
+    expect(eventPages).toBe(pagesBeforeRefresh + 3);
+  }
 });
 
 it('keeps appointments available and withholds provider details when Routines cannot be read', async () => {
