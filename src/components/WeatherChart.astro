@@ -1,12 +1,16 @@
 <div
-  class="mt-3 min-[1000px]:mt-2 group-data-[observance=true]/weather:mt-1 min-[1000px]:group-data-[alert=true]/weather:mt-1"
+  class="mt-3 min-[1000px]:mt-2 min-[1000px]:flex min-[1000px]:grow min-[1000px]:flex-col group-data-[observance=true]/weather:mt-1 min-[1000px]:group-data-[alert=true]/weather:mt-1"
   data-chart
 >
   <p data-chart-empty class="py-5 text-secondary">
     En attente des prévisions…
   </p>
-  <div data-chart-content class="w-full" hidden>
-    <div class="hourly-layout">
+  <div
+    data-chart-content
+    class="w-full min-[1000px]:flex min-[1000px]:grow min-[1000px]:flex-col"
+    hidden
+  >
+    <div class="hourly-layout min-[1000px]:grow">
       <div class="temperature-key text-secondary leading-tight">
         <p class="text-sm font-bold text-temperature">Température</p>
         <p data-chart-range></p>
@@ -258,10 +262,17 @@
       align-self: center;
     }
   }
-  /* A warning shares the frame height; shorten the plots, not their labels. */
   @media (min-width: 1000px) {
+    /* The tracks fill the available height. Their SVGs scale with the grid
+       without contributing an intrinsic height during flex sizing. */
+    .hourly-plot {
+      contain: size;
+      height: auto;
+      min-height: 7.75rem;
+    }
+    /* Reserve room for compact warnings while letting both tracks grow. */
     :global([data-weather][data-alert='true']) .hourly-plot {
-      height: 5.875rem;
+      min-height: 5.875rem;
     }
   }
 </style>

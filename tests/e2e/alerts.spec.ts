@@ -89,6 +89,12 @@ test('clear feed hides the banner; failures, stale feeds and expiry never imply 
   await page.goto('/?display=frame');
   const banner = page.locator('[data-weather-alerts]');
   await expect(banner).toBeHidden();
+  const plot = page.locator('[data-chart-plot]');
+  const picker = page.locator('[data-future-days]');
+  await expect(plot).toBeVisible();
+  const clearPlot = (await plot.boundingBox())!;
+  const clearPicker = (await picker.boundingBox())!;
+  expect(clearPlot.height).toBeGreaterThan(124);
   body = alertsFixture([
     {
       severity: 'Moderate',
@@ -99,6 +105,12 @@ test('clear feed hides the banner; failures, stale feeds and expiry never imply 
   ]);
   await page.clock.fastForward(121_000);
   await expect(banner).toHaveAttribute('data-level', 'yellow');
+  const warningPlot = (await plot.boundingBox())!;
+  const warningPicker = (await picker.boundingBox())!;
+  expect(warningPlot.height).toBeGreaterThan(94);
+  expect(warningPlot.height).toBeLessThan(clearPlot.height);
+  expect(warningPicker.y).toBeCloseTo(clearPicker.y, 0);
+  expect(warningPicker.height).toBe(clearPicker.height);
   isFailed = true;
   await page.clock.fastForward(121_000);
   await expect(banner).toContainText('actualisation interrompue');

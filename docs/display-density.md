@@ -90,6 +90,17 @@ Seven full-height columns remain native buttons with explicit date/value names,
 selected state and painted keyboard focus. Mobile preserves horizontal scrolling
 instead of shrinking seven days into unreadable columns. The SVG is decorative
 for assistive technology because each button exposes the equivalent values.
+
+At widths of 1,000 CSS pixels and up, the hourly temperature and rain-probability
+tracks split the space above the weekly picker equally. The warning banner takes
+its share of the column first, and the plots can still grow above their compact
+minimum. The time axis and daylight legend retain their own rows. Narrow screens
+use the fixed-height hourly plot.
+
+The upstream review covered `dashboard/css/views/home.css` and
+`dashboard/js/views/home.js` at `346b712b8f3c42e7407baae3c620116ebae9c85e` (MIT).
+Upstream uses a grid to lay out its forecast tiles. Dayframe keeps its own two
+plots and shares surplus height through flex and grid. No code or assets were copied.
 The owner approved this layout after screenshot review. Local synthetic evidence
 remains separate from physical-device acceptance. [Capture context](evidence/weather-trend/README.md).
 
