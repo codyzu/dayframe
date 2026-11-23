@@ -467,9 +467,9 @@ for (const [count, tomorrowCount] of [
       const nextRow = page.locator('[data-agenda-events] li[hidden]').first();
       expect(
         await nextRow.evaluate((row) => {
-          row.hidden = false;
+          row.removeAttribute('hidden');
           const {bottom} = row.getBoundingClientRect();
-          row.hidden = true;
+          row.setAttribute('hidden', '');
           return bottom;
         }),
       ).toBeGreaterThan(796); // The agenda keeps a 4px bottom inset.
