@@ -58,30 +58,35 @@ it('identifies a timed appointment ending on a different local date', () => {
   const overnight = makeEvent('2026-10-16T21:30:00Z');
   expect(agendaTimes(overnight, now, timezone)).toEqual({
     start: '23:30',
-    end: '00:30 (17/10)',
+    end: '00:30',
+    endDate: '(17/10)',
+    isOngoing: false,
+  });
+  expect(
+    agendaTimes(overnight, Date.parse('2026-10-16T22:00:00Z'), timezone),
+  ).toEqual({
+    start: '23:30',
+    end: '00:30',
+    endDate: '(17/10)',
+    isOngoing: true,
   });
 });
 
-it('reserves today and a labelled divider before filling spare rows chronologically', () => {
-  for (let count = 0; count <= 9; count++) {
-    const preview = agendaTimeline(
-      [...tomorrow.toReversed(), ...today.slice(0, count)],
-      Date.parse('2026-10-16T05:59:00Z'),
-      timezone,
-    );
-    expect(preview.today).toEqual(today.slice(0, count));
-    expect(preview.shouldShowTomorrow).toBe(count < 9);
-    const capacity = 9 - Math.max(1, count);
-    expect(preview.tomorrow).toEqual(tomorrow.slice(0, capacity));
-  }
-
-  const afterFirst = agendaTimeline(
-    [...today.slice(0, 1), ...tomorrow],
-    Date.parse('2026-10-16T10:00:00Z'),
+it('shares the 18 candidate slots across days and keeps today first', () => {
+  const tenth = makeEvent('2026-10-16T18:00:00Z');
+  const window = agendaWindowEvents(
+    [...tomorrow.toReversed(), tenth, ...today.toReversed()],
+    now,
     timezone,
   );
-  expect(afterFirst.today).toEqual([]);
-  expect(afterFirst.tomorrow).toHaveLength(8);
+  expect(window).toEqual([...today, tenth, ...tomorrow.slice(0, 8)]);
+  expect(
+    agendaWindowEvents(
+      [...tomorrow, makeEvent('2026-10-17T18:00:00Z')],
+      now,
+      timezone,
+    ),
+  ).toHaveLength(10);
 });
 
 it('includes tomorrow all-day entries first without duplicating ongoing multi-day events or skipping to another day', () => {
@@ -117,7 +122,6 @@ it('includes tomorrow all-day entries first without duplicating ongoing multi-da
     now,
     timezone,
   );
-  expect(empty.shouldShowTomorrow).toBe(true);
   expect(empty.tomorrow).toEqual([]);
 });
 

@@ -60,7 +60,7 @@ type RecordState = {
     timezone: string;
     days?: 2;
     weatherTagsRead?: true;
-    sharedRowBudget?: true;
+    sharedCandidateLimit?: true;
     routineRead?: true;
     routineUnavailable?: true;
     observances?: AgendaObservance[];
@@ -593,7 +593,7 @@ async function agenda(env: CalendarEnv, state: RecordState) {
   if (
     cache?.days !== 2 ||
     !cache.weatherTagsRead ||
-    !cache.sharedRowBudget ||
+    !cache.sharedCandidateLimit ||
     cache.timezone !== timezone ||
     now - cache.fetchedAt >= 240_000 ||
     now < cache.fetchedAt ||
@@ -648,7 +648,7 @@ async function agenda(env: CalendarEnv, state: RecordState) {
     cache = {
       days: 2,
       weatherTagsRead: true,
-      sharedRowBudget: true,
+      sharedCandidateLimit: true,
       events: agendaWindowEvents([...events, ...routineEvents], now, timezone),
       fetchedAt: now,
       timezone,

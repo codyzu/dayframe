@@ -1,7 +1,5 @@
 export const appointmentCalendars = ['family', 'massages', 'routines'] as const;
-export const agendaRowBudget = 10;
-const appointmentsPerDay = agendaRowBudget - 1;
-export const agendaAppointmentLimit = 2 * appointmentsPerDay;
+export const agendaAppointmentLimit = 18;
 
 export type AgendaEvent = {
   calendar?: (typeof appointmentCalendars)[number];
@@ -99,12 +97,11 @@ export function remainingAgendaEvents(
         ? appointmentCalendars.indexOf(a.calendar ?? 'family') -
             appointmentCalendars.indexOf(b.calendar ?? 'family')
         : startOrder;
-    })
-    .slice(0, appointmentsPerDay);
+    });
 }
 
 // Tomorrow contains new starts only; ongoing/multi-day events already belong to today.
-// Bound each day across all calendars before the view applies its shared row budget.
+// Give today first use of the shared two-day privacy bound.
 export function agendaWindowEvents(
   events: AgendaEvent[],
   now: number,
@@ -114,7 +111,7 @@ export function agendaWindowEvents(
   return [
     ...remainingAgendaEvents(events, now, timezone),
     ...tomorrowAgendaEvents(events, tomorrowStart, timezone),
-  ];
+  ].slice(0, agendaAppointmentLimit);
 }
 
 export function tomorrowAgendaEvents(

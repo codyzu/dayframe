@@ -195,7 +195,7 @@ test('calendar weather follows timed events and tagged advice expires with the p
             title: 'Salle de sport',
             calendar: 'routines',
             start: '2026-10-17T04:00:00Z',
-            end: '2026-10-17T05:00:00Z',
+            end: '2026-10-17T22:30:00Z',
             allDay: false,
           },
         ],
@@ -222,8 +222,17 @@ test('calendar weather follows timed events and tagged advice expires with the p
       name: /Probabilité de pluie : maximum horaire 65 %/v,
     }),
   ).toBeVisible();
-  await expect(cinema.locator('[data-event-time]')).toHaveText('En cours');
-  await expect(cinema.locator('[data-event-end]')).toHaveText('jusqu’à 10:00');
+  await expect(cinema.locator('[data-event-ongoing]')).toHaveText('En cours.');
+  await expect(cinema.locator('[data-event-time]')).toHaveText('08:00');
+  await expect(cinema.locator('[data-event-time]')).toHaveCSS(
+    'font-weight',
+    '600',
+  );
+  await expect(cinema.locator('[data-event-end]')).toHaveText('10:00');
+  await expect(cinema.locator('[data-event-end]')).toHaveCSS(
+    'font-weight',
+    '700',
+  );
   await expect(cinema.locator('[data-event-weather]')).toBeVisible();
   await expect(today.locator('li')).toHaveCount(2);
   const summary = page.locator('[data-summary]');
@@ -235,7 +244,8 @@ test('calendar weather follows timed events and tagged advice expires with the p
     hasText: 'Salle de sport',
   });
   await expect(gym.locator('[data-event-time]')).toHaveText('06:00');
-  await expect(gym.locator('[data-event-end]')).toHaveText('07:00');
+  await expect(gym.locator('[data-event-end-clock]')).toHaveText('00:30');
+  await expect(gym.locator('[data-event-end-date]')).toHaveText('(18/10)');
   await expect(gym.getByRole('img', {name: /source 06:00/v})).toBeVisible();
   try {
     shouldStall = true;
@@ -368,11 +378,11 @@ test('admin selects shared calendars including routines and observances, disconn
   );
 });
 
-// Vitest covers every row count. Render empty, constrained and full cards here.
-for (const [count, capacity] of [
-  [0, 8],
-  [7, 2],
-  [9, 0],
+// Render empty today, a mix with notices, and a full today on the frame and phone.
+for (const [count, tomorrowCount] of [
+  [0, 14],
+  [7, 11],
+  [13, 5],
 ]) {
   test(`Morning previews tomorrow within spare rows after ${count} events today @mobile`, async ({
     page,
@@ -416,12 +426,12 @@ for (const [count, capacity] of [
       ['family', 'massages', 'routines'][Math.floor(index / 3)];
     const today = Array.from({length: count}, (_, index) => ({
       title: `Aujourd’hui ${index + 1}`,
-      calendar: calendar(index),
+      calendar: calendar(index) ?? 'family',
       start: new Date(fixtureNow + (index + 1) * 3_600_000).toISOString(),
       end: new Date(fixtureNow + (index + 2) * 3_600_000).toISOString(),
       allDay: false,
     }));
-    const tomorrow = Array.from({length: 9}, (_, index) => ({
+    const tomorrow = Array.from({length: tomorrowCount}, (_, index) => ({
       title: index === 0 ? '<img src=x> Demain' : `Demain ${index + 1}`,
       calendar: 'family',
       start: `2026-10-17T${String(index + 8).padStart(2, '0')}:00:00Z`,
@@ -444,9 +454,27 @@ for (const [count, capacity] of [
     );
     await page.goto('/?display=frame');
     await page.getByRole('button', {name: 'Matin', exact: true}).click();
-    await expect(
-      page.locator('[data-agenda-events] [data-event-calendar]'),
-    ).toHaveCount(count);
+    const todayRows = page.locator('[data-agenda-events] li:visible');
+    const tomorrowRows = page.locator(
+      '[data-agenda-tomorrow-events] li:visible',
+    );
+    const isMobile = info.project.name === 'mobile';
+    if (isMobile || count < 13) {
+      await expect(todayRows).toHaveCount(count);
+    } else {
+      await expect.poll(async () => todayRows.count()).toBeGreaterThan(9);
+      expect(await todayRows.count()).toBeLessThan(count);
+      const nextRow = page.locator('[data-agenda-events] li[hidden]').first();
+      expect(
+        await nextRow.evaluate((row) => {
+          row.hidden = false;
+          const {bottom} = row.getBoundingClientRect();
+          row.hidden = true;
+          return bottom;
+        }),
+      ).toBeGreaterThan(796); // The agenda keeps a 4px bottom inset.
+    }
+
     if (count === 7) {
       await expect(
         page.locator('[data-event-calendar=routines]').first(),
@@ -457,10 +485,11 @@ for (const [count, capacity] of [
       await expect(page.locator('[data-weather-alerts]')).toBeVisible();
     }
 
-    await expect(page.locator('[data-agenda-tomorrow-events] li')).toHaveCount(
-      capacity,
-    );
-    if (capacity > 0) {
+    if (isMobile) {
+      await expect(tomorrowRows).toHaveCount(tomorrowCount);
+    }
+
+    if (isMobile || count < 13) {
       await expect(page.locator('[data-agenda-tomorrow-title]')).toHaveText(
         'Demain · samedi',
       );
@@ -473,20 +502,43 @@ for (const [count, capacity] of [
         page.locator('[data-agenda-tomorrow-events] [data-event-time]').first(),
       ).toHaveText('10:00');
       await expect(page.locator('[data-agenda-tomorrow] img')).toHaveCount(0);
+      if (count === 0 && !isMobile) {
+        await expect.poll(async () => tomorrowRows.count()).toBeGreaterThan(8);
+        expect(await tomorrowRows.count()).toBeLessThan(tomorrowCount);
+      }
     } else {
       await expect(page.locator('[data-agenda-tomorrow]')).toBeHidden();
     }
 
-    await page.clock.fastForward(16_000);
     await page.evaluate(async () =>
       globalThis.document.fonts.ready.then(() => undefined),
     );
-    if (info.project.name !== 'mobile') {
+    const visibleRows = page.locator(
+      '[data-agenda] li[data-event-calendar]:visible',
+    );
+    const beforeDockHides = await visibleRows.count();
+    await page.clock.fastForward(16_000);
+    await expect(visibleRows).toHaveCount(beforeDockHides);
+    if (!isMobile) {
       expect(
         await page.evaluate(
           () => globalThis.document.documentElement.scrollHeight,
         ),
       ).toBeLessThanOrEqual(800);
+    }
+
+    if (count === 7 && !isMobile) {
+      const alert = page.locator('[data-weather-alerts]');
+      await alert.evaluate((element) => {
+        element.style.minHeight = '130px';
+      });
+      await expect
+        .poll(async () => visibleRows.count())
+        .toBeLessThan(beforeDockHides);
+      await alert.evaluate((element) => {
+        element.style.minHeight = '';
+      });
+      await expect(visibleRows).toHaveCount(beforeDockHides);
     }
 
     expect(

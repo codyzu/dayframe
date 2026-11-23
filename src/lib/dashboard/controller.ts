@@ -54,15 +54,15 @@ function initializeDashboard(root: HTMLElement) {
   const photoRoot = root.querySelector<HTMLElement>('[data-slideshow]')!;
   const weatherRoot = root.querySelector<HTMLElement>('[data-weather]')!;
   const updatePhotoWeather = mountPhotoWeather(photoRoot);
-  const alerts = mountAlerts(
-    root.querySelector<HTMLElement>('[data-weather-alerts]')!,
-  );
+  const alertsRoot = root.querySelector<HTMLElement>('[data-weather-alerts]')!;
+  const alerts = mountAlerts(alertsRoot);
 
   const slideshow = mountSlideshow(photoRoot, footer);
   const lake = weatherRoot.querySelector<HTMLElement>('[data-lake-window]')!;
   let observedTitles: readonly string[] = [];
   const agenda = mountAgenda(
     root.querySelector<HTMLElement>('[data-agenda]')!,
+    alertsRoot,
     (isObserved, titles) => {
       observedTitles = isObserved ? (titles ?? []) : [];
       lakeCalendar();

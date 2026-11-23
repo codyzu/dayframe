@@ -702,12 +702,24 @@ it('validates appointment sources, retains Routines for older settings clients a
     'massages',
     'massages',
     'routines',
+    'routines',
+    'routines',
+    'routines',
   ]);
   expect(
     body.events
       .filter((event) => event.weatherRelevant)
       .map((event) => event.calendar),
-  ).toEqual(['family', 'family', 'family', 'family', 'routines']);
+  ).toEqual([
+    'family',
+    'family',
+    'family',
+    'family',
+    'routines',
+    'routines',
+    'routines',
+    'routines',
+  ]);
   expect(eventPages).toBe(3);
   await request('/api/calendar/events', 'GET', display);
   expect(eventPages).toBe(3);
@@ -724,7 +736,7 @@ it('validates appointment sources, retains Routines for older settings clients a
   expect(eventPages).toBe(5);
 });
 
-it('caches the earliest nine events across sources for each day and refreshes legacy caches', async () => {
+it('shares 18 cached slots across both days and refreshes legacy caches', async () => {
   shouldIncludeTomorrow = true;
   eventsPerCalendar = 4;
   await finish();
@@ -736,20 +748,17 @@ it('caches the earliest nine events across sources for each day and refreshes le
   const first = await request('/api/calendar/events', 'GET', display);
   const body = (await first.json()) as {events: Array<{title: string}>};
   expect(body.events).toHaveLength(18);
-  expect(body.events.slice(9).map(({title}) => title)).toEqual([
+  expect(body.events.slice(12).map(({title}) => title)).toEqual([
     'Tomorrow 0',
     'Tomorrow 0',
     'Tomorrow 0',
     'Tomorrow 1',
     'Tomorrow 1',
     'Tomorrow 1',
-    'Tomorrow 2',
-    'Tomorrow 2',
-    'Tomorrow 2',
   ]);
   await request('/api/calendar/events', 'GET', display);
   expect(eventPages).toBe(3);
-  for (const marker of ['weatherTagsRead', 'sharedRowBudget'] as const) {
+  for (const marker of ['weatherTagsRead', 'sharedCandidateLimit'] as const) {
     const state = (await (
       await administration(
         platform.binding,
@@ -759,7 +768,7 @@ it('caches the earliest nine events across sources for each day and refreshes le
       )
     ).json()) as {
       revision: string;
-      cache: {weatherTagsRead?: true; sharedRowBudget?: true};
+      cache: {weatherTagsRead?: true; sharedCandidateLimit?: true};
     };
     const pagesBeforeRefresh = eventPages;
     await administration(platform.binding, '/calendar-state', {

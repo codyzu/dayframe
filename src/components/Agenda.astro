@@ -4,7 +4,7 @@ import '../styles/fluent-emoji.css';
 
 <section
   data-agenda
-  class="bg-surface min-w-0 px-4 py-4 min-[1000px]:px-6 min-[1000px]:py-5"
+  class="bg-surface min-w-0 px-4 py-4 min-[1000px]:px-6 min-[1000px]:pt-5 min-[1000px]:pb-1"
   aria-labelledby="agenda-title"
 >
   <h2 id="agenda-title" class="text-3xl leading-tight font-bold tracking-tight">
@@ -31,14 +31,27 @@ import '../styles/fluent-emoji.css';
     </p>
   </section>
   <template data-agenda-template>
-    <li class="agenda-entry grid min-h-14 min-w-0 grid-cols-[5.25rem_minmax(0,1fr)_auto] min-[421px]:grid-cols-[6.5rem_minmax(0,1fr)_auto] items-center gap-1 rounded-md border-s-7 border-[var(--agenda-accent)] bg-[var(--agenda-tint)] ps-1.5 pe-1 py-0.5 text-primary leading-tight data-[next]:ring-1 data-[next]:ring-inset data-[next]:ring-[var(--agenda-accent)]">
+    <li class="agenda-entry grid min-h-14 min-w-0 grid-cols-[4.5rem_minmax(0,1fr)_auto] min-[421px]:grid-cols-[5.25rem_minmax(0,1fr)_auto] items-center gap-1 rounded-md border-s-7 border-[var(--agenda-accent)] bg-[var(--agenda-tint)] ps-1.5 pe-1 py-0.5 text-primary leading-tight data-[next]:ring-1 data-[next]:ring-inset data-[next]:ring-[var(--agenda-accent)]">
       <span class="flex min-w-0 flex-col items-start tabular-nums text-base">
-        <span data-event-time class="font-bold"></span>
+        <span data-event-ongoing hidden class="sr-only">
+          En cours.
+        </span>
+        <span
+          data-event-time
+          class="font-bold data-[muted]:font-semibold data-[muted]:text-secondary"
+        ></span>
         <span
           data-event-end
           hidden
-          class="text-secondary text-xs min-[421px]:text-sm"
-        ></span>
+          class="flex flex-wrap items-baseline gap-x-1 text-secondary text-xs min-[421px]:text-sm data-[ongoing]:font-bold data-[ongoing]:text-primary data-[ongoing]:text-base"
+        >
+          <span data-event-end-clock></span>
+          <span
+            data-event-end-date
+            hidden
+            class="text-xs font-semibold text-secondary"
+          ></span>
+        </span>
       </span>
       <div class="flex min-w-0 items-center gap-1">
         <span

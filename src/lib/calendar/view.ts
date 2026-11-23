@@ -203,10 +203,19 @@ function agendaRow(
     .toggleAttribute('hidden', !isBirthdayEntry(event));
 
   row.toggleAttribute('data-next', isNext);
-  row.querySelector('[data-event-time]')!.textContent = time.start;
+  row
+    .querySelector('[data-event-ongoing]')!
+    .toggleAttribute('hidden', !time.isOngoing);
+  const start = row.querySelector('[data-event-time]')!;
+  start.textContent = time.start;
+  start.toggleAttribute('data-muted', time.isOngoing);
   const end = row.querySelector('[data-event-end]')!;
-  end.textContent = time.end;
+  end.querySelector('[data-event-end-clock]')!.textContent = time.end;
+  end.toggleAttribute('data-ongoing', time.isOngoing);
   end.toggleAttribute('hidden', time.end === '');
+  const endDate = row.querySelector('[data-event-end-date]')!;
+  endDate.textContent = time.endDate;
+  endDate.toggleAttribute('hidden', time.endDate === '');
   const title = row.querySelector('[data-event-title]')!;
   title.textContent = display.title;
   title.toggleAttribute('data-next', isNext);
@@ -259,6 +268,7 @@ function validateResponse(body: Agenda, now: number) {
 // No persistent event cache: privacy expires after five minutes, including offline.
 export function mountAgenda(
   root: HTMLElement,
+  alerts: HTMLElement,
   onObservance?: (isObserved: boolean, titles?: readonly string[]) => void,
   onEventsChanged?: () => void,
 ) {
@@ -291,6 +301,56 @@ export function mountAgenda(
   let householdTimezone = 'Europe/Paris';
   let statusMessage = status.textContent?.trim() ?? '';
   let observedSignature = '[]';
+  const frameLayout = globalThis.matchMedia('(min-width: 1000px)');
+
+  function fitRows() {
+    if (!isActive || !data?.connected) {
+      return;
+    }
+
+    const todayRows = [...list.querySelectorAll<HTMLElement>('li')];
+    const tomorrowRows = [...tomorrowList.querySelectorAll<HTMLElement>('li')];
+    // Restore natural layout for measurement. Read all bounds before hiding
+    // overflow, in the same render or resize callback so it never paints.
+    const rows = [...todayRows, ...tomorrowRows];
+    for (const row of rows) {
+      row.hidden = false;
+    }
+
+    tomorrow.hidden = false;
+    if (!frameLayout.matches) {
+      return;
+    }
+
+    const bottom =
+      document.documentElement.clientHeight -
+      globalThis.scrollY -
+      Number(getComputedStyle(root).paddingBottom.slice(0, -2));
+    const firstOverflow = rows.findIndex(
+      (row) => row.getBoundingClientRect().bottom > bottom,
+    );
+    const shouldHideTomorrow =
+      tomorrowRows.length === 0
+        ? firstOverflow !== -1 ||
+          tomorrowEmpty.getBoundingClientRect().bottom > bottom
+        : firstOverflow !== -1 && firstOverflow <= todayRows.length;
+    if (firstOverflow !== -1) {
+      for (const row of rows.slice(firstOverflow)) {
+        row.hidden = true;
+      }
+    }
+
+    tomorrow.hidden = shouldHideTomorrow;
+  }
+
+  if (typeof ResizeObserver !== 'undefined') {
+    const layoutObserver = new ResizeObserver(fitRows);
+    for (const element of [root, alerts, dayNotices, list, tomorrowList]) {
+      layoutObserver.observe(element);
+    }
+  }
+
+  globalThis.addEventListener('resize', fitRows);
 
   function clear(message: string) {
     data = undefined;
@@ -381,13 +441,14 @@ export function mountAgenda(
     }
 
     tomorrowTitle.textContent = `Demain · ${new Intl.DateTimeFormat('fr-FR', {timeZone: timezone, weekday: 'long'}).format(preview.tomorrowStart)}`;
-    tomorrow.hidden = !data?.connected || !preview.shouldShowTomorrow;
+    tomorrow.hidden = !data?.connected;
     tomorrowList.hidden = preview.tomorrow.length === 0;
     tomorrowEmpty.hidden = preview.tomorrow.length > 0;
     status.hidden = Boolean(data?.connected && preview.today.length > 0);
     status.textContent = data?.connected
       ? 'Aucun autre événement aujourd’hui.'
       : statusMessage;
+    fitRows();
   }
 
   async function refresh() {

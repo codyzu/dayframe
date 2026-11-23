@@ -26,7 +26,7 @@ Google's verified calendar ID. Both existing administrators can manage the conne
 neither administrator needs to sign in on the frame. A normal Dayframe/Cloudflare
 Access sign-in is separate from Google Calendar consent.
 
-Morning prioritizes up to nine remaining events today across the selected calendars
+Morning prioritizes remaining events today across the selected calendars
 in the household's configured timezone, including ongoing multi-day events.
 All-day end dates are exclusive. Google expands recurring appointments and
 exceptions (`singleEvents=true`); cancelled and self-declined entries are omitted.
@@ -58,11 +58,9 @@ grant and select Family again. Changing the selected calendar clears the server 
 
 ## Routines calendar
 
-Routines entries use a green source label in the same chronological timeline.
-The ten-row budget gives remaining appointments priority, with tomorrow using
-spare space. A busy day can show up to
-nine appointments across the three selected sources. The private reader retains
-up to eighteen appointment candidates across today and tomorrow. If Routines is
+Routines entries use an amber source label in the same chronological timeline.
+The private reader retains up to eighteen appointment candidates across today
+and tomorrow. If Routines is
 unavailable, Dayframe reports it and can still show Family and Massages.
 
 Existing selections work without migration or new OAuth consent. Older settings
@@ -216,35 +214,36 @@ bounded to ten pages per selected calendar. No new permissions, package or servi
 
 ## Tomorrow preview
 
-Morning’s **Aujourd’hui** column gives today's appointments priority within
-the ten-row budget. A divider labelled **Demain · weekday** uses one spare
-row, then up to eight of tomorrow’s earliest new appointments can fill the rest.
-When today is empty, its status message uses one row. All selected appointment
-calendars share the available rows in start order within each day.
-An empty tomorrow is labelled explicitly whenever its section fits;
-the preview never skips ahead to another day. All-day events precede timed entries.
+On wide displays, Morning’s **Aujourd’hui** column measures complete rows against
+the viewport. Today's appointments have priority. **Demain · weekday** and the
+earliest new appointments tomorrow fill the remaining height. The heading stays
+with at least one appointment or the explicit empty state. The floating dock can
+cover the last rows temporarily. Narrow screens scroll through the available
+candidates. All selected appointment calendars share the available space.
+The preview ends tomorrow. All-day events precede timed entries.
 Events spanning both days appear under today only, then become today’s entries
 after midnight revalidation.
 
 The same authorized reader now queries through the end of tomorrow in the household
 timezone, using local date boundaries across 23/25-hour days rather than adding
-24 hours. It retains up to nine candidates per day across all selected calendars
-(eighteen total). The browser applies the shared row budget so finished events
-can free preview space between refreshes. The first read after upgrading refreshes
-caches made with per-calendar quotas. Saved selections and consent carry over.
+24 hours. It retains up to eighteen candidates across all selected calendars and
+both days, with today's events first. Finished events can free preview space
+between refreshes. On upgrade, the first read replaces the old per-day cache.
+Saved selections and consent carry over.
 On rollback, the preceding version applies its own rules immediately and refills
 from Google on its next regular refresh.
 The four-minute server refresh, five-minute browser privacy lease, midnight/hiding/
 access-denial clearing, no-store responses and read-only OAuth scopes remain.
 There is no extra periodic request or new service, dependency or recurring cost.
-The public calendar privacy page describes the expanded candidate bound.
+The public calendar privacy page describes the shared candidate bound.
 
 Reviewed upstream main at `346b712b8f3c42e7407baae3c620116ebae9c85e`, including
-the root MIT `LICENSE` and `dashboard/js/views/{home,calendar}.js`. Dayframe keeps
-the ideas of a short remaining list and a next-morning preview. Upstream gives
-each person a short lane on its home view. Dayframe uses a single shared list of
-authorized Google events with a fixed row budget and source labels. No upstream
-code or assets were copied.
+the root MIT `LICENSE`, `dashboard/package.json`,
+`dashboard/js/views/{home,calendar}.js` and `dashboard/css/views/home.css`.
+Dayframe keeps the short remaining list, next-morning preview and distinct ongoing
+state as ideas. Upstream shows three appointments per person and replaces an
+ongoing start with “Now”. Dayframe measures one shared agenda of authorized Google
+events and shows both clocks. No upstream code or assets were copied.
 
 ## Household observances
 
@@ -294,10 +293,9 @@ appointment titles. No upstream dashboard code or artwork was imported.
 ### Compact appointment rows
 
 Appointment rows reserve two lines, with start above end in the time column.
-Times use the household timezone. An end on a different date includes that date.
-An ongoing appointment shows
-`En cours` and its end time, with a date if it ends after today. All-day entries
-retain `Journée`.
+Times use the household timezone. An end on a different date from the start
+includes its date. An ongoing appointment has a muted start and an emphasized
+end, with `En cours` available to screen readers. All-day entries retain `Journée`.
 
 On the Massages calendar only, a recognized French Cal.com title such as
 `Massage 60 minutes VIP entre Studio Exemple et Camille Martin` displays

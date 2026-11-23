@@ -1,6 +1,5 @@
 import {
   agendaObservanceTitleLimit,
-  agendaRowBudget,
   isCivilDate,
   dayEnd,
   localDate,
@@ -28,22 +27,19 @@ function agendaClock(now: number, timezone: string) {
 
 export function agendaTimes(event: AgendaEvent, now: number, timezone: string) {
   if (event.allDay) {
-    return {start: 'Journée', end: ''};
+    return {start: 'Journée', end: '', endDate: '', isOngoing: false};
   }
 
   const start = Date.parse(event.start);
   const end = Date.parse(event.end);
-  const isOngoing = start <= now;
   const endDate = localDate(end, timezone);
-  const endClock = agendaClock(end, timezone);
   const [, month, day] = endDate.split('-', 3);
-  const endLabel =
-    endDate === localDate(Math.max(start, now), timezone)
-      ? endClock
-      : `${endClock} (${day}/${month})`;
-  return isOngoing
-    ? {start: 'En cours', end: `jusqu’à ${endLabel}`}
-    : {start: agendaClock(start, timezone), end: endLabel};
+  return {
+    start: agendaClock(start, timezone),
+    end: agendaClock(end, timezone),
+    endDate: endDate === localDate(start, timezone) ? '' : `(${day}/${month})`,
+    isOngoing: start <= now && now < end,
+  };
 }
 
 export function agendaDisplayTitle(event: AgendaEvent) {
@@ -110,18 +106,11 @@ export function agendaTimeline(
   now: number,
   timezone: string,
 ) {
-  const today = remainingAgendaEvents(events, now, timezone);
   const tomorrowStart = dayEnd(now, timezone);
-  // Preserve today's appointments (or the empty message) and the divider.
-  const spare = agendaRowBudget - Math.max(1, today.length) - 1;
   return {
-    today,
-    tomorrow: tomorrowAgendaEvents(events, tomorrowStart, timezone).slice(
-      0,
-      spare,
-    ),
+    today: remainingAgendaEvents(events, now, timezone),
+    tomorrow: tomorrowAgendaEvents(events, tomorrowStart, timezone),
     tomorrowStart,
-    shouldShowTomorrow: spare > 0,
   };
 }
 

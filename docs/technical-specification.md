@@ -148,10 +148,11 @@ separated by a labelled day divider. Preserve large typography and the private
 runtime-only data boundary. Do not duplicate events spanning both days or
 silently skip ahead beyond tomorrow. See [calendar behavior](calendar.md#tomorrow-preview).
 
-**Journal alpin (#30):** The ten-row **Aujourd’hui** timeline accommodates up
-to nine appointments today across Family, Massages and optional Routines.
-The calendars share the row budget. Tomorrow can show up to eight new starts
-when there is room for them and the day divider.
+**Journal alpin (#30):** The **Aujourd’hui** timeline shares space across Family,
+Massages and optional Routines. The wide layout fits as many complete rows as the
+viewport allows, with today first and tomorrow filling the remaining space.
+The floating dock can overlap rows temporarily. Phones can scroll through both days.
+Ongoing events keep both times and emphasize the end. Overnight events include the end date.
 Routines follow their Google event schedule on all days. Official
 holidays and school breaks are distinguished from optional household observances,
 whose display is independent of the schedule. Up to two optional Google calendars
