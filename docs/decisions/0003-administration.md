@@ -4,7 +4,7 @@ Status: implemented and deployed; partial production/actual-device acceptance re
 
 ## Decision
 
-Keep Cloudflare Access as the final human identity mechanism: two individually allowlisted email identities, RS256 verification at the Worker, a one-hour maximum JWT age, and no password database. Access protects `/admin/*`; the Worker authorizes every private API independently. Access headers alone never establish identity. Admin recovery is independent of the home network.
+Keep Cloudflare Access as the final human identity mechanism: two individually allowlisted email identities, RS256 verification at the Worker, the [admin JWT age limit defined in ADR 0002](0002-protected-photos.md), and no password database. Access protects `/admin/*`; the Worker authorizes every private API independently. Access headers alone never establish identity. Admin recovery is independent of the home network.
 
 Use one SQLite-backed `Administration` Durable Object, named `household`, for settings and the active display credential. Photos remain in KV. The object is accessible only through a binding; its internal URLs have no public router. Every operation uses a storage transaction. The Worker does not cache credential decisions. After a successful rotation/revocation response, subsequent authorization checks reject the previous credential. An already authorized request can finish. No KV propagation window applies to this state.
 
