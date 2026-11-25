@@ -79,7 +79,7 @@ export async function authenticate(
         audience: env.ACCESS_AUD,
         algorithms: ['RS256'],
         requiredClaims: ['exp', 'iat', 'sub', 'email'],
-        maxTokenAge: '30d',
+        maxTokenAge: '730h',
       });
       const admins = env.ADMIN_EMAILS.split(',')
         .map((email) => email.trim().toLowerCase())

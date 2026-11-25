@@ -223,7 +223,7 @@ describe('protected photo API with real local KV', () => {
       {aud: 'other'},
       {exp: undefined},
       {iat: now + 100},
-      {iat: now - 30 * 86_400 - 60},
+      {iat: now - 731 * 3600},
     ]) {
       const token = await authority.token('one@example.test', claims);
       expect(
@@ -235,7 +235,7 @@ describe('protected photo API with real local KV', () => {
   it('accepts a valid month-long session after seven days and enforces signed expiry', async () => {
     const now = Math.floor(Date.now() / 1000);
     for (const [claims, status] of [
-      [{iat: now - 29 * 86_400, exp: now + 86_400}, 200],
+      [{iat: now - 729 * 3600, exp: now + 3600}, 200],
       [{iat: now - 7 * 86_400 - 60, exp: now - 60}, 401],
     ] as const) {
       const token = await authority.token('one@example.test', claims);
